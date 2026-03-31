@@ -1,4 +1,4 @@
-# DDIA
+# System Design on AWS
 
 We can use this simple script to convert from csv to json or vice versa.
 We use google sheet to align glossary and it's the single source of truth.
@@ -22,6 +22,3 @@ For more details, please see [here](./docs/unwrap_text.md).
 ```
 auto/dev-environment python src/unwrap_text.py markdown/ch01.md
 ```
-
-## References
-- [wiki - Quorum](https://zh.wikipedia.org/wiki/Quorum_(%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F))
