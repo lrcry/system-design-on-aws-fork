@@ -1,0 +1,554 @@
+[
+  {
+    "english_term": "asynchronous",
+    "standard_translation": "异步",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "不等待某项操作完成（例如通过网络向另一个节点发送数据），且不对该操作所需的时间做任何假设。参见第 200 页的“同步与异步复制”、第 355 页的“同步与异步网络”以及第 380 页的“系统模型与现实”。",
+    "remarks_en": "Not waiting for something to complete(e.g., sending data over the network to another node), and not making any assumptions about how long it is going to take. See “Synchronous Versus Asynchronous Replication” on page 200, “Synchronous Versus Asynchronous Networks” on page 355, and “System Model and Reality” on page 380.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "atomic",
+    "standard_translation": "原子性",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "1. 在并发语境下，描述一个看起来在单个时间点生效的操作，因此其他并发进程永远不会看到该操作处于“半完成”状态。参见隔离性（isolation）。\n2. 在事务语境下，描述将一组写入操作组合在一起，这些操作必须要么全部提交，要么全部回滚，即使发生故障也是如此。参见第 280 页的“原子性”和第 324 页的“两阶段提交”。",
+    "remarks_en": "1. In the context of concurrency, describes an operation that appears to take effect at a single point in time, so another concurrent process can never encounter the operation in a “half-finished” state. See also isolation.\n2. In the context of transactions, describes grouping together a set of writes that must either all be committed or all be rolled back, even if faults occur. See “Atomicity” on page 280 and “Two-Phase Commit” on page 324.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "backpressure",
+    "standard_translation": "背压",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "当接收方无法跟上发送方的速度时，强制发送方减慢速度。也称为流量控制（flow control）。参见第 38 页的“当过载的系统无法恢复时”。",
+    "remarks_en": "Forcing the sender of data to slow down when the recipient cannot keep up with it. Also known as flow control. See “When an Overloaded System Won’t Recover” on page 38.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "batch process",
+    "standard_translation": "批处理",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "一种以固定（且通常很大）的数据集作为输入并产生其他数据作为输出的计算过程，且不修改输入数据。参见第 11 章。",
+    "remarks_en": "A computation that takes a fixed (and usually large) set of data as input and produces other data as output, without modifying the input. See Chapter 11.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "bounded",
+    "standard_translation": "有界",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "具有已知的上限或大小。例如用于网络延迟（参见第 352 页的“超时与无界延迟”）和数据集（参见第 12 章引言）的语境中。",
+    "remarks_en": "Having a known upper limit or size. Used, for example, in the context of network delay (see “Timeouts and Unbounded Delays” on page 352) and datasets (see the introduction to Chapter 12).",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "Byzantine fault-tolerant",
+    "standard_translation": "拜占庭容错",
+    "need_origin_term": "TRUE",
+    "remarks_cn": "",
+    "remarks_en": "",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "Byzantine fault",
+    "standard_translation": "拜占庭故障",
+    "need_origin_term": "TRUE",
+    "remarks_cn": "一种故障特征，表现为节点以任意方式表现异常（例如向其他节点发送矛盾或恶意的信息）。参见第 377 页的“拜占庭故障”。",
+    "remarks_en": "A fault that is characterized by a node behaving incorrectly in an arbitrary way(e.g., by sending contradictory or malicious messages to other nodes). See “Byzantine Faults” on page 377.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "cache",
+    "standard_translation": "缓存",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "一个记住最近使用过的数据的组件，旨在加速未来对相同数据的读取。它通常是不完整的；任何缓存中缺失的数据都必须从底层、速度较慢且拥有完整数据副本的存储系统中获取。",
+    "remarks_en": "A component that remembers recently used data in order to speed up future reads of the same data. It is generally not complete; any data that is missing from the cache has to be fetched from an underlying, slower data storage system\nthat has a complete copy of the data.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "CAP theorem",
+    "standard_translation": "CAP 定理",
+    "need_origin_term": "TRUE",
+    "remarks_cn": "一个被广泛误解且在实践中用处不大的理论结果。参见第 414 页的“CAP 定理”。",
+    "remarks_en": "A widely misunderstood theoretical result that is not useful in practice. See “The CAP theorem” on page 414.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "causality",
+    "standard_translation": "因果关系",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "当系统中一件事“发生于另一件之前”时产生的事件依赖关系。例如，一个较晚发生的事件是为了响应、建立在或应根据较早事件来理解。参见第 238 页的“Happens-before 关系与并发”。",
+    "remarks_en": "The dependency between events that arises when one thing “happens before” another thing in a system—for example, a later event that occurs in response to, builds upon, or should be understood in the light of an earlier event. See “The happens-before relation and concurrency” on page 238.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "consensus",
+    "standard_translation": "共识",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "分布式计算中的一个基本问题，涉及让多个节点就某件事达成一致（例如哪个节点应该担任数据库集群的主节点）。这个问题比乍看之下要困难得多。参见第 425 页的“共识”。",
+    "remarks_en": "A fundamental problem in distributed computing concerning getting several nodes to agree on something (e.g., which node should be the leader for a database cluster). The problem is much harder than it seems at first glance. See “Consensus” on page 425.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "data warehouse",
+    "standard_translation": "数据仓库",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "一个将来自多个 OLTP 系统的数据进行组合并处理，以用于分析目的的数据库。参见第 7 页的“数据仓库”。",
+    "remarks_en": "A database in which data from several OLTP systems has been combined and prepared to be used for analytics purposes. See “Data Warehousing” on page 7.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "declarative",
+    "standard_translation": "声明式",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "描述事物应该具有的属性，而不是实现它的具体步骤。在数据库查询语境下，查询优化器接收声明式查询并决定如何最佳地执行它。参见第 66 页的“术语：声明式查询语言”。",
+    "remarks_en": "Describes the properties that something should have, but not the exact steps for how to achieve it. In the context of database queries, a query optimizer takes a declarative query and decides how it should best be executed. See “Terminology: Declarative Query Languages” on page 66.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "denormalize",
+    "standard_translation": "反规范化",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "在规范化的数据集中引入一定数量的冗余或重复（通常以缓存或索引的形式），以提高读取速度。反规范化的值是一种预计算的查询结果，类似于物化视图。参见第 72 页的“规范化、反规范化和联结”。",
+    "remarks_en": "To introduce some amount of redundancy or duplication in a normalized dataset, typically in the form of a cache or index, in order to speed up reads. A denormalized value is a kind of precomputed query result, similar to a materialized view. See “Normalization, Denormalization, and Joins” on page 72.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "derived data",
+    "standard_translation": "派生数据",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "通过一个可重复的过程从其他数据创建的数据集，必要时可以再次运行该过程。通常，派生数据是为了加速对数据的某种特定读取访问。索引、缓存和物化视图都是派生数据的例子。参见第 10 页的“记录系统与派生数据”。",
+    "remarks_en": "A dataset created from other data through a repeatable process, which you could run again if necessary. Usually, derived data is needed to speed up a particular kind of read access to the data. Indexes, caches, and materialized views are examples of derived data. See “Systems of Record and\nDerived Data” on page 10.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "deterministic",
+    "standard_translation": "确定性",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "描述一个函数，如果给予相同的输入，它总是产生相同的输出。这意味着它不能依赖随机数、当前时间、网络通信或其他不可预测的事物。参见第 387 页的“确定性的力量”。",
+    "remarks_en": "Describes a function that always produces the same output if you give it the same input. This means it cannot depend on random numbers, the time of day, network communication, or other unpredictable things. See “The Power of\nDeterminism” on page 387.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "distributed",
+    "standard_translation": "分布式",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "运行在通过网络连接的多个节点上。其特点是部分失效：系统的一部分可能损坏而其他部分仍在工作，且软件往往无法确切知道哪里损坏了。参见第 346 页的“故障与部分失效”。",
+    "remarks_en": "Running on several nodes connected by a network. Characterized by partial failures: a part of the system may be broken while other parts are still working, and it is often impossible for the software to know what exactly is broken. See “Faults\nand Partial Failures” on page 346.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "durable",
+    "standard_translation": "持久性",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "以这样一种方式存储数据：即使发生各种故障，你也相信数据不会丢失。参见第 282 页的“持久性”。",
+    "remarks_en": "Storing data in such a way that you believe it will not be lost, even if various faults occur. See “Durability” on page 282.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "ETL",
+    "standard_translation": "ETL",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "提取-转换-加载（Extract–transform–load）。从源数据库提取数据，将其转换为更适合分析查询的形式，并将其加载到数据仓库或批处理系统中的过程。参见第 7 页的“数据仓库”。",
+    "remarks_en": "Extract–transform–load. The process of extracting data from a source database, transforming it into a form that is more suitable for analytical queries, and loading it into a data warehouse or batch processing system. See “Data Warehousing” on\npage 7.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "failover",
+    "standard_translation": "故障转移",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "在单主系统中，故障切换是将主节点角色从一个节点转移到另一个节点的过程。参见第 204 页的“处理节点停机”。",
+    "remarks_en": "In systems that have a single leader, failover is the process of moving the leadership role from one node to another. See “Handling Node Outages” on page 204.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "fault-tolerant",
+    "standard_translation": "容错",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "如果发生问题（例如机器崩溃或网络链路故障），能够自动恢复。参见第 43 页的“可靠性与容错”。",
+    "remarks_en": "Able to recover automatically if something goes wrong (e.g., if a machine crashes or a network link fails). See “Reliability and\nFault Tolerance” on page 43.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "flow control",
+    "standard_translation": "流量控制",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "参见背压（backpressure）。",
+    "remarks_en": "See backpressure.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "follower",
+    "standard_translation": "从节点",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "不直接接受客户端任何写入，而仅处理从主节点接收到的数据变更的副本。也称为次级副本（secondary）、读取副本（read replica）或热备（hot standby）。参见第 198 页的“单主复制”。",
+    "remarks_en": "A replica that does not directly accept any writes from clients, but only processes data changes that it receives from a leader. Also known as a secondary, read replica, or hot standby. See “Single-Leader Repli‐\ncation” on page 198.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "full-text search",
+    "standard_translation": "全文搜索",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "通过任意关键词搜索文本，通常带有匹配拼写相似的单词或同义词等额外功能。全文索引是支持此类查询的一种二级索引。参见第 146 页的“全文搜索”。",
+    "remarks_en": "Searching text by arbitrary keywords, often with additional features such as matching similarly spelled words or synonyms. A full-text index is a kind of secondary index that supports such queries. See\n“Full-Text Search” on page 146.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "graph",
+    "standard_translation": "图",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "由顶点（可以引用的事物，也称为节点或实体）和边（从一个顶点到另一个顶点的连接，也称为关系或弧）组成的数据结构。参见第 84 页的“类图数据模型”。",
+    "remarks_en": "A data structure consisting of vertices (things that you can refer to, also known as nodes or entities) and edges (connections from one vertex to another, also known as relationships or arcs). See\n“Graph-Like Data Models” on page 84.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "hash",
+    "standard_translation": "哈希",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "一种将输入转换为看起来随机的数字的函数。相同的输入总是返回相同的数字作为输出。两个不同的输入很可能会有不同的输出数字，尽管两个不同的输入也可能产生相同的输出（这称为冲突）。参见第 258 页的“按键哈希分片”。",
+    "remarks_en": "A function that turns an input into a random-looking number. The same input always returns the same number as output. Two different inputs will likely have two different numbers as output, although two different inputs could produce the same output (this is called a collision). See\n“Sharding by Hash of Key” on page 258.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "idempotent",
+    "standard_translation": "幂等",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "描述一个可以安全重试的操作；如果执行多次，其效果与仅执行一次相同。参见第 528 页的“幂等性”。",
+    "remarks_en": "Describes an operation that can be safely retried; if it is executed more than once, it has the same effect as if it were executed only once. See “Idempotence” on page\n528.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "index",
+    "standard_translation": "索引",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "一种让你能够高效搜索特定字段中具有特定值的所有记录的数据结构。参见第 116 页的“OLTP 的存储与索引”。",
+    "remarks_en": "A data structure that lets you efficiently search for all records that have a particular value in a particular field. See “Storage\nand Indexing for OLTP” on page 116.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "isolation",
+    "standard_translation": "隔离性",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "在事务语境下，描述并发执行的事务彼此干扰的程度。可串行化隔离提供了最强的保证，但也使用较弱的隔离级别。参见第 281 页的“隔离性”。",
+    "remarks_en": "In the context of transactions, describes the degree to which concurrently executing transactions can interfere with each other. Serializable isolation provides the strongest guarantees, but weaker isolation levels are also used. See “Isolation” on\npage 281.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "join",
+    "standard_translation": "联接",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "将具有共同点的记录汇集在一起。最常用于当一条记录包含对另一条记录的引用（外键、文档引用、图中的边）且查询需要获取引用所指向的记录时。参见第 72 页的“规范化、反规范化与联结”以及第 471 页的“联结与分组”。",
+    "remarks_en": "To bring together records that have something in common. Most commonly used when one record has a reference to another (a foreign key, a document reference, an edge in a graph) and a query needs to get the record that the reference points to. See “Normalization, Denormalization, and Joins” on page 72 and “Joins and Grouping” on page 471.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "leader",
+    "standard_translation": "主节点",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "当数据或服务在多个节点上复制时，主节点是负责进行变更的指定副本。主节点可以通过协议选举产生，或由管理员手动选择。也称为 primary 或 source。参见第 198 页的“单主复制”。",
+    "remarks_en": "When data or a service is replicated across several nodes, the leader is the designated replica that is allowed to make changes. A leader may be elected through a protocol or manually chosen by an administrator. Also known as the primary or source. See “Single-Leader Replication” on page 198.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "linearizable",
+    "standard_translation": "线性一致的",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "表现得好像系统中只有一份数据副本，且所有操作都是原子的。参见第 402 页的“线性化”。",
+    "remarks_en": "Behaving as if only a single copy of data is in the system, which is updated by atomic operations. See “Linearizability” on page 402.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "linearizability",
+    "standard_translation": "线性一致性",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "它是一种一致性模型：系统对外表现得像只有单副本、按顺序执行。",
+    "remarks_en": "",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "locality",
+    "standard_translation": "局部性",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "一种性能优化：如果经常需要同时使用几块数据，则将它们放在同一个位置。参见第 82 页的“读写的局部性”。",
+    "remarks_en": "A performance optimization: putting several pieces of data in the same place if they are frequently needed at the same time. See “Data locality for reads and writes” on page 82.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "lock",
+    "standard_translation": "锁",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "一种确保只有一个线程、节点或事务可以访问某物的机制，任何其他想要访问相同内容的人都必须等待，直到锁被释放。参见第 313 页的“两阶段锁定”和第 373 页的“分布式锁与租约”。",
+    "remarks_en": "A mechanism to ensure that only one thread, node, or transaction can access something, and anyone else who wants to access the same thing must wait until the lock is released. See “Two-Phase Locking” on page 313 and “Distributed Locks and Leases” on page 373.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "log",
+    "standard_translation": "日志",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "一个仅限追加的数据存储文件。预写日志（WAL）用于使存储引擎具备崩溃恢复能力（参见第 127 页的“让 B 树可靠”）；日志结构存储引擎使用日志作为其主要的存储格式（参见第 118 页的“日志结构存储”）；复制日志用于将写入操作从主节点复制到从节点（参见第 198 页的“单主复制”）；而事件日志可以表示一个数据流（参见第 495 页的“基于日志的消息代理”）。",
+    "remarks_en": "An append-only file for storing data. A write-ahead log is used to make a storage engine resilient against crashes (see “Making B-trees reliable” on page 127), a log-structured storage engine uses logs as its primary storage format (see “Log-Structured Storage” on page 118), a replication log is used to copy writes from a leader to followers (see “Single-Leader Replication” on page 198), and an event log can represent a data stream (see “Log-Based Message Brokers” on page 495).",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "materialize",
+    "standard_translation": "物化",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "主动执行计算并写出其结果，而不是在请求时按需计算。参见第 101 页的“事件溯源与 CQRS”。",
+    "remarks_en": "To perform a computation eagerly and write out its result, as opposed to calculating it on demand when requested. See “Event Sourcing and CQRS” on page 101.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "node",
+    "standard_translation": "节点",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "运行在计算机上的软件实例，它通过网络与其他节点通信以完成任务。",
+    "remarks_en": "An instance of software running on a computer, which communicates with other nodes via a network in order to accomplish a task.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "normalized",
+    "standard_translation": "规范化",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "以没有冗余或重复的方式组织数据。在规范化数据库中，当一条数据发生变化时，你只需要在一个地方进行修改，而不是在许多地方修改许多副本。参见第 72 页的“规范化、反规范化与联结”。",
+    "remarks_en": "Structured in such a way that there is no redundancy or duplication. In a normalized database, when a piece of data changes, you need to change it in only one place, not many copies in many places. See “Normalization, Denormalization, and Joins” on page 72.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "OLAP",
+    "standard_translation": "OLAP",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "联机分析处理。一种以对大量记录进行聚合（例如计数、求和、平均值）为特征的访问模式。参见第 3 页的“操作型与分析型系统”。",
+    "remarks_en": "Online analytical processing. An access pattern characterized by aggregating (e.g., count, sum, average) over a large number of records. See “Operational Versus Analytical Systems” on page 3.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "OLTP",
+    "standard_translation": "OLTP",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "联机事务处理。一种以快速查询为特征的访问模式，读取或写入少量记录，通常按键（key）建立索引。参见第 3 页的“操作型与分析型系统”。",
+    "remarks_en": "Online transaction processing. An access pattern characterized by fast queries that read or write a small number of records, usually indexed by key. See “Operational Versus Analytical Systems” on page 3.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "partitioning",
+    "standard_translation": "分区",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "把那些无法由单台机器完成的超大数据集或者计算任务分解为更小的部分, 然后分布到多台机器上, 又称为分片。",
+    "remarks_en": "",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "percentile",
+    "standard_translation": "百分位数",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "通过计算有多少值高于或低于某个阈值来衡量数值分布的一种方法。例如，某段时间内第 95 百分位响应时间是时间 t，使得该时间段内 95% 的请求在小于 t 的时间内完成，而 5% 的请求耗时超过 t。参见第 37 页的“描述性能”。",
+    "remarks_en": "A way of measuring the distribution of values by counting how many values are above or below a certain threshold. For example, the 95th percentile response time during some period is the time t such that 95% of requests in that period complete in less than t, and 5% take longer than t. See “Describing Performance” on page 37.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "primary key",
+    "standard_translation": "主键",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "唯一标识一条记录的值（通常是数字或字符串）。在许多应用中，主键在创建记录时由系统生成（例如顺序生成或随机生成）；它们通常不由用户设置。参见二级索引（secondary index）。",
+    "remarks_en": "A value (typically a number or a string) that uniquely identifies a record. In many applications, primary keys are generated by the system when a record is created (e.g., sequentially or randomly); they are not usually set by users. See also secondary index.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "quorum",
+    "standard_translation": "quorum",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "在操作被视为成功之前需要对该操作进行投票的最少节点数量。参见第 231 页的“使用法定人数进行读写”。",
+    "remarks_en": "The minimum number of nodes that need to vote on an operation before it can be considered successful. See “Using quorums for reading and writing” on page 231.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "quorum read",
+    "standard_translation": "quorum写",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "",
+    "remarks_en": "",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "quorum write",
+    "standard_translation": "quorum读",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "",
+    "remarks_en": "",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "quorum reads/writes",
+    "standard_translation": "quorum读/写",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "",
+    "remarks_en": "",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "read quorum",
+    "standard_translation": "最小读票数",
+    "need_origin_term": "TRUE",
+    "remarks_cn": "",
+    "remarks_en": "",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "write quorum",
+    "standard_translation": "最小写票数",
+    "need_origin_term": "TRUE",
+    "remarks_cn": "",
+    "remarks_en": "",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "rebalance",
+    "standard_translation": "再平衡",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "将数据或服务从一个节点移动到另一个节点，以实现负载均衡。参见第 255 页的“键值数据的分片”。",
+    "remarks_en": "To move data or services from one node to another in order to spread the load fairly. See “Sharding of Key-Value Data” on page 255.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "replication",
+    "standard_translation": "复制",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "在多个节点（副本）上保留相同数据的副本，以便在某个节点不可达时数据仍然可用。参见第 6 章。",
+    "remarks_en": "Keeping a copy of the same data on several nodes (replicas) so that it remains accessible if a node becomes unreachable. See Chapter 6.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "schema",
+    "standard_translation": "模式",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "对数据结构的描述，包括其字段和数据类型。可以在数据生命周期的不同时间点检查数据是否符合模式（参见第 80 页的“文档模型中的模式灵活性”），且模式可以随时间变化（参见第 5 章）。",
+    "remarks_en": "A description of the structure of data, including its fields and datatypes. Whether data conforms to a schema can be checked at various points in the data’s lifetime (see “Schema flexibility in the document model” on page 80), and a schema can change over time (see Chapter 5).",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "secondary index",
+    "standard_translation": "二级索引",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "一种与主数据存储并存的附加数据结构，它使你能够高效地搜索符合某种条件的记录。参见第 132 页的“多列索引与二级索引”以及第 268 页的“分片与二级索引”。",
+    "remarks_en": "An additional data structure that is maintained alongside the primary data storage and that allows you to efficiently search for records that match a certain kind of condition. See “Multicolumn and Secondary Indexes” on page 132 and “Sharding and Secondary Indexes” on page 268.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "serializable",
+    "standard_translation": "可串行化",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "一种隔离保证，即如果多个事务并发执行，其结果与它们按某种顺序一个接一个地执行的效果相同。参见第 308 页的“串行化”。",
+    "remarks_en": "An isolation guarantee that if several transactions execute concurrently, they behave the same as if they had executed one at a time, in a serial order. See “Serializability” on page 308.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "sharding",
+    "standard_translation": "分片",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "将对于单台机器而言太大的数据集或计算任务拆分为较小的部分，并分布到多台机器上。也称为分区（partitioning）。参见第 7 章。",
+    "remarks_en": "Splitting a large dataset or computation that is too big for a single machine into smaller parts and spreading them across several machines. Also known as partitioning. Also known as partitioning. See Chapter 7.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "shared-nothing",
+    "standard_translation": "无共享架构",
+    "need_origin_term": "TRUE",
+    "remarks_cn": "一种架构，其中独立的节点（每个节点都有自己的 CPU、内存和磁盘）通过常规网络连接，与共享内存或共享磁盘架构形成对比。参见第 51 页的“共享内存、共享磁盘与无共享架构”。",
+    "remarks_en": "An architecture in which independent nodes—each with its own CPUs, memory, and disks—are connected via a conventional network, in contrast to shared-memory or shared-disk architectures. See “Shared-Memory, Shared-Disk, and Shared-Nothing Architectures” on page 51.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "skew",
+    "standard_translation": "倾斜",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "1. 分片之间的负载不平衡，导致某些分片有大量的请求或数据，而其他分片则少得多。也称为热点（hot spots）。参见第 263 页的“倾斜工作负载与缓解热点”。\n2. 一种导致事件以非预期、非顺序出现的计时异常。参见第 293 页“快照隔离与可重复读”中的读倾斜（read skew）、第 303 页“写倾斜与幻读”中的写倾斜（write skew）以及第 362 页“用于排序事件的时间戳”中的时钟倾斜（clock skew）。",
+    "remarks_en": "1. Imbalanced load across shards, such that some shards have lots of requests or data and others have much less. Also known as hot spots. See “Skewed Workloads and Relieving Hot Spots” on page 263.\n2. A timing anomaly that causes events to appear in an unexpected, nonsequential order. See the discussions of read skew in “Snapshot Isolation and Repeatable Read” on page 293, write skew in “Write Skew and Phantoms” on page 303, and clock skew in “Timestamps for ordering events” on page 362.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "split brain",
+    "standard_translation": "脑裂",
+    "need_origin_term": "TRUE",
+    "remarks_cn": "两个节点同时认为自己是主节点的场景，这可能会导致系统保证遭到破坏。参见第 204 页的“处理节点停机”和第 372 页的“多数票机制”。",
+    "remarks_en": "A scenario in which two nodes simultaneously believe themselves to be the leader, which may cause system guarantees to be violated. See “Handling Node Outages” on page 204 and “The Majority Rules” on page 372.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "stored procedure",
+    "standard_translation": "存储过程",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "一种编码事务逻辑的方法，使其可以完全在数据库服务器上执行，而在事务期间无需与客户端反复通信。参见第 309 页的“实际串行执行”。",
+    "remarks_en": "A way of encoding the logic of a transaction such that it can be entirely executed on a database server, without communicating back and forth with a client during the transaction. See “Actual Serial Execution” on page 309.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "stream process",
+    "standard_translation": "流处理",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "一种持续运行的计算，它消费永无止境的事件流作为输入并从中产生输出。参见第 12 章。",
+    "remarks_en": "A continually running computation that consumes a never-ending stream of events as input and derives output from it. See Chapter 12.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "synchronous",
+    "standard_translation": "同步",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "异步（asynchronous）的反义词。",
+    "remarks_en": "The opposite of asynchronous.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "system of record",
+    "standard_translation": "记录系统",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "持有主要、权威版本数据的系统，也称为真相源（source of truth）。变更首先写入此处，其他数据集可能由记录系统派生而来。参见第 10 页的“记录系统与派生数据”。",
+    "remarks_en": "A system that holds the primary, authoritative version of data, also known as the source of truth. Changes are first written here, and other datasets may be derived from the system of record. See “Systems of Record and Derived Data” on page 10.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "timeout",
+    "standard_translation": "超时",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "检测故障的最简单方法之一，即通过观察在一定时间内缺乏响应的情况。然而，无法确定超时是由于远程节点的问题还是网络问题引起的。参见第 352 页的“超时与无界延迟”。",
+    "remarks_en": "One of the simplest ways of detecting a fault—namely, by observing the lack of a response within a certain amount of time. However, it is impossible to know whether a timeout is due to a problem with the remote node or an issue in the network. See “Timeouts and Unbounded Delays” on page 352.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "total order",
+    "standard_translation": "全序",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "一种比较两件事物（例如时间戳）的方法，它让你总是能说出哪一个更大、哪一个更小。如果某些事物无法比较（你无法判断哪个更大或更小），这种排序被称为偏序（partial order）。",
+    "remarks_en": "A way of comparing two things (e.g., timestamps) that allows you to always say which one is greater and which one is lesser. An ordering in which some things are incomparable (you cannot say which is greater or smaller) is called a partial order.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "transaction",
+    "standard_translation": "事务",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "将多个读写操作组合成一个逻辑单元，以简化错误处理和并发问题。参见第 8 章。",
+    "remarks_en": "Grouping together several reads and writes into a logical unit in order to simplify error handling and concurrency issues. See Chapter 8.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "two-phase commit (2PC)",
+    "standard_translation": "两阶段提交",
+    "need_origin_term": "TRUE",
+    "remarks_cn": "一种算法，用于确保多个数据库节点要么全部原子地提交事务，要么全部中止事务。参见第 324 页的“两阶段提交”。",
+    "remarks_en": "An algorithm to ensure that several database nodes either all atomically commit or all abort a transaction. See “Two-Phase Commit” on page 324.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "two-phase locking (2PL)",
+    "standard_translation": "两阶段锁定",
+    "need_origin_term": "TRUE",
+    "remarks_cn": "一种用于实现可串行化隔离的算法，其工作原理是事务在读取或写入的所有数据上获取锁，并持有该锁直到事务结束。参见第 313 页的“两阶段锁定”。",
+    "remarks_en": "An algorithm for achieving serializable isolation that works by a transaction acquiring a lock on all data it reads or writes and holding the lock until the end of the transaction. See “Two-Phase Locking” on page 313.",
+    "status": "confirmed"
+  },
+  {
+    "english_term": "unbounded",
+    "standard_translation": "无界",
+    "need_origin_term": "FALSE",
+    "remarks_cn": "没有任何已知的上限或大小。有界（bounded）的反义词。",
+    "remarks_en": "Not having any known upper limit or size. The opposite of bounded.",
+    "status": "confirmed"
+  }
+]

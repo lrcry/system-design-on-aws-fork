@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+cd "$(dirname -- "$0")/.."
+
+IMAGE="python:3.10.19-slim@sha256:ed9e9e63d6b7c71c8f80eae61ab889d3912ca097a8206dca52874457be507cf1"
+
+echo "+++ Running task inside dev environment" 1>&2
+docker run \
+  --rm \
+  --interactive \
+  --tty \
+  -v "${PWD}:/app" \
+  -w /app \
+  "${IMAGE}" "${@-sh}"
