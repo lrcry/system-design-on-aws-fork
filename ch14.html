@@ -1,0 +1,750 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch14_designing_a_url_shortener_service_1734552292687677">
+      <h1>Designing a URL Shortener Service</h1>
+      <p>We <a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="use cases" data-see="use cases">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" id="use-case-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" id="url-short">&nbsp;</a>explored the concept of DNS in <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>, noting that it’s easier to remember a website’s URL than its IP addresses—but what about the long URLs? It’s easy to remember the root part of the URL (for example, <em>learning.oreilly.com</em> in <a href="https://learning.oreilly.com/library/view/system-design-on/9781098146887"><em>https://learning.oreilly.com/library/view/system-design-on/9781098146887</em></a>), but you can easily forget the long URL. We often <a href="https://oreil.ly/SystemDesignOnAWS">embed links in text</a> because that increases the readability. </p>
+      <p>Another way of sharing long URLs is by shortening them. For example, LinkedIn automatically shortens any URL that is part of a post because this helps increase post readability and user interaction. In microblogging applications like Twitter (now known as X), there is a limit on the number of characters in a single post, so to reduce the length of your text, you can shorten any URLs via some URL shortener service such as <a href="https://tinyurl.com/app">TinyURL</a> or <a href="https://bitly.com">Bitly</a> and attach those to the post instead of the full-length versions. </p>
+      <p>This chapter explores the design of a URL shortener service and discusses how to deploy the system on the AWS cloud. We’ll start our discussion with requirements gathering and expectations from the system. Later, we’ll jump into the details of the system.</p>
+      <section data-type="sect1" id="ch14_system_requirements_1734552292687935">
+        <h1>System Requirements</h1>
+        <p>You should<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="system requirements" id="use-case-url-short-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="system requirements" id="url-short-require">&nbsp;</a> have a clear goal in mind for the problem you need to solve. From there, the next step to design any system, big or small, is to gather the requirements. These requirements include:</p>
+        <ul>
+          <li>
+            <p>Why is this system needed? What is the business use case this system is solving?</p>
+          </li>
+          <li>
+            <p>Who are the users of this system? How many users?</p>
+          </li>
+          <li>
+            <p>Is there already a system that you can leverage instead of designing a new system from scratch? Systems like Bitly expose URL-shortening APIs to business customers, so why should we build our own system instead of using Bitly system APIs?</p>
+          </li>
+          <li>
+            <p>Is the system’s latency critical? </p>
+          </li>
+        </ul>
+        <p>Requirements lists can be huge, and generating them can be time-consuming, but this is a very important step. Many times in Parts <a data-type="xref" href="#part1"  data-xrefstyle="select:labelnumber">#part1</a> and <a data-type="xref" href="#part2"  data-xrefstyle="select:labelnumber">#part2</a>, we discussed how to compare two technologies and pick the best solution depending on your understanding of the business use case. It is not possible to weigh the pros and cons of your options if your requirements are not clearly defined. The requirements of any system are usually specified in two categories: functional requirements and nonfunctional requirements (NFRs).</p>
+        <section data-type="sect2" id="ch14_functional_and_nonfunctional_requirements_1734552292688021">
+          <h2>Functional and Nonfunctional Requirements</h2>
+          <p><em>Functional requirements</em> are the functionalities or features that <a contenteditable="false" data-type="indexterm" data-primary="functional requirements" data-secondary="URL shortener service">&nbsp;</a>the system offers to the end users. The main expectations from a URL shortener service are simple:</p>
+          <ul>
+            <li>
+              <p>The system takes input as a long URL and return a shortened URL.</p>
+            </li>
+            <li>
+              <p>The short URL should redirect to the long URL when accessed by any user.</p>
+            </li>
+          </ul>
+          <p>Along with the most critical requirements, you can consider value-add requirements that can be nice to have from a customer’s perspective or helpful in deriving business value. Some of these include:</p>
+          <ul>
+            <li>
+              <p>Custom URL creation support</p>
+            </li>
+            <li>
+              <p>Analytics on the URL access patterns, such as the most popular URLs</p>
+            </li>
+            <li>
+              <p>Expiration for a URL so that the URL automatically expires and is no longer accessible after a fixed period</p>
+            </li>
+            <li>
+              <p>Plug-in-based architecture to ensure extensibility </p>
+            </li>
+            <li>
+              <p>APIs exposed to third-party clients so that they can integrate their applications with our system</p>
+            </li>
+          </ul>
+          <p>We should always gather as many requirements as possible about what might be needed, but we shouldn’t get so caught up thinking about future expectations that we lose track of current expectations. The additional requirements will help us design our system in an extensible way so that new features can be added without needing to rearchitect the system.</p>
+          <p>The other type of requirements is nonfunctional. <em>NFRs</em> determine<a contenteditable="false" data-type="indexterm" data-primary="nonfunctional requirements" data-secondary="URL shortener service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="NFRs" data-see="nonfunctional requirements">&nbsp;</a> the constraints the system operates on and don’t directly affect the user feature-wise, but they are important for ensuring the quality of system operations. Here are a few examples:</p>
+          <dl>
+            <dt>Security</dt>
+            <dd>
+              <p>To ensure the system is not exploited by bad actors</p>
+            </dd>
+            <dt>High availability</dt>
+            <dd>
+              <p>To ensure a high uptime percentage in a year </p>
+            </dd>
+            <dt>Observability</dt>
+            <dd>
+              <p>To ensure that appropriate metrics and alerts are in place for constant monitoring of system health</p>
+            </dd>
+            <dt>Low latency</dt>
+            <dd>
+              <p>For short URL creation and redirection</p>
+            </dd>
+            <dt>Data stores</dt>
+            <dd>
+              <p>Should be durable and ensure correctness of the data for the expiration time configured for a URL. The data should reside in the system until the expiration time or until it is explicitly removed by a user.</p>
+            </dd>
+            <dt>Fault tolerance</dt>
+            <dd>
+              <p>Via mechanisms like retry handling </p>
+            </dd>
+            <dt>Interoperability in the system architecture </dt>
+            <dd>
+              <p>The system operates at high scale and can be broken into multiple subsystems, so how will different subsystems interact with one another?</p>
+            </dd>
+          </dl>
+          <p>These requirements will help us make better decisions while designing the system. Another part of the requirements-gathering step is identifying the scale the system will operate on. </p>
+        </section>
+        <section data-type="sect2" id="ch14_system_scale_1734552292688092">
+          <h2>System Scale</h2>
+          <p><em>Scale</em> refers <a contenteditable="false" data-type="indexterm" data-primary="scale (of system)" data-secondary="URL shortener service" id="scale-url-short">&nbsp;</a>to the number of users or the traffic we’re expecting on the system. We should be able to answer questions such as:</p>
+          <ul>
+            <li>
+              <p>What is the potential number of user requests per second (RPS) or queries per second (QPS) to generate a short URL?</p>
+            </li>
+            <li>
+              <p>How many user requests (or how much load on the system) for redirecting short URLs to long URLs? We should have clarity on both the average and peak load on the system.</p>
+            </li>
+            <li>
+              <p>Do we have any idea of the amount of storage required to store the data? </p>
+            </li>
+          </ul>
+          <p>Coming up with scale numbers can be tricky if you’re starting out fresh since you might not have 100% accurate data to base these numbers on. In these scenarios, it’s OK to make a fair assumption with a balance of not too little and not too much. Let’s move ahead with the following assumptions about our requirements:</p>
+          <ul>
+            <li>
+              <p>Generate short URL from long URL: 1,000 RPS</p>
+            </li>
+            <li>
+              <p>Short URL to long URL redirection: 20,000 RPS</p>
+            </li>
+            <li>
+              <p>Average duration of URL persistence in system: one year</p>
+            </li>
+          </ul>
+          <p>There are a lot of database solutions in the market. To decide which one is best for our use case, we need to consider another important parameter: total storage space required. Knowing this can help answer questions like: </p>
+          <ul>
+            <li>
+              <p>What is the expected cost we’ll bear if we use Amazon DynamoDB or Amazon Aurora? </p>
+            </li>
+            <li>
+              <p>Do we require data partitioning from the start?</p>
+            </li>
+          </ul>
+          <p>Other considerations important for scale could be figuring out an instance type and number of instances for applications deployed on Amazon EC2 instances or memory requirements for AWS Lambda. It’s not easy to get the real numbers before putting the system in production and serving actual consumer traffic. Make fair assumptions and then improve further based on learnings. </p>
+          <p>One key consideration is system load testing; load testing helps you gain confidence that the system can perform as expected (the system is reliable) with increased traffic demands. Let’s discuss<a contenteditable="false" data-type="indexterm" data-primary="scale (of system)" data-secondary="URL shortener service" data-startref="scale-url-short">&nbsp;</a> the storage space requirements next. </p>
+        </section>
+        <section data-type="sect2" id="ch14_storage_space_1734552292688159">
+          <h2>Storage Space</h2>
+          <p>The <a contenteditable="false" data-type="indexterm" data-primary="storage capacity" data-secondary="URL shortener service" id="store-cap-url-short">&nbsp;</a>actual storage required will vary depending on the type of data storage solution we use because the data storage and access patterns are different for each database. An approximate calculation of the storage space will depend on the number of URLs, the lengths of the short URLs and long URLs, user metadata, and URL metadata such as expiration time and creation time. The number of URLs generated in a year can be derived from assumed traffic of 1,000 RPS:</p>
+          <div data-type="equation">
+            <p>Total URLs in one year = (1,000 requests/second) &times; 60 (per minute) &times; 60 (per hour) &times; 24 (per day) &times; 365 (per year) ~ 31.53 billion</p>
+          </div>
+          <p>Before moving further along on storage calculation, we need to figure out the ideal length of a short URL. The length should be such that the system doesn’t run out of unique short URLs and should be able to support the required scale of 31.5 billion unique URLs per year. In <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>, we discussed IPv6 addresses as a replacement for IPv4 addresses because the world is running out of unique IP addresses. We definitely don’t want this kind of problem to occur in our URL shortener system, so the length of the URL should be calculated with the proper considerations from the beginning. You might suggest a length of 12 or 15 to be on the safe side, but that defeats the purpose of shortening the URL. </p>
+          <p>We can think about generating a short URL from the numbers 0−9, as well as the letters a−z and A−Z. What is the maximum number of unique URLs generated for a given length with these 62 unique characters?</p>
+          <div data-type="equation">
+            <p>Length(1) = 62<sup>1</sup> = 62</p>
+            <p>Length(6) = 62<sup>6</sup> = 56.8 billion</p>
+            <p>Length(7) = 62<sup>7</sup> = 3.5 trillion</p>
+            <p>Length(8) = 62<sup>8</sup> = 218.3 trillion</p>
+            </div>
+          <p>We can see based on these calculations that the URL system can support the required scale with a URL length of greater than or equal to 6. Considering future scale, we can finalize the URL length as 7. </p>
+          <p>Now, let’s go back to our original question: what is the required storage space? Considering a simple database schema of storing short URLs, long URLs, expiration times, and metadata, we can calculate our storage needs as follows:</p>
+          <div data-type="equation">
+            <p>Short URL (7 characters) = 7 bytes</p>
+            <p>Average long URL (100 characters) = 100 bytes</p>
+            <p>Expiration date (long) = 8 bytes</p>
+            <p>Average metadata (user IP, user preferences, etc.) = 1 KB</p>
+            <p>Total ~ 1150 bytes</p>
+            </div>
+          <p>For simplicity, let’s take 1 KB as the storage requirement for a single URL:</p>
+          <div data-type="equation">
+            <p>Total storage for one year = 31.53 billion &times; 1 KB = 29.37 TB</p>
+            </div>
+          <p>The system has additional storage requirements, such as cache to improve query performance, analytics data, and user authentication database (which can be required if the system offers additional capabilities to logged-in users, such as custom URL creation, view analytics, etc.).</p>
+          
+           
+          <p>With all these requirements in mind, let’s move forward with the design of a <a contenteditable="false" data-type="indexterm" data-primary="storage capacity" data-secondary="URL shortener service" data-startref="store-cap-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="system requirements" data-startref="use-case-url-short-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="system requirements" data-startref="url-short-require">&nbsp;</a>URL shortener service.</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch14_starting_with_the_design_1734552292688238">
+        <h1>Starting with the Design</h1>
+        <p>We <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="architecture design" id="use-case-url-short-architecture">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="architecture design" id="url-short-architecture">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="in URL shortener service" data-secondary-sortas="URL shortener service" id="schema-url-short">&nbsp;</a>mentioned in the requirements-gathering section that we shouldn’t think too far ahead because we don’t know what our system will look like in the future or what new features we might introduce to evolve with the market. We should try to keep our systems open-ended so that we can introduce new features with ease when they are actually needed. <a data-type="xref" href="#ch14_figure_1_1734552292664156">#ch14_figure_1_1734552292664156</a> shows the most basic architecture and user interactions for the URL shortener service to meet the defined functional requirements. The users create a short URL corresponding to a long URL using the URL shortener service and then use the same short URL in the web browser (or terminal) to access the URL. The URL shortener service figures out the long URL corresponding to the short URL and redirects the request.</p>
+        <figure id="ch14_figure_1_1734552292664156">
+          <img src="images/sdoa_1401.png"/>
+          <figcaption>User interaction with URL shortener service</figcaption>
+        </figure>
+        <p>The first thing we need to figure out for the design is how a short URL can be generated from a long URL so that it can be optimally stored, supporting faster user-lookup queries. </p>
+        <section data-type="sect2" id="ch14_url_shortening_algorithm_1734552292688331">
+          <h2>URL Shortening Algorithm</h2>
+          <p>A long URL<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="algorithms for" id="use-case-url-short-algorithm">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="algorithms for" id="url-short-algorithm">&nbsp;</a> can be shortened into a short URL via different algorithms. We’ll discuss how some of them can fit our system use case, starting with hashing.</p>
+          <section data-type="sect3" id="ch14_hashing_1734552292688407">
+            <h3>Hashing</h3>
+            <p>Hashing seems<a contenteditable="false" data-type="indexterm" data-primary="hashing" id="hashing-ch14">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="collisions" id="collision-ch14">&nbsp;</a> to be a viable solution to solve this problem: using a hash function such as <a class="orm:hideurl" href="https://oreil.ly/FfZ20">MD5</a>, which takes a long URL as input and returns a hash of this long URL as output. The length of the generated hash can be greater than 7, so the system should trim the generated hash to a reduced length. This solution is easy to implement but it has one problem: collision. Two different long URLs could possibly generate the same hash, and even if the hash is different, the truncated length could be the same. At large scale, this can become a frequent problem, making short URL generation a bottleneck. </p>
+            <p>There are different methods of handling collisions: one possible solution is to take some other set of characters instead of truncating to the first 7 characters. The hash-generation approach also requires a data store lookup (or multiple lookups in the case of collisions), which adds extra latency to the operation, as shown in <a data-type="xref" href="#ch14_figure_2_1734552292664190">#ch14_figure_2_1734552292664190</a>. </p>
+            <figure id="ch14_figure_2_1734552292664190">
+              <img src="images/sdoa_1402.png"/>
+              <figcaption>Short URL generation by hashing</figcaption>
+            </figure>
+            <p>In short, the hashing solution is not so perfect for our system requirements. Let’s think about an option that would avoid the collisions and perhaps also avoid the database lookups to make operation <a contenteditable="false" data-type="indexterm" data-primary="hashing" data-startref="hashing-ch14">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="collisions" data-startref="collision-ch14">&nbsp;</a>faster.</p>
+          </section>
+          <section data-type="sect3" id="ch14_unique_id_generation_1734552292688472">
+            <h3>Unique ID generation</h3>
+            <p>A key point<a contenteditable="false" data-type="indexterm" data-primary="unique ID generation" id="unique-id">&nbsp;</a> to consider here is that the long URL and short URL don’t have to be related—this would essentially be a unique ID generation system, which can map the generated ID to a long URL. </p>
+            <p>Let’s discuss a few approaches for generating unique IDs. The ID can be as simple as a counter incremented every time a new request is received from the users or a feature like <a href="https://oreil.ly/WtqwQ"><code>AUTO_INCREMENT</code></a> from a database. If the system itself (without the involvement of the database) handles the ID generation, we can be sure of solving the problems of both collision handling and avoiding database lookups. Think of it as a server initializing a counter value with “1” and then incrementing it every time a new request arrives. The mapping can be stored to a database, and then the short URL is returned to the user, as shown in <a data-type="xref" href="#ch14_figure_3_1734552292664216">#ch14_figure_3_1734552292664216</a>. </p>
+            <figure id="ch14_figure_3_1734552292664216">
+              <img src="images/sdoa_1403.png"/>
+              <figcaption>Short URL generation by maintaining a counter</figcaption>
+            </figure>
+            <p>The sequence of alphanumeric characters from 0 to 9, a to z, and A to Z when used for encoding is referred<a contenteditable="false" data-type="indexterm" data-primary="base62 encoding">&nbsp;</a> to as <em>base62 encoding</em>. Note that when using base62 encoding on the counter values (decimal numbers), the short URL will be unique but not always of length 7. For example:</p>
+            <div data-type="equation">
+              <p>Base62 (1) = 1</p>
+                <p>Base62 (10) = A</p>
+                <p>Base62 (61) = z</p>
+                <p>Base62 (62) = 10</p>
+                <p>Base62 (63) = 11</p>
+                <p>Base62 (1000001) = 4C93</p>
+            </div>
+            <p>To ensure the length is always 7, we can append random characters to the generated base62 value from other character set, which is mutually exclusive of the alphanumeric set (say, _, #, etc.).</p>
+            <p>We haven’t decided on the maintenance of the counter value. The simple solution is to maintain a global counter variable in our application, which is updated after every new short URL generation. But there can be multiple machines on which the application is running, which can lead to a duplicate counter value. Even if there is a single machine, it has a risk of going down, which would make the counter value again start from zero.</p>
+            <p>To solve this, we can consider maintaining this global counter in a database. This way, it solves the problem of a single machine going down (the counter is not initialized to zero every time) or multiple machines being responsible for URL generation (duplicate counter values across the machines). However, it can also cause issues because we can’t allow multiple application threads to access the counter at the same time in order to avoid race conditions, and if we apply a lock (a single machine reads and updates the value), that will increase operation latency. </p>
+            <p>Let’s simplify the entire architecture further to ensure optimal application performance. We can assign additional responsibility to the system of pregenerating the short URLs since they are not dependent on the long URL. This way, multiple machines can utilize the pregenerated IDs (short URLs), solving all the bottlenecks.</p>
+            <p>Our URL shortener service consists of an additional component responsible for pregeneration of short URLs and keeping them in memory for faster access. An important decision to make here is whether we give this additional responsibility to our URL shortener service or host it as an independent service. (We discussed monolith and microservice architecture in <a data-type="xref" href="#ch08_architectural_designs_and_patterns_1734552289324317">#ch08_architectural_designs_and_patterns_1734552289324317</a> and the benefits associated with each.) </p>
+            <p>A single component will ensure comparatively less hardware cost (at least in the beginning) and less latency since there's no requirement for network calls between the services. What you need to consider in order to make the decision here is what value you’re getting if this is an independent component instead of hosted as part of the main application. A separate ID generation or key generation service (KGS) can be beneficial for other use cases, and this is an independent responsibility that doesn’t have to be tied to the URL shortener service. Given this, we’ll go with the idea of hosting a separate service with the responsibility for generating unique keys and passing those on to our URL shortener service when requested, as shown in <a data-type="xref" href="#ch14_figure_4_1734552292664238">#ch14_figure_4_1734552292664238</a>. </p>
+            <figure id="ch14_figure_4_1734552292664238">
+              <img src="images/sdoa_1404.png"/>
+              <figcaption>URL shortener system architecture</figcaption>
+            </figure>
+            <p>An additional analytics pipeline is included in the architecture. The URL shortener service publishes the events of user activity to the queue, and the analytics pipeline takes care of analyzing and offering <a contenteditable="false" data-type="indexterm" data-primary="unique ID generation" data-startref="unique-id">&nbsp;</a>insights on the data. </p>
+            <p>Now, let’s look at the KGS in more detail.</p>
+          </section>
+          <section data-type="sect3" id="ch14_key_generation_service_1734552292688540">
+            <h3>Key generation service</h3>
+            <p>The KGS <a contenteditable="false" data-type="indexterm" data-primary="key generation service" id="key-generation-service">&nbsp;</a>has a simple responsibility of providing unique IDs when requested by our URL shortener service. To ensure traffic control on the KGS as well as make the URL shortener system more efficient, the operation can offer a list of IDs—say, one thousand in a single operation—and the URL shortener service can re-request once these IDs are exhausted. Let’s dig a little deeper into how the KGS works: how should these unique IDs be generated?</p>
+            <p>We can <a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="auto-increment feature">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="auto-increment feature (databases)">&nbsp;</a>consider using the database’s auto-increment feature, such as MySQL’s <code>AUTO_INCREMENT</code> or PostgreSQL’s <a href="https://oreil.ly/nzd_o"><code>SERIAL</code></a> or <a href="https://oreil.ly/HnVc_"><code>SEQUENCE</code></a>. This functionality is applicable for a leader instance (if there are multiple database instances), and it can become a single point of failure for maintenance of IDs, hampering overall system availability. Further, implementing this feature becomes very hard to do in the case of multi-instance database setup, such as horizontally scalable NoSQL databases. We can take inspiration from <a href="https://oreil.ly/uwx2W">Flickr's architecture</a>, which uses MySQL’s auto-increment feature with a <code>REPLACE INTO</code> query to get a globally unique new ID on every new query: </p>
+            <pre data-type="programlisting">CREATE TABLE `Tickets64` (
+  `id` bigint(20) unsigned NOT NULL auto_increment,
+  `stub` char(1) NOT NULL default ‘‘,
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY `stub` (`stub`)
+) ENGINE=InnoDB
+ 
+ 
+REPLACE INTO Tickets64 (stub) VALUES (‘a’);
+SELECT LAST_INSERT_ID();</pre>
+            <p>To increase system availability and avoid a single point of failure, two database servers are used, starting with an even and odd number and offset as 2 to avoid collision:</p>
+            <pre data-type="programlisting">TicketServer1:
+auto-increment-increment = 2
+auto-increment-offset = 1
+ 
+TicketServer2:
+auto-increment-increment = 2
+auto-increment-offset = 2</pre>
+            <p>Further regular snapshots should be taken of these two databases to ensure that a backup is always kept in case of any fatal scenarios. Since only a single row is maintained within a table, we can be sure that the server will not run out of storage space. </p>
+            <p><a data-type="xref" href="#ch14_figure_5_1734552292664259">#ch14_figure_5_1734552292664259</a> shows the interaction of the KGS with ticket servers for ID generation.</p>
+            <figure id="ch14_figure_5_1734552292664259">
+              <img src="images/sdoa_1405.png"/>
+              <figcaption>Unique ID generation via ticket servers</figcaption>
+            </figure>
+            <p>The two ticket servers generate even and odd IDs, respectively, but this management overhead will increase if the ticket servers are deployed in multiple regions instead of just one. One potential solution to ensure uniqueness across regions could be adding a data center prefix to the short URL, such as a 1 for us-east-1, 2 for eu-west-1, and so on, making the URL eight characters instead of seven.</p>
+            <div data-type="note">
+              <p>In 2010, X <a contenteditable="false" data-type="indexterm" data-primary="Snowflake">&nbsp;</a>proposed another approach for generating 64-bit unique IDs: Snowflake. <a href="https://oreil.ly/ooF5v">Snowflake</a> can generate 4,096 unique IDs per millisecond with a combination of timestamp (41 bits for epoch milliseconds timestamp), machine identifier number (10 bits, giving us up to 1,024 machines), and sequence number (12 bits for local counter per machine). The remaining 1 bit is a signed bit always set to 0. This approach won't work directly for our URL shortener because the system always requires a 7-character-length string, but implementation can be built using a similar concept. X used Snowflake because of the requirement for sorting and ensuring ordering guarantees. The URL shortener system does not require creating IDs based on timestamp, so we’re free to choose an approach that's easy to implement and maintain the uniqueness. </p>
+            </div>
+            <p>The KGS can be extended to support multiple types of key generation based on client input in the API or client onboarding configuration. This makes the KGS a single system for generating any kind of identifier. Let’s now discuss the APIs that need to be supported by the <a contenteditable="false" data-type="indexterm" data-primary="key generation service" data-startref="key-generation-service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="algorithms for" data-startref="use-case-url-short-algorithm">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="algorithms for" data-startref="url-short-algorithm">&nbsp;</a>URL shortener service. </p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch14_system_apis_1734552292688604">
+          <h2>System APIs</h2>
+          <p>APIs <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="APIs for" id="use-case-url-short-api">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="APIs for" id="url-short-api">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="api-url-short">&nbsp;</a>help clients integrate with the system to make use of supported functionalities. The URL shortener service should support two main APIs: creating a short URL and retrieving a long URL from a short URL. The following code snippet shows an API signature for creating short URLs:</p>
+          <pre data-type="programlisting">POST /v1/createShortUrl
+{
+    longUrl,
+    customUrl,
+    expiry,
+    userMetadata
+}</pre>
+          <p>The <code>longUrl</code> parameter is mandatory in API requests for generating a short URL. The additional attributes are added to support other functionalities of the application:</p>
+          <dl>
+            <dt>
+              <code>customUrl </code>
+            </dt>
+            <dd>
+              <p>Helpful if the user wants to generate a custom URL instead of a random 7-character string. To handle this parameter, the URL shortener service will directly check in the database if the custom URL is already created, and if not, mapping of the custom URL to the long URL will be stored in the database.</p>
+            </dd>
+            <dt>
+              <code>expiry </code>
+            </dt>
+            <dd>
+              <p>Enables users to specify a custom expiration for the URL instead of what is defined by the system.</p>
+            </dd>
+            <dt>
+              <code>userMetadata </code>
+            </dt>
+            <dd>
+              <p>Used to gather extra information about the user, such as IP address, geographical location, and browser, which helps drive analytics.</p>
+            </dd>
+          </dl>
+          <div data-type="note">
+            <p>It’s possible that the same custom URL could be created by multiple users. Amazon DynamoDB’s default PutItem behavior is to update the item if the primary key already exists, but this is not a valid option for the URL shortener system. The PutItem request should contain a <a href="https://oreil.ly/wOVmO">condition expression</a> to fail the request for the same custom URL.</p>
+          </div>
+          <p>The response of the API can be either success or failure. You might remember our discussion of <a contenteditable="false" data-type="indexterm" data-primary="HTTP response status codes">&nbsp;</a>HTTP status codes from <a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a>—the status codes are helpful for determining the kind of HTTP response the client has received from the server. We should define proper mechanisms for both responses so that the clients can understand the response in failure scenarios and take any further actions, such as retry. The failures can be due to invalid parameters from the client side or some issue at the backend application.</p>
+          <p>Here is an example of a successful response:</p>
+          <pre data-type="programlisting">HTTP/1.1 200 OK
+{
+    “shortUrl”: “https://oreil.ly/SystemDesignOnAWS”
+}
+ </pre>
+          <p>Here is an example of a failed response:</p>
+          <pre data-type="programlisting">HTTP/1.1 500 Internal Server Error
+{
+    “error”: “An error occurred while processing your request”    
+}</pre>
+          <p>As a user creates a short URL and shares it with others or accesses it themself, the API request and response could look something like this:</p>
+          <pre data-type="programlisting">GET v1/getLongUrl
+{
+    shortUrl,
+    userMetadata
+}</pre>
+          <p>Here is the successful response:</p>
+          <pre data-type="programlisting">HTTP/1.1 302 Found
+Location: https://www.oreilly.com/library/view/system-design-on/9781098146887
+ </pre>
+          <p>And here is the failed response:</p>
+          <pre data-type="programlisting">HTTP/1.1 404 Not Found
+{
+    “error”: “short url doesn’t exist”
+}</pre>
+          <p>Let’s discuss any additional considerations before moving on to the AWS components we will use to deploy the system <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="APIs for" data-startref="use-case-url-short-api">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="APIs for" data-startref="url-short-api">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="api-url-short">&nbsp;</a>in production.</p>
+        </section>
+        <section data-type="sect2" id="ch14_system_considerations_1734552292688664">
+          <h2>System Considerations</h2>
+          <p>By this point, we’ve proposed two services in the architecture: the URL shortener service and the KGS for supporting end-to-end functionality. The URL shortener service is responsible for short URL generation as well as redirection. The APIs are simple enough to be supported by a single system, but the traffic patterns are quite different for both APIs; the traffic for URL redirection will be much higher than for URL generation. </p>
+          <p>Imagine a celebrity generating a short URL and sharing it with followers on social media platforms: all of their followers will try to access the URL, increasing overall system traffic. In these kinds of scenarios, we recommend starting with a single system and then evolving if traffic handling becomes a problem. </p>
+          <p>Separating a system into two components can come with extra overhead, such as a database being accessed from two separate services. The URL shortener service will have both read and write use cases, whereas the URL redirect service will have read use cases on the database. It is generally not a good idea for two services to directly interact with a single database; the most robust solution is to expose the database operations via another service that is responsible for handling all database operations along with cache maintenance. We’ll also need to finalize the database choice, given the wide variety of database solutions available on the market. </p>
+        </section>
+        <section data-type="sect2" id="ch14_database_selection_1734552292688741">
+          <h2>Database Selection</h2>
+          <p>Multiple factors<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="database selection" id="use-case-url-short-database">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="database selection" id="url-short-database">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="choosing" data-tertiary="for URL shortener service" data-tertiary-sortas="URL shortener service" id="database-choose-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="choosing" data-secondary="databases" data-tertiary="for URL shortener service" data-tertiary-sortas="URL shortener service" id="choose-database-url-short">&nbsp;</a> are involved in selecting the perfect database for a specific use case. We explored different types of databases and compared them in Chapters <a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892"  data-xrefstyle="select:labelnumber">#ch02_storage_types_and_relational_stores_1734552286519892</a>, <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587"  data-xrefstyle="select:labelnumber">#ch03_nonrelational_stores_1734552286860587</a>, and <a data-type="xref" href="#ch10_aws_storage_services_1734552290474903"  data-xrefstyle="select:labelnumber">#ch10_aws_storage_services_1734552290474903</a>. <a data-type="xref" href="#ch03_figure_4_1734552286842595">#ch03_figure_4_1734552286842595</a> explains how to navigate through the database choices and finalize on a particular database. Begin with the data type and then look for the needed query patterns by the application. Let’s consider the URL shortener service first.</p>
+          <section data-type="sect3" id="ch14_url_shortener_service_1734552292688800">
+            <h3>URL shortener service</h3>
+            <p>For the URL shortener service, the data is structured, and the expected query patterns are as follows:</p>
+            <ul>
+              <li>
+                <p>Get a long URL for a specific short URL.</p>
+              </li>
+              <li>
+                <p>Get all URLs for a user in a specific period of time. This is a secondary query pattern and is only required for logged-in users. </p>
+              </li>
+            </ul>
+            <p>These query patterns can be solved by both relational and nonrelational databases, and you can choose based on previous expertise. We recommend a logical partitioning strategy from the start if you choose a relational database for deployment. In the context of this chapter, we’ll go ahead with <a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service">&nbsp;</a>an AWS key-value database: Amazon DynamoDB. There are many benefits of DynamoDB that we get out of the box, such as horizontal scaling, infrastructure management with no worry about scaling up read/write replicas, TTL configuration, and DynamoDB streams for analytics.</p>
+            <div data-type="note">
+              <p>DynamoDB scales <a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-secondary="scaling">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scaling" data-secondary="in DynamoDB" data-secondary-sortas="DynamoDB">&nbsp;</a>horizontally based on customer-configured capacity mode. Begin with the on-demand capacity mode to figure out traffic patterns and then migrate to the provisioned mode if the traffic is predictable. The system can experience throttling issues with both on-demand and provisioned, with autoscaling capacity modes for spiky workloads. Preplanning your capacity is helpful in <a href="https://oreil.ly/Z3Ait">resolving throttling with provisioned mode</a>, and throttling issues are automatically recovered for <a href="https://oreil.ly/8Jr1K">on-demand capacity mode</a>. There is also an account-level quota of 40,000 RCUs and WCUs for on-demand; this can be increased by <a href="https://oreil.ly/7cdFS">raising a quota increase request on the AWS Console</a>.</p>
+            </div>
+            <p>We can define the DynamoDB partition key and sort key as:</p>
+            <div data-type="equation">
+              <p>Partition key = {short URL}</p>
+              <p>Sort key = SU</p>
+            </div>
+            <p>We can skip defining sort key in the preceding schema because sort key is always a constant string. A constant is suggested because it helps store other entries (apart from long URL mapping) in DynamoDB with partition key as short URL. We’ll require GSI for retrieving all URLs created by a user, and we can use the following schema for the same:</p>
+            <div data-type="equation">
+              <p>Partition key = {userId}</p>
+              <p>Sort key = u#{timestamp}</p></div>
+            <p>The timestamp is included in the sort key to help with retrieving the URLs in a particular time frame. Now, let’s discuss the choice of database for the KGS.</p>
+          </section>
+          <section data-type="sect3" id="ch14_kgs_1734552292688858">
+            <h3>KGS</h3>
+            <p>The<a contenteditable="false" data-type="indexterm" data-primary="key generation service">&nbsp;</a> ID-generation logic is dependent on the ticket servers. Additionally, the KGS should keep some IDs in the buffer to serve the queries faster—but how many IDs should be in the buffer? The logic could be as simple as keeping 10,000 IDs in the buffer, and the number can be tuned based on application traffic. We can utilize an in-memory data store for this purpose, such as Amazon ElastiCache with Redis or Memcached flavor. <a href="https://oreil.ly/kBsUN">Redis lists</a> are one way to store IDs. </p>
+            <p>The KGS doesn’t keep an audit history of which IDs are returned to the URL shortener service at particular instances, and we don’t have that requirement either. This can be built in if needed, and a cache store will be facilitated on top of a configured persistent data store.</p>
+            <p>We’ve discussed the individual components and how the system will operate to serve the requirements. The business aspects of the application are important as well; we want to eventually earn money from our systems. Some examples for revenue generation could be offering URL analytics or a custom URL domain for paid users. Analytics in itself is a big portion of the URL shortener system; the entire end-to-end analytics pipeline is not in the scope of this book. But in the next section, we’ll shed some light on how custom domain support can be built into the <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="database selection" data-startref="use-case-url-short-database">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="database selection" data-startref="url-short-database">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="choosing" data-tertiary="for URL shortener service" data-tertiary-sortas="URL shortener service" data-startref="database-choose-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="choosing" data-secondary="databases" data-tertiary="for URL shortener service" data-tertiary-sortas="URL shortener service" data-startref="choose-database-url-short">&nbsp;</a>system.</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch14_custom_domain_support_1734552292688917">
+          <h2>Custom Domain Support</h2>
+          <p>One of <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="custom domain support" id="use-case-url-short-domain">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="custom domain support" id="url-short-domain">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="custom domain support for URL shortener service" id="domain-support-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="multitenant systems for URL shortener service" id="multitenant-url-short">&nbsp;</a>the requirements of the system is to build an extensible system that can expose the APIs to third-party clients—in short, a multitenant system. For example, assume that Google Drive leverages Bitly services to shorten URLs, but Google wants to share custom Google short URLs with users rather than Bitly short URLs. </p>
+          <p>Enabling custom domain support in the system is somewhat similar to maintaining multiple URL shortener systems, each with different domain names. The important point to consider here is whether the system has <a contenteditable="false" data-type="indexterm" data-primary="physical separation">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="virtual separation">&nbsp;</a>virtual (or logical) separation or physical separation. <em>Physical separation </em>means deploying multiple systems in parallel, each serving a specific domain, and <em>virtual separation</em> means the same system caters to all the clients, with internal code separation or configurations. </p>
+          <div data-type="note">
+            <p>Designing and building multitenant systems requires an extensive thought process on system expectations. This section captures a simplistic version of the thought process.</p>
+          </div>
+          <p>Let’s try to solve this via a single DynamoDB table, which maintains the mappings of short URLs to long URLs. DynamoDB requires a partition key and sort key as part of the primary key, so the system defines:</p>
+          <div data-type="equation">
+            <p>Partition key = {short URL}</p>
+            <p>Sort key = {tenant ID}</p></div>
+          <p>The <code>tenant ID</code> is an identification useful for figuring out different tenants (systems onboarded to the URL shortener system). The <code>short URL</code> is created via an API call by the onboarded system, so it is expected to pass the <code>tenant ID</code> as part of the request. The <code>tenant ID</code> can be created when the system is onboarded, or this can be figured out based on credentials used by the system in the API call. On the get call as well, the <code>tenant ID</code> can be derived based on the domain being accessed. The key in the cache store should be created with a combination of <code>short URL</code> and <code>tenant ID</code> for easy retrievals.</p>
+          <p>We can definitely create different tables per tenant, but a careful decision should be made based on the number of onboarded systems and their scale of operations. We can take a hybrid approach, <a contenteditable="false" data-type="indexterm" data-primary="cell-based architecture">&nbsp;</a>often referred to as <em>cell-based architecture</em>. Each cell is responsible for serving a set of onboarded tenants, and the system maintains the mapping for which cell serves a particular tenant. Cells can operate independently because they don’t share the data between them. Another thing to consider in this architecture is load balancing between the cells; one cell might just onboard a single tenant, but another cell might include 10 tenants, depending on the scale <span class='keep-together'>requirements</span>.</p>
+          <p>We have discussed multiple components and considerations for the URL shortener system. Now, let’s combine the components so that they work together, and discuss the launch of the product on the<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="custom domain support" data-startref="use-case-url-short-domain">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="custom domain support" data-startref="url-short-domain">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="custom domain support for URL shortener service" data-startref="domain-support-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="multitenant systems for URL shortener service" data-startref="multitenant-url-short">&nbsp;</a> AWS cloud. </p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch14_launching_the_system_on_aws_1734552292689024">
+        <h1>Launching the System on AWS</h1>
+        <p>Refer to <a data-type="xref" href="#ch14_figure_4_1734552292664238">#ch14_figure_4_1734552292664238</a> to review the entire system design. In these sections, we’ll discuss deploying this proposed system architecture on the AWS cloud. We’ll start with Day 0 architecture and use AWS services that are easy to deploy and require less expertise. Then, we’ll move on to scaling the architecture.</p>
+        <div data-type="note">
+          <p>To simplify the diagrams, the services introduced in our system design diagrams may not include a load balancer or API gateway to front the application. You can always assume that the service includes an LB or any similar component to distribute load into multiple instances of the application.</p>
+        </div>
+        <section data-type="sect2" id="ch14_day_zero_architecture_1734552292689102">
+          <h2>Day Zero Architecture</h2>
+          <p>As <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="Day 0 architecture" id="use-case-url-short-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="Day 0 architecture" id="url-short-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="dayzero-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Make it Work, Make it Right, Make it Fast principle">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scaling" data-secondary="Day 0 architecture" data-see="Day 0 architecture">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scaling" data-secondary="Day N architecture" data-see="Day N architecture">&nbsp;</a>mentioned, the system should be designed based on the Make It Work, Make It Right, Make It Fast principle, and thinking of those potential 10 million users from the start is not worth it. Day 0 and Day N architecture is a general paradigm followed in <a href="#part3" data-type="xref">#part3</a>. AWS presented a series of sessions (<a href="https://oreil.ly/youtube-2013">2013</a>, <a href="https://oreil.ly/youtube-2014">2014</a>, <a href="https://oreil.ly/youtube-2015">2015</a>, <a href="https://oreil.ly/youtube-2016">2016</a>, <a href="https://oreil.ly/youtube-2017">2017</a>, <a href="https://oreil.ly/youtube-2018">2018</a>, <a href="https://oreil.ly/youtube-2019">2019</a>, <a href="https://oreil.ly/youtube-2022">2022</a>, <a href="https://oreil.ly/youtube-2023">2023</a>) as part of AWS re:Invent, and we want to extract the recommended guidelines and strategies for you to follow to scale from the first user to more than 10 million users.</p>
+          <p>The <a contenteditable="false" data-type="indexterm" data-primary="EC2 (Elastic Compute Cloud)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="ecs-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic Compute Cloud" data-see="EC2">&nbsp;</a>general idea is to start with a monolithic application deployed on an EC2 machine with all the components, such as the web server, application execution logic, and database, as shown in <a data-type="xref" href="#ch14_figure_6_1734552292664278">#ch14_figure_6_1734552292664278</a>. </p>
+          <figure id="ch14_figure_6_1734552292664278">
+            <img src="images/sdoa_1406.png"/>
+            <figcaption>Day 0 architecture</figcaption>
+          </figure>
+          <p>This works well for a very few number of users as you roll out the application for experimentation and gather feedback. There are a couple of issues associated with this architecture that should be addressed as the system starts receiving more traffic:</p>
+          <ul>
+            <li>
+              <p>This is a single application doing everything. It’s recommended to avoid putting too many eggs in one basket in order to avoid disruption. </p>
+            </li>
+            <li>
+              <p>This has a single point of failure; if the EC2 instance goes down, the application is not available, and user state stored in the database is lost.</p>
+            </li>
+          </ul>
+          <p>A few suggestions to improve the architecture are to separate out the database (with a primary and <a href="https://oreil.ly/4oh09">standby instance</a>) and introduce at least two EC2 instances behind an ELB spread across AZs for handling the failover, as shown in <a data-type="xref" href="#ch14_figure_7_1734552292664298">#ch14_figure_7_1734552292664298</a>.</p>
+          <figure id="ch14_figure_7_1734552292664298">
+            <img src="images/sdoa_1407.png"/>
+            <figcaption>Day 0 architecture with improved availability</figcaption>
+          </figure>
+          <p>Spreading the EC2 instances and database instances across multiple AZs makes the architecture more resilient and prevents data loss and downtime. As the user base grows further—say that more than 10,000 customers are accessing the platform regularly—the load on the EC2 instances as well as the database also grows, making them less performant. We can follow these recommendations to scale out the architecture further:</p>
+          <dl>
+            <dt>Autoscaling</dt>
+            <dd>
+              <p>Introduce autoscaling for EC2 instances. Autoscaling ensures that instances are automatically added or removed based on the traffic without manual <span class='keep-together'>intervention</span>.</p>
+            </dd>
+            <dt>Database read replicas</dt>
+            <dd>
+              <p>The number of read requests (get a long URL for a short URL) are far greater than the number of write requests (short URL creation). Adding read replicas to the database offloads the load from the primary database instance and distributes the load. The primary instance can focus on the write operations, and all the read traffic can be served by the read replicas in the cluster. </p>
+            </dd>
+            <dt>Caching</dt>
+            <dd>
+              <p>There are a few URLs that are heavily accessed, so it doesn’t make sense to hit the database for the same query again and again. The system can be further optimized by introducing a caching layer in front of the read replicas. The system first checks for short URL mapping in the cache and moves to checking the entry in the database if that is not present. Appropriate expiration policies and cache invalidation strategies (see <a data-type="xref" href="#ch04_caching_policies_and_strategies_1734552287178593">#ch04_caching_policies_and_strategies_1734552287178593</a>) should ensure that URLs that are not frequently accessed are moved out of the cache and that data in the cache is fresh and relevant.</p>
+            </dd>
+          </dl>
+          <p>The architecture in <a data-type="xref" href="#ch14_figure_7_1734552292664298">#ch14_figure_7_1734552292664298</a> can be improved by integrating these suggestions, as shown in <a data-type="xref" href="#ch14_figure_8_1734552292664318">#ch14_figure_8_1734552292664318</a>.</p>
+          <figure id="ch14_figure_8_1734552292664318">
+            <img src="images/sdoa_1408.png"/>
+            <figcaption>Scaling the architecture for more than 10,000 users</figcaption>
+          </figure>
+          <p>We should <a contenteditable="false" data-type="indexterm" data-primary="EC2 (Elastic Compute Cloud)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="ecs-url-short">&nbsp;</a>continuously evaluate the nature of services we’re using. Multiple fully managed solutions are available in the AWS cloud (such as Amazon RDS or Amazon Aurora), and we can choose one based on our expertise and the amount of operational overload our organization can bear.</p>
+          <p>Expecting further growth on the system, we can move the caching layer closer to customers by introducing a CDN (such as Amazon CloudFront). The more frequently accessed short URLs can be directly served from CloudFront instead of hitting the backend servers with the request. CloudFront can also be used to serve any static content for faster load times, such as frontend website components like images, CSS, and JavaScript.</p>
+          <p>AWS cloud has evolved over the years and has simplified the developer experience to launch products without the need for too much expertise. With so many managed services and serverless offerings available, application deployment has become much easier, with very little to zero maintenance overhead. </p>
+          <p>A simple software application generally involves three components (or tiers): the frontend, the backend, and the database. For the <a contenteditable="false" data-type="indexterm" data-primary="Amplify">&nbsp;</a>frontend tier, AWS offers Amplify for building web and mobile applications. AWS Amplify reduces the go-to-market to a large extent by removing a lot of operational overhead with features like authentication, analytics, and push notifications. See the <a href="https://oreil.ly/YoGVL">AWS documentation for a full list of features</a>. </p>
+          <p>There are a wide array of compute options on AWS, as discussed in <a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a>, and we’ll choose the simplest deployment option for the Day 0 architecture. One of the options is using AWS Lambda to host the application logic without the worry of infrastructure management, as shown in <a data-type="xref" href="#ch14_figure_9_1734552292664338">#ch14_figure_9_1734552292664338</a>.</p>
+          <figure id="ch14_figure_9_1734552292664338">
+            <img src="images/sdoa_1409.png"/>
+            <figcaption>URL shortener service on Day 0</figcaption>
+          </figure>
+          <p>As we’re proposing to use Lambda for<a contenteditable="false" data-type="indexterm" data-primary="Lambda" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener">&nbsp;</a> operations on the URL, we can choose to deploy separate Lambdas based on APIs or a single Lambda handling all the operations. Keep separate Lambdas for the different APIs for clear segregation in the application logic. This also helps with moving these API functions to different compute options in the future if needed. The diagram includes some additional services, such as Amazon CloudWatch for monitoring, Amazon Cognito and AWS IAM for authentication and authorization, Amazon VPC to launch the resources, and AWS Certificate Manager for SSL/TLS certificate management. </p>
+          <p>Another approach for <a contenteditable="false" data-type="indexterm" data-primary="App Runner">&nbsp;</a>application deployment can be to use the <a href="https://oreil.ly/JaRfp">AWS App Runner service</a> to fully manage deployment of containerized web applications or backend API services, as shown in <a data-type="xref" href="#ch14_figure_10_1734552292664358">#ch14_figure_10_1734552292664358</a>. App Runner launches all the resources in the VPC managed by AWS itself.</p>
+          <figure id="ch14_figure_10_1734552292664358">
+            <img src="images/sdoa_1410.png"/>
+            <figcaption>Day 0 architecture with AWS App Runner</figcaption>
+          </figure>
+          <p>AWS App Runner abstracts all the components, and customers just need to focus on application development. It is built with a combination of ECS Fargate, autoscaling, ELB, and ECR, and it supports Python, Node.js, Java, Go, Rails, PHP, and .Net as language runtimes. Customers are required to specify a GitHub source code repository or an ECR image, and App Runner takes all the responsibility of application deployment as ECS Fargate tasks. The App Runner <a href="https://oreil.ly/EN17q">CreateService API</a> returns a secure URL that can be used to access the service APIs.</p>
+          <p>Looking at the overall architecture, the user request is routed to the NLB after domain resolution via Route 53 and then forwarded to an application L7 request router, which further redirects to ECS Fargate tasks. We also added <a contenteditable="false" data-type="indexterm" data-primary="ElastiCache">&nbsp;</a>Amazon <span class='keep-together'>ElastiCache</span> in the diagram to showcase the <a href="https://oreil.ly/xCOGs">connectivity</a> between the AWS App Runner VPC and the customer-managed VPC. ElastiCache is helpful for caching the most frequent get calls for mapping short URLs to long URLs and reduces the load on persistent databases with an improvement in the query performance. App Runner can also be configured to accept traffic via a customer-managed personal VPC (a private VPC in an AWS account) by using the AWS PrivateLink endpoint. </p>
+          <p>There is always the possibility that the Day 0 architecture system will face some bottlenecks as it serves more user traffic and features, so let’s now think about how we can scale.</p>
+        </section>
+        <section data-type="sect2" id="ch14_scaling_to_millions_and_beyond_1734552292689173">
+          <h2>Scaling to Millions and Beyond</h2>
+          <p>With our Day 0 architecture, we try to launch the product without planning too far ahead and choose the technologies we’re most familiar with instead of trying out something very new that will include a learning curve. In short, time to market should be minimal. Let’s consider the example of a compute platform. There are multiple options, such as AWS Lambda, Amazon EC2, Amazon ECS, and Amazon EKS. If you’re most comfortable with Amazon EKS and have prior experience with it, choose that option as a compute platform to start. </p>
+          <p>We’ll now dig deeper into the architectures diagrammed in Figures <a data-xrefstyle="select:labelnumber" data-type="xref" href="#ch14_figure_9_1734552292664338">#ch14_figure_9_1734552292664338</a> and <a data-xrefstyle="select:labelnumber" data-type="xref" href="#ch14_figure_10_1734552292664358">#ch14_figure_10_1734552292664358</a> to identify any issues and address them so as to ensure the system’s high availability. Let’s start our discussion with observability and then move on to the storage and compute counterparts.</p>
+          <section data-type="sect3" id="ch14_observability_1734552292689236">
+            <h3>Observability</h3>
+            <p>We discussed<a contenteditable="false" data-type="indexterm" data-primary="observability">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="X-Ray">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="monitoring" data-secondary="URL shortener service">&nbsp;</a> the importance of metrics and alarms in <a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a>. To identify bottlenecks, we recommend setting proper metrics and alarms via tools like Amazon CloudWatch and AWS X-Ray. The AWS X-Ray service helps with request tracing in a distributed system architecture as well as figuring out which component is taking more time in processing. As we identify specific components causing issues in the overall system, we can dig deeper to figure out a resolution. Alarms play an important role in identifying critical issues; example alarms could be LONG_URL_REDIRECTION_ERRORS (an alarm is activated if errors are greater than 10 per minute for a continuous five minutes) or SHORT_URL_CREATION_FAILURE (an alarm is activated if the short URL creation API fails above the defined threshold). </p>
+          </section>
+          <section data-type="sect3" id="ch14_storage_layer_1734552292689294">
+            <h3>Storage layer</h3>
+            <p>The <a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="dynamodb-url-short">&nbsp;</a>system is using Amazon DynamoDB as a data store to maintain the URL mappings. We don’t have to worry about the scaling capabilities of DynamoDB as it is managed completely by AWS. To begin with, we can utilize on-demand capacity mode, and as we figure out traffic patterns, provisioned mode with autoscaling can be used to reduce costs. The application can be launched in multiple AWS regions, and DynamoDB global tables can be used to ensure that data is replicated across the regions. A key consideration for global tables is that there is approximately <a href="https://oreil.ly/v1dCW">one second of replication lag between two or more regions</a>, so it is possible that a short URL might not be available in another region as soon as it is created.</p>
+            <div data-type="note">
+              <p>At re:Invent 2024, <a href="https://oreil.ly/29MT2">Amazon DynamoDB announced</a> it was launching support for strong consistency reads in multiregion global tables. The read and write latency tends to be higher compared to eventual consistency but can be useful if strong consistency is a business requirement.</p>
+            </div>
+            <p>For URLs generated by popular users, the read traffic can be really huge, so there is no point in serving all read queries directly from the database. DynamoDB guarantees single-digit millisecond latency on direct key operations, but to make it even more seamless and bring down latency to microseconds, we can add a caching layer on top of DynamoDB, such as Amazon ElastiCache or Amazon DAX, to improve read performance. The improvement in latency also depends on network latency. Realistically, it could be around 5−10 ms with caching solutions incorporated. The caching layer on top of the database also helps reduce database load and optimize costs.</p>
+            <p>An key consideration for any system you’re designing with DynamoDB as your storage option is justifying the requirement for caching with DAX or ElastiCache—which one should you use? The ideal choice may be DAX since it is specifically built for DynamoDB to improve query read performance, but ElastiCache may be a better choice if the queries are already being served by it for any other use case or if you’re more familiar with the technology. This reduces integration effort into newer technology, saving implementation bandwidth. It is always a good idea to perform benchmarking tests to compare two technologies to support a technical decision because, in the end, we need a combination of low latency and a cost-efficient solution. For increased traffic, we recommend distributed cache (such as Redis in cluster mode) to spread out the workload on the cache and increase response times.</p>
+            <div data-type="note">
+              <p>The idea of caching holds true for any database type for serving frequent queries. In addition to these, we should reevaluate the data-access patterns and the possibility of improvement of (for example) slow database queries (or API requests) and query timeout handling. Database federation and sharding also become important with increasing scale in the case of relational databases.</p>
+            </div>
+          </section>
+          <section data-type="sect3" id="ch14_compute_layer_1734552292689359">
+            <h3>Compute layer</h3>
+            <p>For<a contenteditable="false" data-type="indexterm" data-primary="compute services (AWS)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="compute-url-short">&nbsp;</a> the compute layer, we preferred AWS Lambda in <a data-type="xref" href="#ch14_figure_9_1734552292664338">#ch14_figure_9_1734552292664338</a> and AWS App Runner in <a data-type="xref" href="#ch14_figure_10_1734552292664358">#ch14_figure_10_1734552292664358</a> to avoid the setup of Amazon EC2 and reduce operational burden, but can Lambda or App Runner scale to millions of customers? Lambda<a contenteditable="false" data-type="indexterm" data-primary="Lambda" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener">&nbsp;</a> automatically scales per traffic requirements without any customer intervention. However, the problem we might face is p100 latency, which can increase from time to time due to cold-start issues. We discussed a couple of solutions to overcome the cold-start problem in <a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a>, such as provisioned concurrency, which can help address the latency bottleneck. </p>
+            <p>App Runner <a contenteditable="false" data-type="indexterm" data-primary="App Runner">&nbsp;</a>allows a maximum of 25 instances per service and a maximum of 200 concurrent requests per instance, leading to 5,000 concurrent requests per service. See the <a href="https://oreil.ly/08gMc">documentation on AWS limits</a> for updated information on service quotas. The limit on the number of requests can become a bottleneck per our scale considerations in <a data-type="xref" href="#ch14_system_scale_1734552292688092">#ch14_system_scale_1734552292688092</a>.</p>
+            <div data-type="note">
+              <p>Concurrent requests per instance differ from requests per second. Essentially, an instance can serve 10 requests in a second if an API takes an execution time of 100 ms. We recommend optimization of application code along with keeping an eye on managed services quotas.</p>
+            </div>
+            <p>A point to consider here is that the limits can be increased in the future by AWS, and this should not prevent us from launching the first version of the product. AWS cloud offerings and open source solutions evolve, and cloud providers innovate on the behalf of their customers, so it is possible that App Runner will be able to support much higher scale with lower cost in the future. Remember that no architecture is considered final, and we can always reevaluate and reiterate in case of any bottlenecks, as shown in the software lifecycle in <a data-type="xref" href="#ch14_figure_11_1734552292664379">#ch14_figure_11_1734552292664379</a>.</p>
+            <figure id="ch14_figure_11_1734552292664379">
+              <img src="images/sdoa_1411.png"/>
+              <figcaption>Software lifecycle</figcaption>
+            </figure>
+            <p>Here are a few things to consider to scale the compute part of your system:</p>
+            <ul>
+              <li>
+                <p>Consider migrating to unmanaged versions of services, such as moving to Amazon ECS EC2 from Amazon ECS Fargate, to have more control over hardware configurations. This can prove to be a cheaper alternative in the long run when operating at a huge scale.</p>
+              </li>
+              <li>
+                <p>The system will have autoscaling in place to handle any increased load during peak times. The ASGs should be in different AZs to withstand AZ downtimes. In the case of managed systems like ECS Fargate, AWS takes care of deploying the system into multiple AZs to ensure availability. Take this into consideration if you’re managing the systems.</p>
+              </li>
+            </ul>
+            <p>Now, let’s incorporate all these concepts and present<a contenteditable="false" data-type="indexterm" data-primary="compute services (AWS)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="compute-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="Day 0 architecture" data-startref="use-case-url-short-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="Day 0 architecture" data-startref="url-short-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="dayzero-url-short">&nbsp;</a> the final architecture on AWS.</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch14_day_n_architecture_1734552292689422">
+          <h2>Day N Architecture</h2>
+          <p>We’re using<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="Day N architecture" id="use-case-url-short-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="Day N architecture" id="url-short-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="dayn-url-short">&nbsp;</a> a single AWS account to host all the services in the architecture—this can be evolved further as necessary to host services in different AWS accounts or to take any other approach of account separation, as we discussed in the section <a data-type="xref" href="#ch09_getting_started_with_aws_1734552289953522">#ch09_getting_started_with_aws_1734552289953522</a> in <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>. Note that using multiple AWS accounts can increase the cost of data flow across the services, and shared databases can become difficult to manage, though it can make the responsibility of each account simpler with clear boundaries. </p>
+          <p>Expanding the discussion from <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>, another degree of isolation is at the <a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service">&nbsp;</a>VPC level. If all the applications are created in the same AWS account, are they present in the same VPC or different VPCs? If they are in the same VPC, are they hosted in the same subnet or in different subnets? The resources should definitely be launched in different subnets (even for a single application) to ensure high availability across the AZs. Launching all applications in a single VPC helps reduce network costs but requires extra care with managing the security of interapplication communications. The rules can be managed by NACLs, and we recommend maintaining a limited number of rules. The rules are evaluated one by one, and a large number of rules can compromise network efficiency by taking more time to evaluate (as compared to all rules being evaluated in parallel).</p>
+          <p>Our URL shortener system architecture can include five microservices for serving simplistic functional requirements:</p>
+          <dl>
+            <dt>Frontend service </dt>
+            <dd>
+              <p>Receives the customer traffic and redirects to specific service VPCs per the operation</p>
+            </dd>
+            <dt>URL creator service </dt>
+            <dd>
+              <p>Creates URLs</p>
+            </dd>
+            <dt>URL reader service </dt>
+            <dd>
+              <p>Redirects from short URLs to long URLs</p>
+            </dd>
+            <dt>KGS</dt>
+            <dd>
+              <p>Generates unique keys to be used as short URLs</p>
+            </dd>
+            <dt>Data management service </dt>
+            <dd>
+              <p>A thin layer of CRUD APIs between the databases and services in the architecture. This is introduced into the architecture because the DynamoDB and ElastiCache are accessible to two systems. </p>
+            </dd>
+          </dl>
+          <p>Evaluate the architecture from time to time to figure out if the application should be split further (microservice architecture) to address the increasing scale. </p>
+          <p>Returning to the URL shortener system design, we are looking at a huge scale, so deploying the applications in separate VPCs should ensure proper isolation. Another architecture pattern followed by organizations is deploying multiple microservices on the same EKS cluster (in the same VPC). This makes sense at a limited scale, but in the context of Day N architecture, we recommend using <a href="https://oreil.ly/c9XMm">separate EKS clusters</a> for service deployments for complete resource isolation (revisit <a data-type="xref" href="#ch07_containerization_orchestration_and_deployments_1734552288630240">#ch07_containerization_orchestration_and_deployments_1734552288630240</a> for Kubernetes architecture). </p>
+          <div data-type="note">
+            <p>It is not always true that the AWS cloud components can introduce bottlenecks with increasing scale—it could also be the application code introducing bugs and bottlenecks into the system. For example, the DynamoDB key schema worked well on Day 0 but is not performing very well with increased traffic. We can use tools like <a href="https://oreil.ly/-sTwn">Amazon CodeGuru Reviewer</a> and <a href="https://oreil.ly/kbPpu">Amazon DevOps Guru</a> to identify potential bottlenecks and then work toward resolution.</p>
+          </div>
+          <p><a data-type="xref" href="#ch14_figure_12_1734552292664404">#ch14_figure_12_1734552292664404</a> shows the final picture of the architecture of the URL shortener system.</p>
+          <figure id="ch14_figure_12_1734552292664404">
+            <img src="images/sdoa_1412.png"/>
+            <figcaption>URL shortener system</figcaption>
+          </figure>
+          <p>Here are some additional points to keep in mind, which we left out of the diagram to make it cleaner:</p>
+          <ul>
+            <li>
+              <p>The public subnet is needed in the frontend service for internet connectivity via IGW or putting  resources such as bastion host.</p>
+            </li>
+            <li>
+              <p>The services residing in different VPCs require a mechanism to connect them to one another. AWS Transit Gateways provides bidirectional communication between the VPCs; AWS PrivateLinks provides unidirectional communication. The CIDR blocks of the VPCs should not overlap in the case of Transit Gateways, but PrivateLink doesn’t take this into consideration.</p>
+            </li>
+            <li>
+              <p>The microservices also interact with AWS services that are present in our owned VPC. These services should be accessed via <a href="https://oreil.ly/ha5qp">PrivateLink</a> instead of NAT gateways. This ensures that the traffic doesn’t go over the internet, which adds to application security and minimizes operation latency. NAT gateway should only be used when an explicit connection to the internet is needed.</p>
+            </li>
+            <li>
+              <p>Other ways for microservices running on Amazon ECS to establish communication with one another can be via <a href="https://oreil.ly/F3hRO">ECS Service Discovery</a>, <a href="https://oreil.ly/wa8D5">AWS App Mesh</a>, and <a href="https://oreil.ly/dg7Iz">ECS Service Connect</a>. </p>
+            </li>
+            <li>
+              <p>Amazon ElastiCache is used as a caching layer on top of DynamoDB to serve read queries faster. ElastiCache will remove the least used data per the cache eviction policy. We can introduce an additional AWS Lambda function (invoked on a DynamoDB data deletion event) to ensure data is removed from the cache if it is removed from DynamoDB. This can happen in the case of any custom expiration of the short URL by the users. Instead of the Lambda function, we can implement a consumer in the data management service itself that can handle this responsibility.</p>
+              <div data-type="note">
+                <p> It's possibile that the DDB entry is not deleted at the exact time mentioned in <a href="https://oreil.ly/p23Xd">TTL</a>. Explore alternatives if the deletion should happen at exact time specified.</p>
+              </div>
+            </li>
+            <li>
+              <p>The architecture presents deployment in a single AWS region. We recommend creating all the infrastructure via code for easy replication to other regions if required. The system resources are deployed in multiple AZs to ensure increased redundancy in case of AZ downtimes.</p>
+            </li>
+            <li>
+              <p>The main reason for separating the URL creator service and the URL reader service is the huge difference in traffic patterns. A separate service ensures independent scaling and clear separation of concern.</p>
+            </li>
+            <li>
+              <p>The system architecture should ensure that the increased traffic is from actual users and throttle any unwanted traffic at the API Gateway or ELB level using AWS services like <a href="https://oreil.ly/zz2xp">AWS WAF</a> and <a href="https://oreil.ly/mqEJ8">AWS Shield</a> or by deploying custom solutions. This can be handled in the frontend service.</p>
+            </li>
+          </ul>
+          <p>This is not an exhaustive list of issues to take care of while serving customers. We will cover additional topics in the rest of <a data-type="xref" href="#part3">#part3</a>. Take a holistic view of the learnings from <a data-type="xref" href="#part3">#part3</a> when deploying systems in production to ensure<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="Day N architecture" data-startref="use-case-url-short-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="Day N architecture" data-startref="url-short-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="dayn-url-short">&nbsp;</a> high standards.</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch14_conclusion_1734552292689496">
+        <h1>Conclusion</h1>
+        <p>We started off <a href="#part3" data-type="xref">#part3</a> with a URL shortener system, which is a popular problem presented at interviews and a system we commonly use in our daily lives. The gist of any new system design is to start with requirement clarifications and system boundaries. You should clearly know what a system is expected to do and what a system will never do—this helps you make better design decisions. </p>
+        <p>Once the requirements and scope of the system are finalized, we move on to identifying the high-level components. The scale a system is supposed to serve is an important factor for identifying these components, along with the business use case. A <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="scaling overview" id="use-case-url-short-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="scaling overview" id="url-short-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scaling" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="scale-url-short2">&nbsp;</a>system operational with 10,000 users might not work the same way with 100,000 users. <a data-type="xref" href="#ch14_table_1_1734552292671860">#ch14_table_1_1734552292671860</a> summarizes scaling the application architecture from zero users to millions of users.</p>
+        <p>We have moved through multiple possible approaches to building a URL shortener service, discussing the pros and cons of each approach along with potential AWS cloud components we can use. We brought in many of the AWS services we discussed in <a href="#part2" data-type="xref">#part2</a>, and we acknowledge that recognizing which one to choose for your specific use case could be difficult. We recommend choosing a technology that will take the minimum time to understand and deploy—down the line, it can be modified or replaced by another technology<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-startref="use-case-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-startref="url-short">&nbsp;</a> if needed.</p>
+        <p>System design is an iterative process, so start small and enhance your systems on the go as needed. Don't think too far ahead because your priorities may shift after 5 or 10 years. In the next chapter, we’ll design a web crawler and search engine system like Google search using AWS components.</p>
+        <table class="pagebreak-before less_space" id="ch14_table_1_1734552292671860">
+          <caption>Scaling from zero to millions of users</caption>
+          <thead>
+            <tr>
+              <th>Step</th>
+              <th>Why</th>
+              <th>How</th>
+              <th>Benefits</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <p>Basic monolithic setup</p>
+              </td>
+              <td>
+                <p>This is the simplest architecture to start with since it consolidates all application components in a single instance.</p>
+              </td>
+              <td>
+                <p>Deploy the entire application stack (web server, application server, and database) on a single server or instance.</p>
+              </td>
+              <td>
+                <p>Low initial complexity and cost, making it easy to develop and deploy for small-scale applications</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Set up multi-AZ database for high availability</p>
+              </td>
+              <td>
+                <p>Ensuring database availability across multiple AZs provides resilience against data loss and downtime.</p>
+              </td>
+              <td>
+                <p>In AWS, for example, you can set up a multi-AZ database using Amazon RDS, which replicates data automatically to a standby in another AZ.</p>
+              </td>
+              <td>
+                <p>High availability and minimal downtime in the event of a database or AZ failure</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Add read replicas to handle increased read traffic</p>
+              </td>
+              <td>
+                <p>As the application grows, read requests can overload the primary database. Read replicas allow you to offload these requests and distribute the load.</p>
+              </td>
+              <td>
+                <p>Set up read replicas in the same region or in different regions to improve read performance for users in various geographic areas.</p>
+              </td>
+              <td>
+                <p>Enhanced read scalability and database performance by handling read requests separately from write operations</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Add caching in front of the database</p>
+              </td>
+              <td>
+                <p>Direct database queries for high-traffic or frequently requested data can result in latency and performance degradation. A cache provides faster data access for repeated queries and reduces database strain.</p>
+              </td>
+              <td>
+                <p>Choose a cache solution: implement a distributed cache like Redis or Memcached.</p>
+                <p>Integrate with the application: add logic to check the cache for data before querying the database.</p>
+                <p>Manage the cache: use expiration policies to ensure data freshness.</p>
+              </td>
+              <td>
+                <p>Faster response times, reduced load on the database, and scalability by serving data efficiently</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Add multiple EC2 instances and an LB for redundancy and scaling</p>
+              </td>
+              <td>
+                <p>Distributing the application load across multiple instances prevents single points of failure and improves scalability.</p>
+              </td>
+              <td>
+                <p>Deploy multiple EC2 instances and place them behind an LB that routes traffic evenly across these instances.</p>
+              </td>
+              <td>
+                <p>Increased fault tolerance, improved redundancy, and the ability to handle larger volumes of incoming traffic</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Implement an ASG for elasticity</p>
+              </td>
+              <td>
+                <p>Autoscaling adjusts the number of running instances according to demand, optimizing resource usage and costs.</p>
+              </td>
+              <td>
+                <p>Define scaling policies based on metrics like CPU utilization, traffic, or custom application metrics.</p>
+              </td>
+              <td>
+                <p>Responsive scaling to meet traffic demand while keeping infrastructure costs manageable</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Switch to a managed database service for ease of management</p>
+              </td>
+              <td>
+                <p>Managing databases can be time intensive, and a managed service like Amazon RDS or Amazon Aurora automates routine tasks, such as backups and scaling.</p>
+              </td>
+              <td>
+                <p>Migrate to a managed database service compatible with your database engine (e.g., MySQL or PostgreSQL).</p>
+              </td>
+              <td>
+                <p>Reduced operational overhead, automated maintenance, and simplified scaling options</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Move static content to Amazon S3 to reduce server load</p>
+              </td>
+              <td>
+                <p>Offloading static assets (e.g., images, CSS, JavaScript) to Amazon S3 frees up application servers and reduces bandwidth costs.</p>
+              </td>
+              <td>
+                <p>Store and serve static files from an S3 bucket, and update application URLs to point to the S3 path for static content.</p>
+              </td>
+              <td>
+                <p>Lower application server load, high availability, and optimized cost for storing and serving static files</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Use a CDN for faster content delivery</p>
+              </td>
+              <td>
+                <p>A CDN improves content load times by caching and delivering static assets from edge locations close to end users.</p>
+              </td>
+              <td>
+                <p>Use Amazon CloudFront or another CDN to cache S3-hosted content and distribute it to a global network of edge locations.</p>
+              </td>
+              <td>
+                <p>Reduced latency, improved load times, and a better user experience, especially for global audiences</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Implement IaC for consistency and automation</p>
+              </td>
+              <td>
+                <p>IaC tools like Terraform or CloudFormation help manage infrastructure in a version-controlled, reproducible manner.</p>
+              </td>
+              <td>
+                <p>Define infrastructure components such as EC2 instances, databases, and networks in code, enabling automated deployment and consistency.</p>
+              </td>
+              <td>
+                <p>Simplified, repeatable infrastructure setup and the ability to deploy consistent environments across development, staging, and production</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Set up centralized logging and monitoring</p>
+              </td>
+              <td>
+                <p>Centralized logging and monitoring enable proactive management of application performance and quick identification of issues.</p>
+              </td>
+              <td>
+                <p>Use tools like Amazon CloudWatch, ELK Stack, or Datadog to centralize logs and monitor metrics across all components.</p>
+              </td>
+              <td>
+                <p>Improved visibility, real-time alerts for critical issues, and detailed performance insights for optimized troubleshooting and debugging</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Use a distributed cache for frequent data access</p>
+              </td>
+              <td>
+                <p>For high-traffic applications, caching frequently accessed but less frequently updated data reduces database load and response times.</p>
+              </td>
+              <td>
+                <p>Implement a distributed cache (such as Redis or Memcached) and adjust the application logic to check the cache for data before querying the database.</p>
+              </td>
+              <td>
+                <p>Faster response times, reduced database load, and improved scalability by offloading frequently accessed data to a dedicated cache</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Refactor into microservices (long-term step)</p>
+              </td>
+              <td>
+                <p>Breaking down a monolithic application into microservices improves flexibility, scalability, and agility.</p>
+              </td>
+              <td>
+                <p>Identify specific components or functions that can be refactored into independent services, such as user management or billing, and deploy them separately.</p>
+              </td>
+              <td>
+                <p>Greater scalability, more efficient resource utilization, and faster development cycles with modular, independently deployable services</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </section>

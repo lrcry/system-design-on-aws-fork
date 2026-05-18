@@ -1,0 +1,605 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch16_designing_a_social_network_and_newsfeed_system_1734552293547861">
+      <h1>设计社交网络与信息流系统</h1>
+      <p>Twitter（现更名为 X）、Instagram、LinkedIn 等社交网站<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="social network" id="use-case-social-network">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="social network use case" id="social-network">&nbsp;</a>已成为人们生活中不可或缺的一部分，大多数用户通过这些平台与他人分享信息。这些信息通常被称为各平台上的<em>帖子</em>，可以以文字、图片、视频、表情符号等多种形式分享。</p>
+      <p>社交网站提供多种多样的功能，本章将深入探讨系统中<a contenteditable="false" data-type="indexterm" data-primary="newsfeeds" data-seealso="social network use case">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="user timelines" data-seealso="social network use case">&nbsp;</a>信息流（或称<em>用户时间线</em>——本章将这两个术语混用）组件的设计。<em>信息流</em>是指用户登录社交媒体应用后通常首先看到的、由其他用户发布的帖子与动态的汇总流。用户可以通过表情或文字回复与这些帖子互动，也可以将帖子转发到自己的主页。每个网站的信息流可以基于不同因素生成。我们将从系统需求开始讨论，进而识别支撑这些需求的系统组件，最后以 AWS 云上社交网络信息流系统的潜在架构作为本章的收尾。</p>
+      <section data-type="sect1" id="ch16_system_requirements_1734552293548077">
+        <h1>系统需求</h1>
+        <p>社交网站<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="social network" data-tertiary="system requirements" id="use-case-social-network-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="social network use case" data-secondary="system requirements" id="social-network-require">&nbsp;</a>提供多种功能，例如可分享的帖子（文字、图片、视频）、内置聊天工具、通常在 24 小时后消失的用户故事等。每项功能都可以作为独立系统——例如聊天工具，我们将在<a data-type="xref" href="#ch19_designing_a_chat_application_1734552294951889">#ch19_designing_a_chat_application_1734552294951889</a>中讨论。现在，让我们深入分析信息流系统的功能性需求与非功能性需求。</p>
+        <section data-type="sect2" id="ch16_functional_and_nonfunctional_requirements_1734552293548156">
+          <h2>功能性需求与非功能性需求</h2>
+          <p>如<a contenteditable="false" data-type="indexterm" data-primary="functional requirements" data-secondary="social network">&nbsp;</a>前所述，社交网站功能繁多，因此我们将把设计范围限定在若干核心功能上。本章语境下最重要的功能性需求是向用户展示信息流。信息流可基于单一参数或多种因素的组合来生成，包括：</p>
+          <ul>
+            <li>
+              <p>与特定话题标签、主题或位置相关的所有帖子</p>
+            </li>
+            <li>
+              <p>用户所关注的人发布的所有帖子</p>
+            </li>
+            <li>
+              <p>用户所关注的人点赞或分享的所有帖子</p>
+            </li>
+            <li>
+              <p>根据用户过往兴趣或指定优先级（例如突发新闻）推导出的所有帖子。这涉及机器学习组件，受篇幅限制，本章不展开详述。</p>
+            </li>
+          </ul>
+          <p>我们的系统将根据用户选择关注的人和话题（或话题标签）为其生成信息流。本章还将在一定程度上讨论基于话题标签的帖子存储与检索（基于关键词的搜索）。</p>
+          <p>为支持信息流功能，系统本身需要满足以下功能性需求：</p>
+          <ul>
+            <li>
+              <p>用户注册到系统，并根据个人兴趣关注（或取消关注）他人或话题。</p>
+            </li>
+            <li>
+              <p>用户可以发布帖子（例如在 Instagram 上传照片，或在 X 上发布文字帖子）。</p>
+            </li>
+            <li>
+              <p>系统对外暴露用于检索数据的 API，这对平台变现很有价值。我们不会详细讨论此需求，但核心思路是让开发者能够使用关键词搜索等 API，或将所有新帖子的数据流式传输给感兴趣的客户端。</p>
+            </li>
+          </ul>
+          <p>以下是系统的<a contenteditable="false" data-type="indexterm" data-primary="nonfunctional requirements" data-secondary="social network">&nbsp;</a>非功能性需求（NFR）：</p>
+          <ul>
+            <li>
+              <p>系统应具备高可用性和容错性，以支撑所有功能性需求。</p>
+            </li>
+            <li>
+              <p>信息流中帖子的呈现允许最终一致性。用户发布帖子到该帖子出现在关注者时间线上之间存在可接受的延迟。</p>
+            </li>
+            <li>
+              <p>关键词搜索请求应响应迅速，对延迟敏感。</p>
+            </li>
+          </ul>
+          <p>接下来，我们讨论系统的规模。</p>
+        </section>
+        <section data-type="sect2" id="ch16_system_scale_1734552293548226">
+          <h2>系统规模</h2>
+          <p>X 和 Facebook 等社交网站上用户之间的互动数量是巨大的，<a contenteditable="false" data-type="indexterm" data-primary="scale (of system)" data-secondary="social network">&nbsp;</a>系统架构需要应对不断增长的规模。让我们对系统需要支持的规模做出一些假设，从写入流量开始：</p>
+          <div data-type="equation">
+            <p>每秒新发帖子数 = 10,000</p>
+            <p>每秒上传图片数 = 800</p>
+            <p>每秒上传视频数 = 200</p>
+            <p>每位用户平均粉丝数 = 1,000</p>
+            <p>单个用户账号的最大粉丝数 = 2 亿</p>
+          </div>
+          <p>读取流量相对写入流量要大得多，因此对读取规模做如下假设：</p>
+          <div data-type="equation">
+            <p>平台月活跃用户数 = 5 亿</p>
+            <p>每秒用户时间线获取请求数 = 100,000</p>
+          </div>
+          <p>点赞等用户互动流量可能非常庞大，每秒可达数百万次。本章将跳过该类存储需求的计算；可以用与前两章类似的规模数字来完成这一计算。</p>
+          <p>明确了需求并对支持的规模有了清晰认识之后，让我们开始梳理系统的关键组件，并呈现<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="social network" data-tertiary="system requirements" data-startref="use-case-social-network-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="social network use case" data-secondary="system requirements" data-startref="social-network-require">&nbsp;</a>系统设计的整体图景。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch16_starting_with_the_design_1734552293548313">
+        <h1>从设计出发</h1>
+        <p>我们<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="social network" data-tertiary="user relationship design" id="use-case-social-network-userrelation">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="social network use case" data-secondary="user relationship design" id="social-network-userrelation">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="user relationship design (social network use case)" id="user-relate-social-network">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="in social network system" data-secondary-sortas="social network system" id="schema-social-network">&nbsp;</a>不会深入讨论用户入驻平台的流程，因为整体架构中的入驻系统基本上会处理这一部分。用户使用个人信息完成注册后，即开始关注感兴趣的人和话题。下面我们简要讨论关注/被关注实体的存储方式，以确保读取查询高效。例如，当用户发帖后，该帖子需要发送给其所有粉丝；系统必须能够快速检索粉丝列表，并发送通知或填充用户时间线。</p>
+        <p>用户之间的关系可以在多个层次上建立，不仅限于一对一关系，还包括共同好友、地理位置、共同兴趣等。例如，<a href="https://oreil.ly/3X8gm">LinkedIn 将人脉推荐划分为</a>一度、二度和三度：一度代表与你直接相连的人，二度代表共同认识的人，三度代表一度和二度之外的所有用户关系。为了管理用户之间的这些关系，社交网站通常使用图数据库，我们已在第 <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587" data-xrefstyle="select:labelnumber">#ch03_nonrelational_stores_1734552286860587</a> 章和第 <a data-type="xref" href="#ch10_aws_storage_services_1734552290474903" data-xrefstyle="select:labelnumber">#ch10_aws_storage_services_1734552290474903</a> 章中讨论过。</p>
+        <p>我们将定义一个<em>用户图服务</em>，在图数据库中管理用户关系。用户图服务可被其他服务实时调用，以获取用户的<a contenteditable="false" data-type="indexterm" data-primary="user graph service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="social network" data-tertiary="user relationship design" data-startref="use-case-social-network-userrelation">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="social network use case" data-secondary="user relationship design" data-startref="social-network-userrelation">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="user relationship design (social network use case)" data-startref="user-relate-social-network">&nbsp;</a>关注列表。</p>
+        <p>现在，让我们讨论处理新帖摄取（用户创建新帖子）的系统架构。</p>
+        <section data-type="sect2" id="ch16_handling_new_posts_1734552293548413">
+          <h2>处理新帖子</h2>
+          <p>社交网站<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="social network" data-tertiary="user post service design" id="use-case-social-network-userpost">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="social network use case" data-secondary="user post service design" id="social-network-userpost">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="user post service design (social network use case)" id="user-post-social-network">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="posts, handling in social network use case" id="post-handle">&nbsp;</a>的核心在于用户与他人分享信息。这也决定了<em>用户帖子服务</em>的目标：以近实时的方式将帖子存储并推送给其他用户。让我们重申系统的功能性需求：</p>
+          <ul>
+            <li>
+              <p>允许用户发布新帖子，并与关注他们的人共享。</p>
+            </li>
+            <li>
+              <p>根据国家或公司法规，系统内置帖子校验。校验内容可包括：无仇恨言论、不偏向任何政治立场、输入净化以防止 SQL 注入等问题。</p>
+            </li>
+          </ul>
+          <p>帖子校验的职责可以不由用户帖子服务来承担，而是交给前端服务或<a contenteditable="false" data-type="indexterm" data-primary="user gateway service">&nbsp;</a><em>用户网关服务</em>。用户网关服务负责执行通用校验（与底层服务无关），以及其他功能，例如限流、用户授权与认证，以及对恶意请求的拦截。</p>
+          <p>用户帖子服务存储层的处理方式取决于用户时间线的构建方式；可以采用推送机制或拉取机制：</p>
+          <dl>
+            <dt>推送机制</dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="push-based communication mechanisms">&nbsp;</a>用户帖子服务获取该用户的所有粉丝，构建其时间线并将其存储到数据存储中。当用户上线时，其时间线可直接从数据存储中提供服务。</p>
+            </dd>
+            <dt>拉取机制</dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="pull-based communication mechanisms">&nbsp;</a>用户时间线实时构建。当用户上线时，系统检索该用户所关注的人的最新帖子，并推送到用户的时间线中。</p>
+            </dd>
+          </dl>
+          <p>为了确定哪种方案更优，我们来考虑两类用户：拥有 100 名粉丝的普通用户 A，以及拥有 1 亿粉丝的名人用户 B。推送机制对 A 类用户效果很好，但对于名人用户而言，摄取工作量将极为庞大。如果帖子还标记了另一位名人，或名人之间互相回复（X 的转发），复杂度会进一步叠加。推送方案让写操作变得复杂（O(<em>n</em>) 操作，<em>n</em> 为粉丝数），但换取了读操作的优化（O(1) 操作）。拉取机制更适合名人用户，帖子在构建用户时间线时实时获取。</p>
+          <div data-type="note">
+            <p>值得注意的是，如果用户只关注了大量名人，且用户时间线直接从磁盘而非预计算缓存中提供服务，那么帖子出现在信息流中的时间会相对更长。为了降低系统复杂度，这是对用户体验的一点妥协。为提升用户体验，社交网站通常在应用本身缓存旧数据，在用户下次访问时先展示缓存内容，同时在后台同步获取最新信息流。</p>
+          </div>
+          <p>为了兼顾两者优势，我们可以构建一种混合方案，同时服务两类用户。用户时间线由所有普通用户的帖子组成，而名人用户的帖子则在获取用户时间线时实时追加。下面详细介绍这种混合架构的处理步骤：</p>
+          <ol>
+            <li>
+              <p>拥有 10,000 名以上粉丝的用户发布一条帖子，并附有唯一的<em>帖子 ID</em>。帖子 ID 保存到 MySQL 等持久化数据库中。我们在 <a data-type="xref" href="#ch14_designing_a_url_shortener_service_1734552292687677">#ch14_designing_a_url_shortener_service_1734552292687677</a> 中介绍过 X 的 Snowflake（雪花算法），可以在此用于生成按时间戳排序的唯一帖子 ID。</p>
+            </li>
+            <li>
+              <p>用户帖子服务从用户图服务中获取所有活跃粉丝的用户 ID，在缓存数据存储中构建时间线，以便快速检索。缓存数据存储（例如 Redis）仅存储活跃用户（例如最近 30 天内访问过平台的用户）的时间线，且数量有上限（最多 30 条帖子）。其余帖子直接从磁盘数据库提供，缓存也随之相应更新。</p>
+            </li>
+            <li>
+              <p>缓存数据存储仅存储针对用户 ID 的帖子 ID。键值结构可以是：键为用户 ID，值为包含 <code>postId</code>、<code>postedBy</code> 和 <code>postType</code> 的列表。帖子的附加元数据（如用户头像、帖子点赞数、关联评论等）可以独立地从其他缓存或持久存储中提供。</p>
+            </li>
+            <li>
+              <p><em>用户时间线服务</em>可<a contenteditable="false" data-type="indexterm" data-primary="user timeline service">&nbsp;</a>直接从缓存数据存储中为活跃用户提供结果，并从磁盘持久数据库中为非活跃用户提供结果（用户重新活跃后，缓存将更新为最新时间线）。</p>
+            </li>
+          </ol>
+          <p>此处还可能涉及其他组件，例如根据发布时间或用户兴趣对帖子进行排序，以及在帖子之间嵌入广告等。用户时间线服务与不同服务交互（用户服务提供用户信息、帖子服务提供帖子内容、排序服务提供帖子排名），并将合并结果推送到用户时间线。</p>
+          <p><a data-type="xref" href="#ch16_figure_1_1734552293527861">#ch16_figure_1_1734552293527861</a> 展示了用户发布新帖时后台发生的架构流程。我们在架构中引入了帖子工作流编排组件，<a contenteditable="false" data-type="indexterm" data-primary="post workflow orchestration (social network use case)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="orchestration" data-secondary="in social network use case" data-secondary-sortas="social network use case">&nbsp;</a>该组件在帖子保存到数据库后由 CDC 事件触发，以异步模式运行。编排组件在缓存中构建用户时间线，同一新帖事件还可被搜索服务消费，用于提供基于话题标签或关键词的搜索功能（更多内容见后续章节）。X 采用类似架构，可参考 <a href="https://oreil.ly/T4_DO">Elon Musk 发布的高层系统图</a>以及 <a href="https://oreil.ly/Rzb3e">QCon 大会上展示的实时分发架构</a>。</p>
+          <figure id="ch16_figure_1_1734552293527861">
+            <img src="images/sdoa_1601.png"/>
+            <figcaption>新帖创建架构</figcaption>
+          </figure>
+          <p>让我们深入探讨用户帖子服务的数据库选型。</p>
+          <section data-type="sect3" id="ch16_user_post_service_databases_1734552293548493">
+            <h3>用户帖子服务数据库</h3>
+            <p>用户帖子服务<a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="choosing" data-tertiary="for user post service" data-tertiary-sortas="user post service" id="database-choose-user-post-service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="choosing" data-secondary="databases" data-tertiary="for user post service" data-tertiary-sortas="user post service" id="choose-database-user-post-service">&nbsp;</a>使用两个数据库来存储帖子信息：一个用于存储帖子的结构化内容（帖子 ID、创建者、媒体元数据），另一个用于存储媒体内容（图片和视频）。S3 等对象存储可用于存储媒体内容。同一媒体被多人分享的概率很高，系统应针对重复内容进行优化。一个简单的方法是为媒体内容创建哈希值；任何新上传的媒体都与已上传的媒体进行比对。我们将在 <a data-type="xref" href="#ch19_designing_a_chat_application_1734552294951889">#ch19_designing_a_chat_application_1734552294951889</a> 讨论聊天应用架构时进一步介绍。另一个考虑点是利用 Amazon CloudFront 等解决方案在边缘节点缓存媒体内容，以优化下载速度。这在两方面带来好处：减少对用户帖子服务的调用，并降低媒体下载延迟。</p>
+            <p>让我们探讨关系型和非关系型两种数据库，以满足所需的使用场景。我们先确定查询模式和对数据库引擎的期望，这有助于缩小选型范围。<a data-type="xref" href="#ch16_table_1_1734552293534546">#ch16_table_1_1734552293534546</a> 列出了用户帖子服务的读写查询模式。</p>
+            <table id="ch16_table_1_1734552293534546">
+              <caption>用户帖子服务查询模式</caption>
+              <thead>
+                <tr>
+                  <th>写入</th>
+                  <th>读取</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <p>存储某用户的帖子</p>
+                  </td>
+                  <td>
+                    <p>读取某用户的所有帖子</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>存储针对某帖子的评论</p>
+                  </td>
+                  <td>
+                    <p>读取某帖子的全部/分页评论</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>存储某帖子的计数器（点赞数、转发数）</p>
+                  </td>
+                  <td>
+                    <p>获取某帖子的点赞数</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>存储点赞该帖子的用户列表（用户 ID）；点赞类型可以不同（微笑、点赞、爱心、大笑）</p>
+                  </td>
+                  <td>
+                    <p>获取点赞该帖子的用户列表</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p>读写查询均较为简单，两种数据库均可满足：关系型数据库 PostgreSQL（通过分片支持所需规模）或 NoSQL 数据库 <a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-secondary="for user post service" data-secondary-sortas="user post service">&nbsp;</a>Amazon DynamoDB 或 Amazon Keyspaces（与 Apache Cassandra 兼容）。DynamoDB 中的数据应以有利于高效读取的方式存储，如 <a data-type="xref" href="#ch16_table_2_1734552293534593">#ch16_table_2_1734552293534593</a> 所示。</p>
+            <table id="ch16_table_2_1734552293534593">
+              <caption>Amazon DynamoDB 与用户帖子服务读取查询</caption>
+              <thead>
+                <tr>
+                  <th>读取查询</th>
+                  <th>数据模型（Schema）</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <p>读取某用户的所有帖子</p>
+                  </td>
+                  <td>
+                    <pre data-type="programlisting">PK = u#{userId}#post SK = p#{postId}</pre>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>读取某帖子的所有评论</p>
+                  </td>
+                  <td>
+                    <pre data-type="programlisting">PK = p#{postId}#comments SK = c#{commentId}</pre>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>获取某帖子的点赞数</p>
+                  </td>
+                  <td>
+                    <pre data-type="programlisting">PK = p#{postId}#likeCount SK = {count}</pre>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>获取点赞该帖子的用户列表</p>
+                  </td>
+                  <td>
+                    <pre data-type="programlisting">PK = p#{postId}#likeList SK = u#{userId}</pre>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>获取某条评论的点赞数</p>
+                  </td>
+                  <td>
+                    <pre data-type="programlisting">PK = p#{postId}#c#{commentId}#likeCount SK = {count}</pre>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p>如果用户长期创建大量帖子而我们只关心最新内容，帖子 ID 应以 Snowflake 方式生成，或者在排序键中直接包含时间戳，例如 <code>t#{epochTime}#p#{postId}</code>（适用于帖子 ID 为完全随机标识符的情况）。Snowflake 是我们的首选方案，因为系统需要在超大规模下生成唯一帖子 ID。</p>
+            <div data-type="note">
+              <p><a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-secondary="limitations of">&nbsp;</a>Amazon DynamoDB 单个分区的数据大小上限为 10 GB，而所定义的数据模型以用户 ID 作为分区键。这意味着我们假设每个用户的帖子数据不会超过此限制。假设单条帖子大小为 0.5 KB（帖子内容最多 400 个字符），则单个用户最多可创建约 2000 万条帖子。</p>
+            </div>
+            <p>我们提到，<a contenteditable="false" data-type="indexterm" data-primary="relational databases" data-secondary="for user post service" data-secondary-sortas="user post service">&nbsp;</a>关系型数据库（如 PostgreSQL）也可用于存储用户帖子，如 <a data-type="xref" href="#ch16_figure_2_1734552293527895">#ch16_figure_2_1734552293527895</a> 所示。</p>
+            <figure id="ch16_figure_2_1734552293527895">
+              <img src="images/sdoa_1602.png"/>
+              <figcaption>用户帖子的关系型数据库数据模型</figcaption>
+            </figure>
+            <p>"post like users"（帖子点赞用户）表和"comments"（评论）表的 post_id 列引用了"posts"（帖子）表的 ID。为了支持按帖子获取所有评论的查询模式，可以在 post_id 上创建索引以加快检索速度。考虑到系统规模，数据库需要分区以支持水平扩展。我们需要确定数据分区所依据的键。如果可行，建议从一开始就规划好数据库的分区逻辑，即使当前暂无此需求。数据可以先逻辑分区，在需要时再迁移到不同的物理分区。</p>
+            <p>对于逻辑分区，我们推荐采用与 Redis 哈希槽实现类似的逻辑（已在 <a data-type="xref" href="#ch04_caching_policies_and_strategies_1734552287178593">#ch04_caching_policies_and_strategies_1734552287178593</a> 中讨论）。Instagram 采用类似的<a href="https://oreil.ly/r-Ny5"> ID 生成机制</a>，并通过 PostgreSQL 的特性管理逻辑和物理分区。另一点值得注意的是，虽然我们使用的是关系型数据库，但管理点赞数量或展示帖子下的所有评论等功能并不要求强一致性。这些读取查询可以是最终一致性的，以确保最优的用户体验。</p>
+            <p>我们提到了负责将所有帖子扇出给粉丝并存储到内存缓存中的帖子工作流编排系统。接下来讨论该系统后台的运作机制，以及它如何在大量新帖持续涌入的情况下保持良好的可扩展性。<a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="choosing" data-tertiary="for user post service" data-tertiary-sortas="user post service" data-startref="database-choose-user-post-service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="choosing" data-secondary="databases" data-tertiary="for user post service" data-tertiary-sortas="user post service" data-startref="choose-database-user-post-service">&nbsp;</a></p>
+          </section>
+          <section data-type="sect3" id="ch16_post_workflow_orchestration_and_memory_cache_1734552293548564">
+            <h3>帖子工作流编排与内存缓存</h3>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="post workflow orchestration (social network use case)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="orchestration" data-secondary="in social network use case" data-secondary-sortas="social network use case">&nbsp;</a>帖子工作流编排是一个异步层，在用户帖子被持久化到数据库后介入。我们在 <a data-type="xref" href="#ch16_figure_1_1734552293527861">#ch16_figure_1_1734552293527861</a> 中推荐使用 Redis 作为内存缓存数据存储来缓存用户时间线。下面进一步评估数据存储的选型。</p>
+            <p>我们推荐<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="in social network use case" data-secondary-sortas="social network use case">&nbsp;</a> Redis 的首要原因是：数据存储在内存中，可降低服务用户查询的延迟。与 MySQL、Amazon DynamoDB、Cassandra 等磁盘存储方案相比，Redis 的速度更快，是理想之选。另一个需要注意的点是数据量需求——考虑到系统的规模数字，数据量相当大，这会增加成本。是否值得考虑 DynamoDB 或 Cassandra 等数据库？DynamoDB 提供自动水平扩展和任意规模下个位数毫秒级的一致延迟，是一个不错的选择。对于这一两难问题，最终答案与任何系统设计决策一样，是"视情况而定"。</p>
+            <p>在本章的语境下，我们将依赖集群模式的 Redis 来服务时间线缓存使用场景。请回顾 <a data-type="xref" href="#ch04_caching_policies_and_strategies_1734552287178593">#ch04_caching_policies_and_strategies_1734552287178593</a> 以复习 Redis 集群架构，以及它如何随着数据增长实现<a href="https://oreil.ly/2UIIc">水平扩展</a>。我们可以利用 Redis 的<a href="https://oreil.ly/gkog_">列表数据结构</a>命令，例如 <a href="https://oreil.ly/WVd7H"><code>RPUSHX</code></a>（仅当用户 ID 在列表中存在时才追加条目，即仅为活跃用户缓存）和 <a href="https://oreil.ly/pxXzZ"><code>LTRIM</code></a>（维护固定大小的帖子 ID 列表）。</p>
+            <p>另一点需要注意的是，帖子工作流编排器向 Redis 集群推送数据的问题。假设每个用户平均有 1,000 名粉丝，系统每秒接收 100 条帖子，对 Redis 的调用次数将达到 10 万次。然而实际帖子数量远不止 100 条，对 Redis 的大量调用可能在延迟和 I/O 消耗方面造成瓶颈。解决此类问题的理想方法是批量处理请求。<a href="https://oreil.ly/mbjLa">Redis 管道（Pipeline）</a>可将多个请求合并，享受请求批处理的好处，从而解决这一瓶颈。批量请求还可以并行处理，以进一步优化性能。</p>
+            <p>对于任何缓存方案，缓存失效都至关重要。如果用户取消关注某人，缓存应更新以移除相应条目。这同样应以异步方式进行：图服务数据库中的任何变更都会被架构中的其他组件消费，并按使用场景进行处理。</p>
+            <p>内存缓存是构建用户时间线时首先查询的数据存储，下一节我们将进一步讨论。</p>
+          </section>
+          <section data-type="sect3" id="ch16_user_timeline_service_1734552293548626">
+            <h3>用户时间线服务</h3>
+            <p><a data-type="xref" href="#ch16_figure_3_1734552293527918">#ch16_figure_3_1734552293527918</a> 展示了<a contenteditable="false" data-type="indexterm" data-primary="user timeline service" id="user-timeline">&nbsp;</a>用户时间线服务，以及它如何从架构中的不同组件汇聚数据来构建用户时间线。内存缓存是预计算帖子的首要查询点，名人用户的额外帖子则从用户帖子服务实时获取。帖子排序服务负责根据排名对结果进行最终排序与合并。对用户图服务的查询因用户是否活跃而有所不同：对于活跃用户，仅查询用户关注的名人列表；对于非活跃用户，则获取全部列表，并从磁盘数据存储构建时间线。</p>
+            <figure id="ch16_figure_3_1734552293527918">
+              <img src="images/sdoa_1603.png"/>
+              <figcaption>用户时间线架构</figcaption>
+            </figure>
+            <p>该架构假设不向用户应用发送实时更新，时间线在页面刷新时更新。若需支持向用户时间线实时推送新帖子，可探索与用户设备建立持久连接的方案。我们将在 <a data-type="xref" href="#ch19_designing_a_chat_application_1734552294951889">#ch19_designing_a_chat_application_1734552294951889</a> 讨论聊天应用架构时深入介绍持久双向连接。</p>
+            <p>我们谈到了将图数据库用于用户关系管理，并在前几章建立了对图数据库的基本认知。接下来深入探讨用户图服务的架构，以及它如何在如此大规模下存储用户之间的众多关系。<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="social network" data-tertiary="user post service design" data-startref="use-case-social-network-userpost">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="social network use case" data-secondary="user post service design" data-startref="social-network-userpost">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="user post service design (social network use case)" data-startref="user-post-social-network">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="posts, handling in social network use case" data-startref="post-handle">&nbsp;</a></p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch16_managing_user_connections_1734552293548688">
+          <h2>管理用户关系</h2>
+          <p><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="social network" data-tertiary="user relationship design" id="use-case-social-network-userrelation2">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="social network use case" data-secondary="user relationship design" id="social-network-userrelation2">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="user relationship design (social network use case)" id="user-relate-social-network2">&nbsp;</a>基本的存储需求是管理每个用户的粉丝，本质上是管理用户之间的关系。MySQL 等关系型数据库通常是不错的选择，因此您可能会好奇，为什么我们在前几节推荐图数据库。原因在于，关系的性质和复杂查询需要在极低延迟下提供服务——例如，查找同时关注名人 A 和名人 B 的所有用户，或查找 LinkedIn 的二度关系（或 Facebook 的共同好友）。所有这些使用场景都非常适合由图数据库来处理。</p>
+          <p><a contenteditable="false" data-type="indexterm" data-primary="user graph service">&nbsp;</a>用户图服务负责管理所有关系。我们提到了用户之间的连接关系，但关系类型可以是任意的。以 LinkedIn 为例，不同实体之间可能存在以下几种关系：</p>
+          <dl>
+            <dt>CONNECTED_TO（已连接）</dt>
+            <dd>
+              <p>用户与用户之间的连接</p>
+            </dd>
+            <dt>WORKS_AT（现任职于）</dt>
+            <dd>
+              <p>用户当前所在的组织</p>
+            </dd>
+            <dt>WORKED_AT（曾任职于）</dt>
+            <dd>
+              <p>用户过去所在的组织</p>
+            </dd>
+            <dt>HAS_SKILL（具备技能）</dt>
+            <dd>
+              <p>用户的技能集</p>
+            </dd>
+          </dl>
+          <p>用户图服务向不同服务暴露 API 以管理各类关系，并发布关系变更事件，供其他服务<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="social network" data-tertiary="user relationship design" data-startref="use-case-social-network-userrelation2">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="social network use case" data-secondary="user relationship design" data-startref="social-network-userrelation2">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="user relationship design (social network use case)" data-startref="user-relate-social-network2">&nbsp;</a>响应处理。</p>
+          <p>关键词或话题标签搜索是系统的另一项功能性需求。下面我们来了解用于处理用户搜索查询的搜索服务。</p>
+        </section>
+        <section data-type="sect2" id="ch16_search_service_1734552293548748">
+          <h2>搜索服务</h2>
+          <p>提到"搜索使用场景"，<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="social network" data-tertiary="search service" id="use-case-social-network-search">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="social network use case" data-secondary="search service" id="social-network-search">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search service" data-secondary="in social network use case" data-secondary-sortas="social network use case" id="search-service-social-network">&nbsp;</a>通常首先浮现的是<em>索引</em>：利用 Elasticsearch 等倒排索引解决方案，对各类关键词提供搜索功能。搜索是大多数系统都需要的通用功能；我们在 <a data-type="xref" href="#ch15_designing_a_web_crawler_and_search_engine_1734552293105400">#ch15_designing_a_web_crawler_and_search_engine_1734552293105400</a> 构建搜索引擎时讨论了搜索，并将在 <a data-type="xref" href="#ch18_designing_a_hotel_reservation_system_1734552294615548">#ch18_designing_a_hotel_reservation_system_1734552294615548</a> 构建酒店预订系统时再次涉及。</p>
+          <p>以下是社交网络系统所需的搜索功能：</p>
+          <ul>
+            <li>
+              <p>检索与特定关键词或话题标签相关联的所有帖子。帖子还可以按位置、时间戳、用户兴趣等进行进一步排序。</p>
+            </li>
+            <li>
+              <p>搜索媒体内容（图片和视频）。在后端，系统可能在媒体上传时自动生成关键词。标签可由系统自动生成，也可由用户手动添加。</p>
+            </li>
+          </ul>
+          <p>X 使用名为 EarlyBird（一种优化版 Lucene 索引）的内部解决方案来支持搜索。搜索服务聚合器从与搜索查询匹配的所有 EarlyBird 实例中汇聚数据。分页对此类使用场景至关重要，因为与搜索查询匹配的结果数量可能非常庞大。我们将在 <a data-type="xref" href="#ch18_designing_a_hotel_reservation_system_1734552294615548">#ch18_designing_a_hotel_reservation_system_1734552294615548</a> 讨论 Elasticsearch 的最优配置（如分片大小）；相同策略同样可在此处用于构建搜索系统。</p>
+          <p>搜索的使用场景多种多样，需要明确系统支持的边界范围。例如，在 Instagram 上搜索"早餐食谱"，会在各定义区块下呈现不同类型的结果："为您推荐"（与用户相关的搜索结果）、以早餐食物为标识符的账号名称、与早餐相关的音频或音乐、以早餐为关键词的标签、以及以"早餐"为关键词的地点和 Reels。值得注意的是，这些搜索结果加载非常迅速（同时提供输入预测选项），所有结果都能极快地渲染出来。Instagram 服务器上存储的数据量巨大，因此索引策略必须相当高效，才能在大规模场景下支撑搜索功能。</p>
+          <p><a data-type="xref" href="#ch16_figure_1_1734552293527861">#ch16_figure_1_1734552293527861</a> 包含了在创建新帖子时调用搜索服务的流程。<em>搜索服务摄取器</em>组件将数据摄取到索引数据存储中，并通过读取 API（<em>搜索服务聚合器</em>）对外提供，如<a data-type="xref" href="#ch16_figure_4_1734552293527939">#ch16_figure_4_1734552293527939</a> 所示。<em>媒体元数据提取服务</em>是一个机器学习组件，用于从图片和视频中提取元数据，例如图片对象（人物、位置、食物）以及包含位置信息时的位置属性（位置名称和位置类型，如海滩或山地）。</p>
+          <figure id="ch16_figure_4_1734552293527939">
+            <img src="images/sdoa_1604.png"/>
+            <figcaption>搜索服务</figcaption>
+          </figure>
+          <p>我们将在 <a data-type="xref" href="#ch18_designing_a_hotel_reservation_system_1734552294615548">#ch18_designing_a_hotel_reservation_system_1734552294615548</a> 讨论酒店预订系统中 GraphQL 联邦的概念；类似实现也可应用于搜索服务聚合器组件。搜索服务聚合器根据查询从<span class='keep-together'>多个</span>可用索引中检索结果，并按相关度排序后返回给用户。<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="social network" data-tertiary="search service" data-startref="use-case-social-network-search">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="social network use case" data-secondary="search service" data-startref="social-network-search">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search service" data-secondary="in social network use case" data-secondary-sortas="social network use case" data-startref="search-service-social-network">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="in social network system" data-secondary-sortas="social network system" data-startref="schema-social-network">&nbsp;</a></p>
+          <p>综合以上所有洞察，让我们进入这些组件在 AWS 云上的部署环节。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch16_launching_the_system_on_aws_1734552293548830">
+        <h1>在 AWS 上部署系统</h1>
+        <p>部署社交网络网站最重要的考量是用户交互的可用性。在选择任何 AWS 服务时，我们都应将这一点纳入考量。我们在构建新帖处理系统上花费了大量时间，以确保用户读取路径的最优性能。另一个值得考量的系统特性是最终一致性，这为我们提供了在成本和延迟方面进行优化的空间。我们将从系统的 Day 0 架构开始，然后尝试针对更大用户群体进行扩展。</p>
+        <section data-type="sect2" id="ch16_day_0_architecture_1734552293548910">
+          <h2>Day 0 架构</h2>
+          <p>我们将设计<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="social network" data-tertiary="Day 0 architecture" id="use-case-social-network-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="social network use case" data-secondary="Day 0 architecture" id="social-network-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for social network" data-secondary-sortas="social network" id="dayzero-social-network">&nbsp;</a>一个非常基础的系统，支持用户上传帖子以及粉丝在时间线中查看这些帖子等需求。<a data-type="xref" href="#ch16_table_2_1734552293534593">#ch16_table_2_1734552293534593</a> 中的 <a href="https://oreil.ly/x3zGg">DynamoDB 数据模型</a>可扩展为包含用户信息和粉丝，<a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-secondary="for social network" data-secondary-sortas="social network use case">&nbsp;</a>如 <a data-type="xref" href="#ch16_table_3_1734552293534616">#ch16_table_3_1734552293534616</a> 所示。</p>
+          <table id="ch16_table_3_1734552293534616">
+            <caption>Amazon DynamoDB 中的用户信息</caption>
+            <thead>
+              <tr>
+                <th>查询模式</th>
+                <th>数据模型（Schema）</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>用户信息与计数器（粉丝数、关注数、帖子数）</p>
+                </td>
+                <td>
+                  <pre data-type="programlisting">PK = u#{userId} SK = count</pre>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>用户的粉丝列表</p>
+                </td>
+                <td>
+                  <pre data-type="programlisting">PK = u#{userId}#followers SK = u#{followerUserId}</pre>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>用户的关注列表</p>
+                </td>
+                <td>
+                  <pre data-type="programlisting">PK = u#{userId}#following SK = u#{followingUserId}</pre>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>单张 DynamoDB 表即可满足我们的存储需求，并支持所有查询模式。我们可以通过 DynamoDB 流将用户帖子数据流式传输到 Amazon OpenSearch 集群，在 DynamoDB 之上构建关键词搜索功能，如<a data-type="xref" href="#ch16_figure_5_1734552293527960">#ch16_figure_5_1734552293527960</a> 所示。</p>
+          <p>该架构由多个 AWS Lambda 函数组成，服务于不同的使用场景（从函数名称即可看出）。转换 Lambda 将 DynamoDB 数据对象转换为 OpenSearch 数据模型，使其可供搜索使用。此架构暂未引入独立的缓存层，但可以在需要时以 Amazon DAX 或 Amazon ElastiCache 的形式按需添加。我们可以使用 Amazon SNS 和 Amazon SES 向用户推送通知，并集成 Amazon CloudWatch 等监控工具进行应用监控和问题排查。</p>
+          <figure id="ch16_figure_5_1734552293527960">
+            <img src="images/sdoa_1605.png"/>
+            <figcaption>社交网络网站 Day 0 架构</figcaption>
+          </figure>
+          <p>Day 0 架构中我们完全跳过了分析管道；它对于使用 Amazon Redshift 和 Amazon QuickSight 等工具运行复杂查询以提取数据洞察非常有帮助。集成方式可以类比于向 Amazon OpenSearch 集群摄取数据：一个独立的 Lambda 将数据转换为 Redshift 数据模型并保存到集群中。</p>
+        </section>
+        <section data-type="sect2" id="ch16_scaling_to_millions_and_beyond_1734552293548997">
+          <h2>扩展至百万级及更高</h2>
+          <p>社交网络网站的规模极为庞大，提供快速、可靠的用户体验至关重要。本书后续章节将探讨许多扩展架构的考量因素，建议综合借鉴所有相关经验。我们已在 <a data-type="xref" href="#ch16_figure_1_1734552293527861" data-xrefstyle="select:labelnumber">#ch16_figure_1_1734552293527861</a> 和 <a data-type="xref" href="#ch16_figure_3_1734552293527918" data-xrefstyle="select:labelnumber">#ch16_figure_3_1734552293527918</a> 中纳入了可扩展架构；本节将进一步讨论如何在 AWS 上扩展该架构。先从本章前面所做的若干存储选型说起。</p>
+          <section data-type="sect3" id="ch16_storage_on_dynamodb_1734552293549071">
+            <h3>DynamoDB 上的存储</h3>
+            <p><a data-type="xref" href="#ch16_table_3_1734552293534616">#ch16_table_3_1734552293534616</a> 展示了<a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-secondary="for social network" data-secondary-sortas="social network" id="dynamodb-social-network">&nbsp;</a>用于存储用户信息（例如正在关注的用户和粉丝）的 DynamoDB 数据模型。我们在 <a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a> 的 <a data-type="xref" href="#ch10_amazon_dynamodb_1734552290476179">#ch10_amazon_dynamodb_1734552290476179</a> 节中介绍了热键的概念，并给出了若干解决建议。所提议的 DynamoDB 数据模型以用户 ID 作为分区键，这意味着每个用户的关注和粉丝数据必须在 10 GB 的限制内。以下是随着规模增长（尤其是对于名人用户）可能出现的潜在问题：</p>
+            <dl>
+              <dt>分区存储限制</dt>
+              <dd>
+                <p>假设存储单个粉丝数据需要 100 字节，则名人用户在突破 10 GB 限制之前，大约可拥有 1.07 亿名粉丝。请回顾 <a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a>，了解对已创建分区进行进一步分区的建议。</p>
+              </dd>
+              <dt>读写容量限制</dt>
+              <dd>
+                <p>当分区达到每秒 3,000 RCU 或 1,000 WCU（或两者同时达到）的硬上限时，DynamoDB 会对请求进行限流。该限流可能影响 <a data-type="xref" href="#ch16_table_3_1734552293534616">#ch16_table_3_1734552293534616</a> 中我们建议用于管理关注/粉丝数量的计数操作的读写性能。当用户粉丝数量因突发事件急剧增减时（例如名人因大型代言活动而迅速走红，或因公众风波而失去人气），就容易出现这种情况。该问题与管理帖子点赞数或帖子评论数的问题类似。解决此需求的核心原则是最终一致性。数据不应直接写入表，而应在中间加入消息队列后再持久化；读取应从缓存而非直接访问数据表来提供服务，如<a data-type="xref" href="#ch16_figure_6_1734552293527980">#ch16_figure_6_1734552293527980</a> 所示。</p>
+              </dd>
+            </dl>
+            <figure id="ch16_figure_6_1734552293527980">
+              <img src="images/sdoa_1606.png"/>
+              <figcaption>高并发下的计数管理</figcaption>
+            </figure>
+            <p>我们在管理点赞数的场景下展示了用户帖子服务，类似模式同样适用于粉丝数管理。写操作还可以通过将多个请求合并来进一步优化：不再每次将点赞数加一，而是将多个请求合并，一次性更新，<a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-secondary="for social network" data-secondary-sortas="social network" data-startref="dynamodb-social-network">&nbsp;</a>从而降低数据库负载。</p>
+            <p>我们在 <a data-type="xref" href="#ch16_handling_new_posts_1734552293548413">#ch16_handling_new_posts_1734552293548413</a> 中讨论了帖子创建场景下名人用户的推送与拉取机制。在高并发场景下，针对帖子发布的评论也会出现类似的设计问题。</p>
+          </section>
+          <section data-type="sect3" id="ch16_scaling_post_comments_1734552293549131">
+            <h3>扩展帖子评论</h3>
+            <p>对于读取路径，<a contenteditable="false" data-type="indexterm" data-primary="comment publication (social network use case)" id="comment-social-network">&nbsp;</a>我们接受最终一致性，因此建议通过内存缓存以分页方式提供评论服务。一个重要问题是：当用户发布评论后，他们应能基于因果一致性看到该评论，如 <a data-type="xref" href="#ch01_system_design_trade_offs_and_guidelines_1734552285979675">#ch01_system_design_trade_offs_and_guidelines_1734552285979675</a> 中所述。评论不应因最终一致性而消失，这会让用户困惑评论是否已成功发布。</p>
+            <p>解决此问题的一种方法是在前端应用（用户 App 或网页浏览器）中处理这一行为。应用向服务端发起发布评论的 API 请求。收到成功的 API 响应后，评论在应用本地缓存并显示在顶部。这是最简单的流畅用户体验实现方式，社交媒体平台在用户时间线方面也采用了类似设计。应用将内容缓存在本地设备上，直到从服务端收到更新的响应。</p>
+            <p>暂且搁置在用户应用侧处理的思路——让我们思考如何在数据库层面解决这一问题。这一讨论对于在类似问题上做决策非常重要。问题在于：用户应在应用中看到数据的一致视图。最简单的实现是将所有查询路由到正在发生写操作的主节点（或在 DynamoDB API 中将 <a href="https://oreil.ly/OKMVD">ConsistentRead</a> 设为 true），但这会增加数据库负载。在这种情况下，"读己之写"一致性是一个有效的思路。</p>
+            <p>为实现"读己之写"一致性，用户应在一段时间内（取决于数据库集群的数据复制时间）绑定到主节点（或对需要的操作启用强一致性读取）。同步复制是确保所有数据库节点拥有相同视图的另一种方式，但它带来极高的延迟成本，不推荐用于写密集型使用场景。</p>
+            <p>我们也来简单谈谈读取。内容生产者与消费者的比例高度倾斜；读取规模呈指数级高于写入。社交平台通常基于"实时评论"原则工作，即无需刷新 App 或浏览器，评论会自动推送到用户设备。为支持此设计，要么用户设备持续轮询新更新，要么服务端自动推送更新。轮询方式在小规模下可行，但随规模增长会成为瓶颈。持续轮询（为实现近实时效果，间隔应小于 5 秒）会使后端服务器过载，不是推荐方案。基于推送方式的系统会确定哪些用户正在查看内容，并向其设备发送更新。</p>
+            <p>此需求与聊天应用的群组消息类似，通常通过管理与用户设备的持久连接来解决。我们将在 <a data-type="xref" href="#ch19_designing_a_chat_application_1734552294951889">#ch19_designing_a_chat_application_1734552294951889</a> 深入介绍聊天应用设计的所有架构细节，但这里先简要讨论一种将评论推送给特定帖子所有查看者的方式，如<a data-type="xref" href="#ch16_figure_7_1734552293527999">#ch16_figure_7_1734552293527999</a> 所示。</p>
+            <figure id="ch16_figure_7_1734552293527999">
+              <img src="images/sdoa_1607.png"/>
+              <figcaption>向所有查看者推送评论</figcaption>
+            </figure>
+            <p>用户发布评论后，评论首先保存到本地区域数据库中。为了数据冗余，还会对另一个区域的数据库写操作进行异步复制，相关内容在 <a data-type="xref" href="#ch16_multiregion_deployments_1734552293549629">#ch16_multiregion_deployments_173455229354962</a> 中讨论。评论被推送到消息队列，扇出到所有区域。网关服务的区域部署查找订阅该帖子的所有用户，并将评论路由到所有<a contenteditable="false" data-type="indexterm" data-primary="comment publication (social network use case)" data-startref="comment-social-network">&nbsp;</a>用户设备。</p>
+            <p>认证与授权系统是我们所设计的任何系统的另一个关键组件。下面结合将系统扩展至数百万用户的场景来讨论。</p>
+          </section>
+          <section data-type="sect3" id="ch16_scaling_the_authentication_system_1734552293549196">
+            <h3>扩展认证系统</h3>
+            <p>我们将<a contenteditable="false" data-type="indexterm" data-primary="authentication" data-secondary="for social network" data-secondary-sortas="social network" id="auth-social-network">&nbsp;</a>重点关注认证（AuthN）和授权（AuthZ），并讨论 Amazon Cognito 的可扩展性，以及在我们所提议的规模下使用 Cognito 而非自研解决方案是否合适。我们在 <a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a> 中介绍了 Cognito 的功能和相关概念，请参阅该章以充分理解本节的对比讨论。选择 Cognito 等托管服务的核心理由是：将整个开发和运维负担从您的团队移除，让 AWS 端到端管理该服务。</p>
+            <p>安全解决方案<a contenteditable="false" data-type="indexterm" data-primary="Cognito">&nbsp;</a>难以构建，需要专业知识才能做到位，因为即使应用规模较小，也不能在客户个人数据上有所妥协。<a data-type="xref" href="#ch16_table_4_1734552293534638">#ch16_table_4_1734552293534638</a> 对 Cognito 与自定义认证服务的各方面进行了比较。</p>
+            <table id="ch16_table_4_1734552293534638">
+              <caption>Amazon Cognito 与自定义认证解决方案对比</caption>
+              <thead>
+                <tr>
+                  <th>对比维度</th>
+                  <th>Amazon Cognito</th>
+                  <th>自定义解决方案</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <p>安全功能</p>
+                  </td>
+                  <td>
+                    <p>Cognito 内置多种认证（AuthN）和授权（AuthZ）功能，如 <a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a> 中所述。</p>
+                  </td>
+                  <td>
+                    <p>Cognito 允许在很大程度上自定义，但您仍无法对系统内部运作拥有端到端的完全灵活性。</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>安全专业知识</p>
+                  </td>
+                  <td>
+                    <p>构建安全系统需要专业知识，Cognito 帮您省去了这一负担。无需担心安全功能和可扩展性，只需专注于软件的业务逻辑。</p>
+                  </td>
+                  <td>
+                    <p>自定义解决方案需要安全专业知识来构建端到端方案。如果 Cognito 在某些方面存在限制，可以选择通过自托管 <a href="https://keycloak.org">Keycloak</a> 等开源软件来构建认证应用，并根据自定义需求修改代码。</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>运维：计算与存储管理</p>
+                  </td>
+                  <td>
+                    <p>Cognito 按需自动扩展，无需用户干预。</p>
+                  </td>
+                  <td>
+                    <p>自定义解决方案需要随业务增长制定合理的扩展策略。</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>合规法规，如 HIPAA 和 PCI DSS</p>
+                  </td>
+                  <td>
+                    <p>Cognito 符合这些标准。</p>
+                  </td>
+                  <td>
+                    <p>合规要求需要内建于自定义解决方案中。虽然 Cognito 支持多种合规法规，但若某个国家的合规要求不受支持，则自定义解决方案更为合适。</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>多区域可用性</p>
+                  </td>
+                  <td>
+                    <p>Cognito 不支持开箱即用的多区域部署，这给客户端带来了额外的多区域用户管理开销。</p>
+                  </td>
+                  <td>
+                    <p>自定义解决方案可按需在所需区域进行部署或复制。</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>与 AWS 服务的集成</p>
+                  </td>
+                  <td>
+                    <p>Cognito 可非常便捷地与 Amazon API Gateway 和 AWS ALB 等其他 AWS 服务集成。</p>
+                  </td>
+                  <td>
+                    <p>自定义解决方案的集成需要额外工作。</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>迁移到其他云提供商、完全迁移到本地部署，或迁移到不同的认证服务</p>
+                  </td>
+                  <td>
+                    <p>使用云厂商专属认证解决方案时，迁移会非常复杂。迁移需要在另一个云上找到对应的认证服务，而将现有用户迁移到新云通常令人头疼。</p>
+                    <p>Cognito 不允许导出用户密码，这在迁移时成为瓶颈（可通过让用户先通过 Cognito 认证后强制重置密码来绕过；对活跃用户效果不错，但对不活跃用户则不够直接）。</p>
+                  </td>
+                  <td>
+                    <p>只要计算和存储方案与云无关，自定义应用就很容易迁移到不同云平台。额外工作仅在特定情况下才需要，例如从 AWS 云上的 Amazon DynamoDB 迁移到 <a href="https://oreil.ly/09MkQ">Google 云上的 Spanner</a>。</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p>请仔细研究这份对比，确认哪些方面最符合您的需求。</p>
+            <p>会话管理是我们所需的功能之一，使用户无需反复经历认证流程。<a href="https://jwt.io/introduction">JWT</a> 是简化会话管理的一种方式。核心思路是：用户一旦通过系统认证，后续对系统的调用无需再次进行认证和授权（根据系统架构，认证可能需要调用认证服务或执行数据库查找来验证用户凭据）。JWT 允许用户在首次认证后创建一个令牌，后续对系统的调用均需携带此令牌，系统依据令牌验证用户。该操作在应用服务器的内存中完成，加快了 API 操作速度；API 可跳过针对特定资源的授权检查，专注于执行应用逻辑。</p>
+            <p>这听起来很理想，但天下没有免费的午餐，问题在哪里？问题在于令牌过期时间：假设令牌过期时间设为 5 分钟，但用户在 1 分钟内就退出登录了。在这种场景下，令牌在接下来的 4 分钟内可能被中间人攻击滥用，给系统带来安全威胁。Redis 在其<a href="https://oreil.ly/_ZVlw">技术博客</a>中记录了这一潜在威胁，并建议使用传统数据库查找进行用户认证，将 JWT 限制用于服务间通信。</p>
+            <p>我们始终在强调"视业务场景而定"，这里同样适用。请评估系统需求，切勿盲目采用任何技术。例如，不要因为读了上面这段就认为 JWT 是一个糟糕的选择；任何技术都有<a contenteditable="false" data-type="indexterm" data-primary="authentication" data-secondary="for social network" data-secondary-sortas="social network" data-startref="auth-social-network">&nbsp;</a>其利弊。</p>
+            <p>本书 <a href="#part3" data-type="xref">#part3</a> 各章节均讨论了构建 Day 0 架构和 Day N 架构的思路，但这涉及迁移工作量，下面讨论一些更好地规划迁移的策略。</p>
+          </section>
+          <section data-type="sect3" id="ch16_moving_from_day_zero_to_day_n_1734552293549265">
+            <h3>从 Day 0 迁移到 Day N</h3>
+            <p>随着<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="social network" data-tertiary="migration for scalability" id="use-case-social-network-migrate">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="social network use case" data-secondary="migration for scalability" id="social-network-migrate">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="migration of social network system" id="migrate-social-network">&nbsp;</a>公司的发展壮大，工程团队会在现有软件之上进行优化，或开发全新软件以支撑规模增长和系统功能演进。这需要不断评估，且在很大程度上取决于您所要解决的业务场景。X 和 Facebook 等社交网络巨头已构建多项技术来支撑规模，并将其中一些开源。研究这些软件（参阅公司工程博客）有助于了解问题背景和解决方案，并深入理解架构中的各个组件。</p>
+            <p>例如，X 开发了用于分布式图存储的 <a href="https://oreil.ly/vWCwr">FlockDB</a>、用于管理数据分区的 <a href="https://oreil.ly/Op19k">Gizzard</a>，以及多租户分布式图数据库 <a href="https://oreil.ly/LKb5U">Manhattan</a>。Facebook 开发了用于在社交图谱中搜索数万亿条边的 <a href="https://oreil.ly/VfVNu">Unicorn</a>（Instagram 使用 Unicorn 驱动<a href="https://oreil.ly/q629S">搜索基础设施</a>），以及用于多媒体内容对象存储的 <a href="https://oreil.ly/6sRm5">Haystack</a>，并优化了 <a href="https://oreil.ly/FxOeZ">Memcached</a> 以支撑 Facebook 规模的缓存。其他公司也有类似创新。例如，LinkedIn 构建了名为 <a href="https://oreil.ly/3X8gm">LIquid</a> 的内部图数据库，以支持多度关系的查询。</p>
+            <p>一旦新系统构建完成，流量应在不影响用户的情况下无缝切换到新系统。迁移策略因多种因素而异，例如：</p>
+            <ul>
+              <li>
+                <p>迁移是否需要停机（即应用在一段时间窗口内不可用）。如果要求零停机完成迁移，迁移过程会复杂得多。</p>
+              </li>
+              <li>
+                <p>系统是无状态还是有状态的：无状态系统相对较易迁移，因为服务器实例上不保存状态，状态维护在不同硬件机器的数据库中。有状态系统在单台硬件机器上同时维护后端系统和数据库。我们将在 <a data-type="xref" href="#ch19_designing_a_chat_application_1734552294951889">#ch19_designing_a_chat_application_1734552294951889</a> 中讨论有状态系统的示例。</p>
+              </li>
+            </ul>
+            <p>下面讨论可以遵循的几种平滑迁移策略。</p>
+            <section data-type="sect4" id="ch16_traffic_replication_on_the_new_system_1734552293549329">
+              <h4>向新系统复制流量</h4>
+              <p>我们需要一种对新系统建立信心的机制，最佳方式是让系统真正投入工作。所谓"工作"，就是服务真实的生产流量。开发或质量保证测试完成后，应对系统进行真实生产流量的测试，如<a data-type="xref" href="#ch16_figure_8_1734552293528018">#ch16_figure_8_1734552293528018</a> 所示。</p>
+              <figure id="ch16_figure_8_1734552293528018">
+                <img src="images/sdoa_1608.png"/>
+                <figcaption>向新系统复制流量</figcaption>
+              </figure>
+              <p>现有系统在处理请求的同时，将相同请求转发到新系统。<em>响应对比分析管道</em>对两个系统的响应进行比较，并生成验证指标。为使组织内其他团队也能复用这一流程，可以创建一个独立的服务组件，专门负责将流量回放到新系统并验证结果。</p>
+              <p class="pagebreak-before less_space">注意，用户仍然由现有系统提供服务；新系统只是并行运行以建立信心。首先，新系统接收一部分生产流量，然后逐步扩展至全部生产流量。过程中发现的问题会随时修复。</p>
+            </section>
+            <section data-type="sect4" id="ch16_actual_system_migration_1734552293549388">
+              <h4>正式系统迁移</h4>
+              <p>一旦确认新系统按预期运行，即可让新系统承接真实生产流量。这同样分阶段进行，以确保平滑迁移；面向用户应用的迁移策略如<a data-type="xref" href="#ch16_figure_9_1734552293528038">#ch16_figure_9_1734552293528038</a> 所示。</p>
+              <figure id="ch16_figure_9_1734552293528038">
+                <img src="images/sdoa_1609.png"/>
+                <figcaption>面向用户应用的发布策略</figcaption>
+              </figure>
+              <p>A/B 测试是一种流行的策略，运作方式类似。您设计实验，并根据流量分配逻辑来划分流量；<a data-type="xref" href="#ch16_figure_8_1734552293528018">#ch16_figure_8_1734552293528018</a> 展示了这样一种逻辑。</p>
+              <p>一旦应用在有限的用户群体中运行良好，可以转为百分比灰度发布。可以从 1% 的流量开始，逐步提升至 10%、30%、50%，以此类推。新系统完成 100% 发布后，建议再运行约两周，然后决定何时关闭旧系统。</p>
+              <p>如果不涉及数据库迁移，迁移相对较为简单；但若不然，我们来讨论几条应对建议。</p>
+            </section>
+            <section data-type="sect4" id="ch16_database_migration_1734552293549445">
+              <h4>数据库迁移</h4>
+              <p>数据库迁移<a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="migration">&nbsp;</a>可能涉及在相同数据库引擎上从旧数据模型迁移到新数据模型，或在更换数据库引擎的同时升级数据模型，例如从 PostgreSQL 迁移到 DynamoDB。</p>
+              <p>以下是实现平滑数据库迁移的几点建议：</p>
+              <ul>
+                <li>
+                  <p>旧数据需要迁移到新数据库模型。可通过转换层进行离线批量加载，将旧模型数据转换为新模型数据。</p>
+                </li>
+                <li>
+                  <p>在迁移窗口期间，系统应遵循双写策略，即数据同时写入两个数据库。</p>
+                </li>
+                <li>
+                  <p>读取策略同样是双路的，即系统从两个数据库中读取数据。可以添加额外的验证层，对两个数据库的数据进行比对。此方式适用于仅在同一系统内进行数据库迁移的场景；如果涉及完全不同架构下的新数据库，验证可以在 API 请求层面进行，如前几节所述。</p>
+                </li>
+              </ul>
+              <p>任何类型的迁移的最后一步是清理旧资源。旧架构应逐步退役，以消除运维负担并节省<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="social network" data-tertiary="migration for scalability" data-startref="use-case-social-network-migrate">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="social network use case" data-secondary="migration for scalability" data-startref="social-network-migrate">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="migration of social network system" data-startref="migrate-social-network">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="social network" data-tertiary="Day 0 architecture" data-startref="use-case-social-network-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="social network use case" data-secondary="Day 0 architecture" data-startref="social-network-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for social network" data-secondary-sortas="social network" data-startref="dayzero-social-network">&nbsp;</a>闲置资源的成本。</p>
+            </section>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch16_day_n_architecture_1734552293549516">
+          <h2>Day N 架构</h2>
+          <p>用户时间线<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="social network" data-tertiary="Day N architecture" id="use-case-social-network-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="social network use case" data-secondary="Day N architecture" id="social-network-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for social network" data-secondary-sortas="social network" id="dayn-social-network">&nbsp;</a>的构建范围会随时间推移而扩展，可以包含基于兴趣、位置或其他特定参数的更多帖子。构建时间线的首要需求是展示用户所关注的人发布的所有帖子，随着系统演进，可以逐步添加更多组件。基于本章所有讨论的 Day N 架构如<a data-type="xref" href="#ch16_figure_10_1734552293528057">#ch16_figure_10_1734552293528057</a> 所示。</p>
+          <p>为简化架构图，我们略去了 Amazon CloudFront，但核心思路是通过 CDN 提供媒体内容，而非直接从 S3 存储桶下载。我们将在 <a data-type="xref" href="#ch20_designing_a_video_processing_pipeline_for_a_stream_1734552295245731">#ch20_designing_a_video_processing_pipeline_for_a_stream_1734552295245731</a> 中讨论多种内容分发策略。我们在 <a data-type="xref" href="#ch15_designing_a_web_crawler_and_search_engine_1734552293105400">#ch15_designing_a_web_crawler_and_search_engine_1734552293105400</a> 中涉及了编排组件，相同参考可用于本章。</p>
+          <p>我们应识别系统运营和为用户提供服务的关键组件；在用户层面对帖子排序或添加更多帖子是为保持用户活跃度而构建的附加功能。让我们进一步阐述这一理念，以及它如何在整体架构中帮助实现系统的高可用性。</p>
+          <figure id="ch16_figure_10_1734552293528057">
+            <img src="images/sdoa_1610.png"/>
+            <figcaption>Day N 架构</figcaption>
+          </figure>
+          <section data-type="sect3" id="ch16_high_availability_of_system_1734552293549574">
+            <h3>系统高可用性</h3>
+            <p>面对<a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="in social network use case" data-secondary-sortas="social network use case">&nbsp;</a>任何不可预见的情况，例如云服务商服务中断，或因新引入代码导致的重试风暴引发负载骤增，系统架构应确保终端用户受到的影响最小。我们应定期进行多层次的测试，以提前发现问题；同时讨论一些在此类情况真正发生时的规划建议。</p>
+            <p>第一条建议涉及识别应用的关键度。架构中所有子系统都被分配一定的优先级；例如，Amazon 采用分级结构：Tier 1 代表高度关键的系统，对客户有直接影响；Tier 2 代表中度关键的系统，影响程度中等（例如订单延迟一天但仍会送达）；Tier 3 代表低关键度系统，提供附加体验。这种分级方式使 Amazon 在发生故障时只需专注于 Tier 1 系统，并强制要求这些系统在任何变更上线前完成额外的测试步骤。</p>
+            <p>同一思路下的另一条建议是：根据优先级处理请求，并丢弃非优先级请求。以 <a href="https://oreil.ly/7Hi6Z">Netflix 系统</a>为例。发送到 API 网关的请求分为两类：播放请求和遥测请求。遥测请求将用户设备的健康指标发送给后端，有助于改善用户体验；但播放请求最为关键，因为它们负责内容服务。系统可以根据健康指标提前识别系统状态，网关在积压请求队列之前直接丢弃低优先级请求。</p>
+            <p>对于大型系统，跨区域部署是一个重要的考量因素。下面更详细地讨论多区域部署。</p>
+          </section>
+          <section data-type="sect3" id="ch16_multiregion_deployments_1734552293549629">
+            <h3>多区域部署</h3>
+            <p>在如此大规模下管理<a contenteditable="false" data-type="indexterm" data-primary="multiregion deployments" data-secondary="in social network use case" data-secondary-sortas="social network use case" id="multiregion-social-network">&nbsp;</a>应用面临诸多挑战，将应用扩展到多个区域又带来一系列新问题。公司选择多区域部署策略可能出于不同原因：</p>
+            <ul>
+              <li>
+                <p>遵循合规法规，要求某个国家用户的数据必须存储在该国境内的数据中心</p>
+              </li>
+              <li>
+                <p>提高应用弹性，使服务在某个云区域完全宕机的情况下仍能不中断地运行</p>
+              </li>
+              <li>
+                <p>将应用部署在距离终端用户更近的位置，以更快地响应请求</p>
+              </li>
+            </ul>
+            <p>假设应用部署在两个 AWS 区域，两个区域根据客户的地理位置分别提供服务。若其中一个区域的服务受到影响，流量将切换到功能正常的区域，客户体验不受影响，如<a data-type="xref" href="#ch16_figure_11_1734552293528076">#ch16_figure_11_1734552293528076</a> 所示。</p>
+            <figure id="ch16_figure_11_1734552293528076">
+              <img src="images/sdoa_1611.png"/>
+              <figcaption>区域故障时的流量切换</figcaption>
+            </figure>
+            <p>以下是多区域服务部署的几点重要考量：</p>
+            <ul>
+              <li>
+                <p>两个区域完全独立运行，均可独立服务客户流量，区域间没有共享服务。</p>
+              </li>
+              <li>
+                <p>服务是无状态的，状态仅在数据库层维护。数据库中存储的信息以异步方式持续复制到另一个区域（以避免复制延迟影响用户请求）。数据库复制可以由数据库本身原生支持（例如 <a href="https://oreil.ly/hZONb">DynamoDB 全局表</a>和 <a href="https://oreil.ly/mJ4KM">ElastiCache Redis 的全球数据存储</a>），如果数据库不支持，则需要自行实现。</p>
+              </li>
+              <li>
+                <p>跨区域的服务部署应尽可能通过自动化保持同步。此外，建议在多个区域的同一部署之间保留缓冲窗口，这有助于在变更传播到另一个区域之前先在一个区域识别问题。</p>
+              </li>
+            </ul>
+            <p>在区域发生故障时，流量应切换到另一个区域，如 <a data-type="xref" href="#ch16_figure_11_1734552293528076">#ch16_figure_11_1734552293528076</a> 所示。建议逐步切换流量，而非一次性切换，以避免因流量骤增而影响另一个区域。如果所有客户端同时切换到另一个区域，就可能出现惊群效应。应在客户端设备的 API 调用中引入随机抖动。</p>
+            <p>服务部分用户总比一个用户都不服务要好。针对区域故障，可以考虑采用负载卸载策略，丢弃一定比例的请求，以管理单区域的负载。系统最终可以在单个区域内进行扩展，以服务所有<a contenteditable="false" data-type="indexterm" data-primary="multiregion deployments" data-secondary="in social network use case" data-secondary-sortas="social network use case" data-startref="multiregion-social-network">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="social network" data-tertiary="Day N architecture" data-startref="use-case-social-network-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="social network use case" data-secondary="Day N architecture" data-startref="social-network-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for social network" data-secondary-sortas="social network" data-startref="dayn-social-network">&nbsp;</a>流量。</p>
+          </section>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch16_conclusion_1734552293549684">
+        <h1>总结</h1>
+        <p>在明确系统需求和边界的同时，了解用户行为以及用户与平台交互的流量模式同样至关重要。我们的社交网络系统有两类用户——粉丝数较少的普通用户和拥有数百万粉丝的名人用户——在构建用户时间线时，我们针对这两类用户进行了差异化设计，以实现最优效果。</p>
+        <p>我们还通过多个示例展示了系统的演进过程：从简单架构出发，随着新需求涌现或系统用户规模扩大，逐步演进为更复杂的架构。其中一个典型例子是用户关系的管理：先在 MySQL 等数据库中管理，随后迁移到图数据库，以便高效查询间接关系（如 LinkedIn 的二度关系）。选择云服务商托管服务还是自建完整服务也是同样的道理，正如我们在 Cognito 与自定义<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="social network" data-startref="use-case-social-network">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="social network use case" data-startref="social-network">&nbsp;</a>认证解决方案的对比中所描述的那样。</p>
+        <p>下一章，我们将探讨另一个实时系统的设计：多人游戏中的在线游戏排行榜。本章将向您介绍如何在多名玩家同时在线的情况下，设计低延迟系统的相关概念。</p>
+      </section>
+    </section>

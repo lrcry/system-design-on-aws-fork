@@ -1,0 +1,380 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch21_designing_an_online_stock_trading_platform_1734552295606829">
+      <h1>设计在线<span class='keep-together'>股票交易平台</span></h1>
+      <p>目前市面上有很多<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" id="use-case-stocks">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" id="stock-app">&nbsp;</a>在线平台可以帮助你投资股票，例如 <a class="orm:hideurl" href="https://robinhood.com/us/en">Robinhood</a>、<a class="orm:hideurl" href="https://zerodha.com">Zerodha</a> 和 <a class="orm:hideurl" href="https://groww.in/stocks">Groww</a>。这些被称为<em>股票经纪商（stockbroker）</em>的平台，在证券交易所和用户之间充当中间人。<em>证券交易所（stock exchange）</em><a contenteditable="false" data-type="indexterm" data-primary="stock exchanges">&nbsp;</a>是买卖股票的市场，例如美国的纽约证券交易所（NYSE）和印度的国家证券交易所（NSE）。<a data-type="xref" href="#ch21_figure_1_1734552295589681">#ch21_figure_1_1734552295589681</a>展示了用户、股票经纪商和证券交易所之间的交互关系。</p>
+      <figure id="ch21_figure_1_1734552295589681">
+        <img src="images/sdoa_2101.png"/>
+        <figcaption>用户、股票经纪商与证券交易所</figcaption>
+      </figure>
+      <p>买入或卖出股票的操作称为<em>委托订单（order）</em>。该订单由股票经纪商代表客户执行。简而言之，你将资金交给股票经纪商以买入或卖出特定股票，经纪商再与证券交易所沟通以执行订单。</p>
+      <div data-type="note">
+        <p>本章重点介绍股票经纪商应用的设计，而非证券交易所应用的设计。股票交易是一个复杂的话题，我们不建议将本章作为股票交易的指南，而应将其视为对底层系统架构的技术深度解析。</p>
+      </div>
+      <p>如果你从未使用过股票经纪商应用，建议先浏览一下，以便理解应用功能，从而确定我们经纪商应用的系统需求。接下来我们来看看这些系统需求。</p>
+      <section data-type="sect1" id="ch21_system_requirements_1734552295607014">
+        <h1>系统需求</h1>
+        <p><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" data-tertiary="system requirements" id="use-case-stocks-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" data-secondary="system requirements" id="stock-app-require">&nbsp;</a>股票经纪商应用提供丰富的功能，但本章专注于买入和卖出股票这一核心功能。在交易领域，任何股票的买卖通常称为<em>委托执行（order execution）</em>。我们先来讨论系统的功能性需求和非功能性需求，然后再看预期的系统规模。</p>
+        <section data-type="sect2" id="ch21_functional_and_nonfunctional_requirements_1734552295607088">
+          <h2>功能性需求与非功能性需求</h2>
+          <p>任何股票经纪商应用的核心功能都是买入和卖出股票。我们还需要为客户提供一些辅助功能，帮助他们做出股票交易决策。应用只允许在证券交易所的交易时段内进行股票买卖，通常为每天六到七个小时。例如，纳斯达克（Nasdaq）证券交易所的交易时段为美国东部时间上午 9:30 至下午 4:00。</p>
+          <p>以下是系统应支持的<a contenteditable="false" data-type="indexterm" data-primary="functional requirements" data-secondary="stockbroker application">&nbsp;</a>功能性需求列表：</p>
+          <ul>
+            <li>
+              <p>用户可以按股票名称或公司名称进行搜索。例如，Amazon.com, Inc. 的股票在纳斯达克证券交易所以 AMZN 为名上市。</p>
+            </li>
+            <li>
+              <p>股价应实时更新，并显示其他相关信息，如平均成交价格、最近的开盘价和收盘价等。</p>
+            </li>
+            <li>
+              <p>用户可以买入新股票并卖出已持有的股票。</p>
+            </li>
+            <li>
+              <p>用户可以查看任意股票在所选时段内的 <a href="https://oreil.ly/2Zmsr">K线图（蜡烛图）</a>。</p>
+            </li>
+            <li>
+              <p>用户可以查看其投资组合的整体及个股盈亏（P&amp;L）情况。</p>
+            </li>
+          </ul>
+          <p>系统的<a contenteditable="false" data-type="indexterm" data-primary="nonfunctional requirements" data-secondary="stockbroker application" id="nonfunction-stock">&nbsp;</a>非功能性需求（NFR）同样至关重要，在系统设计中必须予以考虑。以下是系统应保证的 NFR 列表：</p>
+          <ul>
+            <li>
+              <p>系统应具备高可用性，能够承受硬件故障或数据中心停机。</p>
+            </li>
+            <li>
+              <p>系统应具备高可扩展性，以应对不断增长的流量。</p>
+            </li>
+            <li>
+              <p>系统应具备高可靠性和持久性。不应有任何消息丢失，例如委托执行请求和来自证券交易所系统的响应。</p>
+            </li>
+            <li>
+              <p>市价单执行的延迟应在亚毫秒级别（&lt; 100 ms）以内。</p>
+            </li>
+            <li>
+              <p>整体系统操作需要支持强一致性。<a contenteditable="false" data-type="indexterm" data-primary="nonfunctional requirements" data-secondary="stockbroker application" data-startref="nonfunction-stock">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ultra-low latency">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="latency" data-secondary="ultra-low">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="HFT (high-frequency trading)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="high-frequency trading (HFT)">&nbsp;</a></p>
+            </li>
+          </ul>
+        </section>
+        <section data-type="sect2" id="ch21_system_scale_1734552295607156">
+          <h2>系统规模</h2>
+          <p>系统<a contenteditable="false" data-type="indexterm" data-primary="scale (of system)" data-secondary="stockbroker application" id="scale-stock-broker">&nbsp;</a>在交易时段内频繁运行并与客户大量交互。在非交易时段，系统运行其他作业，例如从交易所收集当天的成交数据，并向客户发送已执行的交易详情。我们将以 <a href="https://oreil.ly/MNrS7">Zerodha 的规模数据</a>为基础，并在此基础上叠加未来增长量：</p>
+          <div data-type="equation">
+            <p>平台活跃用户数 = 5000 万</p>
+            <p>实际执行交易的用户数 = 1000 万</p>
+            <p>每用户平均交易次数 = 2</p>
+            <p>每日交易笔数 = 2000 万</p>
+            </div>
+          <p>这 5000 万活跃用户正在浏览实时股价并查看其投资组合，因此系统在任何时刻都必须为该群体的读查询提供服务。经纪商系统平均每秒向用户推送的股价更新次数为 3 次（Level 2 数据，详见<a data-type="xref" href="#ch21_designing_a_stock_tick_system_1734552295607312">#ch21_designing_a_stock_tick_system_1734552295607312</a>）。对于 5000 万活跃用户，系统每秒需推送 1.5 亿次股价更新。</p>
+          <p>在证券交易所上市的公司数量因国家和交易所而异，以下是一些可供参考的数字：</p>
+          <div data-type="equation">
+            <p>印度 NSE 约 <a href="https://oreil.ly/AclUg">2,300</a> 家</p>
+            <p>美国 Nasdaq 约 <a href="https://oreil.ly/HdGGf">3,300</a> 家</p>
+            <p>美国 NYSE 约 <a href="https://oreil.ly/0--Nf">2,800</a> 家</p>
+          </div>
+          <p>可以假设上市公司数量不会呈指数级增长，每次只有极少数公司新增上市。接下来，我们将在牢记上述<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" data-tertiary="system requirements" data-startref="use-case-stocks-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" data-secondary="system requirements" data-startref="stock-app-require">&nbsp;</a>需求和规模考量的前提下，进入系统设计阶段。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch21_starting_with_the_design_1734552295607232">
+        <h1>从设计开始</h1>
+        <p>与网络爬虫和搜索引擎（<a data-type="xref" href="#ch15_designing_a_web_crawler_and_search_engine_1734552293105400">#ch15_designing_a_web_crawler_and_search_engine_1734552293105400</a>）以及酒店预订系统（<a data-type="xref" href="#ch18_designing_a_hotel_reservation_system_1734552294615548">#ch18_designing_a_hotel_reservation_system_1734552294615548</a>）类似，<a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="in stockbroker application" data-secondary-sortas="stockbroker application" id="schema-stock">&nbsp;</a>股票交易平台同样由两套系统组成。一套系统从交易所平台摄取数据，用于提供实时股价；另一套系统负责执行客户委托订单。我们将首先讨论数据摄取，以支持向终端用户推送实时和历史股价，然后再进入买卖股票的系统设计。</p>
+        <section data-type="sect2" id="ch21_designing_a_stock_tick_system_1734552295607312">
+          <h2>设计股票行情系统</h2>
+          <p><em>股票行情跳动（stock tick）</em><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" data-tertiary="stock tick system design" id="use-case-stocks-tick-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" data-secondary="stock tick system design" id="stock-app-tick-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stock tick system design" id="stock-tick-design">&nbsp;</a>是指股票的价格变动；经纪商系统从交易所系统捕获价格变动并将其流式传输给正在关注该股票的用户。价格变动以接近实时的方式无延迟地推送，帮助客户做出是否买入或卖出的决策。该架构是<a data-type="xref" href="#ch21_figure_1_1734552295589681">#ch21_figure_1_1734552295589681</a>的镜像：交易所系统推送数据，经纪商应用消费后再进一步将其推送给终端客户。</p>
+          <p>在<a data-type="xref" href="#ch21_system_scale_1734552295607156">#ch21_system_scale_1734552295607156</a>中，我们假设经纪商应用每天处理 2000 万笔交易。有多个此类平台的用户在同时执行交易，还有以高频率执行自动化交易的高频交易（HFT）公司。关键在于，证券交易所平台上的交易数量极为庞大（可参考<a href="https://oreil.ly/cgSm4">印度 NSE</a> 和 <a href="https://oreil.ly/3RgCG">纳斯达克</a>的历史数据），在经纪商应用内部消费所有这些数据需要耗费大量资源。此外，经纪商应用还需向交易所平台支付一定费用才能获得市场数据消费权限。</p>
+          <p>请记住，如果排除 HFT 的情况，大多数客户并不需要交易所平台上每一笔委托的数据：主要原因在于，没有计算机算法的帮助，用户无法消化如此庞大的实时数据来做出决策，而且证券交易所通过精心设计的网络基础设施收取数据推送费用。为此，证券交易所通常根据所需数据量提供不同类型的数据流。以<a href="https://oreil.ly/gMJ2C">印度 NSE</a>为例（其他交易所平台，如<a href="https://oreil.ly/I2LDC">纳斯达克</a>，也提供类似级别），实时数据分四个级别提供：Level 1 至 Level 3 以及逐笔成交（TBT）。Level 1 提供最优买入价和卖出价；Level 2 提供最优五档买卖价格的市场深度数据；Level 3 提供最优二十档买卖价格的市场深度数据；TBT 则提供完整的委托簿（交易所平台上所有已执行委托）。</p>
+          <div data-type="note">
+            <p><em>买入价（bid price）</em><a contenteditable="false" data-type="indexterm" data-primary="bid prices (stocks)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ask prices (stocks)">&nbsp;</a>是买方愿意在特定时间为特定数量股票支付的最高价格。<em>卖出价（ask price）</em>是卖方同意出售股票的最低价格。</p>
+          </div>
+          <p>考虑到经纪商应用（而非 HFT）的系统设计需求，本章将架构范围限定在 Level 1 至 Level 3 数据的消费上。我们在<a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a>中讨论过的 SSE 和 WebSocket，都是从证券交易所消费数据的好选择。各证券交易所并没有统一的标准通信协议，协议因交易所而异，但其中一种流行协议是<a href="https://oreil.ly/ve_Mi">金融信息交换协议（FIX 协议）</a>。数据推送方式也因交易所而异，以下是几种可能的市场数据推送方式：</p>
+          <dl>
+            <dt>云订阅</dt>
+            <dd>
+              <p>交易所允许客户订阅其端点并接收数据。该端点可以是持久连接或单向连接（具体取决于交易所）。</p>
+            </dd>
+            <dt>直连</dt>
+            <dd>
+              <p>交易所在其机房提供服务器机架，客户可以在与交易所服务器托管共置（colo）的位置放置硬件。部署在交易所机房的客户硬件通过专线连接到客户的本地数据中心，直接接收数据。例如，以<a href="https://oreil.ly/OqXiD">印度 NSE</a> 为例，<a href="https://oreil.ly/ng5GT">Zerodha 的经纪商应用</a>通过消费 TBT 数据，将其转换为 Level 3 数据，再流式传输给用户应用，从而向客户提供 Level 3 数据。</p>
+            </dd>
+            <dt>供应商连接</dt>
+            <dd>
+              <p>对于所有消费者来说，直连可能并不经济实惠。这些消费者可以利用供应商集成来实现类似功能。例如，<a href="https://oreil.ly/9CY74">LSEG Data &amp; Analytics</a> 已与全球五百多家交易所集成，提供 TBT 数据推送。</p>
+            </dd>
+          </dl>
+          <p>交易所还会向经纪商应用提供历史数据快照，可用于 K线图等使用场景。</p>
+          <p>现在，我们来讨论经纪商应用的后端系统如何处理这些数据，并将其流式传输到前端应用供用户查看。这里的数据流模式与证券交易所向经纪商推送数据的方式类似。我们可以将该架构分为两部分：实时股票行情数据和历史股票市场数据。</p>
+          <section data-type="sect3" id="ch21_live_stock_ticks_1734552295607383">
+            <h3>实时股票行情</h3>
+            <p>向终端客户推送实时股票行情时，<a contenteditable="false" data-type="indexterm" data-primary="live stock ticks architecture" id="live-stock-tick">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stock live ticker service (SLTS)" id="stock-live-service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SLTS (stock live ticker service)" id="slts">&nbsp;</a>延迟至关重要：数据一旦从证券交易所获取，应立即呈现给用户。该架构与<a data-type="xref" href="#ch19_designing_a_chat_application_1734552294951889">#ch19_designing_a_chat_application_1734552294951889</a>中的消息传递架构类似，区别在于这里是经纪商系统向用户发送消息，而非用户之间互相发消息。消息的顺序性同样重要，技术方案必须确保数据按照到达顺序呈现给用户。</p>
+            <p>股票更新由<a contenteditable="false" data-type="indexterm" data-primary="stock tick consumer service (STCS)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="STCS (stock tick consumer service)">&nbsp;</a>股票行情消费服务（STCS，即 stock tick consumer service）消费，它是经纪商架构中的后端服务之一。STCS 是一个非常轻量的服务，负责将从交易所系统接收到的更新转发给内部后端服务。消息转发通过将更新发布到 Kafka 以异步方式完成。在经纪商架构中，两个系统将消费这些更新：实时股票行情系统和历史股票行情系统（下一节讨论）。Kafka 能够处理预期规模并保证消息顺序，确保我们能满足系统需求之一。此外，还可以在客户端应用中构建额外的事件顺序保障机制——应用可以根据事件序号丢弃任何旧事件。</p>
+            <p>股票实时行情服务（SLTS，即 stock live ticker service）从 Kafka 消费消息并实时推送给终端用户。SLTS 与终端用户设备保持持久连接，其工作方式与<a data-type="xref" href="#ch19_designing_a_chat_application_1734552294951889">#ch19_designing_a_chat_application_1734552294951889</a>中聊天应用架构里的前端聊天服务器类似。SLTS 维护两张内存表：一张保存股票价格，另一张列出对特定股票感兴趣的用户。值得注意的是，单只股票关联多个价格条目（取决于系统支持的数据深度），并以接近实时的方式更新。这类使用场景可以通过平衡树、固定长度优先队列等数据结构，或利用 Redis 有序集合来解决。</p>
+            <p>股票价格表是所有 SLTS 服务器均可访问的全局键值存储，而连接数据则由每台服务器在本地维护，如<a data-type="xref" href="#ch21_figure_2_1734552295589713">#ch21_figure_2_1734552295589713</a>所示。</p>
+            <p>我们来简单谈谈用户设备与 SLTS 服务器之间<a contenteditable="false" data-type="indexterm" data-primary="persistence" data-secondary="in stock tick system" data-secondary-sortas="stock tick system">&nbsp;</a>持久连接的问题。用户在应用中完成身份验证后，便会建立持久连接并为该用户设备生成一个连接 ID。该连接 ID 由某台 SLTS 服务器处理。服务器在内存中维护一张表，将股票名称映射到对该股票感兴趣的连接 ID 列表。如果 SLTS 服务器发生故障，用户设备会与新的连接 ID 建立新连接，并将该服务器分配给用户用于接收股票更新。连接 ID 由系统的一个轻量级线程或进程管理，单台 SLTS 服务器可以处理数以千计（约 100,000 个）的此类连接（应通过基准测试来确定单台服务器能支持的最大连接数）。轻量级线程可以由编程语言特有的构件管理，例如 JVM 语言的 Akka Actor（以及近期推出的 Java 虚拟线程）、Go 中的 goroutine，或 Erlang 中的进程。</p>
+            <figure id="ch21_figure_2_1734552295589713">
+              <img src="images/sdoa_2102.png"/>
+              <figcaption>实时股票行情架构</figcaption>
+            </figure>
+            <p>实时股票更新的流程如下：交易所发布股票更新；STCS 摄取更新并将其发布到 Kafka；SLTS 将股票价格更新到全局键值存储（如 Redis）；SLTS 检查对该股票感兴趣的连接 ID，并将更新发送到用户设备。展望未来，SLTS 架构可以进行两项优化：</p>
+            <ul>
+              <li>
+                <p>SLTS 负责两项操作：将股票价格更新持久化到全局键值存储，以及与用户设备维护持久连接。我们可以将其拆分为两个服务部署：一个 Kafka 消费者负责消费更新并更新股票价格，另一个服务负责将股票更新推送给终端用户设备。</p>
+              </li>
+              <li>
+                <p>证券交易所上市的股票数量有限，我们可以在 SLTS 服务器的内存中保存一份股票价格副本。其思路是在 Redis 缓存之上维护一个热缓存（hot cache），用于快速读取股票价格，从而整体提升系统速度。Redis 作为持久化数据存储，应用服务器可以在重启或新增服务器时从 Redis 中恢复数据。</p>
+              </li>
+            </ul>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="live stock ticks architecture" data-startref="live-stock-tick">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stock live ticker service (SLTS)" data-startref="stock-live-service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SLTS (stock live ticker service)" data-startref="slts">&nbsp;</a>推送给用户的实时股票行情会实时计算用户持仓的盈亏，并更新仪表盘。接下来，我们来看如何为用户提取历史市场数据。</p>
+          </section>
+          <section data-type="sect3" id="ch21_historical_stock_ticks_1734552295607456">
+            <h3>历史股票行情</h3>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="historical stock tick service" id="historic-stock">&nbsp;</a>历史股票行情服务（HSTS，即 historical stock tick service）的消费者从 Kafka 消费股票价格更新，然后将其存储到数据库。HSTS 的使用场景是提供特定股票的历史价格，因此数据应存储到数据库中，以便我们能够查询任意时间点的股票价格。我们在<a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a>中讨论了<a contenteditable="false" data-type="indexterm" data-primary="Timestream" id="timestream">&nbsp;</a>Amazon Timestream 数据库；它是此类使用场景最可行的选择。市面上还有其他时序数据库可供选择，例如 <a class="orm:hideurl" href="https://influxdata.com">InfluxDB</a> 和 <a class="orm:hideurl" href="https://oreil.ly/2g8Ra">ClickHouse</a>，应根据既有专业知识和针对具体用例构建概念验证（PoC）的结果来做出选择。与 SLTS 类似，HSTS 也有两个服务部署：一个负责写入股票价格更新，另一个负责处理用户读取查询。</p>
+            <p>系统处理的大多数读取查询都针对近期时间段，例如一天或一周。随着时间段延长（如一个月、一年或超过一年），查询量逐渐减少。对于这类查询模式，数据归档对于降低不频繁访问的历史数据相关成本非常重要。数据归档在 <a href="https://oreil.ly/BFP2b">Timestream 数据库</a>中已内置支持，无需配置任何手动流程。Timestream 提供两个存储层：内存存储（memory store）和磁性存储（magnetic store）。内存存储可用于处理最近的查询。在配置的时间段过后，数据将自动迁移到磁性存储。我们还可以在磁性存储上配置保留期；数据将在该时间到期后从磁性存储中永久删除。</p>
+            <p>用户查看当前股价和历史趋势后，即可选择卖出<a contenteditable="false" data-type="indexterm" data-primary="historical stock tick service" data-startref="historic-stock">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" data-tertiary="stock tick system design" data-startref="use-case-stocks-tick-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" data-secondary="stock tick system design" data-startref="stock-app-tick-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stock tick system design" data-startref="stock-tick-design">&nbsp;</a>已持有的股票或买入新股票。这一操作由订单管理系统（OMS）来处理。</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch21_designing_the_order_management_system_1734552295607530">
+          <h2>设计订单管理系统</h2>
+          <p>我们已经<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" data-tertiary="order management system design" id="use-case-stocks-ordermgmt-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" data-secondary="order management system design" id="stock-app-ordermgmt-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="order management system design" id="stock-ordermgmt-design">&nbsp;</a>将委托订单描述为股票买入或卖出操作。OMS 将用户意图（买入或卖出股票）转换为委托请求，并将其转发给交易所系统执行。OMS 在请求发送给交易所系统之前，会运行一系列预验证，以确保所有合规监管要求均已满足。验证系统（即风险管理系统，RMS）作为独立服务运行，以确保操作和扩展的独立性。通过 OMS 执行委托订单的高层示意图如<a data-type="xref" href="#ch21_figure_3_1734552295589735">#ch21_figure_3_1734552295589735</a>所示。</p>
+          <p>OMS 的职责可能因经纪商应用所在国家而异。以下是 OMS 可能承担的两种职能：</p>
+          <ul>
+            <li>
+              <p>OMS 根据用户输入创建委托请求，并将其传递给证券交易所执行。交易所系统负责将该委托与另一笔委托进行撮合（买入委托与卖出委托匹配；可参考<a href="https://oreil.ly/QrmY8">印度 NSE 使用的订单撮合算法</a>）并完成成交。</p>
+            </li>
+            <li>
+              <p>OMS 可以在用户池内进行委托撮合，然后将撮合结果转发给交易所系统。</p>
+            </li>
+          </ul>
+          <figure id="ch21_figure_3_1734552295589735">
+            <img src="images/sdoa_2103.png"/>
+            <figcaption>委托执行</figcaption>
+          </figure>
+          <p>OMS 可以由经纪商系统自托管，也可以利用第三方解决方案。例如，<a href="https://oreil.ly/s4z1Q">Zerodha</a> 采用自托管与 Refinitiv 提供的第三方 OMS 相结合的方式。第三方 OMS 通常提供一系列功能，包括 RMS 以及从经纪商系统数据中心到交易所系统的连接能力。我们来看一个<a href="https://oreil.ly/Um_TS">Zerodha 的架构示例</a>，以了解使用 AWS、本地数据中心和交易所系统实现端到端连接的方式。用户通过 Cloudflare CDN 连接到系统，在前端交易应用上下达委托。交易应用通过 AWS Direct Connect 与本地数据中心上的其他后端服务（如请求验证）和 OMS 通信，以实现更快的通信速度。本地数据中心通过专用租用线路与交易所系统通信，完成最终委托执行，如<a data-type="xref" href="#ch21_figure_4_1734552295589756">#ch21_figure_4_1734552295589756</a>所示。</p>
+          <p>经纪商后端应用还会创建一个内部委托记录，与交易所系统创建的委托相映射。该内部委托记录保存了对外部交易所委托的引用及其他相关信息，例如委托处理的支付详情。内部委托记录使用唯一标识符创建，有助于确保请求的幂等性（避免重复执行委托）。交易所系统回复请求已接收的确认信息，后续针对该委托采取的操作将以异步方式发送。</p>
+          <figure id="ch21_figure_4_1734552295589756">
+            <img src="images/sdoa_2104.png"/>
+            <figcaption>Zerodha 的委托执行架构</figcaption>
+          </figure>
+          <p>在前几节中，我们讨论了选用 Redis 存储实时股价以及时序数据库提供历史股价图表。以下是内部 OMS 的<a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="for order management system" data-secondary-sortas="order management system">&nbsp;</a>数据存储需求：</p>
+          <ul>
+            <li>
+              <p>在执行前在数据库中为委托创建一条记录。</p>
+            </li>
+            <li>
+              <p>收到交易所系统的确认后，更新该记录，包含委托状态、时间戳、交易所实际成交金额（该金额可能与经纪商应用发起委托时和交易所实际成交时之间存在差异）以及交易所委托参考号等详情。</p>
+            </li>
+          </ul>
+          <p>数据库应符合 ACID 特性，并具备可扩展性以处理高写入负载（相比读取，系统属于写入密集型）。以下是数据库读写的几种典型使用场景：</p>
+          <ul>
+            <li>
+              <p>为用户发起的委托创建参考记录。</p>
+            </li>
+            <li>
+              <p>查询委托状态。</p>
+            </li>
+            <li>
+              <p>获取用户的<em>交易记录（tradebook）</em>（经纪商系统代表用户处理的所有委托）。</p>
+            </li>
+            <li>
+              <p>委托在固定时间间隔后（时间间隔因交易所而异）转移到用户<em>持仓（holdings）</em>（用户已买入的股票）时，交易所系统通常会共享包含详情的文件，系统将批量加载这些数据到数据库。</p>
+            </li>
+            <li>
+              <p>这同样适用于提前下达、根据<a href="https://oreil.ly/q4CS4">委托类型</a>延后执行的委托：市价单、限价单或止损单。</p>
+            </li>
+          </ul>
+          <p>实时委托执行的延迟至关重要，因此减少数据库 I/O 是解决这一问题的关键。Redis 等内存数据存储用于端到端的委托执行，系统同时并行将这些数据持久化到 PostgreSQL 等磁盘数据存储。我们在前几章中探讨了将 Amazon DynamoDB 用于事务性工作负载，这里同样适用。DynamoDB 为基于主键的点查询提供可预测的响应时间。如果选择非分布式关系型数据存储，鉴于我们最终确定的规模需求，建议进行数据库分片。初期可以创建<a href="https://oreil.ly/NuGmV">逻辑数据库分区</a>，待有必要时再迁移到实际的物理分区。对于股票经纪商应用，分区可以按时间范围划分，例如按周或按月。</p>
+          <p>低延迟是我们在<a data-type="xref" href="#ch21_system_requirements_1734552295607014">#ch21_system_requirements_1734552295607014</a>中讨论过的 NFR 之一。如前所述，股票经纪商应用不追求像 HFT 公司那样的微秒级延迟，但延迟确实应在亚毫秒以内，以确保用户在查看股价时不会感受到延迟。接下来我们讨论<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" data-tertiary="order management system design" data-startref="use-case-stocks-ordermgmt-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" data-secondary="order management system design" data-startref="stock-app-ordermgmt-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="order management system design" data-startref="stock-ordermgmt-design">&nbsp;</a>与超低延迟系统相关的几个方面。</p>
+        </section>
+        <section data-type="sect2" id="ch21_designing_ultra_low_latency_systems_1734552295607596">
+          <h2>设计超低延迟系统</h2>
+          <p>由于系统架构方式的不同，<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" data-tertiary="ultra-low latency system design" id="use-case-stocks-latency-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" data-secondary="ultra-low latency system design" id="stock-app-latency-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ultra-low latency" id="ultra-low-latency">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="latency" data-secondary="ultra-low" id="latency-ultra-low">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="HFT (high-frequency trading)" id="hft">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="high-frequency trading (HFT)" id="high-frequency-trade">&nbsp;</a>经纪商应用无法像 HFT 那样实现极低延迟。经纪商应用通过公共网络与用户连接（而非专用网络），这在数据推送中引入了额外的延迟。就 HFT 系统需求而言，系统必须能够摄取 TBT 市场数据，运行算法判断操作（买入股票、卖出股票或不操作），并根据评估结果执行委托。整个过程应尽可能缩短时间，以实现最大化的市场收益。</p>
+          <p>HFT 系统的架构类似于经纪商应用本地数据中心与交易所系统之间通过专用网络的直连模式。我们来讨论 HFT 在系统中实现超低延迟所采用的几种技术，先从不同组件之间的网络连接开始。</p>
+          <section data-type="sect3" id="ch21_network_connectivity_1734552295607659">
+            <h3>网络连接</h3>
+            <p>HFT 系统与交易所系统之间采用<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="in high-frequency trading (HFT)" data-secondary-sortas="high-frequency trading" id="network-hft">&nbsp;</a>专用网络连接，以避免任何与网络带宽相关的问题。交易所系统要求所使用的租用线路对所有 HFT 公司具有相同的能力，以确保各公司之间的公平性。HFT 后端系统由多个微服务组成，这些服务之间也涉及连接问题。</p>
+            <p>调用其他服务的网络请求会增加延迟，因此这种方式不可行；各微服务应在共享内存中执行，以实现超快处理速度。<a href="https://oreil.ly/mMOpf">Aeron 集群</a>和 <a href="https://oreil.ly/vcH9n">Chronicle Queue</a> 是可以以容错方式实现这一目标的两种解决方案。低延迟系统的另一个考量是如何管理执行程序的硬件资源。程序线程不应等待资源或被其他线程阻塞。为此，HFT 软件系统倾向于采用无需线程同步的单线程系统。</p>
+            <div data-type="note">
+              <p>仔细评估业务用例，以确定最可行的架构。单线程执行适合 HFT 软件系统，而大量轻量级线程则适合聊天系统（参见<a data-type="xref" href="#ch19_designing_a_chat_application_1734552294951889">#ch19_designing_a_chat_application_1734552294951889</a>）。</p>
+            </div>
+            <p>以上是改善 HFT 系统网络连接的几种方式。下一个重要考量是编程语言的选择；某些语言相比其他语言具有更快的代码执行速度，这对于延迟敏感型<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="in high-frequency trading (HFT)" data-secondary-sortas="high-frequency trading" data-startref="network-hft">&nbsp;</a>应用至关重要。</p>
+          </section>
+          <section data-type="sect3" id="ch21_programming_language_1734552295607717">
+            <h3>编程语言</h3>
+            <p>设计<a contenteditable="false" data-type="indexterm" data-primary="programming languages, latency and">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="latency" data-secondary="programming languages and">&nbsp;</a>可以做得极其出色，但如果编程语言在执行代码的同时还要做额外的工作，就会增加延迟。垃圾回收（GC）就是一个典型的额外工作示例。我们在前几章中讨论过 GC 如何影响系统性能（例如 Apache Cassandra 中的墓碑问题），对于 Java 等语言，需要想办法绕过这一问题。其核心思想是对代码在硬件上的执行方式拥有最大程度的控制，从而将优化精度达到微秒级别。这一理念类似于使用 AWS 全托管服务与自己承担运维开销之间的权衡。为了避免 GC 问题，可以选择 C 和 C++ 等编程语言，但这些语言需要自行管理内存。</p>
+            <p>各种编程语言都有其优缺点，在做出选择之前需要进行全面分析。例如，如果选择 Java 这样的 JVM 语言，可以通过以下技术解决 GC 问题：</p>
+            <ul>
+              <li>
+                <p>利用 <a href="https://oreil.ly/EsBvK">Azul Platform Prime</a> 等技术，该技术能从根本上提升 Java 代码的执行效率。</p>
+              </li>
+              <li>
+                <p>引入无需 GC 的编程技术，例如使用<em>堆外内存</em>（分配给操作系统、在 JVM 管辖范围之外的内存）、在市场开盘前预热代码，或向内存池预分配内存（运行时无需分配或释放）。内存预分配类似于使用已建立的持久连接，而无需每次都重新发起 TCP 握手。</p>
+              </li>
+            </ul>
+            <p>还有其他选择，如 FPGA 和专用集成电路（ASIC），它们的速度比 Java 或 C++ 更快，但这些选择难以编程，并且有其自身的一系列问题。例如，FPGA 的编译时间约为 30 分钟至 30 小时不等（取决于程序复杂度和机器类型），这会增加任何关键 Bug 修复的部署时间。</p>
+            <p>最优秀的架构只有在最优秀的硬件上才能发挥最佳性能，因此选择硬件配置与做出软件架构决策同等重要。云服务提供商提供了多种运行 HFT 软件的选项，例如用于高速单线程执行的 Amazon EC2 z1d 实例。</p>
+            <p>在基于实时股票行情和历史股票图表查看股票，<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" data-tertiary="ultra-low latency system design" data-startref="use-case-stocks-latency-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" data-secondary="ultra-low latency system design" data-startref="stock-app-latency-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ultra-low latency" data-startref="ultra-low-latency">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="latency" data-secondary="ultra-low" data-startref="latency-ultra-low">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="HFT (high-frequency trading)" data-startref="hft">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="high-frequency trading (HFT)" data-startref="high-frequency-trade">&nbsp;</a>并下达委托后，下一步操作是查看盈亏仪表盘及其他分析数据。</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch21_building_the_p_l_dashboard_1734552295607777">
+          <h2>构建盈亏仪表盘</h2>
+          <p>盈亏仪表盘<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" data-tertiary="P&amp;L dashboard design" id="use-case-stocks-dashboard-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" data-secondary="P&amp;L dashboard design" id="stock-app-dashboard-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="P&amp;L dashboard design" id="dashboard-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Profit &amp; Loss dashboard design" id="profit-loss-dashboard-design">&nbsp;</a>展示用户在任意时刻的股票持仓，包括每只个股及整体投资组合的盈亏情况。如我们在<a data-type="xref" href="#ch21_live_stock_ticks_1734552295607383">#ch21_live_stock_ticks_1734552295607383</a>中所讨论的，盈亏仪表盘也应根据股票行情实时更新。实时更新逻辑可在客户端应用中处理，通过持久连接接收到的事件进行计算。</p>
+          <p>盈亏仪表盘是基于委托执行数据库（用户交易记录）衍生出的数据。其思路是将其单独维护为用户持仓，而非在运行时动态计算，因为该数据被用户频繁访问。盈亏的计算非常简单，可通过以下两步完成：</p>
+          <ol>
+            <li>
+              <p>获取用户的所有股票持仓。</p>
+            </li>
+            <li>
+              <p>对每只股票，用所有卖出委托的总金额减去所有买入委托的总金额。</p>
+            </li>
+          </ol>
+          <p>逻辑虽然简单，但交易可能跨越数年；例如，你卖出了五年前买入的 50% 持仓。这使得数据推导变得困难，也是在非交易时段执行这一操作的主要原因。这里有一个重要的注意点：用户持仓在全天内不会变化，而是在交易日结束后由交易所系统进行结算。</p>
+          <p class="pagebreak-before less_space">我们来用 Amazon DynamoDB 展示一个简化的 Schema 设计。以下 Schema 是一个简单示例，可通过 <code>userId</code> 获取该用户的所有股票及其盈亏：</p>
+          <div data-type="equation">
+            <p>分区键（Partition key）= {userId}</p>
+              <p>整体盈亏排序键（Sort key for overall P&amp;L）= PL</p>
+              <p>每只股票排序键（Sort key for each stock）= S#{stockName}</p>
+            </div>
+          <p>我们也可以在同一张表中维护整体盈亏，使用相同的分区键，并通过额外的前缀区分排序键。</p>
+          <p>该 Schema 仅供示例说明之用。同一张表可能包含其他实体，以支持不同的查询模式。较旧的数据可根据配置的 TTL <a href="https://oreil.ly/_gavV">归档到 S3</a>，或从标准模式迁移至 <a href="https://oreil.ly/Q_IMx">DynamoDB 标准-IA</a>，从而优化存储成本。标准-IA 的读写成本略高，但其设计面向不频繁访问场景，可在存储上实现 60% 的成本优化。</p>
+          <p>我们同样可以在关系型数据库管理系统中创建类似的表，以支持所有盈亏相关的使用场景。以<a href="https://oreil.ly/9Cqck">Zerodha 经纪商应用</a>为例，该控制台应用（负责处理盈亏的服务）在主 PostgreSQL 数据库之上构建了一个 PostgreSQL 缓存层（该主库在非交易时段根据交易所发来的文件进行批量更新）。缓存 PostgreSQL 为用户创建数百万张表来维护其持仓，并每天根据当日完成的交易进行更新。</p>
+          <div data-type="note">
+            <p><a href="https://oreil.ly/acXV1">AWS 博客</a>介绍了 Zerodha 系统如何使用 AWS Batch 服务在非交易时段进行盈亏计算。Batch 是一项完全托管的批处理计算服务，可在多种 AWS 计算服务（Amazon EC2、Amazon ECS 和 Amazon EKS）上调度和运行重量级工作负载。</p>
+          </div>
+          <p>经纪商应用还提供各种分析功能，可以通过 Amazon Redshift 等分析数据库以及 <a href="https://metabase.com">Metabase</a> 或 Amazon QuickSight 等解决方案来最好地提供这些功能，并在此基础上构建仪表盘。分析查询的关键考量在于，我们可以接受响应时间上的少量延迟，但不能过大<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" data-tertiary="P&amp;L dashboard design" data-startref="use-case-stocks-dashboard-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" data-secondary="P&amp;L dashboard design" data-startref="stock-app-dashboard-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="P&amp;L dashboard design" data-startref="dashboard-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Profit &amp; Loss dashboard design" data-startref="profit-loss-dashboard-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="in stockbroker application" data-secondary-sortas="stockbroker application" data-startref="schema-stock">&nbsp;</a>（应在五秒以内）。</p>
+          <p>接下来，我们将讨论如何在 AWS 云上部署我们所设计的架构。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch21_launching_the_system_on_aws_1734552295607849">
+        <h1>在 AWS 上启动系统</h1>
+        <p>在前几节中，我们大量参考了 Zerodha 系统的架构。Zerodha 将其大部分服务自托管在裸金属 EC2 实例上，以获得对基础设施调优和管理的完全控制权。我们反复强调，系统设计过程中的每一个决策都是权衡取舍，重要的是要理解决策与业务用例之间的对应关系。对于在线经纪商应用这类系统，一个重要的考量是必须从第一天起就遵守合规监管要求。我们将从 AWS 云上的 Day 0 架构开始，以快速启动系统，然后再向着高可扩展架构演进。</p>
+        <section data-type="sect2" id="ch21_day_0_architecture_1734552295607918">
+          <h2>Day 0 架构</h2>
+          <p><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" data-tertiary="Day 0 architecture" id="use-case-stocks-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" data-secondary="Day 0 architecture" id="stock-app-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for stockbroker application" data-secondary-sortas="stockbroker application" id="dayzero-stock">&nbsp;</a>Day 0 架构应具有模块化设计，使合规监管要求能够得到轻松满足，不成为软件开发的障碍。模块化架构的另一个好处是，在后续阶段可以轻松地将单一服务拆分为多个微服务。我们在<a data-type="xref" href="#ch19_designing_a_chat_application_1734552294951889">#ch19_designing_a_chat_application_1734552294951889</a>中探讨了使用 AWS AppSync 创建持久连接并近实时推送用户消息。经纪商应用有推送股票行情的需求，因此此处可采用类似的实现方案。</p>
+          <p>系统需求规定，系统在交易时段内被用户大量访问，而后面向客户的流量会指数级下降。AppSync 会根据所需连接数自动扩展，无需人工干预（可参考使用 AppSync 和 Amazon MSK 实现的<a href="https://oreil.ly/Ys_IU">AWS 博客</a>）。系统利用 <a href="https://oreil.ly/hxetH">LSEG Data &amp; Analytics</a> 等第三方系统获取实时市场数据。市场数据流在 NLB 端点处被接收，并分发给 Amazon ECS Fargate 任务。ECS Fargate 摄取器将这些数据发布到 MSK，再通过 AppSync 经由持久连接推送给用户。MSK 中的市场数据同时被另一个股票行情消费者消费，用于写入 Amazon Timestream 数据库，以处理历史市场数据查询。数据摄取和用户查询服务相互独立，如<a data-type="xref" href="#ch21_figure_5_1734552295589780">#ch21_figure_5_1734552295589780</a>所示。</p>
+          <p>下一部分是允许用户下达证券交易所上市股票的委托。Day 0 架构也应以低延迟为设计目标——虽然可能无法达到 50–100 ms 的水平，但应明显低于 1 秒。经纪商系统利用 Refinitiv（已被 LSEG 收购）等第三方 OMS，并使用 AWS Direct Connect 在 AWS 云中托管的应用与 Refinitiv 服务器之间进行通信。内部交易服务处理用户的委托请求，通过规则管理服务对请求进行验证，并在验证通过后将其转发给 Refinitiv OMS。OMS 与交易所系统通信，完成委托撮合和执行，如<a data-type="xref" href="#ch21_figure_6_1734552295589799">#ch21_figure_6_1734552295589799</a>所示。该请求的确认信息会被捕获并反映给客户。</p>
+          <figure id="ch21_figure_5_1734552295589780">
+            <img src="images/sdoa_2105.png"/>
+            <figcaption>实时与历史行情 Day 0 架构</figcaption>
+          </figure>
+          <figure id="ch21_figure_6_1734552295589799">
+            <img src="images/sdoa_2106.png"/>
+            <figcaption>订单管理 Day 0 架构</figcaption>
+          </figure>
+          <p>内部交易服务使用 Amazon Aurora 持久化委托记录，并为委托状态发布事件，供仪表盘服务（负责计算用户盈亏和其他分析数据）等服务消费。仪表盘服务使用 Amazon Redshift 提供各类分析功能。</p>
+        </section>
+        <section data-type="sect2" id="ch21_scaling_to_millions_and_beyond_1734552295607982">
+          <h2>扩展至百万级及以上</h2>
+          <p>面向客户的流量主要集中在交易时段，因此自动扩缩在降低整体基础设施成本方面发挥着重要作用。除客户流量外，非交易时段还会运行多个离线作业，例如<a href="https://oreil.ly/uWADr">向用户发送当日交易 PDF 报告</a>、根据交易所系统发来的文件结算委托，以及在结算周期结束后计算用户盈亏。这些作业对延迟不敏感，可以按自身节奏执行，在成本与执行时间之间取得平衡。</p>
+          <p><a contenteditable="false" data-type="indexterm" data-primary="latency" data-secondary="in stockbroker application" data-secondary-sortas="stockbroker application" id="latency-stock-broker">&nbsp;</a>确保低延迟的一个关键考量是让各系统在物理位置上尽量靠近。例如，交易应用应靠近终端用户以减少连接的网络跳数；OMS 应靠近交易所系统以加快委托执行速度；后端应用之间应尽量托管共置，以减少不必要的网络跳数。</p>
+          <p>以下是确保面向客户系统低延迟的其他一些考量：</p>
+          <dl>
+            <dt>基础设施预热</dt>
+            <dd>
+              <p>AWS 提供<a href="https://oreil.ly/seC87">计划扩缩功能</a>，允许系统根据配置的时钟时间自动扩缩。这确保系统在交易开始前即已就绪，请求无需在队列中等待执行。AWS 还为启动时间较长的应用提供<a href="https://oreil.ly/81ETm">暖池</a>，对于应对任何计划外的突发流量或运行系统发生硬件故障时的快速自动扩缩非常有用。我们建议将应用二进制包保持在绝对最小限度，使其保持轻量（减少外部依赖，采用小型模块化服务），避免承载过多业务逻辑。</p>
+            </dd>
+            <dt>跨可用区部署</dt>
+            <dd>
+              <p>我们通常建议将基础设施跨区域内多个可用区（AZ）部署，以提升应用可靠性并承受单个 AZ 的停机，但这可能会增加延迟。例如，us-east-1a 中的内部交易服务实例连接到 us-east-1b 中的 RMS 实例进行验证；如果两个服务都位于同一 AZ 中，这一过程会更快。只有对延迟要求极低的服务才建议采用这种部署方式，因为 AWS AZ 和区域之间通过专用网络相连，默认情况下通信延迟极低（这类似于 EC2 实例连接实例存储与连接 EBS 卷之间的差异）。系统还应具备应对 AZ 或区域停机的灾难恢复机制。</p>
+            </dd>
+            <dt class="pagebreak-before less_space">VPC 连接</dt>
+            <dd>
+              <p>VPC 可以跨多个 AZ，并根据子网在不同 AZ 中托管基础设施，如我们在<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>中所讨论的。假设我们决定将基础设施托管在单个 AZ 中：这些应用是跨多个 VPC 还是属于同一 VPC？在最低延迟的理想场景下，可将所有基础设施托管在单个 VPC 中（前提是需要多个 VPC（在相同或不同 AWS 账户中）来实现清晰的隔离）。在这种场景下，VPC 连接变得尤为重要，我们推荐使用 VPC 对等连接（VPC Peering）而非 AWS Transit Gateway，以减少一个网络跳数并降低延迟。</p>
+            </dd>
+            <dt>EC2 置放群组</dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="EC2 (Elastic Compute Cloud)" data-secondary="placement groups">&nbsp;</a>AZ 内有多个服务器机架，不同的微服务可能分布在不同机架上，从而增加延迟。AWS 提供 <a href="https://oreil.ly/ptzF0">EC2 置放群组功能</a>，确保分配给你的 EC2 实例属于同一个服务器机架。这一策略违背了分散硬件以避免关联性故障的通用建议，但对于实现系统低延迟是合理的。如果应用部署在多个机架以提升弹性，系统架构应确保机架之间没有跨机架连接，每个微服务的二进制包都部署在所有机架上。为避免系统停机，灾难恢复策略变得尤为重要，例如采用 AWS Outposts 部署多个本地数据中心。</p>
+            </dd>
+            <dt>硬件选择</dt>
+            <dd>
+              <p>AWS 提供多种实例类型，选择最适合工作负载的实例类型决定了执行延迟；我们建议进行充分的基准测试以确定最佳实例配置。工作负载所使用的 EBS 卷同样发挥着重要作用，<a href="https://oreil.ly/jDWRG">AWS Nitro SSD 卷</a>有助于实现亚毫秒级延迟。</p>
+            </dd>
+            <dt>数据缓存</dt>
+            <dd>
+              <p>数据库读操作可能引入 I/O 瓶颈，增加执行延迟。内存数据存储在实现低延迟方面更有帮助。这些数据存储可作为持久化磁盘存储之上的缓存层，或作为主数据存储（附带磁盘持久化选项以防止数据丢失）用于委托执行等热路径。我们还建议在可行的情况下使用 Amazon CloudFront 将内容缓存到靠近终端用户的位置。</p>
+            </dd>
+            <dt>AWS 边缘基础设施</dt>
+            <dd>
+              <p>我们提到可以通过缩短距离来降低延迟，但有一个我们无法控制的地方——公共互联网。客户通过公共互联网连接到经纪商应用服务器可能引入不必要的网络延迟；使用 <a contenteditable="false" data-type="indexterm" data-primary="local zones (AWS)">&nbsp;</a>AWS Local Zones（在<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>中讨论过）可以进一步降低这一延迟。Local Zones 使我们能够将基础设施部署到比 AWS 区域更靠近客户的位置，非常适合延迟敏感型应用。<a href="https://oreil.ly/esCO2">AWS Wavelength</a> 是另一种边缘基础设施，<a contenteditable="false" data-type="indexterm" data-primary="Wavelength">&nbsp;</a>有助于将基础设施部署到电信运营商 5G 网络的边缘。这使得与 5G 设备的通信更快。目前我们可能无法充分利用这一优势，但随着大多数设备支持 5G，这将在未来大有用武之地。在某些情况下，Local Zones 和 Wavelength Zones 可能仍不够靠近终端用户，对于这类场景，AWS Outposts 是<a contenteditable="false" data-type="indexterm" data-primary="Outposts">&nbsp;</a>解决方案。AWS Outposts 允许客户将 AWS 基础设施延伸到其本地数据中心，并通过 AWS Direct Connect 直接连接到 AWS 区域。</p>
+            </dd>
+          </dl>
+          <p>我们在此讨论了通过 AWS 基础设施优化延迟的多种方式。定期评估软件将帮助你识别消耗更多执行时间的进程。精确定位软件耗时较长的位置有助于找到改进路径并解决问题。例如，你可能希望对数据进行反规范化以避免不必要的 join 操作并提升查询性能；考虑使用 Protobuf 或简单二进制编码（SBE）代替 JSON/XML 通过网络传输负载。确保整体系统健康的另一个通用建议是：在<a contenteditable="false" data-type="indexterm" data-primary="latency" data-secondary="in stockbroker application" data-secondary-sortas="stockbroker application" data-startref="latency-stock-broker">&nbsp;</a>交易时段避免任何部署或基础设施配置变更（除非是紧急需求）。</p>
+          <p>回顾图 <a data-type="xref" href="#ch21_figure_5_1734552295589780" data-xrefstyle="select:labelnumber">#ch21_figure_5_1734552295589780</a> 和 <a data-type="xref" href="#ch21_figure_6_1734552295589799" data-xrefstyle="select:labelnumber">#ch21_figure_6_1734552295589799</a>，我们可以看到省略了一些功能，仅关注用户买卖股票的核心组件。其他组件包括：</p>
+          <dl>
+            <dt>用户引导服务</dt>
+            <dd>
+              <p>根据所在国家和证券交易所的合规要求，引导用户注册到股票经纪商平台。该服务与<a data-type="xref" href="#ch18_designing_a_hotel_reservation_system_1734552294615548">#ch18_designing_a_hotel_reservation_system_1734552294615548</a>中讨论的房产引导架构类似，用户通过一系列步骤完成注册，因此可以利用 Step Functions 等解决方案。</p>
+            </dd>
+            <dt>支付服务</dt>
+            <dd>
+              <p>负责处理从用户首选支付方式到经纪商账户的资金转账，该账户中的资金可用于后续股票买入。该服务还负责在股票卖出或用户充值的资金在经纪商账户中停留时间过长时（依各国合规规定），将资金转回用户账户。</p>
+            </dd>
+            <dt>用户身份验证服务</dt>
+            <dd>
+              <p>对用户在经纪商应用中执行的所有操作请求进行身份验证。</p>
+            </dd>
+          </dl>
+          <p>证券交易所在交易日结束后通过不同机制向经纪商应用共享市场委托更新，机制可以是向我们的系统端点推送回调，也可以是包含所有数据的文件，具体因交易所而异。经纪商系统根据从交易所系统收到的更新采取以下操作：</p>
+          <ul>
+            <li>
+              <p>计算用户盈亏。</p>
+            </li>
+            <li>
+              <p>更新用户交易记录。</p>
+            </li>
+            <li>
+              <p>向用户发送当日已执行交易的通知。</p>
+            </li>
+          </ul>
+          <p>值得注意的是，股票经纪商应用可以提供来自不同证券交易所平台的股票列表。网络连接方式大致相似，但 RMS 维护的规则或 OMS 的部署方式可能有所不同。我们建议在设计时假设证券交易所平台存在差异，例如交易所与经纪商系统的通信方式、经纪商系统从交易所系统获取市场更新的方式，以及委托的执行方式。这将帮助你应对未来针对不同证券交易所系统的特定任务需求。我们将在下一节的设计中为 RMS 和 OMS 分别针对各证券交易所保持独立部署。</p>
+          <p>为了辅助扩展，应尽量减少开发人员对运营任务的依赖，例如在 RMS 中添加或修改规则。RMS 应向运营团队暴露一个门户，供其访问和修改规则集。此外，系统应具备某种机制，用于在将规则迁移到生产环境之前在预发布环境中进行测试（并采用百分比灰度发布策略）。维护规则配置的存储方案应随时间推移保留规则配置的版本记录。任何已创建的委托都应关联一个规则配置版本。这有助于建立审计历史，用于验证系统在允许<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" data-tertiary="Day 0 architecture" data-startref="use-case-stocks-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" data-secondary="Day 0 architecture" data-startref="stock-app-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for stockbroker application" data-secondary-sortas="stockbroker application" data-startref="dayzero-stock">&nbsp;</a>交易发生之前，针对成功验证所执行的规则。</p>
+          <p>接下来我们进入 AWS 云上的 Day N 架构。</p>
+        </section>
+        <section data-type="sect2" id="ch21_day_n_architecture_1734552295608046">
+          <h2>Day N 架构</h2>
+          <p>在<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" data-tertiary="Day N architecture" id="use-case-stocks-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" data-secondary="Day N architecture" id="stock-app-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for stockbroker application" data-secondary-sortas="stockbroker application" id="dayn-stock">&nbsp;</a> Day 0 架构中，我们使用了 Refinitiv 和 LSEG 作为 OMS 以及获取实时市场数据需求的占位系统。第三方系统通常是针对相应规模专门设计的，此处仅供示意，我们不建议在你的架构中集成这些系统。建议分析行业内可用的不同解决方案（或开发自定义方案），以确定最适合你组织的方案。总体架构中是否需要本地数据中心也取决于所在国家和证券交易所的合规监管要求。某些证券交易所要求经纪商应用只能通过专用租用线路从本地数据中心连接到交易所（如<a data-type="xref" href="#ch21_figure_4_1734552295589756">#ch21_figure_4_1734552295589756</a>所示）。</p>
+          <p>为了将系统扩展到更多实时并发用户，我们将架构讨论分为两部分：提供实时和历史市场数据的系统，以及负责执行委托的系统。</p>
+          <section data-type="sect3" id="ch21_market_data_delivery_1734552295608109">
+            <h3>市场数据推送</h3>
+            <p>针对实时市场数据和委托执行系统的双重<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" data-tertiary="stock tick system design" id="use-case-stocks-tick-design2">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" data-secondary="stock tick system design" id="stock-app-tick-design2">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stock tick system design" id="stock-tick-design2">&nbsp;</a>需求，我们将依托证券交易所提供的托管共置空间（例如<a href="https://oreil.ly/wgocP">纳斯达克</a>）。这将有助于减少整体网络跳数，优化延迟，并在可能的情况下消除对第三方供应商的依赖。此外，将 TBT 市场数据流式传输给所有客户会消耗大量带宽，因此理想情况下，交易所最多向客户流式传输 Level 2 数据（约每秒三个 tick）。对于提供 Level 3 和 TBT 数据的使用场景，经纪商应用需要在托管共置空间中托管服务器，并消费 TBT 数据流。</p>
+            <p>托管共置在证券交易所数据中心的经纪商服务器消费 TBT 市场数据，将 TBT 数据转换为 Level 3 数据，对 Level 3 数据进行压缩，然后通过专用租用线路将数据流式传输至本地数据中心。从本地数据中心，数据经由 AWS Direct Connect 流式传输至 AWS 区域，并通过 SLTS 经持久 WebSocket 连接推送给用户。引入本地数据中心是基于交易所依照监管要求强制要求这样做的假设。如果没有此类强制要求，数据可以通过 Direct Connect 直接从证券交易所流式传输到 AWS 区域。包含实时和历史股票行情的总体架构如<a data-type="xref" href="#ch21_figure_7_1734552295589817">#ch21_figure_7_1734552295589817</a>所示；网关、负载均衡器和边缘缓存等网络组件已省略，以保持图表简洁。</p>
+            <p>在此架构中，我们假设证券交易所服务器托管在自管理的数据中心。如今，证券交易所也在向云端迁移，以托管基础设施并降低运维负担。即便是本地数据中心，证券交易所也在尝试利用 AWS Local Zones 等服务，这有助于在自托管数据中心中享受云计算的优势。</p>
+            <figure id="ch21_figure_7_1734552295589817">
+              <img src="images/sdoa_2107.png"/>
+              <figcaption>股票行情系统</figcaption>
+            </figure>
+          </section>
+          <section data-type="sect3" id="ch21_market_order_execution_1734552295608166">
+            <h3>市场委托执行</h3>
+            <p>市场委托执行系统中<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" data-tertiary="order management system design" id="use-case-stocks-ordermgmt-design2">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" data-secondary="order management system design" id="stock-app-ordermgmt-design2">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="order management system design" id="stock-ordermgmt-design2">&nbsp;</a>的请求流向与市场数据推送系统相反。请求从用户侧发起，带有执行委托的意图。股票经纪商系统验证请求后，在验证通过的情况下将请求转发给证券交易所系统。该架构与<a data-type="xref" href="#ch21_figure_6_1734552295589799">#ch21_figure_6_1734552295589799</a>类似，并有一些改进，例如 OMS 可以由经纪商应用自行拥有，而无需依赖第三方供应商。我们此前已建议为具有交易所特定行为的系统，针对每个证券交易所保持独立部署。<a data-type="xref" href="#ch21_figure_6_1734552295589799">#ch21_figure_6_1734552295589799</a>中增加的一个组件是离线数据编排器，用于异步处理当天成交委托在交易日结束后从交易所系统收到的更新。</p>
+            <p>交易所不保证对委托执行的响应会针对相同的请求发回，因此我们应考虑在 OMS 之前引入一个队列。经纪商应用在收到请求后，运行规则集判断委托是否可以执行，并将请求发布到 OMS 队列。OMS 从队列中拉取消息，并转发给交易所系统进行实际的委托撮合。Day N 架构如<a data-type="xref" href="#ch21_figure_8_1734552295589836">#ch21_figure_8_1734552295589836</a>所示。</p>
+            <figure id="ch21_figure_8_1734552295589836">
+              <img src="images/sdoa_2108.png"/>
+              <figcaption>市场委托执行架构</figcaption>
+            </figure>
+            <p>我们在<a data-type="xref" href="#ch21_scaling_to_millions_and_beyond_1734552295607982">#ch21_scaling_to_millions_and_beyond_1734552295607982</a>中讨论了降低执行延迟的方法；系统弹性是整体<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" data-tertiary="order management system design" data-startref="use-case-stocks-ordermgmt-design2">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" data-secondary="order management system design" data-startref="stock-app-ordermgmt-design2">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="order management system design" data-startref="stock-ordermgmt-design2">&nbsp;</a>成功的另一个重要考量。</p>
+          </section>
+          <section data-type="sect3" id="ch21_system_resilience_1734552295608221">
+            <h3>系统弹性</h3>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="resiliency">&nbsp;</a>系统应能够在硬件故障情况下继续运行，并在不发生停机的情况下恢复。提升应用弹性的通用建议是跨多个 AZ 和区域部署。大多数 AWS 托管服务默认会处理这一问题；例如，Amazon Aurora 在三个 AZ 中为每次写操作持久化两份副本。</p>
+            <p>我们通常将基础设施部署到 AWS 区域的各个 AZ，这默认能处理 AZ 停机等问题（此类情况极少发生）。对于股票经纪商应用，我们讨论了使用本地数据中心或 AWS Local Zones 进行基础设施托管，这会将维护开销转移到我们自己的团队。</p>
+
+            <p class="pagebreak-before less_space">遵循以下建议可提升系统弹性：</p>
+            <ul>
+              <li>
+                <p>为避免单个服务器机架出现问题，保留一个部署相同服务集的备用服务器机架，以便在发生故障时系统可以切换到另一个机架。</p>
+              </li>
+              <li>
+                <p>如果整个数据中心发生故障，系统应能够从另一个数据中心继续运行。另一个数据中心可以是本地数据中心，也可以是部署在 AWS 区域某个 AZ 中的系统。假设此类情景极少发生，我们建议在 AWS 区域中托管相同的服务集，以便在出现问题时从那里提供流量服务。这里需要重点考虑的是数据库的主动复制，以便引用正在进行中的委托的当前状态，并从其他数据中心继续操作。</p>
+              </li>
+              <li>
+                <p><a data-type="xref" href="#ch21_figure_8_1734552295589836">#ch21_figure_8_1734552295589836</a>展示了每个证券交易所对应一个 OMS。进一步的可能性是对工作负载进行分片，消除单点故障。每个分片 OMS 与证券交易所网络保持独立连接，从而提升整体系统<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" data-tertiary="Day N architecture" data-startref="use-case-stocks-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" data-secondary="Day N architecture" data-startref="stock-app-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for stockbroker application" data-secondary-sortas="stockbroker application" data-startref="dayn-stock">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="stockbroker application" data-startref="use-case-stocks">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="stockbroker application use case" data-startref="stock-app">&nbsp;</a>的可用性。</p>
+              </li>
+            </ul>
+          </section>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch21_conclusion_1734552295608280">
+        <h1>总结</h1>
+        <p>选择基础设施和技术与编写软件同等重要；一个设计完美的软件应用，如果选择了不合适的部署技术，也会表现不佳。<a href="#part3" data-type="xref">#part3</a> 的重点一直是识别需求和业务用例，以最终确定解决方案。</p>
+        <p>我们收集了大量可以在软件和基础设施层面进行的建议和优化，以降低系统的执行延迟。超低延迟的业务用例极为罕见，且需要特定的解决方案。对于这类用例，我们建议对软件和硬件拥有最大程度的控制权。软件和硬件配置中的每一个决策对超低延迟系统都非常重要，因此我们不建议在这些用例中使用全托管服务。原因很简单：全托管服务是为所有通用用途设计的，而你的需求非常特定。全托管服务可能捆绑了 10 项功能，但你只需要其中 1 项，并且需要完全的控制权。</p>
+        <p>我们来看一个<a contenteditable="false" data-type="indexterm" data-primary="self-hosting, cloud-managed services versus">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cloud-managed services, self-hosting versus">&nbsp;</a>自托管与使用云托管服务的例子，并将其比喻为自己做饭与雇厨师（或在线点餐、外出用餐等）准备饭菜。自己做饭（或自托管软件）能让你精细控制到最底层的配置。如果雇佣厨师，你可以购买食材或香料，但无法控制烹饪速度、切菜方式、香料用量——诸如此类。托管服务亦是如此：你或许可以指定内存大小和 vCPU 数量（或取决于服务的其他配置），但你无法在操作系统或硬件层面对软件进行调优。</p>
+        <p>我（Mandeep）自己做饭。我享受这个过程，而且因为积累了经验，并不会花费太多时间。当人们得知我自己做饭时，总是非常惊讶，我也收到了很多关于时间管理的问题。自托管同样存在这个问题——你可能会担心管理系统所需的工程带宽、学习曲线、如何处理系统停机等，但大多数情况下这些并不成问题。本书的核心主题始终是：在做出决策之前，确保你评估了自己的业务用例。如果你能够为使用托管服务的决策找到合理依据，那就大胆使用吧。例如，我几乎每天都自己做饭，但每个周日下午会从 <a class="orm:hideurl" href="https://www.zomato.com/">Zomato</a>（印度的在线点餐平台，类似于美国的 <a class="orm:hideurl" href="https://www.doordash.com/">DoorDash</a>）点一份 <a href="https://oreil.ly/G_OZY">biryani（香料饭）</a>，让自己从烹饪中解放出来，节省时间用于其他兴趣。</p>
+        <p>在本书范围内不可能涵盖 AWS 系统的每一个方面。请思考我们在全书中所讨论的内容，并将所学知识运用到你正在设计或期望设计的系统中。我们希望本书有助于加深你对 AWS 云系统设计的理解，也祝你在未来的系统设计决策中一切顺利。</p>
+      </section>
+    </section>

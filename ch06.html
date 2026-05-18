@@ -1,0 +1,642 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch06_communication_networks_and_protocols_1734552288217584">
+      <h1>Communication Networks and Protocols</h1>
+      <p>How do you know what’s going on in someone’s mind? You ask them. You might simply say, “I believe something is troubling you, and sharing it might help to take the burden off your mind.” This is a <a contenteditable="false" data-type="indexterm" data-primary="communication">&nbsp;</a>simple exchange of words that we call <em>communication</em>. There can be different ways to communicate. For example, in this scenario, the conversation might have happened in person or via a messaging application or a phone call in a language you both understand. We very briefly introduced you to the concept of communication in <a data-type="xref" href="#ch01_system_design_trade_offs_and_guidelines_1734552285979675">#ch01_system_design_trade_offs_and_guidelines_1734552285979675</a>. In this chapter, we’ll extend the idea of communication in much more detail. </p>
+      <p>The internet has changed a lot over time, and many solutions have been built to solve new problems that we encounter while communicating over the internet. It is important that there are guidelines or mechanisms to ensure that people and machines can work with one another. We’ll begin our discussion with communication models to strengthen our understanding of communication over the internet adhering to certain rules, which are <a contenteditable="false" data-type="indexterm" data-primary="protocols">&nbsp;</a>called <em>protocols</em>. You may have seen a lot of keywords floating around, such as TCP, XMPP, WebSockets, WebRTC, HTTP, GraphQL, REST, and so on. It can be very confusing to figure out what these terms mean and in which scenarios they should be used. This chapter will help you gain an understanding of communication-related terms, and we’ll identify the correct scenarios for using a particular technology. </p>
+      <section data-type="sect1" id="ch06_communication_models_and_protocols_1734552288217828">
+        <h1>Communication Models and Protocols</h1>
+        <p>The first thing that you need to communicate with another person is a common language that you both can understand and use to convey your messages. This common language has a set of rules, generally referred to as <em>grammar</em>, and these rules define how you speak and write. A similar analogy applies in machines: for machines to communicate over the internet, they follow certain rules, referred to as <em>communication protocols</em>. There <a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocols">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols">&nbsp;</a>are different communication protocols operating at different layers in the communication model. The layers in a communication model represent how data travels from one location to another across the internet in a reliable way. The layers also ensure that data transforms from one form to another so that it can be understood by both humans and machines. We’ll talk about two such models—Open Systems Interconnection (OSI) and Transmission Control Protocol and Internet Protocol (TCP/IP)—and then we’ll discuss the protocols. </p>
+        <section data-type="sect2" id="ch06_osi_model_1734552288217929">
+          <h2>OSI Model</h2>
+          <p>The <em>OSI model</em> is a <a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="OSI model" id="comms-osi">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="OSI model" id="osi-model">&nbsp;</a>reference model that divides the communication network into seven layers, with each layer responsible for performing a specific job. The top layer is an application layer (L7), and the bottommost layer is a physical layer (L1). L7 corresponds to data on how humans perceive, such as plain English language, and L1 corresponds to data on how machines perceive, such as binary format. For any communication to happen, the data travels through the OSI model layers from top to bottom and bottom to top, as described in <a data-type="xref" href="#ch06_table_1_1734552288203762">#ch06_table_1_1734552288203762</a>. </p>
+          <p>We’ll explore the example protocols in <a data-type="xref" href="#ch06_table_1_1734552288203762">#ch06_table_1_1734552288203762</a> in the following sections.</p>
+          <table id="ch06_table_1_1734552288203762">
+            <caption>OSI model</caption>
+            <thead>
+              <tr>
+                <th>Layer number</th>
+                <th>Layer name</th>
+                <th>Layer function</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>Layer 7</p>
+                </td>
+                <td>
+                  <p>Application layer</p>
+                </td>
+                <td>
+                  <p>L7 has direct access to the user data, and the software application relies on it via protocols like HTTP, SMTP, SSH, and so on. This layer is also helpful in service advertisement, such as which services are available over the network to connect.</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Layer 6</p>
+                </td>
+                <td>
+                  <p>Presentation layer</p>
+                </td>
+                <td>
+                  <p>This layer is responsible for formatting, encryption, decryption, and compression of data. Formatting ensures that L6 is able to format the data as expected by L7. If the data is in encrypted format, L6 decrypts the data before passing it on to L7 or encrypts the data before passing it on to L5 (if encryption is a requirement). To reduce the data footprint, L6 compresses the data before passing it on to L5.</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Layer 5</p>
+                </td>
+                <td>
+                  <p>Session layer</p>
+                </td>
+                <td>
+                  <p>This layer is responsible for the session lifecycle: initiation, maintenance, and termination.</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Layer 4</p>
+                </td>
+                <td>
+                  <p>Transportation layer</p>
+                </td>
+                <td>
+                  <p>This layer is responsible for data transport between the devices via protocols like TCP and UDP. It also helps with data buffering, error control, and windowing. It figures out an optimal speed for data communication between the sender and receiver so that a receiver with a slow connection receives the data at the required speed. The extra data can be buffered in a buffer queue so that it can be delivered at the speed needed. In case the buffer queue is full, the new data segments are dropped, referred to as <em>tail drop</em>. The layer can request data retransmission if any data segments are lost to ensure reliable connection in the case of the TCP protocol. The windowing feature identifies the amount of data that can be transferred before expecting an acknowledgment from the receiver.</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Layer 3</p>
+                </td>
+                <td>
+                  <p>Network layer</p>
+                </td>
+                <td>
+                  <p>This layer is responsible for data transfer between the networks with the help of logical addressing, such as IP addresses. L4 breaks down the data into smaller chunks, called <em>data packets</em>, before passing it on to L3.</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Layer 2</p>
+                </td>
+                <td>
+                  <p>Data link layer</p>
+                </td>
+                <td>
+                  <p>This layer transfers data between devices, from the incoming network interface to the outgoing network interface, in the form of frames (packets are further broken down into data frames). This layer has two parts: </p>
+                  <ul>
+                    <li><em>Medium access control (MAC)</em> helps with the physical addressing of devices involved in network communication. The MAC address of any device is globally unique and can identify the device for data delivery.</li>
+                    <li><em>Logical link control (LLC)</em> helps with flow control and error control. The flow and error control in this layer is inside the same network as compared to L3, where it is across different networks.</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Layer 1</p>
+                </td>
+                <td>
+                  <p>Physical layer</p>
+                </td>
+                <td>
+                  <p>The data frames from L2 are converted to bit streams (in the form of ones and zeros) in L1. This layer involves the physical devices, such as cables and switches.</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>In modern-age internet applications, we don’t see an OSI model being practically present; it serves only as a reference communication model. In general, internet communications happen via the TCP/IP model. The TCP/IP model layers don’t match one-to-one with the OSI model layers, but there are quite a few <a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="OSI model" data-startref="comms-osi">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="OSI model" data-startref="osi-model">&nbsp;</a>similarities.</p>
+        </section>
+        <section data-type="sect2" id="ch06_tcp_ip_model_1734552288218017">
+          <h2>TCP/IP Model</h2>
+          <p>The <em>TCP/IP model</em>, also <a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="TCP/IP model" id="comms-tcpip">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TCP/IP model" id="tcpip-model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="internet protocol suite" data-see="TCP/IP model">&nbsp;</a>referred to as the <em>internet protocol suite</em>, mainly includes TCP, IP, and UDP. The TCP/IP model combines multiple layers of the OSI model into one layer to execute similar functionality; the layers in the two models are compared in <a data-type="xref" href="#ch06_table_2_1734552288203800">#ch06_table_2_1734552288203800</a>.</p>
+          <table id="ch06_table_2_1734552288203800">
+            <caption>Different layers of the OSI and TCP/IP models</caption>
+            <thead>
+              <tr>
+                <th>OSI model layer</th>
+                <th>TCP/IP model layer</th>
+                <th>TCP/IP protocol examples</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>Application, presentation, session </p>
+                </td>
+                <td>
+                  <p>Application </p>
+                </td>
+                <td>
+                  <p>SMTP, HTTP</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Transport</p>
+                </td>
+                <td>
+                  <p>Transport</p>
+                </td>
+                <td>
+                  <p>TCP, UDP</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Network</p>
+                </td>
+                <td>
+                  <p>Internet</p>
+                </td>
+                <td>
+                  <p>IP, ICMP</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Data link</p>
+                </td>
+                <td>
+                  <p>Data link</p>
+                </td>
+                <td>
+                  <p>IEEE 802.2</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Physical</p>
+                </td>
+                <td>
+                  <p>Physical network</p>
+                </td>
+                <td>
+                  <p>Ethernet</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div data-type="note">
+            <p>See the <a href="https://oreil.ly/3nu3W">RFC documentation</a> for a deeper dive into each of the protocols discussed in this chapter. You can search for the documentation in your favorite search engine with keywords like “TCP protocol RFC documentation.” We’ve linked the <a href="https://oreil.ly/vZHMC">TCP documentation</a> for reference.</p>
+          </div>
+          <p>Different protocols operate at different layers in the communication models. We’ll discuss the more general ones to help you gain an understanding of how <span class='keep-together'>communication</span> over the internet works, starting with the network layer protocols such as IP, and we’ll learn how different protocols are used for specific communication purposes.</p>
+          <section data-type="sect3" id="ch06_network_layer_protocols_1734552288218099">
+            <h3>Network layer protocols</h3>
+            <p>The <a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="TCP/IP model" data-tertiary="network layer protocols">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TCP/IP model" data-secondary="network layer protocols">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="network layer">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="network layer protocols">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Internet Protocol (IP)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IP (Internet Protocol)">&nbsp;</a>most used protocol in the network/internet layer is the <em>Internet Protocol (IP)</em>. It is a set of rules responsible for delivering data packets from a source IP address to a destination IP address. (We’ll discuss IP addresses and their types more in <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>.) The <a contenteditable="false" data-type="indexterm" data-primary="IP addresses">&nbsp;</a>IP address uniquely identifies the source and destination of data packets across the network and helps routers to route this information from one place to another. Data across the internet is often broken into chunks (referred<a contenteditable="false" data-type="indexterm" data-primary="fragmentation">&nbsp;</a> to as <em>fragmentation</em>) to avoid the burden of delivering large packets and to reduce latency. There is also a limit to the maximum size of a packet (1,500 bytes for ethernet) that can be transmitted over the network <a contenteditable="false" data-type="indexterm" data-primary="maximum transmission unit (MTU)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MTU (maximum transmission unit)">&nbsp;</a>interface: the<em> maximum transmission unit (MTU)</em>.</p>
+            <p>Each packet in IP protocol contains an IP header and payload. The <a contenteditable="false" data-type="indexterm" data-primary="IP headers">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="payload">&nbsp;</a>IP header has the source IP address and the destination IP address, along with any other metadata (such as IP version, packet size, and TTL) required to route the packet. The payload consists of actual data (called <em>IP datagrams</em>) <a contenteditable="false" data-type="indexterm" data-primary="IP datagrams">&nbsp;</a>that is to be transferred over the network.</p>
+            <p>Another protocol <a contenteditable="false" data-type="indexterm" data-primary="Internet Control Message Protocol (ICMP)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ICMP (Internet Control Message Protocol)">&nbsp;</a>that operates on this layer is the <em>Internet Control Message Protocol (ICMP).</em> This protocol is generally used for network diagnostics and implementing error mechanisms. For example, to check if Google servers are responding to traffic, we can use the command <code>ping google.com</code> (the command output is included here as reference). Let’s say the<em> google.com</em> URL is not resolved to a server; the router can respond with an ICMP message to the sender:</p>
+            <pre data-type="programlisting">PING google.com (142.250.74.206) 56(84) bytes of data.
+64 bytes from fra24s02-in-f14.1e100.net (142.250.74.206): icmp_seq=1 ttl=116
+64 bytes from fra24s02-in-f14.1e100.net (142.250.74.206): icmp_seq=2 ttl=116
+64 bytes from fra24s02-in-f14.1e100.net (142.250.74.206): icmp_seq=3 ttl=116</pre>
+            <p>The network layer protocols in general work in conjunction with transport layer protocols, <a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="TCP/IP model" data-tertiary="transport layer protocols" id="comms-tcpip-transport">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TCP/IP model" data-secondary="transport layer protocols" id="tcpip-transport">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="transport layer" id="protocol-transport">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="transport layer protocols" id="transport-layer">&nbsp;</a>such as TCP and UDP, for data delivery.</p>
+          </section>
+          <section data-type="sect3" id="ch06_transmission_control_protocol_1734552288218161">
+            <h3>Transmission Control Protocol</h3>
+            <p>The <em>Transmission Control Protocol (TCP) </em>is a transport layer protocol<a contenteditable="false" data-type="indexterm" data-primary="Transmission Control Protocol (TCP)" id="transmission-control-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TCP (Transmission Control Protocol)" id="tcp">&nbsp;</a> that offers reliable communication between sender and receiver with the capability of retransmitting data in case of packet loss. Communication via TCP is initiated between the sender and receiver via a three-way handshake process shown in <a data-type="xref" href="#ch06_figure_1_1734552288196810">#ch06_figure_1_1734552288196810</a>. The three-way handshake process is an agreement between the two parties to send and accept the data. The TCP header includes information like the source and destination port numbers, sequence number (identifies how much data is sent during a session), acknowledgment number (used at the receiver end to send an acknowledgment and a request for the next segment), and window (the number of bytes a receiver can accept from a sender).</p>
+            <figure id="ch06_figure_1_1734552288196810">
+              <img src="images/sdoa_0601.png"/>
+              <figcaption>TCP three-way handshake process</figcaption>
+            </figure>
+            <p>Once the connection is established after a successful handshake, the protocol needs to figure out the optimal amount of data (window size) that can be transmitted before waiting for an acknowledgment (ACK), ensuring available bandwidth utilization and data transfer without network congestion. This is achieved by two mechanisms: <a href="https://oreil.ly/kNVMG">slow start and congestion avoidance</a>.</p>
+            <p>The <a contenteditable="false" data-type="indexterm" data-primary="slow start">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="congestion avoidance">&nbsp;</a>data transfer begins with a small data size (one segment in a congestion window)—hence the term <em>slow start</em>—and the sender gradually increases the window size in an exponential manner (the window is increased by one segment on every ACK). The maximum allowed data transfer size depends on the advertised window size by the receiver. If the allowed internet bandwidth is surpassed, the intermediate router (or the receiver) discards the data packets. Congestion is detected if there are connection timeouts or if duplicate ACKs are received. Congestion avoidance kicks in to deal with these dropped packets, and the congestion window size is halved and set to one segment for timeout scenarios.</p>
+            <p>We recommend deploying applications in closer vicinity (the same geographic region) to improve performance. Closeness reduces the number of network hops and improves the round trip time (RTT), helping the sender quickly adjust the congestion window size for any congestion occurrence.</p>
+            <p class="pagebreak-before less_space">A connection has both a source and a destination port for communication. A <em>port</em> is a <a contenteditable="false" data-type="indexterm" data-primary="ports">&nbsp;</a>virtual point managed by an OS that defines an entry to or exit from a software application (numbered from 0 to 65535). You can compare them to your personal computer ports, such as USB ports. Each port is responsible for certain types of network communication, and the role is assigned based on the range it falls into. The following are the three divisions of range from 0 to 65535:</p>
+            <dl>
+              <dt>Well-known ports</dt>
+              <dd>
+                <p>Ports <a contenteditable="false" data-type="indexterm" data-primary="well-known ports">&nbsp;</a>with numbers from 0 to 1023 are called <a href="https://oreil.ly/raByZ"><em>well-known ports</em></a> (also known as <em>system ports</em>). These ports are used by system processes and controlled by the <a href="https://oreil.ly/MZMMP">Internet Assigned Numbers Authority (IANA)</a>. For example, Port 22 is used for <a href="https://oreil.ly/TFmzf">Secure Shell (SSH)</a>, and Port 80 is used for <a href="https://oreil.ly/J5p9j">HTTP</a>. </p>
+              </dd>
+              <dt>Registered ports</dt>
+              <dd>
+                <p>Ports <a contenteditable="false" data-type="indexterm" data-primary="registered ports">&nbsp;</a>with numbers from 1024 to 49151 are called<em> </em><a href="https://oreil.ly/3QPN1"><em>registered ports</em></a> (also known as <em>user ports</em>). These ports are used by user processes. For example, Port 1194 is used for <a href="https://oreil.ly/gc6GS">OpenVPN</a>. Both well-known and registered ports are also referred to as <em>nonephemeral ports</em> and are assigned by IANA.</p>
+              </dd>
+              <dt>Ephemeral ports</dt>
+              <dd>
+                <p>Ports <a contenteditable="false" data-type="indexterm" data-primary="ephemeral ports">&nbsp;</a>with numbers from 49152 to 65535 are called <em>ephemeral ports</em> (also known as <em>private</em> or <em>dynamic ports</em>). These ports are not controlled by IANA and can be used for private or temporary purposes.</p>
+              </dd>
+            </dl>
+            <p>We described the additional work, such as establishing communication or retransmitting lost packets with TCP, that comes with the extra cost of latency. If there are no such requirements, we can go with another<a contenteditable="false" data-type="indexterm" data-primary="Transmission Control Protocol (TCP)" data-startref="transmission-control-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TCP (Transmission Control Protocol)" data-startref="tcp">&nbsp;</a> transport layer protocol: <em>User Datagram Protocol (UDP)</em>.</p>
+          </section>
+          <section data-type="sect3" id="ch06_user_datagram_protocol_1734552288218221">
+            <h3>User Datagram Protocol</h3>
+            <p>Some <a contenteditable="false" data-type="indexterm" data-primary="User Datagram Protocol (UDP)" id="user-datagram-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="UDP (User Datagram Protocol)" id="udp">&nbsp;</a>business use cases where latency (real-time communication) is more important than dropping packets include voice and video calls, live event streaming, gaming, and DNS. The UDP transport protocol is less reliable but faster than TCP and works for these use cases. It is faster because it doesn’t involve a three-way handshake process for establishing a connection, and it provides no guarantee of data delivery, so there is no overhead of retries. </p>
+            <p>The UDP header includes information like the source and destination ports, length, UDP checksum, and data. The UDP header is not as heavy as the TCP header as it holds the minimum data for segment delivery and doesn’t provide assurance of the order of segments (data received at the receiver might not be in the same order as sent by the sender). However, not having a three-way handshake between the sender and receiver to start communication can present a security threat. To illustrate how this works, let’s first discuss the steps in communicating via UDP:</p>
+            <ol>
+              <li>
+                <p>A sender sends a UDP segment to a destination on a specific port.</p>
+              </li>
+              <li>
+                <p>The receiver checks if the request is expected by any application on that port. If yes, then the request is consumed by the application for further processing.</p>
+              </li>
+              <li>
+                <p>If no, the receiver responds with an ICMP packet mentioning that the destination is not reachable.</p>
+              </li>
+            </ol>
+            <p>Given that this processing happens at a large scale, some bad actors can intentionally bombard UDP requests to the server so that server resources are entirely consumed in responding to the requests, causing denial of service to actual traffic. We need to add mechanisms to our systems to mitigate these kinds of issues. One way could be to ignore these requests after a configured threshold by not responding with ICMP messages. The downside of this approach is potentially dropping actual customer requests, but at least we’ll be able to keep our system healthy. Another way could be to leverage third-party applications offered by cloud providers, such as <a href="https://aws.amazon.com/shield">AWS Shield</a>.</p>
+            <p>Both TCP and UDP serve their purposes, and you should choose based on your business requirements. We prefer TCP for reliability and full-duplex (bidirectional) communications, and UDP for faster response times and unidirectional <a contenteditable="false" data-type="indexterm" data-primary="User Datagram Protocol (UDP)" data-startref="user-datagram-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="UDP (User Datagram Protocol)" data-startref="udp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="TCP/IP model" data-tertiary="transport layer protocols" data-startref="comms-tcpip-transport">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TCP/IP model" data-secondary="transport layer protocols" data-startref="tcpip-transport">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="transport layer" data-startref="protocol-transport">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="transport layer protocols" data-startref="transport-layer">&nbsp;</a><span class='keep-together'>communications</span>. </p>
+            <p>The layer operating on top of the network layer is the application layer <a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="TCP/IP model" data-tertiary="application layer protocols" id="comms-tcpip-application">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TCP/IP model" data-secondary="application layer protocols" id="tcpip-application">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="application layer" id="protocol-application">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="application layer protocols" id="application-layer">&nbsp;</a>in the TCP/IP model. Let’s dig deeper into a few application layer protocols, starting with HTTP.</p>
+          </section>
+          <section data-type="sect3" id="ch06_hypertext_transfer_protocol_1734552288218284">
+            <h3>Hypertext Transfer Protocol</h3>
+            <p>The <a contenteditable="false" data-type="indexterm" data-primary="Hypertext Transfer Protocol (HTTP)" id="hypertext-transfer-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="HTTP (Hypertext Transfer Protocol)" id="http">&nbsp;</a>world heavily depends on the internet for day-to-day work, and most of this work happens in web browsers and software applications running on mobile devices. Communications over the internet generally follow the client-server model, where a client requests some information (an HTTP request) and the server responds with data (an HTTP response) corresponding to the request on port 80 (port 443 for HTTPS, a secure version of HTTP). To gain more familiarity with how the protocol works, take a look at an example HTTP request for retrieving customer orders based on order ID:</p>
+            <pre data-type="programlisting">GET /api/orders?id=23234555&amp;customerId=dhfsd348e48ddd HTTP/1.1
+Host: api.myFoodApp.com
+Authorization: Bearer MyAccessToken
+User-Agent: MyOnlineFoodOrderApplication/1.0
+Accept: application/json
+HTTP/1.1 200 OK
+Content-Type: application/json
+{
+  “orderId”: “23234555”,
+  “customerId”: “dhfsd348e48ddd”,
+  “amount”: 199,
+  “currency”: “INR”,
+  “items”: [
+    {
+      “product”: “Paneer Tikka Masala”,
+      “quantity”: 1,
+      “price”: 119
+    },
+    {
+      “product”: “Tandoori Roti Butter”,
+      “quantity”: 3,
+      “price”: 80
+    }
+  ],
+  “address”: “House 740, 1st Block, Koramangala, Bengaluru”,
+  “status”: “Delivered”
+}
+ </pre>
+            <div data-type="note">
+              <p>The request responses included in this chapter are for illustrative purposes only and were not tested in the production environment.</p>
+            </div>
+            <p>The HTTP request contains details like the HTTP method (<code>GET</code> in this case), version (1.1), and host specifying where the request is being routed to with the required authentication mechanism. We can specify different HTTP methods (<code>GET</code>, <code>HEAD</code>, <code>POST</code>, <code>PUT</code>, <code>DELETE</code>, <code>CONNECT</code>, <code>OPTIONS</code>, <code>TRACE</code>, <code>PATCH</code>) based on the type of call to the server. The following are the most widely used methods:</p>
+            <dl>
+              <dt><code>GET</code> method </dt>
+              <dd>
+                <p>Used<a contenteditable="false" data-type="indexterm" data-primary="GET method">&nbsp;</a> to retrieve data without any state modification inside the system (ensures idempotent nature). For example, retrieve order details based on order ID and customer ID.</p>
+              </dd>
+              <dt><code>POST</code> method </dt>
+              <dd>
+                <p>Used<a contenteditable="false" data-type="indexterm" data-primary="POST method">&nbsp;</a> to create a new resource on the server or send any data for processing and is nonidempotent in nature. For example, place a food order and complete the transaction.</p>
+              </dd>
+              <dt><code>PUT</code> method </dt>
+              <dd>
+                <p>Used to update<a contenteditable="false" data-type="indexterm" data-primary="PUT method">&nbsp;</a> any resource on the server and is idempotent in nature. For example, update the address after placing an order.</p>
+              </dd>
+              <dt><code>DELETE</code> method </dt>
+              <dd>
+                <p>Used to<a contenteditable="false" data-type="indexterm" data-primary="DELETE method">&nbsp;</a> remove any resource from the server and is idempotent in nature. For example, delete a saved address entry.</p>
+              </dd>
+            </dl>
+            <div data-type="note">
+              <p>The <code>POST</code>, <code>PUT</code>, and <code>DELETE</code> method APIs should be idempotent in nature, but the actual nature of the APIs still depends on the developer’s code. Follow the general guidelines of idempotent nature based on method type to avoid unintended system behavior.</p>
+            </div>
+            <p>Next to the HTTP method is the request target specifying the location on the host (server) that the client is trying to access. HTTP has evolved, and the version represents which particular specification the application is using. Older versions are deprecated. The most used versions these days are:</p>
+            <dl>
+              <dt>HTTP/1.1</dt>
+              <dd>
+                <p>The<a contenteditable="false" data-type="indexterm" data-primary="HTTP/1.1">&nbsp;</a> most widely used version, HTTP/1.1 offers better support to previous versions, such as reuse of TCP connections to make multiple requests.</p>
+              </dd>
+              <dt>HTTP/2 </dt>
+              <dd>
+                <p>HTTP/2 <a contenteditable="false" data-type="indexterm" data-primary="HTTP/2">&nbsp;</a>optimizes the header to be available in a compressed format (less bandwidth compared to HTTP/1.1), with a single TCP connection for a domain and server push capability to avoid any polling from clients for asynchronous calls (we will elaborate on this in upcoming sections).</p>
+              </dd>
+              <dt>HTTP/3 </dt>
+              <dd>
+                <p>HTTP/3 <a contenteditable="false" data-type="indexterm" data-primary="HTTP/3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="congestion avoidance">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="QUIC (Quick UDP Internet Connections)">&nbsp;</a>improves speed (compared to HTTP/2) by using UDP instead of TCP/IP protocols, also referred to as <a href="https://oreil.ly/uQ7fx"><em>QUIC (Quick UDP Internet Connections)</em></a>. Therefore, it avoids occasional TCP/IP congestion problems by implementing a congestion control algorithm.</p>
+              </dd>
+            </dl>
+            <p>There can be some additional metadata as part of the <a contenteditable="false" data-type="indexterm" data-primary="HTTP headers">&nbsp;</a>request, referred to as the<em> HTTP header</em>. It can include information like the user agent (where the request is being made from, such as a software application or web browser name), accept (the type of content format expected from the server), and so on. </p>
+            <p>The HTTP response includes the response to the request (order details for order ID and customer ID). Alongside the response object, it has the <a contenteditable="false" data-type="indexterm" data-primary="HTTP response status codes" id="http-response-status-code">&nbsp;</a>HTTP status code. The status code represents what happened with the request. For example, “200 OK” means the request was successfully processed by the server. The status codes range from the 100 series to the 500 series and are listed in <a data-type="xref" href="#ch06_table_3_1734552288203826">#ch06_table_3_1734552288203826</a>.</p>
+            <table id="ch06_table_3_1734552288203826">
+              <caption>HTTP response status codes</caption>
+              <thead>
+                <tr>
+                  <th>Status code series</th>
+                  <th>Status code meaning and examples</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <p>100</p>
+                  </td>
+                  <td>
+                    <p>For informational purposes, such as noting that the server has received the request and it is in processing. </p>
+                    <ul>
+                      <li>100: Continue</li>
+                      <li>101: Switching protocols</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>200</p>
+                  </td>
+                  <td>
+                    <p>Notes that the request has been successfully processed by the server.</p>
+                    <ul>
+                      <li>200: OK with the response associated with the corresponding request</li>
+                      <li>201: The request has been processed by the server, and a new resource has been created.</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>300</p>
+                  </td>
+                  <td>
+                    <p>The server has redirected the request to another resource for fulfilling it.</p>
+                    <ul>
+                      <li>301: The resource has moved permanently to a new location, and the client should update the references on its end. The location header in the response contains the updated URL reference.</li>
+                      <li>302: The resource has temporarily moved to a new location.</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>400</p>
+                  </td>
+                  <td>
+                    <p>There was an issue in the client request that should be rectified before sending it to the server.</p>
+                    <ul>
+                      <li>400: The request is not as expected for the server request target. </li>
+                      <li>401: The request doesn’t contain valid credentials for authentication.</li>
+                      <li>403: The client is not authorized for the request.</li>
+                      <li>404: The requested resource is not available on the server.</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>500</p>
+                  </td>
+                  <td>
+                    <p>The server encountered an error while the request was being processed.</p>
+                    <ul>
+                      <li>500: The server encountered some unexpected exception while processing the request.</li>
+                      <li>503: The server is temporarily unavailable to take client requests.</li>
+                    </ul>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p>HTTP is a general protocol <a contenteditable="false" data-type="indexterm" data-primary="HTTP response status codes" data-startref="http-response-status-code">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Hypertext Transfer Protocol (HTTP)" data-startref="hypertext-transfer-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="HTTP (Hypertext Transfer Protocol)" data-startref="http">&nbsp;</a>for application communications over the internet. Some protocols are designed to solve specific use cases, such as <em>Simple Mail Transfer Protocol (SMTP)</em> for email communications. </p>
+          </section>
+          <section data-type="sect3" id="ch06_simple_mail_transfer_protocol_1734552288218349">
+            <h3>Simple Mail Transfer Protocol</h3>
+            <p>Email access <a contenteditable="false" data-type="indexterm" data-primary="Simple Mail Transfer Protocol (SMTP)" id="simple-mail-transfer-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SMTP (Simple Mail Transfer Protocol)" id="smtp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="email communications (SMTP)" id="email-smtp">&nbsp;</a>was directly tied to personal computers in the early days, and an email software application needed to be installed on the computer to download emails for reading. The limitations of this approach included having to own a personal computer (not so common in the early days of the internet), setting up email clients (which could be complex), and synchronizing across the devices. The solution was a web-based email client launched by Hotmail as a free service in 1996.</p>
+            <p>The software applications interact via application layer protocols like SMTP for email services and forward the communication flow through other layers in the TCP/IP model. The SMTP protocol is used for email communications between two or more parties. Let’s look at an example (shown in <a data-type="xref" href="#ch06_figure_2_1734552288196860">#ch06_figure_2_1734552288196860</a>) of how a person can send an email via different mail agents. </p>
+            <p>The SMTP client identifies the mail domain (such as <em>gmail.com</em>, <em>hotmail.com</em>, etc.) and then establishes a two-way stateful transmission channel to the corresponding SMTP server(s) to transfer mail. The connection is initiated via SMTP commands, and the server replies to corresponding commands with success or failure. The SMTP server can be the destination of mail delivery, or it can be an intermediate server to forward the mail. When the sender and receiver belong to different domains (for example, email from <em>gmail.com</em> to <em>hotmail.com</em>), the intermediate server<a contenteditable="false" data-type="indexterm" data-primary="relay servers">&nbsp;</a> is called a <em>relay server</em>. </p>
+            <figure id="ch06_figure_2_1734552288196860">
+              <img src="images/sdoa_0602.png"/>
+              <figcaption>Email communication via SMTP</figcaption>
+            </figure>
+            <p>Let’s compare this to physical mail delivery: you’ve gone to the local post office and mailed two letters—one to be delivered in your own town and another to be delivered to a friend in a nearby town. The first letter can be delivered without involving any other post office, but in the case of the second, the letter is transferred to the post office of the nearby town and then delivered to your friend. Because our delivery agents can’t directly go to other towns to deliver letters, we require another post office in between—the relay server, in the case of SMTP—to bear this responsibility.</p>
+            <p>The SMTP server can also behave <a contenteditable="false" data-type="indexterm" data-primary="gateways">&nbsp;</a>as a <em>gateway</em>, meaning that further transport of mail is carried out with the help of other protocols, not via SMTP. SMTP clients and servers are also referred <a contenteditable="false" data-type="indexterm" data-primary="mail transfer agents (MTAs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MTAs (mail transfer agents)">&nbsp;</a>to as <em>mail transfer agents (MTAs) </em>because they offer the mail transfer service. <a href="https://oreil.ly/rpweI">SMTP commands</a> are used for communication between the parties, and replies include a success or failure acknowledgment corresponding to the commands sent. </p>
+            <p>We often add media to emails as attachments, which are not inherently supported by SMTP. For these purposes, <a contenteditable="false" data-type="indexterm" data-primary="Multipurpose Internet Mail Extensions (MIME)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MIME (Multipurpose Internet Mail Extensions)">&nbsp;</a>we use <em>Multipurpose Internet Mail Extensions (MIMEs)</em>. The MIME protocol makes SMTP extensible to support media attachments and conversion of non-ASCII characters to 7-bit ASCII characters (English language alphabets and numbers). Recall that we described ports very briefly when discussing TCP—SMTP operates on Port 25 for plain-text communications and Port 587 for encrypted mail communications.</p>
+            <p>SMTP essentially operates on a push mechanism, transferring email contents from clients to servers. There are two other protocols, Post Office Protocol (POP) and Internet Message Access Protocol (IMAP), that specifically <a contenteditable="false" data-type="indexterm" data-primary="Post Office Protocol (POP)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="POP (Post Office Protocol)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Internet Message Access Protocol (IMAP)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IMAP (Internet Message Access Protocol)">&nbsp;</a>work on the pull mechanism, retrieving the email from servers to send to user devices. POP connects with the email servers, downloads the content to the local machine, and deletes the emails from the server. IMAP directly reads from servers without downloading content to the local machine or deleting the emails after reading. Both these protocols have their benefits. POP is fast because the message is predownloaded for reading, but since the messages are deleted from the servers, we can’t read the same emails on different devices. IMAP allows us to read emails on any number of devices, but it is not as fast as POP.</p>
+            <p>We’ve discussed protocols designed specifically for email communications, but email communications are not near real time. Next, we’ll move to the <em>Extensible Messaging and Presence Protocol (XMPP)</em>, which offers near real-time communication over the <a contenteditable="false" data-type="indexterm" data-primary="Simple Mail Transfer Protocol (SMTP)" data-startref="simple-mail-transfer-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SMTP (Simple Mail Transfer Protocol)" data-startref="smtp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="email communications (SMTP)" data-startref="email-smtp">&nbsp;</a>internet.</p>
+          </section>
+          <section data-type="sect3" id="ch06_extensible_messaging_and_presence_protocol_1734552288218409">
+            <h3>Extensible Messaging and Presence Protocol</h3>
+            <p><a href="https://xmpp.org">XMPP</a> is an instant message protocol <a contenteditable="false" data-type="indexterm" data-primary="Extensible Messaging and Presence Protocol (XMPP)" id="extensible-message-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="XMPP (Extensible Messaging and Presence Protocol)" id="xmpp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="real-time communications" data-secondary="XMPP" id="real-time-comms-xmpp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="XMPP" id="chat-xmpp">&nbsp;</a>based on Extensible Markup Language (XML) with additional features, such as presence information (noting when a user is online or offline) and a contact list<a contenteditable="false" data-type="indexterm" data-primary="rosters">&nbsp;</a> (called a <em>roster</em>). XMPP helps keep communication near real time among users by streaming<a contenteditable="false" data-type="indexterm" data-primary="stanzas">&nbsp;</a> XML <em>stanzas</em> (a fundamental unit of communication in XMPP with message and recipient information) over a persistent TCP or HTTP connection. XMPP can be <a contenteditable="false" data-type="indexterm" data-primary="WebSockets">&nbsp;</a>operated in a more efficient manner using <a href="https://oreil.ly/4DbrQ">WebSockets</a> as a subprotocol (we’ll discuss this shortly) instead of <a href="https://oreil.ly/hlzDp">HTTP binding</a> since WebSockets are inherently built for bidirectional communications. This protocol can operate in asynchronous fashion as well, which essentially means the recipient user doesn’t have to be online. This can be helpful in use cases like notification broadcasting.</p>
+            <p>The lifecycle of an XMPP connection starts with the client initiating a TCP connection with a server on Port 5222 for plain text and 5223 for encrypted communications. The next steps are: </p>
+            <ol>
+              <li>
+                <p>The client sends a stream header to start the negotiation process for stream features, such as authentication mechanisms and encryption methods. </p>
+              </li>
+              <li>
+                <p>After negotiation, the client shares credentials for authentication depending on whether that was agreed to during the negotiation process. </p>
+              </li>
+              <li>
+                <p>The client binds to a resource. This enables unique identification with the use of a Jabber ID, which we’ll explain shortly. </p>
+              </li>
+              <li>
+                <p>The client can establish a session (if needed) by sending a session request to a server.</p>
+              </li>
+              <li>
+                <p>Once a session is established, the client shares the presence information with the server. Now the client can request a roster and continue with sending or receiving messages via XML stanzas. </p>
+              </li>
+              <li>
+                <p>As with any other protocol, the connection is terminated at the end of the session once requested by the client and acknowledged by the server.</p>
+              </li>
+            </ol>
+            <p>XMPP is a decentralized protocol—meaning anyone can host XMPP servers—and works like SMTP. Every user has a unique ID referred to as a <em>Jabber ID</em> (JID—note that XMPP was previously known as Jabber), which is like an email address. The<a contenteditable="false" data-type="indexterm" data-primary="Jabber ID (JID)">&nbsp;</a> JID is denoted by a unique user ID along with the domain name (e.g., <em>myUserId@example.com</em>). The user may log in from multiple devices, which can be represented by specifying the resource identifier, such as <em>myUserId@example.com/mobile</em>. </p>
+            <p>XMPP is a widely used protocol for chat applications; for example, you may have used or heard about the <a class="orm:hideurl" href="https://whatsapp.com">WhatsApp chat application</a>. WhatsApp is built on top of <a href="https://oreil.ly/7asN1">ejabberd</a>, an open source software application written in the <a href="https://erlang.org">Erlang programming language</a> that <a contenteditable="false" data-type="indexterm" data-primary="Extensible Messaging and Presence Protocol (XMPP)" data-startref="extensible-message-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="XMPP (Extensible Messaging and Presence Protocol)" data-startref="xmpp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="real-time communications" data-secondary="XMPP" data-startref="real-time-comms-xmpp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="XMPP" data-startref="chat-xmpp">&nbsp;</a>operates over XMPP.</p>
+            <p>Message Queuing Telemetry Transport <a href="https://oreil.ly/nO5UU">(MQTT)</a> is another real-time protocol that we’ll discuss next.</p>
+          </section>
+          <section data-type="sect3" id="ch06_message_queuing_telemetry_transport_1734552288218470">
+            <h3>Message Queuing Telemetry Transport</h3>
+            <p>As its <a contenteditable="false" data-type="indexterm" data-primary="Message Queuing Telemetry Transport (MQTT)" id="messaging-queue-telemetry">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MQTT (Message Queuing Telemetry Transport)" id="mqtt">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="real-time communications" data-secondary="MQTT" id="real-time-comms-mqtt">&nbsp;</a>name suggests, MQTT was originally designed for applications to send telemetry data to and from space probes using minimum resources. The MQTT protocol is heavily used for IoT device communication and can support messaging applications as well. MQTT is based on the pub/sub model: users send messages to a topic (publish) and receive them by subscribing to topics. The publishers and subscribers are completely independent of one another, and the pub/sub actions are facilitated by MQTT brokers, as shown in <a data-type="xref" href="#ch06_figure_3_1734552288196887">#ch06_figure_3_1734552288196887</a>.</p>
+            <figure id="ch06_figure_3_1734552288196887">
+              <img src="images/sdoa_0603.png"/>
+              <figcaption>MQTT architecture</figcaption>
+            </figure>
+            <p>MQTT supports bidirectional communications between the devices and the cloud and offers <a contenteditable="false" data-type="indexterm" data-primary="quality of service (QoS) levels (in MQTT)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="QoS (quality of service) levels (in MQTT)">&nbsp;</a>multiple <a href="https://oreil.ly/Ir-vL">quality of service (QoS)</a> levels for ensuring message delivery guarantees. The QoS levels are defined separately by the publisher (to publish a message to a topic) and the subscriber (to consume a message from a topic). The three QoS levels supported by MQTT are:</p>
+            <dl>
+              <dt>At most once—QoS Level 0</dt>
+              <dd>
+                <p>QoS 0 is based on the principle of “fire and forget.” The sender publishes a message only once (no retransmission), and the consumer doesn’t acknowledge receiving a message for confirmation. QoS Level 0 is simplest to implement as no guarantees need to be ensured for message delivery.</p>
+              </dd>
+              <dt>At least once—QoS Level 1</dt>
+              <dd>
+                <p>QoS 1 ensures the message is delivered to the subscriber at least once, so there is a possibility of duplicate messages, and the subscriber should appropriately handle that. The publisher waits for an acknowledgment of message delivery and retransmits the message if the acknowledgment is not received within a certain time frame. This level is intermediary between Level 0 and Level 1 in terms of both reliability and implementation.</p>
+              </dd>
+              <dt>Exactly once—QoS Level 2</dt>
+              <dd>
+                <p>QoS 2 guarantees “exactly once” message delivery to the recipients. This is achieved by four-part verification between the publisher and subscriber for every message (thus reducing efficiency and complicating the implementation).</p>
+              </dd>
+            </dl>
+            <p>We can select the QoS levels based on the efficiency and reliability requirements. QoS 0 is most efficient but least reliable, while QoS 2 is most reliable but least efficient. </p>
+            <p>Protocols are essentially a set of rules to establish communication among the involved parties. In the next section, we’ll discuss the different communication types available over the internet and how we can use them as necessary for our <a contenteditable="false" data-type="indexterm" data-primary="Message Queuing Telemetry Transport (MQTT)" data-startref="messaging-queue-telemetry">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MQTT (Message Queuing Telemetry Transport)" data-startref="mqtt">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="real-time communications" data-secondary="MQTT" data-startref="real-time-comms-mqtt">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="TCP/IP model" data-tertiary="application layer protocols" data-startref="comms-tcpip-application">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TCP/IP model" data-secondary="application layer protocols" data-startref="tcpip-application">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="application layer" data-startref="protocol-application">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="application layer protocols" data-startref="application-layer">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="TCP/IP model" data-startref="comms-tcpip">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TCP/IP model" data-startref="tcpip-model">&nbsp;</a>business needs. </p>
+          </section>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch06_communication_types_1734552288218532">
+        <h1>Communication Types</h1>
+        <p>We briefly <a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="synchronous">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="synchronous communication">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="asynchronous" id="comms-async-ch6">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="asynchronous communication" id="async-comms-ch6">&nbsp;</a>touched on the general idea of synchronous (sync) and asynchronous (async) communication in <a data-type="xref" href="#ch01_system_design_trade_offs_and_guidelines_1734552285979675">#ch01_system_design_trade_offs_and_guidelines_1734552285979675</a>. In synchronous communication between two parties, the first party requests some data and then waits for the response from the second party. In the case of asynchronous communication, the first party requests some data but doesn’t wait for the response. The second party can respond in the near future via events or any other mechanism. Both the sync and the async modes of communications have their own sets of challenges and benefits, and it’s very important that we identify when to use which for our business use cases.</p>
+        <p>Sync communications are generally preferred for low-latency calls: we’re aware that the server will return the response for the corresponding request within the expected time frame and won’t take too long. The premise is that if we already know the request is going to take time to process, then we’re blocking a system resource at the client’s end and not performing any actual work. Note that using async mode doesn’t mean the system is latency heavy—the request can be processed as soon as it is consumed by the service here as well. The fundamental difference lies in the method of communication. </p>
+        <p>With async calls, the response is not immediately returned for a request nor is it returned over the same connection. There are two ways to receive a response in the near future: either the client sends a request to the server again after some time, requesting a response, or the server delivers the response without the client needing to request it. The first mechanism <a contenteditable="false" data-type="indexterm" data-primary="pull-based communication mechanisms">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="pull-based mechanisms">&nbsp;</a>is referred to as a <em>pull-based</em> mechanism, and the second is called a <em>push-based </em>mechanism.</p>
+        <p>There can be multiple methods of communication in the pull- and push-based mechanisms. We’ll discuss them one by one, beginning with the pull-based <span class='keep-together'>approaches—namely</span>, HTTP regular polling and HTTP long polling.</p>
+        <section data-type="sect2" id="ch06_pull_mechanism_http_polling_1734552288218593">
+          <h2>Pull Mechanism: HTTP Polling</h2>
+          <p>Let’s<a contenteditable="false" data-type="indexterm" data-primary="HTTP polling">&nbsp;</a> take an example of an online food-ordering platform to understand the different kinds of pull mechanisms. Once an order is placed, we want to know its status, such as order preparation is ongoing, a delivery agent is assigned, the delivery agent has picked up the food, the delivery agent is at a particular location, and finally, food is delivered at our doorstep. <a data-type="xref" href="#ch06_table_4_1734552288203847">#ch06_table_4_1734552288203847</a> lists different approaches that the client application can take to request the latest status of the order from the server application.</p>
+          <table id="ch06_table_4_1734552288203847">
+            <caption>Pull-mechanism approaches</caption>
+            <thead>
+              <tr>
+                <th>Approach</th>
+                <th>Approach considerations</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>HTTP regular polling:</p>
+                  <ol>
+                    <li>Clients ask the server for a recent status at regular intervals, such as five seconds. </li>
+                    <li>The server checks the status and responds back.</li>
+                  </ol>
+                </td>
+                <td>
+                  <p>Clients regularly invoke an API and might not get a response, wasting network bandwidth. We don’t recommend this approach for production workloads as it will consume unnecessary resources.</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>HTTP long polling:</p>
+                  <ol>
+                    <li>Clients ask the server for a recent status at regular intervals, such as one minute.</li>
+                    <li>The server responds only if there is a change in status; otherwise, it holds the connection for a fixed interval, such as one minute.</li>
+                    <li>The client reestablishes the connection after this interval to check for the most recent status.</li>
+                  </ol>
+                </td>
+                <td>
+                  <p>This requires fewer server calls compared to HTTP regular polling, reducing overall resource consumption; hence, the approach is an improvement over HTTP regular polling. Implement an exponential strategy in case a response is not received in the first call. For example, you might have seen how Gmail responds when there’s no internet connection. First, it tries to connect within 1 second, then within 5 seconds, then 30 seconds, and so on.</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>The next set of approaches that we’re going to discuss are push-based mechanisms, which essentially means that clients don’t ask for a response; it’s the server’s responsibility to send a response once the results are ready.</p>
+        </section>
+        <section data-type="sect2" id="ch06_push_mechanism_websockets_1734552288218649">
+          <h2>Push Mechanism: WebSockets</h2>
+          <p>In <a contenteditable="false" data-type="indexterm" data-primary="push-based communication mechanisms" id="push-comms">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="push-based mechanisms" id="comms-push">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="WebSockets" id="websockets">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="persistence" data-secondary="WebSockets" id="persistence-websockets">&nbsp;</a>HTTP long polling, the connection is terminated after a certain time, and then the client reinitiates a connection. But what if we require a persistent connection? <a href="https://oreil.ly/p6xfg">WebSockets</a> represent a bidirectional persistent connection (full-duplex communication on a single TCP connection) over HTTP where clients and servers communicate with each other. Once the connection is established between the client and server, the messages can flow to and fro. A <a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="with WebSockets" data-secondary-sortas="WebSockets" id="chat-websockets">&nbsp;</a>popular example for these kinds of requirements is a chat application (architecture details are given in <a data-type="xref" href="#ch19_designing_a_chat_application_1734552294951889">#ch19_designing_a_chat_application_1734552294951889</a>). Two people (or more, in the case of user groups) interact with each other in real time, so a persistent connection makes more sense here compared to the client application asking for a response again and again. </p>
+          <p>The WebSocket connection follows a similar flow as TCP. Any connection is started with a <a contenteditable="false" data-type="indexterm" data-primary="handshake process">&nbsp;</a>handshake process, and then the actual data transfer happens. The handshake process before data transfer ensures the agreement between the client and the server for bidirectional communication. The first step is that the client initiates an HTTP <code>GET</code> call (see the following code snippet) to the host server with the <code>Connection</code> type set as <code>Upgrade</code> and a <code>Sec-WebSocket-Key</code> <a href="https://oreil.ly/YrUen">(random base64-encoded key)</a> for ensuring security: </p>
+          <pre data-type="programlisting">GET ws://myChatApp.com/chat HTTP/1.1
+Host: myChatApp.com
+Connection: Upgrade
+Upgrade: websocket
+Sec-WebSocket-Version: 13
+Sec-WebSocket-Key: q4xkcO32u266gldTuKaSOw==</pre>
+          <p>Once the server receives this request, it responds with HTTP status code 101, meaning the protocol is switched from HTTP to WebSocket. This is shown in the following code snippet: </p>
+          <pre data-type="programlisting">HTTP/1.1 101 Switching Protocols
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Accept: skjfdPPEKjdksejsl+sdr=</pre>
+          <p>The server also responds with <code>Sec-WebSocket-Accept</code>, created by the server by appending a predefined GUID (<code>258EAFA5-E914-47DA-95CA-C5AB0DC85B11</code>, as defined in RFC 6455) to <code>Sec-WebSocket-Key</code>, hashing it to the <a href="https://oreil.ly/sZ2hk">SHA-1 algorithm</a> and encoding it to base64.</p>
+          <p>When the server acknowledgment is received, the WebSocket connection is established for the client and server to communicate with each other. The communication messages can be in textual or binary format following a frame structure. A frame should always be masked before sending to the server—if not, the connection is closed by the server upon receiving an unmasked frame. The masking key is 4 bytes long and should be randomly generated to mask the message payload. The masking key and payload are <a href="https://oreil.ly/duwH5">XOR</a> together to generate a masked frame, and the reverse process is performed by the server to retrieve the original payload. </p>
+          <p>The frame consists of payload data and additional metadata, such as whether the frame is masked or not (denoted by 1 or 0), payload length, and masking key. The payload data is a combination of extension data and application data. The application data consists of the original message, and extension data is an optional field that can help achieve additional capabilities, such as encryption and compression. Finally, the connection between client and server is torn down at the end of the<a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="with WebSockets" data-secondary-sortas="WebSockets" data-startref="chat-websockets">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="WebSockets" data-startref="websockets">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="persistence" data-secondary="WebSockets" data-startref="persistence-websockets">&nbsp;</a> communication. </p>
+          <p>Now, we might not always have a requirement for bidirectional connection. We may just require a communication channel from server to clients. We’ll discuss this idea in the next section, where we elaborate on server-sent events (SSEs).</p>
+        </section>
+        <section data-type="sect2" id="ch06_push_mechanism_server_sent_events_1734552288218705">
+          <h2>Push Mechanism: Server-Sent Events</h2>
+          <p>Let’s go back to our<a contenteditable="false" data-type="indexterm" data-primary="server-sent events (SSEs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SSEs (server-sent events)">&nbsp;</a> example of checking the status of an order we placed on an online food-ordering application. SSE can be a feasible approach in this case as the server is responsible for updating the order status and no such input is required from the client’s end. The server is not dependent on any message-delivery acknowledgments from clients—if there is such a requirement, SSE might not be the best fit for that use case. SSE is implemented over a long-lived HTTP connection to consume any updates or notifications from the server in text format. We define an EventSource in a client application, which includes the URL of the SSE event stream on the server, and any new event is delivered to this EventSource via the event stream.</p>
+          <div data-type="note">
+            <p>SSE is also used in messenger applications much like WebSockets; for example, BlackBerry Messenger (BBM) and <a href="https://oreil.ly/9zlxR">LinkedIn</a> messaging and live video interactions work on SSE as an underlying technology.</p>
+          </div>
+          <p>We discussed that the network is not reliable in <a data-type="xref" href="#ch01_system_design_trade_offs_and_guidelines_1734552285979675">#ch01_system_design_trade_offs_and_guidelines_1734552285979675</a>, and due to this unreliability, a long-lived HTTP connection can always break. In these kinds of scenarios, we need the ability to reestablish the connection from where we left off so as to continue consuming the events from the server. SSE has this capability built in: it can reestablish dropped connections and recover any messages that might have been missed by the clients during the connection issue.</p>
+          <p>We mentioned that responses in the case of async architectures can be delivered via WebSockets or SSE. Yet another way could be publishing a response to a topic that clients have subscribed to or delivering a response to the HTTP endpoint exposed by the client. This mechanism is widely used for server-to-server communication for callbacks (the response of the API is delivered asynchronously). We’ll elaborate on this idea in <a data-type="xref" href="#ch08_architectural_designs_and_patterns_1734552289324317">#ch08_architectural_designs_and_patterns_1734552289324317</a> while discussing pub/sub architectures, and in <a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a> while discussing Amazon Simple Queue Service (SQS) and Amazon Simple Notification Service (SNS). </p>
+          <p>Up to this point, we’ve looked at different networking protocols and mechanisms for communication over the internet. With networking protocols, there are common communication standards (protocols or architectural styles) that are generally followed in the client-server architecture. Let’s <a contenteditable="false" data-type="indexterm" data-primary="push-based communication mechanisms" data-startref="push-comms">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="push-based mechanisms" data-startref="comms-push">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="asynchronous" data-startref="comms-async-ch6">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="asynchronous communication" data-startref="async-comms-ch6">&nbsp;</a>take a closer look at this.</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch06_common_communication_protocol_standards_1734552288218768">
+        <h1>Common Communication Protocol Standards</h1>
+        <p>In the <a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" id="comms-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" id="protocol-comms-standard">&nbsp;</a>client-server architecture, clients interact with servers to retrieve some information or perform an action on the server. Consider a scenario where each client and server defines its own paradigms for interaction over the internet—it becomes very difficult for software applications to adapt and implement a vast set of paradigms. This can be easier if the client-server calls are commonly defined and everyone uses them. In this section, we’ll explain the concept of<a contenteditable="false" data-type="indexterm" data-primary="application programming interfaces" data-see="APIs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)">&nbsp;</a> an <em>application programming interface (API)</em> and its multiple types to identify how they suit particular business use case requirements. An API enables two software applications to communicate over the internet using a set of definitions and protocols. We’ll start our discussion with RPC and then explore other paradigms.</p>
+        <section data-type="sect2" id="ch06_remote_procedure_call_1734552288218829">
+          <h2>Remote Procedure Call</h2>
+          <p>Typically, <a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" data-tertiary="RPC" id="comms-protocol-rpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" data-tertiary="RPC" id="protocol-comms-standard-rpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Remote Procedure Call (RPC)" id="remote-proc-call">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RPC (Remote Procedure Call)" id="rpc">&nbsp;</a>a single machine can’t hold all the necessary implementation logic, so part of the code is hosted somewhere else, which may or may not be owned by your company. In the example of fulfilling an order on an online food-ordering application, the frontend application calls the backend service to place an order, the backend service talks with the payment service to process the payment in the desired payment mode, the payment service talks with external providers like a bank or payment gateway (PG) to process the payment, and finally, the order is placed. Now, consider the interaction of our own payment service with a PG: the PG is not owned by us, but we invoke the payment-processing method similarly to how we call any local method in our codebase. This is referred to as <em>Remote Procedure Call (RPC)</em>. </p>
+          <p>A <em>procedure</em> is a <a contenteditable="false" data-type="indexterm" data-primary="procedures">&nbsp;</a>block of code responsible for executing a specific set of tasks. It can be as simple as a program adding two numbers or, in this case, processing a payment via a PG. RPC means executing this piece of code, aka the procedure, on a remote machine as if it were being executed on your local personal computer or laptop. Now, let’s understand why we need such a mechanism and discuss how this remote code execution works.</p>
+          <p>If the code is hosted on a remote machine, the one definite benefit we get is code reusability and scalability. The code can be shared among multiple clients, offering abstraction to the clients on the code execution, and it is scalable such that the code can be distributed among multiple machines. It additionally abstracts out the network communication for how the local machine interacts with the remote machine to execute a procedure; for a developer, it’s similar to any local procedure call. There can be multiple teams in an organization that might own up to hundreds of microservices written in different programming languages. We define the interfaces, and RPC helps with cross-language and platform support by taking on the headache of data marshaling (encoding) and unmarshaling (decoding). </p>
+          <p>Recall that while discussing the benefits of RPC, we mentioned that the different microservices might be written in different programming languages, so it’s not possible to invoke the remote function directly. We need an intermediary that can handle this conversion logic—this is referred to as <em>stub</em>. A <a contenteditable="false" data-type="indexterm" data-primary="stub functions">&nbsp;</a>stub function offers a similar interface as a remote method that clients can invoke, and it internally handles the implementation details, such as network communication and marshaling of method arguments to a message over the network. On the server side, the stub function will unmarshal the message to the arguments as expected by the remote method. Once the method processing is complete, the method response is again marshaled and sent back over the network where the client-side stub function unmarshals it to an object that is readable by the client machine.</p>
+          <p>The common interface or a contract to specify the remote procedures and data types is defined in the<a contenteditable="false" data-type="indexterm" data-primary="interface definition language (IDL)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IDL (interface definition language)">&nbsp;</a> interface definition language (IDL). This interface is language agnostic, meaning it will work with any desired programming language. The IDL is used to generate the stubs used for client communication. Some examples include the Web Services Description Language (WSDL), which is used with Simple Object Access Protocol (SOAP), and the Apache Thrift IDL.</p>
+          <p>While there are benefits to RPC, there are also downsides since we’re operating in a distributed environment. Some of the issues we might face here, which we don’t have to consider with local method invocation, are worrying about network latency, handling network failures and retry mechanisms for network calls, and ensuring the interfaces are compatible as systems evolve. </p>
+          <p>Some examples of RPC include <a href="https://oreil.ly/72X4-">SOAP</a>, Representational State Transfer (REST), <a href="https://grpc.io">gRPC</a>, and <a href="https://thrift.apache.org">Thrift</a>. <em>SOAP</em> is a protocol that offers mechanisms to clients and servers for communicating with one another using XML messages. <a contenteditable="false" data-type="indexterm" data-primary="Simple Object Access Protocol (SOAP)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SOAP (Simple Object Access Protocol)">&nbsp;</a>SOAP is not tied to any specific protocol and can be used alongside other protocols, such as HTTP, SMTP, and TCP, although it is mostly used with HTTP. SOAP is relatively complex with its XML-based structure, and it has its own learning curve. You won’t find many new use cases being developed via this protocol. Developers tend to lean toward simpler paradigms, such as REST, over SOAP for application development and <a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" data-tertiary="RPC" data-startref="comms-protocol-rpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" data-tertiary="RPC" data-startref="protocol-comms-standard-rpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Remote Procedure Call (RPC)" data-startref="remote-proc-call">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RPC (Remote Procedure Call)" data-startref="rpc">&nbsp;</a>interaction over the internet.</p>
+        </section>
+        <section data-type="sect2" id="ch06_rest_1734552288218883">
+          <h2>REST</h2>
+          <p>REST is <a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" data-tertiary="REST" id="comms-protocol-rest">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" data-tertiary="REST" id="protocol-comms-standard-rest">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Representational State Transfer (REST)" id="represent-state-transfer">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="REST (Representational State Transfer)" id="rest">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)" data-secondary="RESTful" id="api-rest">&nbsp;</a>widely used alongside the HTTP protocol for client-server interactions and uses HTTP methods to implement different CRUD (create, read, update, and delete) operations. REST is a software architectural style, not a protocol like SOAP, and is used extensively for building applications for today’s internet.</p> 
+          
+          <p class="pagebreak-before less_space">The following are the guiding principles of the REST design pattern: </p>
+          <ul>
+            <li>
+              <p>Communication over REST APIs includes the clients, the server, and resources. The <em>resource</em> is a fundamental entity that can be uniquely identified by a URL. The clients can interact with the server to perform any operation on these resources via HTTP methods.</p>
+            </li>
+            <li>
+              <p>REST operates over a stateless paradigm, meaning the server is not responsible for maintaining the state of older requests. The state maintenance (if required) should be handled by the client, and all relevant information should be part of the HTTP request in order for the server to process it.</p>
+            </li>
+            <li>
+              <p>It is possible that responses to particular REST APIs don’t change too frequently. In these kinds of scenarios, the responses can be cached at the client’s end, at the browser level, or using a CDN or any other caching mechanism. </p>
+            </li>
+            <li>
+              <p>There is a uniform interface between the components involved in information transfer following standardized ways for communication. This ensures that it’s easy to evolve the capability of the software application. Key factors include unique resource identification, resource update via representations (the client and server communicate to update a resource in formats such as plain text, JSON, XML, or HTML), self-descriptive messages (the server should share relevant information in response in order for it to be processed by the client), and hypermedia as the engine of application state (clients should be able to navigate through the resources via hyperlinks present in the server response).</p>
+            </li>
+            <li>
+              <p>Multiple systems can be involved in gathering information. The client is abstracted out from these multiple layer calls inside the system and is only responsible for sending requests to the first layer (such as an LB, API gateway, or any other service endpoint) and gathering a response from it.</p>
+            </li>
+            <li>
+              <p>The server can deliver code on demand in the form of scripts in response to client requests, and clients can execute it per requirement.</p>
+            </li>
+          </ul>
+          <p>Note that the APIs following these standards are referred to as <em>RESTful APIs</em>.</p>
+          <div data-type="note">
+            <p>We’ll explore LBs, API gateways, NAT, IP addresses, and related networking concepts in <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>.</p>
+          </div>
+          <p>As REST can operate with JSON, it’s simple for developers to work with. SOAP is known for its support for advanced security features, typed data, and procedures (SOAP allows RPCs similar to local procedures), but it comes with higher complexity. We can definitely introduce advanced security aspects in REST as well, though that requires extra design considerations that SOAP is inherently built to support. As always, it varies from use case to use case, and there is no perfect choice. </p>
+          <p>The REST architectural pattern operates on a fixed schema defined by the server, but in some cases, we might look for flexibility in the way that the client can define data needs. Let’s explore this idea in more detail in the next section where we talk<a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)" data-secondary="RESTful" data-startref="api-rest">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" data-tertiary="REST" data-startref="comms-protocol-rest">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" data-tertiary="REST" data-startref="protocol-comms-standard-rest">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Representational State Transfer (REST)" data-startref="represent-state-transfer">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="REST (Representational State Transfer)" data-startref="rest">&nbsp;</a> about GraphQL.</p>
+        </section>
+        <section data-type="sect2" id="ch06_graphql_1734552288218937">
+          <h2>GraphQL</h2>
+          <p><em>GraphQL</em> is an API query language<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" data-tertiary="GraphQL" id="comms-protocol-graphql">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" data-tertiary="GraphQL" id="protocol-comms-standard-graphql">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)" data-secondary="GraphQL" id="api-graphql">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="GraphQL" id="graphql">&nbsp;</a> that allows clients to write a query specific to data retrieved on a single API endpoint (unlike REST, where we define endpoints per API). To compare GraphQL with REST, let’s look at an example: we want to retrieve a food item’s name and description to show items that are available from a particular restaurant on an online food-ordering application. With REST, we’ll require an API that can return these exact details or use an API that returns complete information about the food item and shows only the required information on the application (similarly, there can be cases where we need to combine data from multiple APIs). There can be scenarios of overfetching or underfetching data with REST, which can be resolved by the query flexibility offered by GraphQL, in addition to a few other features that we’ll discuss shortly. Querying only the required data consumes only the necessary network bandwidth, which can make applications faster on slower networks.</p>
+          <p>Now that you have a fair idea of GraphQL’s advantages over REST, let’s dig a little deeper into how it works. GraphQL has a strong type system to define the entities supported via the client’s query, which are written in the GraphQL Schema Definition Language (SDL). Let’s extend our previous example to show how it can be supported via GraphQL:</p>
+          <pre data-type="programlisting">type Restaurant {
+  id: String!
+  name: String!
+  rating: Float
+  foodItems: [FoodItem!]!
+}
+ 
+type FoodItem {
+  id: String!
+  name: String!
+  rating: Float
+  isVeg: Boolean!
+}
+query {
+  Restaurant (id: “lsoa34444lsoa”) {
+    name
+    foodItems {
+      name
+      description
+    }
+  }
+}</pre>
+          <p>We defined two objects in SDL to support our example: <code>Restaurant</code> and <code>FoodItem</code> (the exclamation mark [!] denotes a mandatory attribute). To gather data on food items, the query specifies only the attributes required by the client.</p>
+          <div data-type="note">
+            <p>Visit the <a href="https://graphql.org/learn">GraphQL documentation</a> for full information on GraphQL. </p>
+          </div>
+          <p>Moving forward, querying (data read) is not the only capability we need with the APIs; we also need support for operations such as creating, updating, and deleting data (data modification on server data stores). GraphQL supports these operations with a feature<a contenteditable="false" data-type="indexterm" data-primary="mutations">&nbsp;</a> called <em>mutations</em>. The mutations start with a mutation keyword with syntax similar to GraphQL queries. Let’s look at an example mutation of creating a new food item for a restaurant:</p>
+          <pre data-type="programlisting">mutation {
+  createFoodItem(name: “Paneer Tikka Masala”, isVeg: true) {
+    id
+    name
+  }
+}</pre>
+          <p>Mutations can also send a response similar to a GraphQL query. Along with performing its main job of data modification, as in the previous example, the mutation will return the ID and name of the newly created food item as part of the response. </p>
+          <p>We might also be interested in knowing about any new changes happening on the server side. For this, we can leverage technologies such as SSE or WebSockets, which we discussed earlier in this chapter. We can also use GraphQL subscriptions (defined by the <code>Subscription</code> keyword), which inherently establish a bidirectional connection to inform us about any new events in near real time, such as if a new food item is created. GraphQL queries, mutations, and subscriptions are defined in the GraphQL schema and offer clients insights into the API capabilities. </p>
+          <p>One of the benefits of GraphQL over REST is its integration with a single endpoint and the fact that it serves all the API needs with the same API endpoint, instead of multiple endpoints. As our system evolves, it’s possible that frontend applications will need to interact with multiple backend applications to gather the necessary data, and each backend application exposes its own GraphQL endpoint. This can be optimized by choosing a GraphQL client like <a href="https://apollographql.com">Apollo</a> or AWS AppSync (which we’ll discuss in <a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a>) to help applications scale with much more <a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" data-tertiary="GraphQL" data-startref="comms-protocol-graphql">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" data-tertiary="GraphQL" data-startref="protocol-comms-standard-graphql">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)" data-secondary="GraphQL" data-startref="api-graphql">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="GraphQL" data-startref="graphql">&nbsp;</a>ease. </p>
+        </section>
+        <section data-type="sect2" id="ch06_web_real_time_communication_1734552288218993">
+          <h2>Web Real-Time Communication</h2>
+          <p>People <a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" data-tertiary="WebRTC" id="comms-protocol-webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" data-tertiary="WebRTC" id="protocol-comms-standard-webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)" data-secondary="WebRTC" id="api-webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="real-time communications" data-secondary="WebRTC" id="real-time-comms-webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="WebRTC (Web Real-Time Communication)" id="webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="peer-to-peer connections" id="peer-to-peer-webrtc">&nbsp;</a>around the world interact with one another over text messaging, voice calls, or video calls. Text messaging is simple to implement and operate compared to voice and video calls. Think of a scenario where you’re interacting with your friend on a video call: what do you expect experience-wise from the video-calling application? The primary expectations are that you’re able to see your friend clearly and to hear their voice without any lag. WebRTC (which stands for Web Real-Time Communication) offers a mechanism for supporting audio and video communications in web browsers or mobile applications by APIs without requiring installation of any specific plug-ins. It also offers support for file sharing and data exchange between the web services in near real time. </p>
+          <p>Up to this point, all the protocols or architectural patterns we’ve discussed have included a server, and we focused our discussion on client-server communication. WebRTC allows direct peer-to-peer connection without any requirement for a server in between. Even though peers can communicate directly, a server can be introduced if the need arises (such as to ensure secure communication). A key consideration to note is that the latency can increase substantially if the number of peers communicating with one another increases to double digits—for example, a voice channel on <a href="https://oreil.ly/u1Ya1">Discord servers</a> with a thousand members. </p>
+          <p>WebRTC is not itself a protocol—it’s a tool working on top of multiple protocols to serve our use case. Some APIs offered by WebRTC include RTCPeerConnection for establishing connections between the peers, getUserMedia to access audio and video from a user’s device, and RTCDataChannel for bidirectional data exchange between the peers. Let’s take a look at how the peer-to-peer connection is established. </p>
+          <p>For communication over the internet and connecting with another device, we require the IP address and the port number. It becomes difficult if the devices are behind a NAT (more details on this in <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>). In these kinds of scenarios, WebRTC can use <a contenteditable="false" data-type="indexterm" data-primary="Interactive Connectivity Establishment (ICE)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ICE (Interactive Connectivity Establishment)">&nbsp;</a>Interactive Connectivity Establishment (ICE), which helps figure out the optimal communication route. We don’t require ICE if it is not a direct peer-to-peer connection and our system operates on a client-server architecture.</p>
+          <p>To communicate with any device, we need a unique address. This might not be possible if you’re operating inside a private network behind a NAT (all devices in this network will have the same public IP address and are distinguished by assigned private IP address). The<a contenteditable="false" data-type="indexterm" data-primary="Session Traversal Utilities for NAT (STUN) protocol" id="session-traversal-utility-nat">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="STUN (Session Traversal Utilities for NAT) protocol" id="stun">&nbsp;</a> <a href="https://oreil.ly/ABUGB">Session Traversal Utilities for NAT (STUN) protocol</a> is used if the devices are behind a NAT. Both the peers connect with the STUN server to figure out the IP address, port (allocated by NAT corresponding to the private IP address and port), and type of NAT the device is behind. Once this information is obtained, it will be used as <a contenteditable="false" data-type="indexterm" data-primary="Session Description Protocol (SDP)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SDP (Session Description Protocol)">&nbsp;</a>part of the <a href="https://oreil.ly/ZTpvz">Session Description Protocol (SDP)</a>, as shown in <a data-type="xref" href="#ch06_figure_4_1734552288196910">#ch06_figure_4_1734552288196910</a>.</p>
+          <p>The two peer devices exchange ICE candidates (network address and port) with each other via a signaling mechanism such as SDP. SDP includes information like media type (audio or video), transport protocol (UDP, IP, etc.), media format, remote address, and port for the media.</p>
+          <figure id="ch06_figure_4_1734552288196910">
+            <img alt="A diagram of a computer network&#10;&#10;Description automatically generated" src="images/sdoa_0604.png"/>
+            <figcaption>WebRTC communication with a STUN server</figcaption>
+          </figure>
+          <p>In some scenarios, direct peer-to-peer connection may not be feasible because of restrictive firewalls and the STUN server fails to do its job. In these scenarios, we<a contenteditable="false" data-type="indexterm" data-primary="Traversal Using Relays around NAT (TURN) servers">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TURN (Traversal Using Relays around NAT) servers">&nbsp;</a> can use <a href="https://oreil.ly/VjhcQ">Traversal Using Relays around NAT (TURN) servers</a>. A TURN server acts as an intermediary between the peers to communicate, where essentially one device sends a message to the TURN server, and then the TURN server relays this to another device. A TURN server can be used singlehandedly to serve the functionality of STUN and relay traffic, but the STUN server is always used as the first point of action. This is because using the TURN server to stream high-quality data is relatively expensive, adding an extra hop into the architecture.</p>
+          <p>Once the peer-to-peer connection is established, media data can be exchanged in both directions to carry forward the communication. WebRTC is used across the IT industry to support voice and<a contenteditable="false" data-type="indexterm" data-primary="Session Traversal Utilities for NAT (STUN) protocol" data-startref="session-traversal-utility-nat">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="STUN (Session Traversal Utilities for NAT) protocol" data-startref="stun">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" data-tertiary="WebRTC" data-startref="comms-protocol-webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" data-tertiary="WebRTC" data-startref="protocol-comms-standard-webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)" data-secondary="WebRTC" data-startref="api-webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="real-time communications" data-secondary="WebRTC" data-startref="real-time-comms-webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="WebRTC (Web Real-Time Communication)" data-startref="webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" data-startref="comms-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" data-startref="protocol-comms-standard">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="peer-to-peer connections" data-startref="peer-to-peer-webrtc">&nbsp;</a> video communications. </p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch06_conclusion_1734552288219046">
+        <h1>Conclusion</h1>
+        <p>The OSI model is a good starting point for understanding data communication over the internet. The device communications we see around us mostly follow the TCP/IP model, with TCP, UDP, and IP being the base protocols for data transport. Multiple protocols are built around them, such as HTTP, SMTP, and XMPP, to serve specific use cases. Determining which protocol makes more sense to implement for your specific use case can be confusing, so it’s important to identify the most critical requirements to make your decision. You may also find that combining multiple technologies to meet customer demands is your best option. For example, XMPP is extensively used for text messages, and WebRTC is a preferred choice for audio and video communications. Direct peer-to-peer communication can become complex, particularly when you involve multiuser experiences such as group video or audio calls. Combining these tools can reduce this complexity, bringing the benefits of the text, audio, and video functionality of WebRTC and XMPP together.</p>
+        <p>We also discussed communication types and which mechanism might make more sense for your implementation. We suggest having your use case requirements in place before trying to compare your options—there may never be a clear winner when designing large-scale distributed systems. We ended our discussion with different communication standards and architectures for how client-server information sharing works across the internet. While we have tried to cover the basic and most widely used communication tools, multiple other protocols or technologies have been designed and built to solve specific use cases that we simply didn’t have the room to discuss here. </p>
+        <p>In the next chapter we’ll dig into the concept of containers. Docker and Kubernetes are hot keywords in the industry—it’s likely you’ve already heard of these concepts, which are used to deploy and run your software applications. </p>
+      </section>
+    </section>

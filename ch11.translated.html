@@ -1,0 +1,445 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch11_aws_compute_services_1734552290903110">
+      <h1>AWS 计算服务</h1>
+      <p>您热爱编程，并在业余时间于个人计算机上设计和开发新的软件应用程序。您最近创建了一个将输入图像转换为卡通图像的应用程序，并向朋友进行了演示——恰好这位朋友是一家大型科技公司的软件工程师。朋友非常喜欢这个想法，并建议将该应用程序分享给更多人，同时还能帮您赚取一些额外收入。但如何实现这一目标？如何让运行在个人计算机上的程序能够被其他人访问？</p>
+      <p>对于这个具体示例，您需要某种机制，允许用户通过互联网向个人计算机发送图像，并由个人计算机将输出作为卡通图像返回。在这种场景中，个人计算机充当了<em>服务器</em>的角色。<a contenteditable="false" data-type="indexterm" data-primary="servers">&nbsp;</a><em>服务器</em>就是一台大多数时间处于运行状态（即高可用应用程序）的计算机，负责响应各类请求。该服务器可以仅供您个人访问，也可以对其他计算机或用户开放，这些用户统称为<a contenteditable="false" data-type="indexterm" data-primary="clients">&nbsp;</a><em>客户端</em>。</p>
+      <p>服务器是任何应用程序的核心组成部分，AWS 提供了多种计算平台来运行应用程序。AWS 云中的计算平台是托管在 AWS 数据中心的虚拟服务器，可通过互联网访问。我们将首先介绍一种类似个人计算机的计算平台——亚马逊弹性计算云（Amazon EC2），然后再探讨 AWS Lambda 以及 AWS 云中的容器化服务。</p>
+      <section data-type="sect1" id="ch11_amazon_elastic_compute_cloud_1734552290903283">
+        <h1>Amazon Elastic Compute Cloud</h1>
+        <p>Amazon EC2 <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="compute services" data-tertiary="EC2" id="aws-compute-ec2">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="compute services (AWS)" data-secondary="EC2" id="compute-aws-ec2">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EC2 (Elastic Compute Cloud)" id="ec2">&nbsp;</a>是 AWS 提供的可扩展虚拟服务器托管服务。我们可以利用 EC2 服务在 AWS 云中创建具有所需配置（如 CPU、内存、存储、网络等）的虚拟机（VM）。这些 VM 或虚拟计算环境被<a contenteditable="false" data-type="indexterm" data-primary="instances">&nbsp;</a>称为<em>实例</em>。AWS 提供了选择裸金属服务器或通过虚拟机监管程序维护的虚拟化环境的选项，具体选择应根据业务和合规需求来确定。以下是裸金属服务器和虚拟机监管程序服务器的一般说明：</p>
+        <dl>
+          <dt>裸金属服务器</dt>
+          <dd>
+            <p>专用于单一租户的物理服务器。<a contenteditable="false" data-type="indexterm" data-primary="bare-metal servers">&nbsp;</a>这类服务器适用于需要直接访问 Intel Xeon 处理器基础设施的工作负载，例如 <a href="https://oreil.ly/f_zl6">Intel 虚拟化技术（VT-x）</a>，或有严格合规要求，或需要运行自定义虚拟机监管程序的场景。例如，您可能需要运行 Oracle Hypervisor 而非 Nitro。</p>
+          </dd>
+          <dt>虚拟机监管程序</dt>
+          <dd>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="hypervisors">&nbsp;</a>一种在单台物理服务器上运行多个虚拟机的虚拟化组件，如<a data-type="xref" href="#ch11_figure_1_1734552290890478">#ch11_figure_1_1734552290890478</a>所示。虚拟机监管程序负责将 CPU、内存等计算资源分配给各自运行独立操作系统和应用程序的虚拟机。AWS 根据可用实例类型支持两种虚拟机监管程序：<a href="https://xenproject.org">Xen</a> 和 <a href="https://aws.amazon.com/ec2/nitro">Nitro</a>。<a href="https://oreil.ly/n-6xJ">Nitro 系统</a>是新一代虚拟机监管程序，具有更强的安全性和性能。</p>
+          </dd>
+        </dl>
+        <figure id="ch11_figure_1_1734552290890478">
+          <img src="images/sdoa_1101.png"/>
+          <figcaption>Xen 虚拟机监管程序</figcaption>
+        </figure>
+        <p>在 AWS 云中启动和运行实例非常简便，无需承担维护物理硬件的繁琐工作。只需在 AWS 控制台上点击几下，即可按照 <a href="https://oreil.ly/HH7mS">AWS 文档</a>中的步骤启动 EC2 实例。实例启动时所使用的特定配置集由 Amazon 系统映像（AMI）决定。</p>
+        <div data-type="note">
+          <p>一个 EC2 实例不一定对应 AWS 云中的一台物理服务器。</p>
+        </div>
+        <section data-type="sect2" id="ch11_amazon_machine_image_1734552290903357">
+          <h2>Amazon 系统映像</h2>
+          <p>我们可以<a contenteditable="false" data-type="indexterm" data-primary="EC2 (Elastic Compute Cloud)" data-secondary="AMIs" id="ec2-ami">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="instances" data-secondary="launching" id="instance-launch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="launching" data-secondary="instances" id="launch-instance">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Amazon Machine Image (AMI)" id="amazon-machine-image">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AMI (Amazon Machine Image)" id="ami">&nbsp;</a>以不同配置启动 EC2 实例，例如操作系统、附加到实例的存储卷、实例启动前需安装的依赖项、自定义安全配置等。这些配置可以通过一个名为 <em>AMI</em> 的预配置模板来定义，从而高效、便捷地使用所需软件栈来预置 EC2 实例。设想这样一个场景：您作为工程师负责为组织中所有启动的 EC2 实例安装安全依赖项。一种方法是在 EC2 实例启动后在其上运行脚本，但更优化的方式是创建一个预装所有必要依赖项的基础 AMI。这样不仅节省了大量时间，还能确保所有 EC2 实例都不会遗漏必要的依赖项安装。</p>
+          <p>作为用户，我们可以使用 AWS 社区提供的免费 AMI 来启动 EC2 实例，也可以向 Red Hat 等第三方购买 AMI，或根据需要创建自定义 AMI。例如，Amazon Linux 和 Linux 2 AMI 可免费使用，并由 AWS 全面支持和维护。AWS 提供了一个市场，用户可以从多种公开可用的 AMI 中进行选择。以下是为您的业务用例选择最佳 AMI 时需要考虑的几个因素：</p>
+          <dl>
+            <dt>区域</dt>
+            <dd>
+              <p>AMI 是针对特定区域创建的。如果某个 AMI 在特定区域不可用，您可以<a href="https://oreil.ly/qR1Qx">将该 AMI 复制</a>到所需区域，然后使用它来启动 EC2 实例。</p>
+            </dd>
+            <dt>操作系统和架构</dt>
+            <dd>
+              <p>EC2 实例在操作系统上运行，您可以从 <a href="https://oreil.ly/9ZeBP">AWS 支持</a>的多种操作系统版本（32 位或 64 位架构）中进行选择。</p>
+            </dd>
+            <dt>启动权限</dt>
+            <dd>
+              <p>AMI 可以由 AWS、企业或个人拥有，并可以对普通公众、特定用户组或单个个人开放使用。</p>
+            </dd>
+            <dt>根设备存储</dt>
+            <dd>
+              <p>AMI 以 Amazon EBS 或实例存储（详见<a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a>）作为根设备存储。根设备存储包含用于启动 EC2 实例的映像。这两种存储选择之间<a href="https://oreil.ly/t3DTk">存在显著差异</a>，例如大小限制（EBS io2 Block Express 为 64 TB，实例存储为 10 GB）、数据持久性以及启动时间（EBS 通常不足一分钟，实例存储不足五分钟）。</p>
+            </dd>
+          </dl>
+          <div data-type="note">
+            <p>您可以在 <a href="https://oreil.ly/VDXDr">AWS 文档</a>中找到 EC2 实例根设备存储的完整详细信息。</p>
+          </div>
+          <p>接下来<a contenteditable="false" data-type="indexterm" data-primary="EC2 (Elastic Compute Cloud)" data-secondary="AMIs" data-startref="ec2-ami">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="instances" data-secondary="launching" data-startref="instance-launch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="launching" data-secondary="instances" data-startref="launch-instance">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Amazon Machine Image (AMI)" data-startref="amazon-machine-image">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AMI (Amazon Machine Image)" data-startref="ami">&nbsp;</a>我们需要做的决策是实例类型的选择。AWS 根据不同的能力提供了丰富的实例类型，我们可以选择最符合需求的类型。</p>
+        </section>
+        <section data-type="sect2" id="ch11_instance_type_1734552290903425">
+          <h2>实例类型</h2>
+          <p>不同客户的硬件需求<a contenteditable="false" data-type="indexterm" data-primary="EC2 (Elastic Compute Cloud)" data-secondary="instance types" id="ec2-instance">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="instances" data-secondary="types of" id="instance-type">&nbsp;</a>各有不同，因此 EC2 服务提供了多种实例类型。<em>实例类型</em>定义了 EC2 实例的硬件和性能特征。我们未必总能立即确定哪种实例类型最为合适。可以先在任意通用型实例上安装应用程序，然后执行负载测试。这将有助于确定该实例的极限，进而帮助我们确定适合工作负载的实例类型和所需实例数量。</p>
+          <p>不同的实例类型在 CPU、内存、存储和网络容量方面提供各不相同的组合。以下是各种可用的实例类型系列：</p>
+          <dl>
+            <dt>通用型实例</dt>
+            <dd>
+              <p>适用于行业中大多数工作负载。在计算、内存和网络资源之间保持良好的平衡。</p>
+            </dd>
+            <dt>计算优化型实例</dt>
+            <dd>
+              <p>适用于 CPU 密集型工作负载，例如高性能计算、大数据分析等。</p>
+            </dd>
+            <dt>内存优化型实例</dt>
+            <dd>
+              <p>适用于需要在 RAM 中处理大型数据集的工作负载，例如内存缓存。</p>
+            </dd>
+            <dt>存储优化型实例</dt>
+            <dd>
+              <p>适用于需要对本地存储上的大型数据集进行高吞吐量顺序读写访问的工作负载，例如数据库。</p>
+            </dd>
+            <dt>加速计算型实例</dt>
+            <dd>
+              <p>基于 GPU 的实例，适用于需要高性能计算、计算金融、机器学习等的工作负载。</p>
+            </dd>
+          </dl>
+          <p>选择合适的实例类型对于实现特定工作负载的最佳性能和成本效益至关重要。有关实例类型和实例系列的最新指导，请参阅 <a href="https://oreil.ly/uympU">AWS EC2 实例类型页面</a>。</p>
+          <p>以下是启动 EC2 实例时需要注意的一些其他注意事项：</p>
+          <ul>
+            <li>
+              <p>要在实例启动后与其建立连接，应选择密钥对以启用对实例的安全外壳协议（SSH）访问。</p>
+            </li>
+            <li>
+              <p>EC2 实例在特定区域内的可用区（AZ）级别启动。EC2 允许您修改默认网络配置，例如实例应在其中启动的 VPC、VPC 中的子网、安全组等。这些配置有助于确定如何建立与已启动实例的连接。</p>
+            </li>
+            <li>
+              <p>您可以选择为实例分配公有 IP。分配公有 IP 允许直接从公共互联网连接到实例，前提是您已通过安全组或网络访问控制列表（NACL）设置了相应的权限。</p>
+            </li>
+          </ul>
+          <p>为了在大规模场景下运行应用程序，我们需要在整个基础设施的若干实例之间保持纵向扩展与横向扩展的良好平衡。通过查看使用指标，我们可以确定在较长时间段内始终需要的最少实例数量。对于此类场景，可以通过使用<a href="https://oreil.ly/v0Tqr">预留 EC2 实例容量</a>来降低成本，与按需实例定价相比，根据使用承诺（一年或三年承诺）最高可节省 72% 的费用。请注意，按需实例是我们根据需要从 AWS 控制台随时启动的实例，而预留实例则是我们预先承诺在一定时期内使用 EC2 实例的方案。</p>
+          <p>在某些使用场景下，我们不太担心工作负载运行期间实例被终止，或者工作负载在实例重新可用后可以恢复。对于此类场景，我们<a contenteditable="false" data-type="indexterm" data-primary="spot instances">&nbsp;</a>可以利用被称为 <a href="https://oreil.ly/Vu_ul"><em>Spot 实例</em></a>的资源。</p>
+          <p>Spot 实例比按需实例价格更低。举个例子：假设 us-east-1a 可用区共有 100 台 m4.large 实例容量。其中一半已被客户使用。根据 AWS 历史分析，客户即将申请 30 台专用容量实例。在这个包含 100 台实例的 EC2 池中，有 20 台实例处于闲置状态——AWS 和客户均未从中获益。因此，这些实例以较低的价格作为 Spot 实例提供。客户可以从该池中申请 Spot 实例使用。当 AWS 客户需要的实例数量超过前述预测的 30 台可用实例时，任何 Spot 实例都可以被终止并分配给提出申请的客户。</p>
+          <p>运行在 EC2 实例之上的应用程序流量在一天中会有所变化，我们不一定始终需要固定数量的运行中 EC2 实例。例如，应用程序在中午需要 10 个实例，但在午夜只需要 2 个。AWS 提供了一项自动扩缩功能，可自动为应用程序添加和移除实例。接下来让我们深入探讨<a contenteditable="false" data-type="indexterm" data-primary="EC2 (Elastic Compute Cloud)" data-secondary="instance types" data-startref="ec2-instance">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="instances" data-secondary="types of" data-startref="instance-type">&nbsp;</a>自动扩缩功能。</p>
+        </section>
+        <section data-type="sect2" id="ch11_autoscaling_1734552290903505">
+          <h2>自动扩缩</h2>
+          <p><em>自动扩缩</em>是一项<a contenteditable="false" data-type="indexterm" data-primary="EC2 (Elastic Compute Cloud)" data-secondary="autoscaling" id="ec2-autoscale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="instances" data-secondary="autoscaling" id="instance-autoscale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="autoscaling" id="autoscale-ec2">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scalability" data-secondary="autoscaling" id="scale-autoscale">&nbsp;</a>AWS 功能，可根据不断变化的工作负载需求自动调整集合中 EC2 实例的数量。我们可以基于任意因素（例如可用区、实例类型等）创建 EC2 实例集合。启用自动扩缩后，这些集合<a contenteditable="false" data-type="indexterm" data-primary="autoscaling groups (ASGs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ASGs (autoscaling groups)">&nbsp;</a>被称为 <em>Auto Scaling 组（ASG）</em>。在这些组中，我们可以指定最小和最大实例数量，并应用自动扩缩策略在此限制范围内自动添加和移除实例。这有助于通过根据预定义的扩缩策略动态扩展或缩减容量来维持应用程序的性能和可用性。</p>
+          <p>自动扩缩可以配置为根据 CPU 使用率、网络流量或用户自定义指标进行扩缩。它确保应用程序能够无缝扩展以处理增加的流量，并在低需求期间降低成本。除了处理扩缩之外，自动扩缩还能确保始终有固定数量的实例处于健康运行状态（在运行状况检查失败时会替换实例）。以下是当 ASG 的累计 CPU 使用率超出限制时如何添加新实例的说明（参见<a data-type="xref" href="#ch11_figure_2_1734552290890511">#ch11_figure_2_1734552290890511</a>）：</p>
+          <ul>
+            <li>
+              <p>对于 ASG 1，配置的最小实例数为 1，最大实例数为 4。</p>
+            </li>
+            <li>
+              <p>假设自动扩缩策略规定，如果最大 CPU 使用率在连续 5 分钟内超过 75%，则向组中添加一个新实例。</p>
+            </li>
+            <li>
+              <p>当超出限制时，自动扩缩介入，所需实例数从 1 增加到 2，并启动一个新的 EC2 实例。</p>
+            </li>
+          </ul>
+          <p>AWS 云中的大型应用程序可能需要运行数千台 EC2 机器来处理客户流量或内部系统处理，故障是不可避免的。EC2 实例可能因不可预见的硬件故障而宕机，作为客户，我们应该建立适当的机制来应对这些故障。处理此类问题的方式有多种：</p>
+          <ul>
+            <li>
+              <p>通过自动扩缩策略始终维持组内所需的实例数量</p>
+            </li>
+            <li>
+              <p>在多个可用区中启动 EC2 实例，以承受可用区故障</p>
+            </li>
+            <li>
+              <p>利用 EC2 自动恢复功能，在发生故障时重新启动实例；实例将以相同配置重新启动，包括实例 ID、元数据、挂载的 EBS 卷、私有 IP 以及弹性 IP（EIP）地址</p>
+            </li>
+          </ul>
+          <figure id="ch11_figure_2_1734552290890511">
+            <img src="images/sdoa_1102.png"/>
+            <figcaption>自动扩缩</figcaption>
+          </figure>
+          <p>自动扩缩是扩展和缩减实例的出色工具，但实例启动速度有一定限制，对于突发流量工作负载的响应可能不够及时。依赖自动扩缩应对突发流量可能会骤然中断应用程序可用性；对于此类事件（例如板球赛事直播或 NFL 赛事），我们建议提前对实例进行预扩缩，或将扩缩配置设为更低的触发阈值（例如，将实例添加触发阈值从 80% CPU 使用率降低至 60%）。为了缩短新实例上的应用程序启动和初始化时间，应尽量保持应用程序镜像尺寸小巧，避免包含不必要的依赖项。</p>
+          <p>除了配置扩缩活动中的最小和最大实例数外，我们<a contenteditable="false" data-type="indexterm" data-primary="cooldown periods">&nbsp;</a>还可以定义<a href="https://oreil.ly/P-eAj">冷却期</a>（默认值为 300 秒）。在扩缩活动（启动或终止实例）之后，AWS 会等待所定义的冷却期，然后再启动任何进一步的扩缩活动，从而确保 ASG 的稳定性。</p>
+          <p>EC2 是 AWS 云中最早且使用最广泛的应用程序运行服务。EC2 提供了对软件栈维护的高度控制权以及对硬件操作的最大可见性。然而，我们并非总是需要了解应用程序软件是如何部署的，或者您可能希望避免对系统进行操作维护，例如操作系统补丁更新。AWS 提供了无服务器服务，客户无需担心实例预置或容量规划。顾名思义，<em>无服务器</em>将服务器细节抽象化，使我们可以直接运行工作负载。AWS Lambda 基于无服务器模型运行，支持所需规模下的代码<a contenteditable="false" data-type="indexterm" data-primary="EC2 (Elastic Compute Cloud)" data-secondary="autoscaling" data-startref="ec2-autoscale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="instances" data-secondary="autoscaling" data-startref="instance-autoscale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="autoscaling" data-startref="autoscale-ec2">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scalability" data-secondary="autoscaling" data-startref="scale-autoscale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="compute services" data-tertiary="EC2" data-startref="aws-compute-ec2">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="compute services (AWS)" data-secondary="EC2" data-startref="compute-aws-ec2">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EC2 (Elastic Compute Cloud)" data-startref="ec2">&nbsp;</a>执行。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch11_aws_lambda_1734552290903572">
+        <h1>AWS Lambda</h1>
+        <p>AWS Lambda <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="compute services" data-tertiary="Lambda" id="aws-compute-Lambda">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="compute services (AWS)" data-secondary="Lambda" id="compute-aws-Lambda">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Lambda" id="lambda-ch11">&nbsp;</a>是一项完全托管的无服务器计算服务，让用户无需承担服务器维护的开销即可运行代码。在 Lambda 上运行应用程序，我们只需要提供所选编程语言编写的代码，即所谓的 <em>Lambda 函数</em>。Lambda 支持多种编程语言，能够快速开发和部署事件驱动的应用程序。Lambda 的后端架构按函数运行时进行预置，并在客户调用事件时执行。Lambda 会自动扩展底层基础设施以匹配工作负载，提供高可用性和可靠性。以下是您应该了解的与 Lambda 服务相关的主要概念：</p>
+        <dl>
+          <dt>函数</dt>
+          <dd>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="function (Lambda)">&nbsp;</a>用 Lambda 所支持的首选编程语言编写的应用程序代码库。函数通过触发器调用以执行特定逻辑。</p>
+          </dd>
+          <dt>触发器</dt>
+          <dd>
+            <p>任何<a contenteditable="false" data-type="indexterm" data-primary="triggers">&nbsp;</a>负责调用 Lambda 函数的资源或配置——例如，通过 AWS 控制台进行<a href="https://oreil.ly/-lImC">调用</a>，或通过任何 AWS 服务（如 Amazon SQS、Amazon DynamoDB 流、Amazon Kinesis 等）进行调用。</p>
+          </dd>
+          <dt>事件</dt>
+          <dd>
+            <p>自定义<a contenteditable="false" data-type="indexterm" data-primary="events">&nbsp;</a> JSON 格式文档或特定于某个 AWS 服务的其他结构（例如 SNS 通知），用于向 Lambda 函数传递处理所需的信息。</p>
+          </dd>
+          <dt>Lambda 执行环境</dt>
+          <dd>
+            <p>Lambda <a contenteditable="false" data-type="indexterm" data-primary="execution environment">&nbsp;</a>后端基础设施会在内部为函数执行创建一个安全、隔离的运行时环境。这个运行时环境被称为<em>执行环境</em>，并借助用户输入（如函数语言运行时、可用内存以及函数最大执行时间（最大支持配置为 15 分钟））进行设置。Lambda 执行环境在执行时间到期后关闭。执行环境以特定的指令集架构启动，Lambda 提供两种架构类型来确定计算机处理器类型：</p>
+
+          <ul>
+            <li>
+              <p>ARM64：用于 <a href="https://oreil.ly/7FKn0">AWS Graviton2 处理器</a>的 64 位 ARM 架构</p>
+            </li>
+            <li>
+              <p>x86-64：用于基于 x86 的处理器的 64 位 x86 架构</p>
+            </li>
+          </ul>
+
+
+          <p>我们建议选择 ARM64 架构，因为与 x86 相比，它在成本和性能效率方面更具优势。</p>
+           </dd>
+          <dt>部署包</dt>
+          <dd>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="deployment packages">&nbsp;</a>Lambda 函数代码可以通过两种方式部署：</p>
+
+          <ul>
+            <li>
+              <p>一个包含代码及其依赖项的 <em>.zip</em> 文件，存储在 Amazon S3 中，最大允许大小为 250 MB。Lambda 为函数提供操作系统和运行时。</p>
+            </li>
+            <li>
+              <p>一个存储在 Amazon ECR 中、包含代码及其依赖项的容器镜像，最大允许大小为 10 GB。镜像应与 <a href="https://opencontainers.org">OCI</a> 兼容，并应包含操作系统和<span class='keep-together'>运行时</span>。</p>
+            </li>
+          </ul>
+          </dd>
+
+          <dt>层</dt>
+          <dd>
+            <p>公共代码（<a contenteditable="false" data-type="indexterm" data-primary="layers (Lambda)">&nbsp;</a>例如工具类或库）可以打包为层，而无需添加到每个 Lambda 函数中。层可以附加到 Lambda 以实现代码共享，从而减小整体 Lambda 函数代码包大小并缩短启动时间。层还支持版本控制，以维护代码库的多个版本并确保向后兼容性。</p>
+          </dd>
+          <dt>目标</dt>
+          <dd>
+            <p>另一个<a contenteditable="false" data-type="indexterm" data-primary="destinations (Lambda)">&nbsp;</a> AWS 服务，配置为在异步 Lambda 执行完成（成功或失败）后接收调用记录。AWS 支持将标准 SQS 队列、标准 SNS 主题、Lambda 函数以及 EventBridge 事件总线作为目标。</p>
+          </dd>
+        </dl>
+        <div data-type="note">
+          <p>AWS 会持续添加新的语言运行时；请查阅 <a href="https://oreil.ly/P9958">Lambda 文档</a>以获取受支持语言运行时的最新指导。</p>
+        </div>
+        <p>Lambda 函数的调用方式取决于您的使用场景。一些选项包括：<a href="https://oreil.ly/I_a1c">向 S3 存储桶添加对象</a>、通过 <a href="https://oreil.ly/RBbBj">CloudWatch 事件</a>设置每周计划，或者您可能会选择特定的触发器来调用 Lambda。Lambda 支持三种<a href="https://oreil.ly/KbRR1">调用模式</a>：</p>
+        <dl>
+          <dt>同步调用</dt>
+          <dd>
+            <p>同步调用<a contenteditable="false" data-type="indexterm" data-primary="synchronous invocation">&nbsp;</a>可以通过多种方式实现：通过 Amazon API Gateway、ALB、AWS CLI 等。在此调用模式下，客户等待响应，直到 Lambda 完成执行。这种方式适用于延迟敏感的工作负载，最大执行超时为 15 分钟。如果 Lambda 通过任何 AWS 服务触发，执行超时可能更短，例如 API Gateway 为 29 秒。</p>
+          </dd>
+          <dt>异步调用</dt>
+          <dd>
+            <p>异步调用<a contenteditable="false" data-type="indexterm" data-primary="asynchronous invocation">&nbsp;</a>可以通过 S3、SNS、CloudWatch 事件等实现。在此调用模式下，响应立即返回，请求由 Lambda 排队处理。与同步模式不同，异步调用还可以配置为处理重试，并将调用响应定向到已配置的<a href="https://oreil.ly/RbZ_O">目标</a>。</p>
+          </dd>
+          <dt>轮询调用</dt>
+          <dd>
+            <p>这是<a contenteditable="false" data-type="indexterm" data-primary="polling invocation">&nbsp;</a>基于流或队列的服务（如 DynamoDB 流、Kinesis、SQS 队列或 Kafka）的首选调用模式。在此调用模式下，Lambda 轮询 AWS 服务并同步调用 Lambda 函数进行处理。其优势在于 AWS 不会向客户收取消息轮询的费用，我们只需为 Lambda 函数调用付费。重试机制取决于 AWS 服务中的数据过期时间，例如 SQS 队列为 1 分钟到 14 天。</p>
+          </dd>
+        </dl>
+        <p>我们提到 Lambda 在调用时预置资源，这可能会因冷启动问题导致更长的请求处理时间。<em>冷启动</em>是指<a contenteditable="false" data-type="indexterm" data-primary="cold start">&nbsp;</a> Lambda 预置资源并准备执行环境所花费的时间，涉及从 S3 或 ECR 下载函数代码、使用内存和运行时配置创建环境，以及执行主函数代码之外的任何初始化代码。完成上述全部设置后，Lambda 才开始为客户请求提供服务。冷启动时间可能从 100 毫秒到 1 秒不等，据 AWS 对生产工作负载的分析，通常发生在约 1% 的总调用中。AWS 推荐了多种减少冷启动问题的方法：</p>
+        <dl>
+          <dt>暖启动</dt>
+          <dd>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="warm start">&nbsp;</a>执行环境在函数完成执行后不会立即删除，而是保留一段时间，以便持续处理调用同一 Lambda 函数的请求。这省略了每次 Lambda 调用时的执行环境设置，即所谓的<em>暖启动</em>。冷启动不由客户控制，Lambda 可以根据需要创建新的执行环境。例如，Lambda 会为并发调用创建全新的执行环境，以处理不断增加的流量。我们可以主动利用暖启动优势：在 Lambda 函数为实际请求提供服务之前，使用虚拟输入提前调用它。这种方法仅推荐用于计划性或低流量工作负载，不适用于大规模生产环境。</p>
+          </dd>
+          <dt>预置并发</dt>
+          <dd>
+            <p>预置并发<a contenteditable="false" data-type="indexterm" data-primary="provisioned concurrency">&nbsp;</a>确保执行环境提前设置完毕，随时准备处理请求。例如，预置并发度为 4 的 Lambda 函数将并行创建 4 个执行环境，对于初始化代码库庞大的函数极为有用。</p>
+          </dd>
+          <dt>内存配置</dt>
+          <dd>
+            <p>AWS 提供了
+            为 Lambda 函数配置内存的选项，范围从 128 MB 到 10,240 MB。分配给 Lambda 函数的计算能力与配置的内存成正比，因此建议调整内存设置以提升性能。您可以通过对 Lambda 函数运行测试来确定适合您工作负载的最佳内存配置，也可以探索使用 <a href="https://oreil.ly/URjgH">Lambda Power Tuning 工具</a>来实现这一目标。</p>
+          </dd>
+          <dt>静态初始化优化</dt>
+          <dd>
+            <p>Lambda <a contenteditable="false" data-type="indexterm" data-primary="static initialization optimization (Lambda)">&nbsp;</a>在准备执行环境时，会配置所需的连接或下载代码依赖项。大量依赖项无疑会增加冷启动时间，因此建议仅导入所需的依赖项。如果函数代码库过于庞大而导致上述方式不可行，则可以探索其他途径，例如将一个函数拆分为多个子函数。</p>
+          </dd>
+          <dt>SnapStart</dt>
+          <dd>
+            <p>对于<a contenteditable="false" data-type="indexterm" data-primary="SnapStart">&nbsp;</a> Java 11 运行时环境，SnapStart 通过对初始化完毕的执行环境的内存和磁盘状态拍摄加密快照来缩短函数启动时间。新的函数调用从缓存的快照中恢复执行，从而改善冷启动时间。</p>
+          </dd>
+        </dl>
+        <p>如前所述，Lambda 支持多种调用模式并能自动扩展以满足所需流量。决定是否选择 Lambda 作为计算平台的关键因素，是判断您是否能接受对基础设施的高度抽象。请考虑：是否有在基础设施层面对系统效率进行精细调优的需求？是否可以接受因冷启动问题导致的延迟峰值？这些都是您在做出决策时应当尝试回答的问题。</p>
+        <p>我们在<a data-type="xref" href="#ch07_containerization_orchestration_and_deployments_1734552288630240">#ch07_containerization_orchestration_and_deployments_1734552288630240</a>中讨论了不同的容器化概念。接下来，我们将探讨如何将容器作为计算平台，并在 AWS 云上部署我们的系统。<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="compute services" data-tertiary="Lambda" data-startref="aws-compute-Lambda">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="compute services (AWS)" data-secondary="Lambda" data-startref="compute-aws-Lambda">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Lambda" data-startref="lambda-ch11">&nbsp;</a></p>
+      </section>
+      <section data-type="sect1" id="ch11_containerization_services_1734552290903645">
+        <h1>容器化服务</h1>
+        <p>AWS <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="compute services" data-tertiary="containerization" data-see="containerization">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="compute services (AWS)" data-secondary="containerization" data-see="containerization">&nbsp;</a>通过两项服务提供 Docker 容器的编排能力：亚马逊弹性容器服务（Amazon ECS）和亚马逊弹性 Kubernetes 服务（Amazon EKS）。ECS 是完全托管的容器编排服务，而 EKS 是在 AWS 云上运行开源 Kubernetes 的托管服务。</p>
+        <div data-type="note">
+          <p>本节基于<a data-type="xref" href="#ch07_containerization_orchestration_and_deployments_1734552288630240">#ch07_containerization_orchestration_and_deployments_1734552288630240</a>中涵盖的概念，请先阅读该章。</p>
+        </div>
+        <section data-type="sect2" id="ch11_amazon_elastic_container_service_1734552290903718">
+          <h2>Amazon Elastic Container Service</h2>
+          <p>Amazon ECS <a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="ECS (Elastic Container Service)" id="container-ecs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ECS (Elastic Container Service)" id="ecs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic Container Service (ECS)" id="elastic-container-service">&nbsp;</a>是一项完全托管的高可用服务，用于管理容器化应用程序的部署、运维和扩缩，以应对所需的流量负载。ECS 与其他 AWS 服务集成，例如 Amazon EC2、Amazon ECR 以及 AWS ELB，提供完整的容器管理解决方案。以下是与 Amazon ECS 相关的一些重要术语：</p>
+          <dl>
+            <dt>任务</dt>
+            <dd>
+              <p>任务<a contenteditable="false" data-type="indexterm" data-primary="tasks (ECS)" id="task-ecs">&nbsp;</a>是 ECS 中的基本部署单位，负责运行一个或多个容器，如<a data-type="xref" href="#ch11_figure_3_1734552290890535">#ch11_figure_3_1734552290890535</a>所示。</p>
+            </dd>
+          </dl>
+          <figure id="ch11_figure_3_1734552290890535">
+            <img alt="A screenshot of a computer program&#10;&#10;Description automatically generated" src="images/sdoa_1103.png"/>
+            <figcaption>ECS 任务、服务与集群示意图</figcaption>
+          </figure>
+          <dl>
+            <dt>ECS 服务</dt>
+            <dd>
+              <p>ECS 服务将相同的任务分组，以便在一处对其进行扩缩和监控。</p>
+            </dd>
+            <dt>ECS 集群</dt>
+            <dd>
+              <p>基础设施注册到 ECS 集群，ECS 集群充当 ECS 任务或服务的逻辑分组，这些任务或服务通过 ECS Fargate、ECS EC2 启动类型，或在单个集群中同时使用两种类型来运行。</p>
+            </dd>
+            <dt>任务定义</dt>
+            <dd>
+              <p>任务定义用于定义任务的各种<a href="https://oreil.ly/tXxnK">配置</a>，例如运行时平台、任务大小、启动类型、数据卷、环境变量、针对任务内启动的容器特定配置的容器定义等。任务定义使您能够定义复杂的多容器应用程序，并指定其编排方式。以下是以 Fargate 作为启动<a contenteditable="false" data-type="indexterm" data-primary="tasks (ECS)" data-startref="task-ecs">&nbsp;</a>选项的示例：</p>
+              <pre data-type="programlisting">{
+   "family": "fargate-task-definition",
+   "containerDefinitions": [
+      {
+         "image": "AwsAccId.dkr.ecr.us-west-2.amazonaws.com/repository:tag",
+         "name": "my-fargate-application",
+         "portMappings": [
+            {
+               "containerPort": 80,
+               "hostPort": 80,
+            }
+         ]
+      }
+   ],
+   "essential": true,
+   "cpu": "256",
+   "memory": "512",
+   "executionRoleArn": "arn:aws:iam::AwsAccId:role/ecsTaskExecutionRole",
+   "networkMode": "awsvpc",
+   "runtimePlatform": {
+        "operatingSystemFamily": "LINUX"
+    },
+   "requiresCompatibilities": [
+       "FARGATE"
+    ]
+}</pre>
+            </dd>
+            <dt>Amazon Elastic Container Registry </dt>
+            <dd>
+              <p><a href="https://oreil.ly/Mpz-u">Amazon ECR</a> 是 AWS 托管的容器<a contenteditable="false" data-type="indexterm" data-primary="Elastic Container Registry (ECR)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ECR (Elastic Container Registry)">&nbsp;</a>镜像注册表，可用于推送、拉取和管理 Docker 或 OCI 镜像。</p>
+            </dd>
+          </dl>
+          <p>ECS 提供两种<a contenteditable="false" data-type="indexterm" data-primary="launching" data-secondary="ECS launch types">&nbsp;</a>启动选项：（1）ECS EC2，即在一组 EC2 机器上管理容器；（2）ECS Fargate，一种无服务器选项，将完整的运营管理责任交由 AWS 负责。这两种部署选项之间的主要差异列于<a data-type="xref" href="#ch11_table_1_1734552290894663">#ch11_table_1_1734552290894663</a>中。</p>
+          <table id="ch11_table_1_1734552290894663">
+            <caption>Amazon ECS 启动类型</caption>
+            <thead>
+              <tr>
+                <th>对比维度</th>
+                <th>Amazon ECS EC2</th>
+                <th>Amazon ECS Fargate</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>运营管理</p>
+                </td>
+                <td>
+                  <p>计算层由客户管理，包括实例类型和 EC2 实例数量、应用程序扩缩、操作系统补丁更新等。EC2 支持自动扩缩，以根据资源使用率或应用程序需求调整实例数量。</p>
+                </td>
+                <td>
+                  <p>无服务器模式，客户无需担心服务器管理任务，例如应用操作系统安全补丁。客户可以指定操作系统、<a href="https://oreil.ly/wnfut">vCPU、内存</a>以及自动扩缩配置。</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>定价</p>
+                </td>
+                <td>
+                  <p>ECS 本身无额外费用；客户按 EC2 实例的运行时间以及所选存储（如 EBS 卷）<a href="https://oreil.ly/eP7lk">收费</a>。</p>
+                </td>
+                <td>
+                  <p><a href="https://oreil.ly/3P9kW">费用</a>基于 ECS 任务或 EKS 容器组（Pod）的 vCPU、内存、CPU 架构以及存储选择，且仅在容器工作负载处于活跃状态时收费。</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>业务使用场景</p>
+                </td>
+                <td>
+                  <p>AWS 推荐 ECS EC2 用于以下工作负载：对 CPU 或内存有高要求的工作负载、有成本优化需求的工作负载、需要持久存储访问的应用程序，或有合规和组织要求需要自行管理基础设施的场景。</p>
+                </td>
+                <td>
+                  <p>AWS 推荐 ECS Fargate 用于以下场景：需要低运维开销优化的大型工作负载、有偶发性突发流量的小型工作负载，以及批处理工作负载。</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>局限性</p>
+                </td>
+                <td>
+                  <p>客户方在选择 EC2 实例、维护实例队列、操作系统补丁更新等方面存在额外的运营开销。</p>
+                </td>
+                <td>
+                  <p>不支持图形处理单元（GPU）以及用于持久存储的 EBS 卷。您可以使用 <a href="https://oreil.ly/rq5MT">EFS 卷</a>进行持久存储，使用绑定挂载进行临时存储。总体而言，与 ECS EC2 相比，可定制性更为有限。</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>ECS 与其他 AWS 服务无缝集成，例如用于可观测性的 Amazon CloudWatch、用于安全和访问控制的 AWS IAM、<a href="https://oreil.ly/Lijc3">AWS Cloud Map</a> 以及 AWS ALB，提供服务发现和负载均衡能力。Cloud Map 允许用户动态注册和发现服务，使容器之间的通信更加便捷。ALB 根据配置的规则在容器之间提供负载均衡，分发流量，有助于实现高可用性和可扩展性。</p>
+          <p>以下是 ECS 的一些其他关键优势：</p>
+          <dl>
+            <dt>可扩展性</dt>
+            <dd>
+              <p>ECS 允许您根据需求无缝扩展容器化应用程序。它通过自动扩缩或无服务器计算选项，自动调整资源以高效处理流量峰值。</p>
+            </dd>
+            <dt>高可用性</dt>
+            <dd>
+              <p>ECS 通过将容器分散到区域内的多个可用区，确保容器的高可用性。它能自动恢复故障容器，保持应用程序的平稳运行。</p>
+            </dd>
+            <dt>成本效益</dt>
+            <dd>
+              <p>使用 ECS，您只需为实际使用的资源付费。它优化资源分配并根据实际需求进行扩缩，有助于降低成本。</p>
+            </dd>
+            <dt>安全性与合规性</dt>
+            <dd>
+              <p>ECS 与 AWS IAM 集成，允许您控制对容器和资源的访问。它还为传输中和静态数据提供加密选项。</p>
+            </dd>
+          </dl>
+          <p>Amazon EKS 是 AWS 提供的另一项用于在容器上运行应用程序的服务。让我们探讨它与 Amazon ECS 的区别，以及客户通常在哪些使用场景下选择 EKS <a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="ECS (Elastic Container Service)" data-startref="container-ecs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ECS (Elastic Container Service)" data-startref="ecs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic Container Service (ECS)" data-startref="elastic-container-service">&nbsp;</a>而非 ECS。</p>
+        </section>
+        <section data-type="sect2" id="ch11_amazon_elastic_kubernetes_service_1734552290903798">
+          <h2>Amazon Elastic Kubernetes Service</h2>
+          <p>Amazon EKS 是<a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="EKS (Elastic Kubernetes Service)" id="container-eks">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic Kubernetes Service (EKS)" id="elastic-kubernetes">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EKS (Elastic Kubernetes Service)" id="eks">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Kubernetes" data-secondary="EKS (Elastic Kubernetes Service)" id="kubernetes-eks">&nbsp;</a>一项完全托管的 Kubernetes 服务，简化了在 AWS 云上使用 Kubernetes 部署、管理和扩展容器化应用程序的流程。EKS 消除了手动设置和配置 Kubernetes 集群的需要，使开发人员能够专注于应用程序，而非底层基础设施。与 ECS 类似，EKS 也提供 EKS EC2 和 Fargate 启动类型。</p>
+          <p>您可能会疑惑：为什么会有两种不同的容器化服务，我该如何决定哪种更适合我的使用场景？EKS 的一些主要优势包括：</p>
+          <dl>
+            <dt>托管式 Kubernetes 控制平面</dt>
+            <dd>
+              <p>EKS 管理 Kubernetes 集群控制平面，包括 API 服务器和 <a href="https://oreil.ly/mlpe1">etcd 持久化数据库</a>。这消除了客户管理和扩展控制平面的管理开销，并由 AWS 提供高可用性和可靠性保障。</p>
+            </dd>
+            <dt>多可用区支持</dt>
+            <dd>
+              <p>EKS 支持跨多个可用区运行 Kubernetes 集群，提供增强的可用性和容错能力。通过将集群资源分布在不同的可用区，运行在 EKS 上的应用程序可以承受故障并持续无缝运行。EKS 控制平面在三个可用区运行，支持自动检测和替换不健康的节点。</p>
+            </dd>
+            <dt>自动化 Kubernetes 版本升级</dt>
+            <dd>
+              <p>EKS 会自动处理控制平面的 Kubernetes 版本升级，简化了跟进最新功能和安全补丁的流程。这有助于确保集群运行在稳定、安全的 Kubernetes 版本上，无需人工干预。</p>
+            </dd>
+            <dt class="pagebreak-before less_space">混合部署</dt>
+            <dd>
+              <p>对于高延迟敏感型工作负载，可以使用 <a href="https://oreil.ly/D1014">AWS Outposts</a> 上的 EKS 在本地数据中心运行应用程序。Outposts 将 AWS 基础设施、服务和工具扩展到客户的本地数据中心，从而使在其上运行 EKS 工作负载成为可能。</p>
+            </dd>
+            <dt>与 AWS 服务集成</dt>
+            <dd>
+              <p>EKS 与各种 AWS 服务无缝集成，使开发人员能够充分利用 AWS 广泛的资源和能力生态系统。它与 AWS ELB、Amazon VPC、AWS IAM、AWS CloudTrail 等服务集成，为应用程序的管理和安全保护提供统一的体验。</p>
+            </dd>
+            <dt>可扩展性与弹性</dt>
+            <dd>
+              <p>借助 Amazon EKS，轻松扩展 Kubernetes 集群以适应增加的工作负载。它利用 Amazon EC2 实例和 Auto Scaling 组，根据需求动态扩展 Worker 节点，或者使用 Fargate 启动作为无服务器选项。这使应用程序能够无缝处理流量峰值和不断变化的资源需求。我们还可以利用 EC2 Spot 实例降低 EKS 集群成本，或使用 GPU 优化实例进行高性能计算。</p>
+            </dd>
+            <dt>安全性与合规性</dt>
+            <dd>
+              <p>EKS 融入了多项安全功能以保护应用程序和数据。它与 AWS IAM 集成以控制对集群资源的访问，支持使用 Amazon VPC 实施细粒度的网络策略，并允许使用 AWS KMS 对静态数据进行加密。EKS 符合多种行业法规，包括<a href="https://oreil.ly/qMRt0">系统和组织控制（SOC）</a>、<a href="https://oreil.ly/oxQW8">PCI DSS</a>、<a href="https://oreil.ly/VajbI">ISO</a>、<a href="https://oreil.ly/UJF8F">FedRAMP Moderate</a>、<a href="https://oreil.ly/78ggQ">信息安全注册评估师计划（IRAP）</a>、<a href="https://oreil.ly/RjghE">云计算合规控制目录（C5）</a>、<a href="https://oreil.ly/dhW5D">韩国信息安全管理体系（K-ISMS）</a>、<a href="https://oreil.ly/_lbgS">国家安全计划（ENS）高级别</a>、<a href="https://oreil.ly/aIXj1">外包服务提供商审计报告（OSPAR）</a>、<a href="https://oreil.ly/xzijT">健康信息信任联盟通用安全框架（HITRUST CSF）</a>以及 <a href="https://oreil.ly/489qi">HIPAA</a>。</p>
+            </dd>
+            <dt>监控与日志记录</dt>
+            <dd>
+              <p>EKS 提供与主流监控和日志记录服务的集成，包括 Amazon CloudWatch 和 AWS CloudTrail。这些服务使开发人员能够深入了解集群性能、监控资源使用情况，并跟踪 API 调用和事件，用于审计和故障排查。</p>
+            </dd>
+            <dt>生态系统与社区</dt>
+            <dd>
+              <p>作为开源平台，Kubernetes 拥有活跃的生态系统和社区。EKS 通过与 Kubernetes 原生工具、框架和 Operator 的兼容性从中受益。开发人员可以利用这些工具在 EKS 环境中增强应用程序的部署、管理和可观测性。</p>
+            </dd>
+          </dl>
+          <p>对开源的热情或许正是您选择 EKS 的又一原因——在 EKS 中，您可以完整地了解 Kubernetes 的持续开发动态及其内部架构。AWS 上的 EKS 兼顾了两者的优势：开源支持以及将管理任务卸载给 AWS，同时与其他 AWS <a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="EKS (Elastic Kubernetes Service)" data-startref="container-eks">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic Kubernetes Service (EKS)" data-startref="elastic-kubernetes">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EKS (Elastic Kubernetes Service)" data-startref="eks">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Kubernetes" data-secondary="EKS (Elastic Kubernetes Service)" data-startref="kubernetes-eks">&nbsp;</a>服务更易于集成。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch11_conclusion_1734552290903855">
+        <h1>总结</h1>
+        <p>为应用程序选择<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="compute services" data-tertiary="choosing" id="aws-compute-choose">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="compute services (AWS)" data-secondary="choosing" id="compute-aws-choose">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="choosing" data-secondary="compute services" id="choose-compute">&nbsp;</a>合适的计算平台可能是一个艰难的抉择，因此您应该清晰地梳理所有应用程序需求或预期，以帮助您做出明智的决策。亚马逊内部有一种"双向门"决策理念，其核心是："如果结果不尽如人意，您随时可以撤回决策。"同样，随着应用程序范围或流量模式的变化，计算平台也始终可以重新迭代。以下是我们认为在决定计算平台时有所帮助的几点建议：</p>
+        <dl>
+          <dt>灵活性</dt>
+          <dd>
+            <p>EC2 在硬件层面的定制化以及软件应用程序的部署方式上为用户提供了最大的灵活性。相比之下，AWS Lambda 对资源进行了完全抽象，客户只需专注于代码，但受到诸如最长调用时间 15 分钟等限制。EC2 的高灵活性带来了更大的系统维护运营开销，例如操作系统安全补丁更新、确定最适合应用程序的实例类型、配置自动扩缩策略、部署应用程序等。</p>
+          </dd>
+          <dt>学习曲线</dt>
+          <dd>
+            <p>在开始构建和运行应用程序时，对平台的熟悉程度是另一个需要考虑的因素。越熟悉意味着未知越少，应用程序上线越快。例如，如果您完全不熟悉任何计算平台，从 Lambda 开始并在最短时间内发布应用程序是非常容易的，因为您只需专注于编写代码，免去了应用程序部署和维护所需流量的所有烦恼。</p>
+          </dd>
+          <dt>流量模式</dt>
+          <dd>
+            <p>AWS 提供的所有计算平台都能在高规模下运行。您应该了解手头的需求，以及为什么特定平台能最好地服务于业务用例并提供成本效益。例如，EC2 或 ECS EC2 提供了更多的硬件控制，因此可能是高延迟敏感操作或 GPU 加速计算的更好选择。</p>
+          </dd>
+          <dt>成本</dt>
+          <dd>
+            <p>在 AWS 云中，考虑资源成本非常重要。每个计算平台的定价模型各不相同，无法直接进行一一比较。成本可能取决于流量模式、工作负载规模或资源选择，例如 EC2 实例类型、ECS Fargate 任务大小或 Lambda 内存配置。同时也要将运营开销纳入考量，因为最终需要由人来维护<span class='keep-together'>运营</span>。</p>
+          </dd>
+        </dl>
+        <p>您可能暂时无法确定最佳方案，但请记住，这始终是一个双向门决策，随时可以调整和迭代。</p>
+        <p>在下一章中，我们将探讨消息服务（如 Amazon SQS、Amazon SNS 和 Apache Kafka）、工作流编排服务（如 AWS Step Functions 和 Apache Airflow）、应用程序健康与监控服务（如 AWS CloudWatch）以及应用程序安全服务（如 AWS IAM <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="compute services" data-tertiary="choosing" data-startref="aws-compute-choose">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="compute services (AWS)" data-secondary="choosing" data-startref="compute-aws-choose">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="choosing" data-secondary="compute services" data-startref="choose-compute">&nbsp;</a>和 Amazon Cognito）。</p>
+      </section>
+    </section>

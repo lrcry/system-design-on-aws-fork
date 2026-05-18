@@ -1,0 +1,517 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch04_caching_policies_and_strategies_1734552287178593">
+      <h1>缓存机制与策略</h1>
+      <p>在计算领域，<em>缓存</em>是一种<a contenteditable="false" data-type="indexterm" data-primary="cache, definition of">&nbsp;</a>组件或机制，用于将频繁访问的数据或指令存储在更靠近计算单元的位置，从而降低从较慢的存储设备或外部资源获取信息时的延迟。在传统硬件中，缓存通常以高速、小容量存储器的形式实现，其位置比主存更靠近 CPU。其目标是通过减少访问数据或指令所需的时间来提升系统整体性能。</p>
+      <p>缓存的核心思想围绕<a contenteditable="false" data-type="indexterm" data-primary="locality">&nbsp;</a><em>局部性原理</em>展开。该原理指出，程序往往会反复访问相对较小的一部分数据或指令。通过将这些频繁访问的信息存储在缓存中，后续对相同数据的访问可以得到更快的响应，从而提升性能。</p>
+      <p>从缓存中访问数据时，存在两种可能的结果：缓存命中和缓存未命中。<em>缓存命中</em><a contenteditable="false" data-type="indexterm" data-primary="cache hit">&nbsp;</a>发生在缓存中找到所请求数据时，此时无需访问较慢的主存或外部资源便可快速获取数据。<em>缓存未命中</em><a contenteditable="false" data-type="indexterm" data-primary="cache miss">&nbsp;</a>则发生在缓存中未找到所请求数据时，系统需要从主存或外部存储中取回数据。缓存命中率衡量缓存在无需访问较慢外部存储的情况下响应请求的有效性，而缓存未命中率则表明缓存未能响应请求数据的频率。</p>
+      <p>本章将介绍帮助您有效使用数据缓存的重要知识。我们将讨论缓存淘汰策略——即决定何时从缓存中删除数据以加快重要数据检索速度的规则。我们还将介绍缓存失效机制，以确保缓存数据始终正确并与真实的底层数据源保持一致。本章将讨论面向读密集型和写密集型应用的缓存策略，并介绍如何将缓存付诸实践，包括如何部署缓存以获得最佳效果。您将了解缓存的工作原理以及 CDN 的重要性。最后，您将发现两种流行的开源缓存解决方案。让我们从缓存入手。</p>
+      <section data-type="sect1" id="ch04_benefits_of_caching_1734552287178779">
+        <h1>缓存的优势</h1>
+        <p>缓存<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="benefits of" id="cache-benefit">&nbsp;</a>在以下几个方面对提升系统性能和降低延迟起着至关重要的作用：</p>
+        <dl>
+          <dt>更快的访问</dt>
+          <dd>
+            <p>与主存或外部存储相比，缓存提供了更快的访问速度。将频繁访问的数据保存在更靠近 CPU 的位置，可以显著降低缓存访问时间，从而缩短平均数据获取时间，即降低平均访问时间或延迟。</p>
+          </dd>
+          <dt>降低延迟</dt>
+          <dd>
+            <p>缓存通过减少对较慢存储资源的访问需求来降低延迟。通过从缓存命中中获取数据，系统避免了从主存或外部数据源取回数据所带来的延迟，从而降低了整体延迟，这一概念在 <a data-type="xref" href="#ch01_system_design_trade_offs_and_guidelines_1734552285979675">#ch01_system_design_trade_offs_and_guidelines_1734552285979675</a> 中有详细讨论。</p>
+          </dd>
+          <dt>带宽优化</dt>
+          <dd>
+            <p>缓存通过减少发送到较慢存储设备的请求数量来优化带宽使用。当数据频繁从缓存中获取时，可以降低对内存总线或外部接口的需求，从而释放资源用于其他操作。</p>
+          </dd>
+          <dt>提升吞吐量</dt>
+          <dd>
+            <p>缓存使 CPU 能够快速访问频繁所需的数据，无需等待较慢的存储访问，从而提升系统整体吞吐量。这使 CPU 能够在给定时间内完成更多计算操作。</p>
+          </dd>
+        </dl>
+        <p>阿姆达尔定律和帕累托分布为缓存的优势提供了进一步的理论支撑。</p>
+        <p><em>阿姆达尔定律</em>指出，<a contenteditable="false" data-type="indexterm" data-primary="Amdahl's law">&nbsp;</a>优化系统某一特定组件所能实现的整体速度提升，受限于该组件被使用的时间占比。缓存作为关键的优化组件，尤其在缓存命中率较高时，可以对系统整体性能产生显著影响。阿姆达尔定律强调了高效缓存的重要性，以最大化性能优化带来的收益。</p>
+        <p><em>帕累托分布</em>，<a contenteditable="false" data-type="indexterm" data-primary="Pareto distribution">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="80/20 rule">&nbsp;</a>又称<em>二八定律</em>，指出系统工作负载的很大一部分由少量数据驱动。缓存与这一分布高度契合——将频繁访问的数据存储在快速缓存中，可以高效地服务于最关键的操作。通过将缓存资源集中在访问频率最高的数据上，可以借助帕累托分布来优化最重要工作负载的性能。</p>
+        <p>总而言之，缓存为频繁访问的数据提供了更快的访问速度，从而降低延迟并提升系统整体性能。缓存还能优化带宽、提高吞吐量，并与阿姆达尔定律和帕累托分布等原则相契合，以最大化性能<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="benefits of" data-startref="cache-benefit">&nbsp;</a>收益。</p>
+      </section>
+      <section data-type="sect1" id="ch04_cache_eviction_policies_1734552287178851">
+        <h1>缓存淘汰策略</h1>
+        <p>缓存<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="eviction policies" id="cache-evict">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="eviction policies for caches" id="evict-cache">&nbsp;</a>通过将频繁访问的数据存储在更靠近消费者的位置，在提升数据检索系统的性能和效率方面发挥着至关重要的作用。缓存策略决定了当缓存容量达到上限时，如何处理数据的淘汰和替换。缓存淘汰策略致力于最大化<em>缓存命中率</em>——即请求的数据项在缓存中被找到并响应的时间占比。较高的缓存命中率减少了从外部存储获取数据的需求，从而提升系统整体性能。本节将探讨多种缓存淘汰策略，包括 Belady 算法、基于队列的策略、基于时效性的策略以及基于频率的策略。</p>
+        <section data-type="sect2" id="ch04_belady_s_algorithm_1734552287178918">
+          <h2>Belady 算法</h2>
+          <p><em>Belady 算法</em>是一种最优缓存<a contenteditable="false" data-type="indexterm" data-primary="Belady's algorithm">&nbsp;</a>算法，它淘汰未来最长时间内不会被使用的数据项。该算法需要掌握未来的访问模式，这在实际中通常难以获取。Belady 算法作为理论基准，用于评估其他缓存淘汰策略的性能。</p>
+        </section>
+        <section data-type="sect2" id="ch04_queue_based_policies_1734552287178978">
+          <h2>基于队列的策略</h2>
+          <p>基于队列的<a contenteditable="false" data-type="indexterm" data-primary="queue-based cache eviction policies" id="queue-cache-evict">&nbsp;</a>缓存淘汰策略将缓存视为队列进行管理。当缓存达到容量上限时，采用以下策略之一删除数据，为新数据腾出空间：</p>
+          <dl>
+            <dt>先进先出（FIFO）</dt>
+            <dd>
+              <p>先进先出（FIFO）<a contenteditable="false" data-type="indexterm" data-primary="FIFO (first-in, first-out) caching policy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="first-in, first-out (FIFO) caching policy">&nbsp;</a>是一种简单的缓存淘汰策略，它淘汰缓存中最旧的数据项。其原则是：最先插入缓存的数据项在缓存满时最先被淘汰。请注意，在传统 FIFO 中，数据项被访问时不会调整位置；它们仅在插入缓存时被加入队列。因此，数据项一旦插入，其位置便固定不变，直至最终被淘汰。这可能导致仍有需求的数据项被过早淘汰，产生老化问题。</p>
+            </dd>
+            <dt>后进先出（LIFO）</dt>
+            <dd>
+              <p>后进先出（LIFO）<a contenteditable="false" data-type="indexterm" data-primary="LIFO (last in, first out)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="last in, first out (LIFO)">&nbsp;</a>与 FIFO 相反，最近插入的数据项最先被淘汰。LIFO 不考虑访问模式，可能导致缓存利用率低下和淘汰决策不合理。</p>
+            </dd>
+          </dl>
+          <p>FIFO 的一个实际应用场景是打印队列管理——FIFO 通过按提交顺序处理文档来保证公平性，当队列满时淘汰最早的任务。<a contenteditable="false" data-type="indexterm" data-primary="queue-based cache eviction policies" data-startref="queue-cache-evict">&nbsp;</a></p>
+        </section>
+        <section data-type="sect2" id="ch04_recency_based_policies_1734552287179036">
+          <h2>基于时效性的策略</h2>
+          <p>基于时效性的<a contenteditable="false" data-type="indexterm" data-primary="recency-based cache eviction policies">&nbsp;</a>缓存淘汰策略侧重于数据访问的时间维度，优先将最近访问的数据项保留在缓存中：</p>
+          <dl>
+            <dt>最近最少使用（LRU）</dt>
+            <dd>
+              <p>最近最少使用（LRU）<a contenteditable="false" data-type="indexterm" data-primary="least recently used (LRU)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LRU (least recently used)">&nbsp;</a>是一种常用的缓存淘汰策略，它淘汰缓存中最久未被访问的数据项。该策略假设最近访问的数据项在近期更可能再次被访问。LRU 需要跟踪每个数据项的访问时间戳，因此实现起来稍显复杂。</p>
+            </dd>
+            <dt>最近最多使用（MRU）</dt>
+            <dd>
+            <p>最近最多使用（MRU）<a contenteditable="false" data-type="indexterm" data-primary="most recently used (MRU)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MRU (most recently used)">&nbsp;</a>淘汰缓存中最近访问的数据项，其假设是最近访问的数据项不太可能很快再次被访问。MRU 在少量数据项被频繁访问、而较旧的数据项更可能被复用的场景中效果较好。</p>
+          </dd>
+          </dl>
+          <p>以实际应用为例，MRU 在 Web 浏览器中淘汰最近访问的页面，假设用户短期内不太可能重新访问这些页面，从而为新内容腾出空间。</p>
+        </section>
+        <section data-type="sect2" id="ch04_frequency_based_policies_1734552287179094">
+          <h2>基于频率的策略</h2>
+          <p>基于频率的<a contenteditable="false" data-type="indexterm" data-primary="frequency-based cache eviction policies" id="frequent-cache-evict">&nbsp;</a>缓存淘汰策略根据数据项的访问频率来决定其保留优先级，替换访问频率最低的数据项，假设访问较少的数据对性能优化的重要性较低。基于频率的策略包括：</p>
+          <dl>
+            <dt>最不经常使用（LFU）</dt>
+            <dd>
+              <p>最不经常使用（LFU）<a contenteditable="false" data-type="indexterm" data-primary="least frequently used (LFU)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LFU (least frequently used)">&nbsp;</a>淘汰缓存中访问频率最低的数据项，假设访问频率较低的数据项在未来被访问的可能性也较低。LFU 需要为每个数据项维护访问频率计数，可能占用较多内存。</p>
+            </dd>
+            <dt>最不经常最近使用（LFRU）</dt>
+            <dd>
+            <p>最不经常最近使用（LFRU）<a contenteditable="false" data-type="indexterm" data-primary="least frequently recently used (LFRU)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LFRU (least frequently recently used)">&nbsp;</a>综合了 LFU 和 LRU 的概念，同时考虑访问频率和访问时效性，淘汰在最近未使用的数据项中频率计数最低的数据项。</p>
+          </dd>
+          </dl>
+          <p>在提供频繁访问静态内容的 CDN 中，LFRU 能够通过平衡时效性和频率来优化缓存。例如，一个热门视频可能在短期内被频繁访问，但随着时间推移其相关性逐渐降低。LFRU 可确保在视频持续获得频繁访问的情况下将其保留在缓存中，同时兼顾其他可能频率增加的内容，确保最有价值的内容始终可用。CDN 架构将在 <a contenteditable="false" data-type="indexterm" data-primary="frequency-based cache eviction policies" data-startref="frequent-cache-evict">&nbsp;</a><a data-type="xref" href="#ch04_content_delivery_networks_1734552287180133">#ch04_content_delivery_networks_1734552287180133</a> 中详细介绍。</p>
+        </section>
+        <section data-type="sect2" id="ch04_allowlist_policy_1734552287179151">
+          <h2>允许列表策略</h2>
+          <p>缓存替换的<em>允许列表策略</em><a contenteditable="false" data-type="indexterm" data-primary="allowlist policies">&nbsp;</a>是一种机制，用于定义一组在空间有限时优先保留在缓存中的数据项。与删除最近最少使用或最不经常访问数据项的传统缓存淘汰策略不同，允许列表策略侧重于明确指定哪些数据项应保留在缓存中。即使在缓存压力较大的时期，该策略也能确保重要或高优先级的数据始终可用。通过允许特定数据项留在缓存中，同时淘汰其他数据项，允许列表策略优化了缓存利用率，并在关键数据访问场景中提升了性能。</p>
+          <p>在提供动态内容的 Web 应用程序中，可以实施允许列表策略以保留关键的用户特定数据，例如会话信息或频繁访问的配置设置。当缓存达到容量上限时，系统优先处理允许列表中的数据项，确保关键数据始终可用，而非允许列表中的数据项则按 LRU 等标准淘汰策略正常淘汰。这一机制提升了应用程序性能和用户体验，尤其在访问关键数据至关重要的使用高峰期。</p>
+          <p>缓存淘汰策略的目的各异，并根据系统的访问模式和工作负载展现出不同的性能特征。选择合适的缓存策略取决于应用程序的具体需求和特点。通过有效理解和实施这些缓存策略，系统设计师和开发人员可以优化缓存利用率、提升数据检索性能并改善整体用户体验。接下来，我们将讨论缓存失效策略——这些策略在基于缓存淘汰策略确定要淘汰的数据后<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="eviction policies" data-startref="cache-evict">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="eviction policies for caches" data-startref="evict-cache">&nbsp;</a>应用。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch04_cache_invalidation_1734552287179208">
+        <h1>缓存失效</h1>
+        <p>缓存失效<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="invalidation policies" id="cache-invalid">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="invalidation policies for caches" id="invalid-cache">&nbsp;</a>是缓存管理的关键环节，用于确保缓存数据与底层数据源保持一致。有效的缓存失效策略有助于维护数据完整性，防止陈旧或过期数据被提供给用户。以下是四种常见的缓存失效技术：</p>
+        <dl>
+          <dt>主动失效</dt>
+          <dd>
+            <p>主动失效<a contenteditable="false" data-type="indexterm" data-primary="active cache invalidation">&nbsp;</a>涉及在底层数据源发生变化时，显式删除或使缓存数据失效。该方法要求应用程序或系统通知或触发缓存失效操作。例如，当数据源中的数据被修改或删除时，缓存立即更新或清除，以确保后续请求获取最新数据。主动失效提供了对缓存一致性的精确控制，但需要额外开销来有效管理失效过程。</p>
+            <p>在社交媒体应用中，当用户发布新内容时，系统主动使所有可能包含过期信息的用户动态缓存失效，确保每个人都能无延迟地看到最新更新，提供新鲜、准确的用户体验。</p>
+          </dd>
+          <dt>修改时失效</dt>
+          <dd>
+            <p>当底层数据源中的数据被修改时，缓存<a contenteditable="false" data-type="indexterm" data-primary="modification, invalidation on">&nbsp;</a>随之失效。发生修改操作（如更新或删除）时，缓存被通知或标记以使相应的缓存数据失效。下次访问已失效数据时会触发缓存未命中，数据从数据源重新获取，确保缓存包含最新信息。这种方法最大程度地减少了陈旧数据被响应的可能性，但在失效过程中对缓存未命中引入了轻微的延迟。</p>
+            <p>在电商平台上，每当商品详情（如价格、描述或库存状态）被修改时，对应的缓存条目随即失效。这可以防止用户看到过期信息，确保他们始终访问到最新的商品数据，这对于做出购买决策至关重要。</p>
+          </dd>
+          <dt>读取时失效</dt>
+          <dd>
+            <p>当访问缓存数据或发起读取请求时，<a contenteditable="false" data-type="indexterm" data-primary="read, invalidation on" id="read-invalid">&nbsp;</a>缓存失效。收到读取请求时，缓存根据数据版本或实体标签（ETag）检查数据是否仍然有效或已过期。如果数据已过期或被标记为无效，缓存从数据源获取最新数据并在响应请求前更新缓存。这种方法保证了每次都响应最新数据，但由于缓存必须在响应前验证数据的新鲜度，因此为每次读取操作增加了延迟。</p>
+            <p>在新闻应用中，当用户阅读一篇文章时，系统会检查该文章的缓存版本是否仍然有效。如果文章在缓存后有所更新，缓存失效，最新版本将被获取并响应给用户。这确保了后续读者能够获取到最新内容，尤其是在初次发布后不久进行了更新或更正的情况下。</p>
+            <div data-type="note">
+              <p><em>实体标签（ETag）</em>是<a contenteditable="false" data-type="indexterm" data-primary="ETags">&nbsp;</a>分配给 Web 服务器上资源特定版本的唯一标识符，用于缓存验证。客户端请求资源时，可在 <code>If-None-Match</code> 请求头中附带 ETag，以检查缓存版本是否仍然有效。若 ETag 与当前版本匹配，服务器响应"304 未修改"状态，从而减少带宽占用并提升<a contenteditable="false" data-type="indexterm" data-primary="read, invalidation on" data-startref="read-invalid">&nbsp;</a>性能。</p>
+            </div>
+          </dd>
+          <dt>生存时间（TTL）</dt>
+          <dd>
+            <p>生存时间（TTL）是<a contenteditable="false" data-type="indexterm" data-primary="time to live (TTL)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TTL (time to live)">&nbsp;</a>一种将时间段与每个缓存数据项关联的缓存失效技术。数据项存入缓存时，会被标记一个 TTL 值，表示该数据项被视为有效的时长。TTL 到期后，缓存将该数据项视为已过期，后续对该数据项的请求会触发缓存未命中，促使缓存从数据源获取最新数据。基于 TTL 的缓存失效提供了一种简单且自动的缓存新鲜度管理方式，但在 TTL 到期前可能会响应轻微过期的数据。</p>
+            <p>天气应用可以使用 TTL 将天气数据缓存特定时长，例如 30 分钟。超过这一时限后，缓存数据被视为陈旧并自动失效，系统将获取最新天气信息，确保用户收到及时、准确的天气更新，同时避免大量请求压垮数据源。</p>
+          </dd>
+        </dl>
+        <p>选择缓存失效策略取决于数据的性质、更新频率、性能需求以及所需的一致性保证等因素。主动失效提供精确控制但需要主动管理；修改时失效可确保数据的即时新鲜度；读取时失效保证每次读操作都获取最新数据；基于 TTL 的失效则提供基于时间的过期机制。了解数据特性和系统需求，有助于选择合适的缓存失效策略，以维护数据一致性并提升<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="invalidation policies" data-startref="cache-invalid">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="invalidation policies for caches" data-startref="invalid-cache">&nbsp;</a>整体性能。</p>
+      </section>
+      <section class="pagebreak-before" data-type="sect1" id="ch04_caching_strategies_1734552287179268">
+        <h1 class="less_space">缓存策略</h1>
+        <p>缓存策略<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="strategies for" id="cache-strategy">&nbsp;</a>定义了数据在缓存与底层数据源之间的管理和同步方式。本节将探讨如 <a data-type="xref" href="#ch04_figure_1_1734552287163557">#ch04_figure_1_1734552287163557</a> 所示的几种缓存策略：旁路缓存（Cache-Aside）、读穿透（Read-Through）、预刷新（Refresh-Ahead）、写穿透（Write-Through）、绕写（Write-Around）和写回（Write-Back）。</p>
+        <figure id="ch04_figure_1_1734552287163557">
+          <img src="images/sdoa_0401.png"/>
+          <figcaption>缓存策略</figcaption>
+        </figure>
+        <section data-type="sect2" id="ch04_read_intensive_strategies_1734552287179329">
+          <h2>读密集型策略</h2>
+          <p>图示<a contenteditable="false" data-type="indexterm" data-primary="read-intensive caching strategies" id="read-cache">&nbsp;</a>左侧展示了读密集型缓存策略，侧重于优化频繁读取或访问的数据检索。读密集型缓存策略的目标是通过直接从内存返回缓存数据来降低延迟、提升读操作的整体性能，这比从较慢的远程数据源获取数据快得多。该策略对于大多数操作涉及数据读取而非更新或写入的应用程序尤为有益。下面我们详细了解这些读密集型缓存策略。</p>
+          <section data-type="sect3" id="ch04_cache_aside_1734552287179385">
+            <h3>旁路缓存（Cache-Aside）</h3>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="cache-aside caching strategy">&nbsp;</a>旁路缓存（Cache-Aside）策略，又称<em>懒加载</em>，将缓存管理的职责委托给应用程序代码。数据被请求时，应用程序首先检查缓存。如果数据已在缓存中，则直接从缓存返回；否则，应用程序从数据源获取数据，将其存入缓存，然后返回给调用方。旁路缓存提供了灵活性，因为应用程序对缓存决策拥有完全控制权，但需要额外的逻辑来管理缓存。</p>
+          </section>
+          <section data-type="sect3" id="ch04_read_through_1734552287179440">
+            <h3>读穿透（Read-Through）</h3>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="read-through caching strategy">&nbsp;</a>读穿透（Read-Through）策略在缓存数据可用时直接从缓存获取，否则由缓存自身从底层数据源取回数据。当读操作发生缓存未命中时，缓存从数据源获取数据，将其存储以备后用，并将数据返回给调用方。后续对相同数据的读请求可直接从缓存响应，提升整体读性能。与旁路缓存策略不同，该策略将缓存查找的管理职责从应用程序中剥离，提供了更简化的数据检索流程。读穿透缓存在数据填充后可提升读性能，但在预热期由于缓存未命中可能初期引入较高延迟。这可能导致 P999 延迟不可预测地出现峰值，因为首批请求需要从数据源进行较长时间的获取，而非从缓存快速检索。</p>
+          </section>
+          <section data-type="sect3" id="ch04_refresh_ahead_1734552287179495">
+            <h3>预刷新（Refresh-Ahead）</h3>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="refresh-ahead caching strategy">&nbsp;</a>预刷新（Refresh-Ahead）策略，又称<em>预取</em>，在数据被显式请求之前主动将数据从数据源取入缓存。缓存预判特定数据项的未来需求并提前获取。通过预取数据，缓存降低了后续读请求的延迟，提升了数据检索的整体性能。该策略带来了更优、更可预测的 P999 延迟特性，因为数据已预先加载至缓存中。当用户请求预期的数据时，可以几乎即时从缓存响应，而无需从较慢的数据源获取。这种主动方式最大程度地减少了延迟峰值的出现，即使在负载条件变化的情况下也能实现更稳定、可靠的性能。</p>
+            <div data-type="note">
+              <p><em>缓存预热</em>是指<a contenteditable="false" data-type="indexterm" data-primary="cache warm-up">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cold start">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="warm start">&nbsp;</a>在数据被需要之前将其预先加载到缓存中，确保频繁访问的数据随时可用。<em>冷启动</em>发生在缓存为空时，系统需要从底层数据源获取数据，随着缓存逐渐填充，会导致较高的延迟和潜在的性能瓶颈。相比之下，<em>热启动</em>则预先在缓存中加载了数据，使后续请求能够从内存中快速响应，从而提升应用程序<a contenteditable="false" data-type="indexterm" data-primary="read-intensive caching strategies" data-startref="read-cache">&nbsp;</a>整体性能。</p>
+            </div>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch04_write_intensive_strategies_1734552287179554">
+          <h2>写密集型策略</h2>
+          <p>图示 <a data-type="xref" href="#ch04_figure_1_1734552287163557">#ch04_figure_1_1734552287163557</a> 右侧展示了写密集型策略，侧重于优化频繁更新或写入数据的存储与管理。与读密集型缓存侧重于优化数据检索不同，写密集型缓存策略旨在提升数据更新和写入的效率，同时保持可接受的性能水平。在写密集型缓存策略中，缓存被设计为能处理频繁的写操作，确保更新后的数据临时存储在缓存中，最终与底层数据源（如数据库或远程服务器）同步，从而实现更好的一致性。这种方式可以减少主数据存储的负载，并通过更快速地确认写操作来提升应用程序的响应能力。下面我们详细了解这些写密集型缓存策略。</p>
+          <section data-type="sect3" id="ch04_write_through_1734552287179611">
+            <h3>写穿透（Write-Through）</h3>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="write-through caching strategy">&nbsp;</a>写穿透（Write-Through）策略涉及将数据同时写入缓存和底层数据源。发生写操作时，数据首先写入缓存，然后在写操作被视为完成之前同步传播至持久化存储。该策略确保缓存与数据源之间的数据保持一致，但同步写操作可能引入额外延迟。</p>
+          </section>
+          <section data-type="sect3" id="ch04_write_around_1734552287179667">
+            <h3>绕写（Write-Around）</h3>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="write-around caching strategy">&nbsp;</a>绕写（Write-Around）策略在写操作时绕过缓存。当应用程序需要更新数据时，直接写入底层数据源，不经过缓存。因此，写入的数据不会存储在缓存中，从而减少了不常访问数据对缓存的污染。但是，对已更新数据的后续读操作可能会遇到缓存未命中，直到数据再次从数据源获取并被缓存为止。</p>
+          </section>
+          <section data-type="sect3" id="ch04_write_back_1734552287179721">
+            <h3>写回（Write-Back）</h3>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="write-back caching strategy">&nbsp;</a>写回（Write-Back）策略允许写操作直接在缓存上执行，将对底层数据源的更新推迟到稍后时间。缓存中的数据被修改后，变更记录在缓存本身，更新最终按计划或在满足特定条件时（如缓存淘汰或时间间隔）异步传播至数据源。写回缓存通过减少立即磁盘写入的次数来提供更快的写操作速度。</p>
+            <p>除了改善写延迟之外，写回缓存还提供了更好的吞吐量管理，使其能够处理突发数据流量。由于写操作首先在内存中处理，系统可以吸收写请求的峰值，而不会压垮底层数据源。这一能力使得系统能够更有效地处理工作负载的突然增加，确保应用程序即使在高需求时期也能保持响应能力。然而，若在变更被刷入数据源之前发生系统故障，则存在数据丢失的风险。</p>
+            <p>每种缓存策略都有其各自的优势和注意事项，选择合适的策略取决于系统的具体需求和特点。通过了解这些缓存策略，系统设计师和开发人员可以做出明智决策，优化数据访问并提升应用程序的<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="strategies for" data-startref="cache-strategy">&nbsp;</a>整体性能。</p>
+          </section>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch04_cache_deployment_1734552287179780">
+        <h1>缓存部署</h1>
+        <p>部署<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="deployment strategies" id="cache-deploy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment strategies" data-secondary="for caches" data-secondary-sortas="caches" id="deploy-cache">&nbsp;</a>缓存时，可根据系统的具体需求和架构选择多种方案。缓存部署有三种常见方式：进程内缓存、进程间缓存和远程缓存。</p>
+        <section data-type="sect2" id="ch04_in_process_caching_1734552287179839">
+          <h2>进程内缓存</h2>
+          <p><a contenteditable="false" data-type="indexterm" data-primary="in-process caching">&nbsp;</a>缓存与请求组件驻留在同一进程或应用程序中，通常以内存数据存储的形式实现，可由应用程序或服务直接访问。进程内缓存提供了快速的数据访问和低延迟。这种部署方式适用于数据共享和缓存需求仅限于单个应用程序或进程的场景。</p>
+          <p>例如，在 Web 应用程序中，用户会话数据可以缓存在内存中，以便在无需对每次请求都查询数据库的情况下快速检索会话信息，从而实现会话粘滞（Sticky Sessions）。这在 <a data-type="xref" href="#ch05_load_balancing_approaches_and_techniques_1734552287463010">#ch05_load_balancing_approaches_and_techniques_1734552287463010</a> 中有详细讨论。</p>
+        </section>
+        <section data-type="sect2" id="ch04_interprocess_caching_1734552287179895">
+          <h2>进程间缓存</h2>
+          <p><a contenteditable="false" data-type="indexterm" data-primary="interprocess caching">&nbsp;</a>缓存作为独立的进程或服务部署，与应用程序或服务并行运行，充当可被多个应用程序或进程访问的专用缓存层。应用程序通过进程间通信（IPC）机制（如共享内存、管道、套接字或远程过程调用（RPC））与缓存通信。进程间缓存改善了不同组件之间的资源利用率和数据一致性，非常适合需要在单台机器上跨多个应用程序或进程共享和缓存数据的场景。</p>
+          <p>例如，金融服务应用程序可能使用 <a href="https://ignite.apache.org">Apache Ignite</a> 来缓存交易数据，使应用程序的各个组件可以访问这些数据进行实时分析和报告。金融应用的设计与架构将在 <a data-type="xref" href="#ch21_designing_an_online_stock_trading_platform_1734552295606829">#ch21_designing_an_online_stock_trading_platform_1734552295606829</a> 中详细介绍。</p>
+        </section>
+        <section data-type="sect2" id="ch04_remote_caching_1734552287179950">
+          <h2>远程缓存</h2>
+          <p><a contenteditable="false" data-type="indexterm" data-primary="remote caching">&nbsp;</a>缓存作为独立服务或集群部署，运行于与请求组件不同的机器或位置。缓存服务通过 HTTP、TCP/IP 或自定义通信协议等网络协议进行远程访问。远程缓存可用于在运行于不同机器的应用程序或服务之间共享缓存数据，甚至跨地理分布的位置共享，提供可扩展性和容错性。远程缓存适用于需要在分布式系统中缓存数据，或缓存需要被运行在不同机器上的组件访问的场景。</p>
+          <p>例如，社交媒体应用程序可能使用 Redis 集群（详见 <a data-type="xref" href="#ch04_redis_1734552287180570">#ch04_redis_1734552287180570</a>）来缓存用户资料信息和动态数据，确保所有应用程序服务器都能快速访问这些信息，而无需反复查询主数据库。社交媒体应用的设计与架构将在 <a data-type="xref" href="#ch16_designing_a_social_network_and_newsfeed_system_1734552293547861">#ch16_designing_a_social_network_and_newsfeed_system_1734552293547861</a> 中详细介绍。</p>
+        </section>
+        <section data-type="sect2" id="ch04_choosing_a_cache_deployment_approach_1734552287180009">
+          <h2>选择缓存部署方式</h2>
+          <p>缓存部署方式的选择取决于系统规模、性能需求、数据共享需求及架构考量等因素。这些<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="deployment strategies" data-startref="cache-deploy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment strategies" data-secondary="for caches" data-secondary-sortas="caches" data-startref="deploy-cache">&nbsp;</a>因素的对比详见 <a data-type="xref" href="#ch04_table_1_1734552287168527">#ch04_table_1_1734552287168527</a>。</p>
+          <table id="ch04_table_1_1734552287168527">
+            <caption>缓存部署方式对比</caption>
+            <thead>
+              <tr>
+                <th>方式</th>
+                <th>延迟</th>
+                <th>延迟量级</th>
+                <th>描述</th>
+                <th>使用场景</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>进程内缓存</p>
+                </td>
+                <td>
+                  <p>低延迟</p>
+                </td>
+                <td>
+                  <p>微秒级</p>
+                </td>
+                <td>
+                  <p>进程内缓存延迟最低，因为缓存与应用程序驻留于同一进程内。</p>
+                </td>
+                <td>
+                  <p>适用于需要快速访问常用数据的场景</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>进程间缓存</p>
+                </td>
+                <td>
+                  <p>中等延迟</p>
+                </td>
+                <td>
+                  <p>低毫秒级</p>
+                </td>
+                <td>
+                  <p>进程间缓存由于需要进程间通信（IPC）机制而引入中等延迟。</p>
+                </td>
+                <td>
+                  <p>适用于在同一台机器上的多个应用程序之间共享数据</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>远程缓存</p>
+                </td>
+                <td>
+                  <p>高延迟</p>
+                </td>
+                <td>
+                  <p>毫秒级</p>
+                </td>
+                <td>
+                  <p>远程缓存延迟最高，因为需要通过网络通信访问运行在不同机器上的缓存。</p>
+                </td>
+                <td>
+                  <p>适用于需要可扩展性和跨机器数据共享的分布式应用程序</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch04_caching_mechanisms_1734552287180071">
+        <h1>缓存机制</h1>
+        <p>以下<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="mechanisms for" id="cache-mechanism">&nbsp;</a>缓存机制可用于提升应用程序性能：</p>
+        <dl>
+          <dt>客户端缓存</dt>
+          <dd>
+            <p>缓存数据<a contenteditable="false" data-type="indexterm" data-primary="client-side caching">&nbsp;</a>存储在客户端设备上，通常位于浏览器的内存或本地存储中。这种机制允许 Web 应用程序直接从客户端设备存储和检索静态资源，如 HTML、CSS、JavaScript 和图片。客户端缓存减少了后续请求从服务器获取资源的需求，从而加快页面加载速度并改善用户体验。</p>
+          </dd>
+          <dt>CDN 缓存</dt>
+          <dd>
+            <p>静态<a contenteditable="false" data-type="indexterm" data-primary="content delivery networks" data-see="CDNs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CDNs (content delivery networks)">&nbsp;</a>内容缓存在分布于不同地理区域的分布式服务器上。CDN 根据用户与 CDN 服务器的地理位置就近为其提供缓存内容，从而降低延迟和源服务器的负载。CDN 缓存常用于缓存静态文件、媒体资源及其他频繁访问的内容，提升 Web 应用程序的整体性能和可扩展性。</p>
+          </dd>
+          <dt>Web 服务器缓存</dt>
+          <dd>
+            <p>这些<a contenteditable="false" data-type="indexterm" data-primary="web server caching">&nbsp;</a>缓存机制在服务器端实现，用于存储频繁访问的内容。向服务器发出请求时，服务器首先检查请求的内容是否已被缓存。若已缓存，服务器直接提供缓存内容，无需重新生成。Web 服务器缓存对于静态网页、具有较长过期时间的动态内容以及生成代价高昂的内容非常有效。</p>
+          </dd>
+          <dt>应用程序缓存</dt>
+          <dd>
+            <p>数据<a contenteditable="false" data-type="indexterm" data-primary="application caching">&nbsp;</a>缓存在应用程序的内存或内存数据库中。这种机制通常用于存储频繁访问的数据或从其他数据源获取或生成代价高昂的计算结果。应用程序缓存通过减少重复数据检索和计算的需求来提升响应时间，增强应用程序的整体性能。</p>
+          </dd>
+          <dt>数据库缓存</dt>
+          <dd>
+            <p>数据库<a contenteditable="false" data-type="indexterm" data-primary="database caching">&nbsp;</a>缓存侧重于通过缓存频繁访问的数据或查询结果来提升数据库操作性能。该机制可在两个层面实现：</p>
+            <dl>
+              <dt>查询级缓存</dt>
+              <dd>
+                <p>查询级缓存<a contenteditable="false" data-type="indexterm" data-primary="query-level caching">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="relational databases" data-secondary="query-level caching">&nbsp;</a>将频繁执行的查询结果存储在内存中。当相同查询再次执行时，直接响应缓存结果而非再次查询数据库，从而降低数据库负载并提升响应时间。</p>
+              </dd>
+              <dt>对象级缓存</dt>
+              <dd>
+                <p>对象级缓存<a contenteditable="false" data-type="indexterm" data-primary="object-level caching">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="relational databases" data-secondary="object-level caching">&nbsp;</a>缓存从数据库检索的单个数据对象或记录。当频繁访问特定对象或数据库相对静态时，这种机制非常有用。对象级缓存减少了频繁数据库查询的需求，提升了应用程序<span class='keep-together'>整体性能</span>。</p>
+              </dd>
+            </dl>
+          </dd>
+        </dl>
+        <p>如 <a data-type="xref" href="#ch04_figure_2_1734552287163590">#ch04_figure_2_1734552287163590</a> 所示，通过采用这些缓存机制，组织和开发人员可以优化数据检索，降低延迟，并提升系统的可扩展性和响应能力。然而，必须认真考虑缓存失效、缓存一致性和缓存管理策略，以确保缓存<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="mechanisms for" data-startref="cache-mechanism">&nbsp;</a>数据的一致性和完整性。</p>
+        <figure id="ch04_figure_2_1734552287163590">
+          <img src="images/sdoa_0402.png"/>
+          <figcaption>各阶段采用的缓存机制</figcaption>
+        </figure>
+      </section>
+      <section data-type="sect1" id="ch04_content_delivery_networks_1734552287180133">
+        <h1>内容分发网络（CDN）</h1>
+        <p>在<a contenteditable="false" data-type="indexterm" data-primary="CDNs (content delivery networks)" id="cdn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="CDNs (content delivery networks)" id="cache-cdn">&nbsp;</a>缓存机制中，CDN 通过在边缘站点进行缓存，以降低延迟和增强可扩展性，在提升最终用户的 Web 内容性能和可用性方面发挥着至关重要的作用。CDN 采用多种策略和架构模型，在地理分布的服务器上高效分发和缓存内容。CDN 主要分为两种类型：推送型 CDN 和拉取型 CDN。</p>
+        <section data-type="sect2" id="ch04_push_cdns_1734552287180193">
+          <h2>推送型 CDN</h2>
+          <p>在<a contenteditable="false" data-type="indexterm" data-primary="push CDNs">&nbsp;</a>推送型 CDN 中，内容被提前预先缓存并分发至边缘服务器。CDN 服务商根据预测的需求或预定规则主动将内容推送至边缘站点。使用推送型 CDN 时，内容仅在新增或变更时上传，既减少了流量，又最大化了存储效率。这种方式确保了更快的内容分发，因为最终用户请求时内容已在边缘服务器上就绪。</p>
+          <p>推送型 CDN 适用于流量较低或内容无需频繁更新的网站，例如 Netflix 和 Amazon Prime Video 等视频流媒体平台（这些平台的设计与架构将在 <a data-type="xref" href="#ch20_designing_a_video_processing_pipeline_for_a_stream_1734552295245731">#ch20_designing_a_video_processing_pipeline_for_a_stream_1734552295245731</a> 中的流媒体服务用例中介绍）。内容无需定期从服务器拉取，而是上传至 CDN 一次后保留，直至发生变更。</p>
+        </section>
+        <section data-type="sect2" id="ch04_pull_cdns_1734552287180251">
+          <h2>拉取型 CDN</h2>
+          <p>在<a contenteditable="false" data-type="indexterm" data-primary="pull CDNs">&nbsp;</a>拉取型 CDN 中，内容按需缓存。当第一个用户请求内容时，CDN 服务器从源服务器拉取内容，随后将内容缓存在边缘服务器上供后续请求使用，为未来用户优化分发。内容缓存的时长由 TTL 设置决定。拉取型 CDN 最大程度减少了 CDN 上的存储空间，但如果文件在过期前被拉取，可能产生冗余流量，导致不必要的数据传输。拉取型 CDN 非常适合高流量网站，因为最近请求的内容会保留在 CDN 上，均匀分布负载。</p>
+          <section data-type="sect3" id="ch04_cdn_optimization_techniques_1734552287180311">
+            <h3>CDN 优化技术</h3>
+            <p>CDN<a contenteditable="false" data-type="indexterm" data-primary="optimizing" data-secondary="CDNs" id="optimize-cdn">&nbsp;</a>采用多种优化技术来提升边缘服务器缓存的性能：</p>
+            <dl>
+              <dt>动态内容缓存优化</dt>
+              <dd>
+                <p>CDN<a contenteditable="false" data-type="indexterm" data-primary="dynamic content caching optimization">&nbsp;</a>在缓存根据用户交互或实时数据频繁变化的动态内容时面临挑战。为优化动态内容缓存，CDN 采用多种技术：</p>
+                <dl>
+                  <dt>内容分片</dt>
+                  <dd>
+                    <p>将<a contenteditable="false" data-type="indexterm" data-primary="content fragmentation">&nbsp;</a>动态内容分解为较小的片段，以实现部分缓存和高效更新</p>
+                  </dd>
+                  <dt>边缘端包含（ESI）</dt>
+                  <dd>
+                    <p>实施<a contenteditable="false" data-type="indexterm" data-primary="edge side include (ESI) tags">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ESI (edge side include) tags">&nbsp;</a>ESI 标签以分离动态和静态内容，允许动态部分即时处理，同时缓存静态<span class='keep-together'>片段</span></p>
+                  </dd>
+                  <dt>内容个性化</dt>
+                  <dd>
+                    <p>利用<a contenteditable="false" data-type="indexterm" data-primary="content personalization">&nbsp;</a>用户画像和分群技术在边缘服务器缓存个性化或用户特定内容</p>
+                  </dd>
+                </dl>
+              </dd>
+            </dl>
+            <dl>
+              <dt>多层 CDN 架构</dt>
+              <dd>
+                <p>多层 CDN 架构<a contenteditable="false" data-type="indexterm" data-primary="multitier CDN architecture">&nbsp;</a>涉及在多个层级或层次的边缘服务器之间分发内容。这种方式带来了更好的可扩展性与容错性，以及向地理上分散的区域提供更优化的内容分发。它实现了高效的内容复制，并通过将内容移近最终用户来降低延迟。</p>
+              </dd>
+              <dt>DNS 重定向</dt>
+              <dd>
+                <p>CDN 使用<a contenteditable="false" data-type="indexterm" data-primary="DNS redirection">&nbsp;</a>DNS 重定向，根据地理位置就近性、网络状况和服务器可用性等因素，将用户请求引导至最近或最合适的边缘服务器，优化内容分发并降低延迟。</p>
+              </dd>
+              <dt>客户端多路复用</dt>
+              <dd>
+                <p>该<a contenteditable="false" data-type="indexterm" data-primary="client multiplexing">&nbsp;</a>技术将客户端与边缘服务器之间的多个 HTTP 请求和响应合并为单个连接。这减少了建立多个连接的开销，提升了效率，尤其对小对象请求效果显著，从而加快内容<a contenteditable="false" data-type="indexterm" data-primary="optimizing" data-secondary="CDNs" data-startref="optimize-cdn">&nbsp;</a>分发速度。</p>
+              </dd>
+            </dl>
+          </section>
+          <section data-type="sect3" id="ch04_content_consistency_in_cdns_1734552287180371">
+            <h3>CDN 中的内容一致性</h3>
+            <p>确保<a contenteditable="false" data-type="indexterm" data-primary="content consistency in CDNs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="consistency" data-secondary="in CDNs" data-secondary-sortas="CDNs">&nbsp;</a>CDN 中多个边缘服务器上的内容一致性对于提供最新、最准确的内容至关重要。CDN 采用多种方法来维护内容一致性：</p>
+            <dl>
+              <dt>周期性轮询</dt>
+              <dd>
+                <p>CDN 定期轮询源服务器以检查内容更新或变化，确保缓存内容刷新以反映最新版本。</p>
+              </dd>
+              <dt>生存时间（TTL）</dt>
+              <dd>
+                <p>CDN 使用在 HTTP 头或 DNS 记录中指定的 TTL 值，确定缓存内容保持有效的时长。TTL 到期后，CDN 从源服务器获取更新后的内容。</p>
+              </dd>
+              <dt>租约</dt>
+              <dd>
+                <p>CDN 使用基于租约的机制来控制边缘服务器上内容缓存的时长。租约定义了内容在需要续期或重新验证之前保持有效的特定时间窗口。</p>
+              </dd>
+            </dl>
+            <div data-type="note">
+              <p>AWS 提供了<a contenteditable="false" data-type="indexterm" data-primary="CloudFront">&nbsp;</a>亚马逊 CloudFront——一款面向高性能、安全性和开发者便捷性构建的拉取型 CDN，我们将在 <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a> 中详细介绍。</p>
+            </div>
+            <p>使用 CDN 可能存在一些缺点。CDN 可能根据流量产生较高费用，但重要的是将这些费用与不使用 CDN 时的开销进行比较。如果在 TTL 到期前进行了更新，内容可能在 CDN 上刷新之前处于过期状态。CDN 还需要修改静态内容的 URL 以指向 CDN，这可能是额外的管理工作。总体而言，CDN 在性能和可扩展性方面提供了优势，但需要仔细考虑这些因素以及<a contenteditable="false" data-type="indexterm" data-primary="CDNs (content delivery networks)" data-startref="cdn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="CDNs (content delivery networks)" data-startref="cache-cdn">&nbsp;</a>网站的具体需求。</p>
+            <p>接下来，我们将介绍两种流行的开源缓存解决方案，了解它们的架构以及如何实现本章讨论的缓存概念。</p>
+          </section>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch04_open_source_caching_solutions_1734552287180444">
+        <h1>开源缓存解决方案</h1>
+        <p>开源缓存解决方案<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="open source solutions" id="cache-opensource">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="open source caching solutions" id="opensource-cache">&nbsp;</a>因其高效性、可扩展性和易用性而广受欢迎。下面我们来深入了解 Memcached 和 Redis——两种被广泛采用的开源缓存解决方案。</p>
+        <section data-type="sect2" id="ch04_memcached_1734552287180509">
+          <h2>Memcached</h2>
+          <p>Memcached<a contenteditable="false" data-type="indexterm" data-primary="Memcached" id="memcached">&nbsp;</a>是一种开源、高性能的缓存解决方案，被广泛用于 Web 应用程序。它作为分布式内存对象缓存系统运行，将数据存储在多台服务器的内存中。以下是 Memcached 的主要功能和优势：</p>
+          <dl>
+            <dt>简单轻量</dt>
+            <dd>
+              <p>Memcached 设计简洁、轻量且易于部署，专注于缓存功能，提供简单直接的键值接口用于数据存储和检索。</p>
+            </dd>
+            <dt>水平可扩展性</dt>
+            <dd>
+              <p>Memcached 采用分布式架构，通过向缓存集群添加更多服务器实现水平扩展。这种分布式方式确保了高可用性、容错性，并在工作负载增长时提升性能。</p>
+            </dd>
+            <dt>协议兼容性</dt>
+            <dd>
+              <p>Memcached 遵循简单协议，与多种编程语言兼容，使其易于集成到用不同语言开发的应用程序中。</p>
+            </dd>
+            <dt>透明缓存层</dt>
+            <dd>
+              <p>Memcached 作为透明缓存层运行，位于应用程序与数据源之间，通过缓存频繁访问的数据来减轻数据库或 API 负载，降低重复查询的需求。</p>
+            </dd>
+          </dl>
+          <p>旁路缓存（Cache-Aside）是 Memcached 最常用的策略，允许应用程序根据使用模式管理缓存行为。最近最少使用（LRU）淘汰策略通过淘汰最久未被访问的数据项来有效维护相关缓存数据，确保频繁访问的数据始终可用，因而受到青睐。</p>
+          <p>Memcached 的架构由一台协调缓存数据存储和检索的中央服务器组成。当客户端发送存储或检索数据的请求时，服务器处理请求并与底层内存分配策略交互。</p>
+          <p>Memcached 采用多线程架构，能够高效处理并发请求并跨多个 CPU 核心扩展。在该架构中，Memcached 利用一个工作线程池同时处理客户端请求，每个工作线程负责处理一部分传入请求，从而实现并行执行并提升吞吐量。这种多线程方式确保 Memcached 能有效处理高流量负载，并将处理工作负载分布于可用的 CPU 资源上。通过利用多个线程，Memcached 可以实现更好的性能和响应能力，使其适用于对高并发有要求的高需求缓存场景。</p>
+          <p>在内存分配方面，Memcached 采用 slab 分配策略。它将分配的内存划分为固定大小的块，称为 <em>slab</em>。每个 slab 进一步分为称为<em>页</em>（page）的更小单元，<a contenteditable="false" data-type="indexterm" data-primary="slabs (in Memcached)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="pages (in Memcached)">&nbsp;</a>这些页用于存储单个缓存数据项。slab 分配策略通过将大小相似的数据项分组在一起，使 Memcached 能够高效管理内存，减少内存碎片并提升内存利用率。</p>
+          <p>向缓存添加新数据项时，Memcached 根据数据项的大小确定合适的 slab 尺寸。如果存在具有足够空闲空间的 slab，数据项将存储在该 slab 中；否则，Memcached 从可用内存池中分配新的 slab 并将数据项添加至其中。slab 分配策略使 Memcached 能够在保持最优性能的同时在内存中存储大量数据项。</p>
+          <p>Memcached 的架构和内存分配策略协同工作，提供了一种轻量、高效的缓存解决方案，能够处理高流量负载并提供快速的数据访问时间。Memcached 有效利用内存并采用可扩展架构，使应用程序能够通过将频繁访问的数据缓存在内存中来显著<a contenteditable="false" data-type="indexterm" data-primary="Memcached" data-startref="memcached">&nbsp;</a>提升性能。</p>
+        </section>
+        <section data-type="sect2" id="ch04_redis_1734552287180570">
+          <h2>Redis</h2>
+          <p>Redis，<a contenteditable="false" data-type="indexterm" data-primary="Redis" id="redis">&nbsp;</a>即 Remote Dictionary Server（远程字典服务器）的缩写，是一种基于服务器的内存数据结构存储，可用作高性能缓存。与依赖行的遍历、排序和排列的传统数据库不同，Redis 从底层开始以可定制的数据结构组织数据，支持多种数据类型，如字符串（string）、位图（bitmap）、位域（bitfield）、列表（list）、集合（set）、哈希（hash）、地理空间（geospatial）和 HyperLogLog。这种多功能性使其适用于各种缓存使用场景。以下是 Redis 的主要<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="benefits of" id="redis-benefit">&nbsp;</a>功能和优势：</p>
+          <dl>
+            <dt>高性能</dt>
+            <dd>
+              <p>Redis 专为速度而设计，利用内存存储模型实现极快的数据检索和更新。它每秒可处理海量操作，适用于高需求应用程序。</p>
+            </dd>
+            <dt>持久化选项</dt>
+            <dd>
+              <p>Redis 提供持久化选项，允许将数据存储在磁盘上，即使在系统重启的情况下也能确保数据持久性。这一特性使 Redis 适用于需要在系统重启或缓存失效后仍保留数据的场景。</p>
+            </dd>
+            <dt>高级缓存功能</dt>
+            <dd>
+              <p>Redis 提供高级缓存功能，如过期时间、淘汰策略以及基于 TTL 值的自动缓存失效。它还支持数据分区和复制以实现可扩展性和容错性。旁路缓存（Cache-Aside）是 Redis 最常用的策略，Redis 支持多种淘汰策略，如 LRU、LFU、随机和 TTL。</p>
+            </dd>
+            <dt>发布/订阅与消息传递</dt>
+            <dd>
+              <p>Redis 包含发布/订阅（Pub/Sub）消息传递功能，支持实时消息传递和事件驱动架构，使其适用于涉及实时数据更新和通知的场景。</p>
+            </dd>
+          </dl>
+          <p>Redis 作为内存数据库，主要用作其他数据库（如 MySQL 或 PostgreSQL）的前置缓存。通过利用内存的速度，Redis 提升了应用程序性能并减轻了主数据库的负载。它对于存储不经常变化但频繁被请求的数据以及不太关键但频繁更新的数据尤为有用。此类数据的例子包括会话或数据缓存、排行榜信息以及仪表板的汇总分析数据。</p>
+          <p>Redis 的架构设计追求高性能、低延迟和简洁性，提供多种部署选项以根据需求和成本约束确保高可用性。</p>
+          <section data-type="sect3" id="ch04_availability_in_redis_deployments_1734552287180633">
+            <h3>Redis 部署中的高可用性</h3>
+            <p>如<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="availability in" id="redis-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="in Redis" data-secondary-sortas="Redis" id="available-redis">&nbsp;</a> <a data-type="xref" href="#ch04_figure_3_1734552287163614">#ch04_figure_3_1734552287163614</a> 所示，Redis 支持多种部署架构，包括单 Redis 实例、Redis 高可用（HA）、Redis 哨兵（Redis Sentinel）和 Redis 集群（Redis Cluster）。每种架构都有其权衡，适用于不同的使用场景和可扩展性需求。</p>
+            <figure id="ch04_figure_3_1734552287163614">
+              <img src="images/sdoa_0403.png"/>
+              <figcaption>Redis 部署架构</figcaption>
+            </figure>
+            <p>在单 Redis 实例配置中，Redis 作为独立服务器部署。虽然这种方式简单直接，适合小型实例，但缺乏容错性。若实例发生故障或变为不可用，所有对 Redis 的客户端调用都将失败，影响整体系统性能。</p>
+            <p>Redis 高可用（HA）涉及部署一个主 Redis 实例和一个或多个通过复制同步的从实例。从实例可以帮助扩展读操作，或在主实例失效时提供故障转移。复制 ID 和偏移量在同步过程中起着至关重要的作用，使从实例能够追赶上主实例的数据。</p>
+            <p>Redis 哨兵（Redis Sentinel）是一种确保 Redis 高可用性的分布式系统。哨兵进程协调状态并监控主实例和从实例的可用性，同时充当客户端查询主节点信息的入口，告知其当前主实例。若主实例变为不可用，哨兵进程可启动故障转移流程。</p>
+            <p>Redis 集群（Redis Cluster）通过在多台机器或分片之间分发数据来实现水平扩展。算法分片用于确定哪个 Redis 实例（分片）持有特定键。Redis 集群采用哈希槽分区机制将数据映射到分片，并在向集群添加新实例时支持无缝重新分片。Gossip 协议用于 Redis 集群中维护集群健康状态。节点不断通信以确定分片的可用性，并在需要时将从实例提升为主实例。<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="availability in" data-startref="redis-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="in Redis" data-secondary-sortas="Redis" data-startref="available-redis">&nbsp;</a></p>
+          </section>
+          <section data-type="sect3" id="ch04_durability_in_redis_deployment_1734552287180692">
+            <h3>Redis 部署中的持久性</h3>
+            <p>Redis<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="durability in" id="redis-durable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="durability" data-secondary="in Redis" data-secondary-sortas="Redis" id="durable-redis">&nbsp;</a>提供两种持久化模型：RDB 文件（Redis 数据库文件）和仅追加文件（AOF）。这些<a contenteditable="false" data-type="indexterm" data-primary="persistence" data-secondary="in Redis" data-secondary-sortas="Redis" id="persist-redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RDB (Redis database) files" id="rdb-file">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AOFs (append-only files)" id="aof">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="append-only files (AOFs)" id="append-only">&nbsp;</a>持久化机制确保数据在系统重启或崩溃时不会丢失。</p>
+            <p>RDB 是 Redis 默认的持久化模型，它定期创建数据集的快照并将其保存为二进制 RDB 文件。这些文件捕获特定时间点的 Redis 数据库状态。以下是 RDB 持久化的主要特性：</p>
+            <dl>
+              <dt>基于快照的持久化</dt>
+              <dd>
+                <p>RDB 持久化通过定期对整个数据集进行快照并将其存储在文件中来实现持久化。快照的频率可以配置。</p>
+              </dd>
+              <dt>高效与快速</dt>
+              <dd>
+                <p>RDB 文件在磁盘空间使用和数据加载速度方面非常高效，体积紧凑且可以快速重新加载到 Redis 中，适用于快速恢复至关重要的场景。</p>
+              </dd>
+              <dt>完整数据恢复</dt>
+              <dd>
+                <p>RDB 文件包含完整数据集，提供完整数据恢复能力。发生系统故障时，Redis 可通过加载最近可用的 RDB 文件来恢复数据。</p>
+              </dd>
+            </dl>
+            <p>值得注意的是，RDB 文件存在一些局限性。由于它们是快照，不提供实时持久性，若崩溃发生在两个快照点之间，可能导致数据丢失。此外，恢复大型 RDB 文件可能需要一定时间，影响恢复过程中的系统性能。</p>
+            <p>AOF 持久化是 RDB 文件的替代持久化模型，它将每次写操作记录到仅追加文件中。AOF 捕获写操作的顺序日志，使 Redis 能够通过重放日志来重建数据集。以下是 AOF 持久化的主要特性：</p>
+            <dl>
+              <dt>预写日志</dt>
+              <dd>
+                <p>AOF 将每次写操作以一系列命令或原始数据的形式持久化到仅追加文件中，该日志可用于从头重建数据集。</p>
+              </dd>
+              <dt>持久性与灵活性</dt>
+              <dd>
+                <p>AOF 比 RDB 文件提供更强的持久性，因为它捕获每次写操作，能够恢复到最后一次执行命令时的数据。此外，AOF 提供不同的持久化选项（如每次写入、每秒同步或两者兼用），以平衡持久性和性能。</p>
+              </dd>
+              <dt>仅追加特性</dt>
+              <dd>
+                <p>AOF 将新的写操作追加到文件末尾，确保原始数据集永不被修改。这种方式防止了因崩溃或断电造成的数据损坏。</p>
+              </dd>
+            </dl>
+            <p>AOF 持久化有其自身的注意事项。仅追加文件可能随时间推移不断增大，占用大量磁盘空间。Redis 提供 AOF 文件重写选项，以压缩日志并减小其大小。此外，由于需要将每条命令写入磁盘，AOF 持久化通常比 RDB 文件具有略高的性能开销。</p>
+            <p>在实践中，Redis 用户通常根据其具体需求以及性能、持久性和恢复时间目标之间的权衡，同时采用 RDB 和 AOF 持久化。值得注意的是，如果持久性不是主要关注点，或者数据在重启或崩溃时可以从外部来源重新生成，Redis 还提供了不使用持久化（易失模式）的选项，<a contenteditable="false" data-type="indexterm" data-primary="persistence" data-secondary="in Redis" data-secondary-sortas="Redis" data-startref="persist-redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RDB (Redis database) files" data-startref="rdb-file">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AOFs (append-only files)" data-startref="aof">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="append-only files (AOFs)" data-startref="append-only">&nbsp;</a>供参考。</p>
+            <div data-type="note">
+              <p>Redis 主要用于易失性缓存，但 AWS 推出了<a contenteditable="false" data-type="indexterm" data-primary="MemoryDB">&nbsp;</a>亚马逊 MemoryDB——一种与 Redis 兼容的、持久化的内存数据库服务，专为需要微秒级读取和个位数毫秒级写入性能的应用程序设计。以数据持久性和高可用性为核心，亚马逊 MemoryDB 非常适合缓存、会话管理和实时分析等使用场景。我们建议您<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="durability in" data-startref="redis-durable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="durability" data-secondary="in Redis" data-secondary-sortas="Redis" data-startref="durable-redis">&nbsp;</a>自行探索其功能和应用。</p>
+            </div>
+          </section>
+          <section data-type="sect3" id="ch04_memory_management_in_redis_1734552287180753">
+            <h3>Redis 的内存管理</h3>
+            <p>Redis<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="memory management in" id="redis-memory-mgmt">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="memory management in Redis" id="memory-mgmt-redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="forking" id="forking">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="copy-on-write (CoW)" id="copy-on-write">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CoW (copy-on-write)" id="cow">&nbsp;</a>利用进程分叉（fork）和写时复制（CoW）技术，在其单线程架构中高效实现数据持久化。当 Redis 执行快照（RDB）或后台保存操作时，遵循以下步骤：</p>
+            <ol>
+              <li>
+                <p>Redis 使用 <code>fork()</code> 系统调用创建子进程，子进程是父进程的完整副本。进程分叉是一种轻量级操作，因为它创建了父进程内存的写时复制（CoW）克隆。</p>
+              </li>
+              <li>
+                <p>子进程最初与父进程共享相同的内存页。但当父进程或子进程任意一方修改内存页时，写时复制（CoW）机制启动——操作系统不会立即复制被修改的页，而仅在必要时创建新副本。</p>
+              </li>
+            </ol>
+            <p>通过采用写时复制（CoW），Redis 实现了以下优势：</p>
+            <dl>
+              <dt>内存效率</dt>
+              <dd>
+                <p>子进程最初创建时与父进程共享相同的内存页，这种共享内存方式消耗的额外内存极少。仅在必要时复制已修改的页，从而节省内存资源。</p>
+              </dd>
+              <dt>性能</dt>
+              <dd>
+                <p>由于仅复制已修改的页，Redis 可以利用写时复制机制执行持久化操作，而不会产生显著的性能开销。这对大型数据集尤为有益，因为复制整个数据集进行持久化将非常耗时。</p>
+              </dd>
+              <dt>fork 安全性</dt>
+              <dd>
+                <p>Redis 使用基于 fork 的持久化来避免在快照过程中阻塞主事件循环。通过分叉子进程，父进程可以继续响应客户端请求，而子进程独立执行持久化操作，从而确保高响应能力和不间断服务。</p>
+              </dd>
+            </dl>
+            <p>虽然进程分叉和写时复制提供了内存效率和性能优势，但也有一些缺点需要考虑。如果需要复制大量修改页，进程分叉在写时复制过程中可能导致内存使用量增加。在内存占用较大的系统上，fork 操作也可能较慢。</p>
+            <p>总体而言，Redis 在其单线程架构中有效利用进程分叉和写时复制机制实现高效数据持久化。通过采用这些技术，Redis 可以在不显著影响性能或内存使用的情况下执行快照和后台保存操作。</p>
+            <p>综上所述，Redis 为开发人员提供了一种功能强大、灵活的数据存储解决方案，具备多种部署选项和功能。</p>
+            <p>Redis 和 Memcached 都是优秀的开源缓存解决方案，各有其优势。选择哪个取决于具体需求和使用场景。Redis 适用于需要多样化数据结构、持久化、发布/订阅消息传递和高级缓存功能的场景。Memcached 在注重可扩展性和易集成性的简单、轻量级缓存使用场景中表现突出。<a contenteditable="false" data-type="indexterm" data-primary="forking" data-startref="forking">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="copy-on-write (CoW)" data-startref="copy-on-write">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CoW (copy-on-write)" data-startref="cow">&nbsp;</a></p>
+            <div data-type="note">
+              <p>AWS 提供了<a contenteditable="false" data-type="indexterm" data-primary="ElastiCache">&nbsp;</a>亚马逊 ElastiCache，与 Redis 和 Memcached 兼容，适用于缓存、会话存储、游戏、地理空间服务、分析和排队等实时使用场景。我们将在<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="memory management in" data-startref="redis-memory-mgmt">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="memory management in Redis" data-startref="memory-mgmt-redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Redis" data-startref="redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="open source solutions" data-startref="cache-opensource">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="open source caching solutions" data-startref="opensource-cache">&nbsp;</a> <a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a> 中详细介绍。</p>
+            </div>
+          </section>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch04_conclusion_1734552287180808">
+        <h1>小结</h1>
+        <p>本章对支撑高效数据缓存的基本概念和策略进行了全面探讨。我们介绍了缓存淘汰策略、缓存失效机制以及多种缓存策略，将为您优化数据访问和存储提供必要知识。我们深入研究了缓存部署，了解了战略性部署如何最大化效果，并探索了各种可用的缓存机制。此外，我们还介绍了 CDN 以及 Redis 和 Memcached 这两种为提升性能提供强大选项的开源缓存解决方案。在架构中引入 Redis 或 Memcached，可以通过利用内存缓存的强大功能，显著提升应用程序性能、缩短响应时间并改善整体用户体验。</p>
+        <p>下一章将介绍扩展与负载均衡策略。扩展是现代计算的核心环节，使系统能够从容应对增加的负载。我们还将深入探讨负载均衡策略，以高效分发传入流量。这些策略将共同助力您设计和维护能够应对当今动态数字环境需求的高性能系统。</p>
+      </section>
+    </section>

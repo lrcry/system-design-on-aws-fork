@@ -1,0 +1,510 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch07_containerization_orchestration_and_deployments_1734552288630240">
+      <h1>容器化、编排与部署</h1>
+      <p>近年来，容器化（containerization）已成为软件开发和部署领域的变革性技术。传统的应用程序构建和部署方式往往面临一致性不足、可移植性差以及资源利用率低等挑战。容器化以一种全新而有效的方式为这些问题提供了解决方案。</p>
+      <p>那么，什么是<em>容器化</em>呢？简单来说，它是一种将应用程序及其运行所需的一切——如库和依赖项——打包成一个轻量级、可移植单元（称为<em>容器</em>）的方式。这些<a contenteditable="false" data-type="indexterm" data-primary="containers">&nbsp;</a>容器确保应用程序无论部署在何处——无论是开发人员的笔记本电脑、测试服务器还是生产环境——都能以相同的方式运行。这种一致性使开发人员能够专注于编写代码，而无需担心兼容性问题或部署的复杂性。<a href="https://docker.com">Docker</a> 是最流行的容器化工具之一，<a contenteditable="false" data-type="indexterm" data-primary="Docker">&nbsp;</a>它让创建、共享和运行容器变得简单，从而简化了开发流程，帮助团队更快地工作，并将应用程序更快速地推向市场。</p>
+      <p>在本章中，我们将首先介绍容器化的基本概念，重点关注 Docker。您将了解容器的工作原理、如何创建容器以及如何大规模管理容器。我们还将涉及更高级的主题，例如管理容器镜像、使用 <a href="https://kubernetes.io">Kubernetes</a> 等工具编排容器，以及使用现代策略部署应用程序。在本章结束时，您将对容器化有深入的理解，并了解它如何改善您的系统设计和软件开发方法。让我们深入探讨，了解容器化如何使您的开发运维工作更轻松、更高效！</p>
+      <section data-type="sect1" id="ch07_evolution_of_application_deployment_1734552288630437">
+        <h1>应用程序部署的演进</h1>
+        <p>在<a contenteditable="false" data-type="indexterm" data-primary="application deployment" data-secondary="evolution of" id="app-deploy-evolution">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment" data-secondary="evolution of" id="deploy-evolution">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="VMs versus" id="container-vms-compare">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VMs (virtual machines), containers versus" id="vm-container-compare">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="virtual machines (VMs), containers versus" id="virtual-machine-container-compare">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="software deployment" data-see="application deployment">&nbsp;</a>软件部署的早期阶段，企业依赖物理服务器来运行其应用程序。每个应用程序通常托管在一台独立的物理服务器上，导致资源分配和利用率不足的问题。例如，如果多个应用程序共享同一台服务器，一个应用程序可能会独占资源，导致其他应用程序的性能下降。随着企业努力维护众多物理服务器，这种方式被证明既低效又昂贵。为了解决传统部署的局限性，虚拟化（virtualization）应运而生，成为了一项改变游戏规则的技术。</p>
+        <p><em>虚拟化</em><a contenteditable="false" data-type="indexterm" data-primary="virtualization">&nbsp;</a>如<a data-type="xref" href="#ch07_figure_1_1734552288616281">#ch07_figure_1_1734552288616281</a>所示，使企业能够在单台物理服务器的 CPU 上运行多个<em>虚拟机（VM）</em>，从而最大化资源利用率和可扩展性。虚拟机（VM）是使用软件模拟物理计算机的技术。每台虚拟机作为一个独立的实例运行，拥有自己的操作系统和应用程序栈，确保应用程序之间的安全性和隔离性。<a contenteditable="false" data-type="indexterm" data-primary="hypervisors">&nbsp;</a><em>虚拟机监管程序（hypervisor）</em>充当主机与虚拟机之间的中间层，用于创建虚拟化硬件组件，包括虚拟磁盘、网络接口和 CPU。虚拟机在应用程序之间提供了强大的隔离性，但同时也需要在内存、存储和处理能力方面付出大量开销，并引入了与管理多个操作系统实例相关的复杂性。</p>
+        <figure id="ch07_figure_1_1734552288616281">
+          <img src="images/sdoa_0701.png"/>
+          <figcaption>机器虚拟化与容器化</figcaption>
+        </figure>
+        <p>容器代表了部署技术的下一个演进，提供了一种比虚拟机更轻量、更可移植的替代方案。如<a data-type="xref" href="#ch07_figure_1_1734552288616281">#ch07_figure_1_1734552288616281</a>所示，容器共享主机操作系统内核和运行时环境，使其比虚拟机更高效、更敏捷。与需要独立操作系统实例的虚拟机不同，容器利用操作系统级别的虚拟化来共享底层操作系统内核，从而实现更快的启动时间和更低的资源开销。</p>
+        <p>容器和虚拟机在部署和执行应用程序方面都扮演着至关重要的角色。尽管它们在隔离和封装工作负载的能力上有一些相似之处，但容器和虚拟机在架构、资源利用率和部署特性方面存在显著差异，如<a data-type="xref" href="#ch07_table_1_1734552288620901">#ch07_table_1_1734552288620901</a>所述。</p>
+        <table id="ch07_table_1_1734552288620901">
+          <caption>虚拟机与容器的比较</caption>
+          <thead>
+            <tr>
+              <th>特性</th>
+              <th>虚拟机</th>
+              <th>容器</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <p>虚拟化</p>
+              </td>
+              <td>
+                <p>硬件级别：虚拟机模拟物理硬件，并在虚拟机监管程序层之上提供完整的虚拟化环境，包括来宾操作系统。每台虚拟机独立于主机系统运行自己的操作系统实例，并消耗专用的系统资源，如 CPU、内存和磁盘空间。</p>
+              </td>
+              <td>
+                <p>操作系统级别：容器利用操作系统级别的虚拟化，为运行应用程序提供轻量级的隔离环境。每个容器共享主机操作系统内核，但维护独立的用户空间，允许多个容器在同一主机上并发运行。</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>资源利用率</p>
+              </td>
+              <td>
+                <p>效率较低：与容器相比，虚拟机在资源利用率方面效率较低，因为每台虚拟机都需要自己的操作系统实例，这会消耗额外的内存、CPU 和磁盘空间。</p>
+              </td>
+              <td>
+                <p>高效：容器在资源利用率方面非常高效，因为它们共享主机操作系统内核，仅需极小的额外开销。</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>部署灵活性</p>
+              </td>
+              <td>
+                <p>受虚拟机监管程序限制：尽管虚拟机提供了隔离性和封装性，但与容器相比，它们在部署灵活性方面较为有限。虚拟机与特定的虚拟机监管程序平台绑定，在不同虚拟化平台之间迁移时可能需要额外的配置或转换步骤。</p>
+              </td>
+              <td>
+                <p>可移植：容器凭借其轻量级、可移植的特性，提供了比虚拟机更强的部署灵活性。容器可以在不同环境（如开发、测试和生产）之间轻松移动，无需任何修改。</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>开销</p>
+              </td>
+              <td>
+                <p>重量级：虚拟机占用空间较大，当多台虚拟机在同一主机上运行时可能遭遇资源争用。</p>
+              </td>
+              <td>
+                <p>轻量级：容器对系统资源的额外开销极小。</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>速度</p>
+              </td>
+              <td>
+                <p>启动缓慢：与容器相比，虚拟机通常体积更大、启动更慢，这是因为运行多个操作系统实例需要额外的开销。</p>
+              </td>
+              <td>
+                <p>启动快速：由于容器无需启动独立的操作系统实例，它们启动时间更快，消耗的系统资源也更少，非常适合部署轻量级、可扩展的应用程序。</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>性能</p>
+              </td>
+              <td>
+                <p>有限：虚拟机由于模拟硬件的开销，性能往往受到限制。</p>
+              </td>
+              <td>
+                <p>原生：容器通过直接利用主机操作系统内核，提供原生性能。</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>安全性</p>
+              </td>
+              <td>
+                <p>完全隔离：虚拟机在操作系统级别提供完全隔离，通过最大程度降低跨虚拟机攻击的风险来增强安全性。</p>
+              </td>
+              <td>
+                <p>进程级别隔离：容器在共享操作系统资源中提供进程级别的隔离，这需要额外的安全措施来防止容器逃逸和进程间的未授权访问。</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p>容器和虚拟机代表了系统设计中应用程序隔离和部署的两种不同方式。容器为运行应用程序提供了轻量级、高效、可移植的环境，而虚拟机则提供了更强的隔离性和与现有基础设施的兼容性。通过了解容器和虚拟机之间的差异，系统设计师可以根据具体需求和使用场景做出明智的决策，选择合适的技术。无论是在云中部署微服务（microservice）架构，还是在本地运行遗留应用程序，容器和虚拟机都为现代系统设计<a contenteditable="false" data-type="indexterm" data-primary="application deployment" data-secondary="evolution of" data-startref="app-deploy-evolution">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment" data-secondary="evolution of" data-startref="deploy-evolution">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="VMs versus" data-startref="container-vms-compare">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VMs (virtual machines), containers versus" data-startref="vm-container-compare">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="virtual machines (VMs), containers versus" data-startref="virtual-machine-container-compare">&nbsp;</a>和基础设施管理提供了互补的解决方案。</p>
+      </section>
+      <section data-type="sect1" id="ch07_containerization_1734552288630531">
+        <h1>容器化</h1>
+        <p>现在，让我们了解围绕容器化的一些基本概念，包括 Docker、镜像、注册表和容器，它们构成了容器化的基础。</p>
+        <section data-type="sect2" id="ch07_docker_1734552288630633">
+          <h2>Docker</h2>
+          <p>Docker<a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" id="containerization-docker">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" id="docker">&nbsp;</a>是容器化的事实标准。它提供了一个用于构建、分发和运行容器的综合平台。借助 Docker，开发人员可以使用 <a href="https://oreil.ly/w_NP0">Dockerfile</a> 定义应用程序环境，构建容器镜像，并将应用程序无缝部署到任何环境。Docker 提供了丰富的工具集和 API，用于管理容器、编排分布式应用程序，以及与现有的 DevOps 工作流集成。</p>
+          <p>以下是一个简单 <a contenteditable="false" data-type="indexterm" data-primary="Dockerfiles">&nbsp;</a>Dockerfile 的示例，用于使用 Flask 框架创建一个基本的 Python Web 应用程序，该文件被转换为由多个层组成的 Docker 镜像，如<a data-type="xref" href="#ch07_figure_2_1734552288616314">#ch07_figure_2_1734552288616314</a>所示：</p>
+          <pre data-type="programlisting"># Use the official Python image from Docker Hub
+FROM python:3.9-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the current directory contents into the container at /app
+COPY . /app
+
+# Install Flask and other dependencies via pip
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Expose port 5000 to the outside world
+EXPOSE 5000
+
+# Define environment variable
+ENV NAME World
+
+# Run app.py when the container launches
+CMD ["python", "app.py"]</pre>
+<p>现在，让我们了解从 Dockerfile 创建的 Docker 镜像。</p>
+          <figure id="ch07_figure_2_1734552288616314">
+            <img src="images/sdoa_0702.png"/>
+            <figcaption>从 Dockerfile 到 Docker 镜像</figcaption>
+          </figure>
+          <section data-type="sect3" id="ch07_images_1734552288630701">
+            <h3>镜像</h3>
+            <p>容器镜像<a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-tertiary="images" id="containerization-docker-image">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" data-secondary="images" id="docker-image">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="images (Docker)" id="image-docker">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="container images" id="container-image">&nbsp;</a>是容器化应用程序的构建块。<em>镜像</em>是一个轻量级、独立的可执行包，包含运行应用程序所需的一切，包括应用程序代码、运行时、库和依赖项。镜像通过 Dockerfile 创建，Dockerfile 逐层指定构建镜像的指令。Docker Hub 和其他容器注册表托管预构建镜像的公共和私有存储库，使开发人员能够轻松共享和分发容器化应用程序。</p>
+            <p>容器镜像的核心由以下元素组成：</p>
+            <dl>
+              <dt>基础镜像</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="base image">&nbsp;</a>基础镜像作为容器镜像的基础，为应用程序提供运行时环境。它通常包括一个最小化操作系统（如 Alpine Linux 或 Ubuntu）以及基本的系统库和实用程序。基础镜像针对大小和安全性进行了优化，使开发人员能够构建轻量级、安全的容器化应用程序。</p>
+              </dd>
+              <dt>应用程序代码</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="application code">&nbsp;</a>应用程序代码代表容器化应用程序的核心功能。它包括源代码、二进制文件和执行应用程序所需的依赖项。应用程序代码被打包到容器镜像中，确保应用程序在不同环境中表现一致。</p>
+              </dd>
+              <dt>运行时依赖项</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="runtime dependencies">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="dependencies">&nbsp;</a>除应用程序代码外，容器镜像还可能包含运行时依赖项，如库、框架和运行时环境（例如 Node.js、Python、Java）。这些依赖项对于执行应用程序至关重要，并被打包到容器镜像中以确保兼容性和可移植性。</p>
+              </dd>
+              <dt>配置文件</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="configuration files">&nbsp;</a>容器镜像可能包含配置应用程序运行时环境所需的配置文件和设置。配置文件通常存储在容器镜像内定义良好的位置，允许在运行时轻松配置应用程序。</p>
+              </dd>
+            </dl>
+            <p>容器镜像由多个层组成，每层代表对基础镜像的一个离散组件或修改。这些层叠加在一起形成完整的容器镜像。容器镜像的关键组成部分是：</p>
+            <dl>
+              <dt>基础层</dt>
+              <dd>
+                <p>基础层作为容器镜像的基础，包含运行应用程序所需的最小化操作系统和系统库。基础层是不可变的，为构建和定制容器镜像提供了一个干净的起点。</p>
+              </dd>
+              <dt>中间层</dt>
+              <dd>
+                <p>中间层代表对基础镜像的修改或添加，例如安装软件包、复制文件或配置设置。每个中间层由<a href="https://oreil.ly/krHtG">Dockerfile 指令</a>（如 <code>RUN</code>、<code>COPY</code>、<code>ADD</code>）创建，并对容器镜像的最终状态有所贡献。</p>
+              </dd>
+              <dt>顶层</dt>
+              <dd>
+                <p>顶层是容器镜像的最终层，包含应用程序代码、运行时依赖项和配置文件。该层是可读写的，允许在运行时对容器镜像进行更改，例如在容器文件系统中创建或修改文件。</p>
+              </dd>
+            </dl>
+            <p>构建和管理容器镜像是容器部署的基本方面。容器镜像可以使用 Dockerfile 创建和定制，Dockerfile 是声明式文件，逐层指定构建镜像的指令。Docker 提供了一套命令和工具，用于构建和标记容器镜像，并将其推送到容器注册表，如 <a href="https://hub.docker.com">Docker Hub</a> 或 <a href="https://aws.amazon.com/ecr">亚马逊弹性容器注册表（Amazon ECR）</a>。</p>
+            <p class="pagebreak-before less_space">容器镜像<a contenteditable="false" data-type="indexterm" data-primary="versioning">&nbsp;</a>应进行适当的版本控制和标记，以跟踪更改并确保跨环境的一致性。语义化版本控制（SemVer）或基于日期的版本控制方案可用于有效管理容器镜像版本。此外，应对容器镜像进行漏洞扫描并定期更新，以降低安全风险并确保符合行业标准。</p>
+            <div data-type="note">
+              <p>我们将在<a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a>介绍在 AWS 上使用 Amazon ECR 维护容器镜像，以便在 AWS Lambda、亚马逊弹性容器服务（Amazon ECS）和亚马逊弹性 Kubernetes 服务（Amazon EKS）上进行部署。</p>
+            </div>
+            <p>下一个问题是容器镜像存储在哪里：存储在容器注册表中，我们接下来将介绍。<a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-tertiary="images" data-startref="containerization-docker-image">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" data-secondary="images" data-startref="docker-image">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="images (Docker)" data-startref="image-docker">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="container images" data-startref="container-image">&nbsp;</a></p>
+          </section>
+          <section data-type="sect3" id="ch07_registry_1734552288630759">
+            <h3>注册表</h3>
+            <p><em>容器注册表</em>是以可扩展、高效的方式存储、管理和分发容器镜像的中央存储库。<a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-tertiary="registries" id="containerization-docker-registry">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" data-secondary="registries" id="docker-registry">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="registries (Docker)" id="registry-docker">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="container registries" id="container-registry">&nbsp;</a>容器注册表承担以下几项关键功能：为容器镜像提供安全、可靠的存储，确保在需要时可用；通过版本控制、标记以及将镜像组织到存储库中，实现有效的镜像管理；在各种环境（如开发、测试和生产）之间分发镜像，确保整个部署管道的一致性；最后，强制执行访问控制和权限，以规范谁可以推送、拉取和修改镜像，从而确保安全性并符合组织政策。</p>
+            <p>为了支持容器镜像的存储、管理和分发，容器注册表提供以下功能：</p>
+            <dl>
+              <dt>私有存储库</dt>
+              <dd>
+                <p>容器注册表支持创建私有存储库，允许企业在身份验证和访问控制的保护下安全存储和管理专有或敏感的容器镜像。</p>
+              </dd>
+              <dt>标记和版本控制</dt>
+              <dd>
+                <p>容器注册表允许开发人员标记和版本化容器镜像，从而轻松跟踪更改、管理依赖项，并确保跨环境的一致性。</p>
+              </dd>
+              <dt>可扩展性和高可用性</dt>
+              <dd>
+                <p>容器注册表设计为高度可扩展和可用，能够处理大量容器镜像，并支持持续集成和持续部署（CI/CD）工作流。</p>
+              </dd>
+              <dt>内容信任与签名</dt>
+              <dd>
+                <p>容器注册表支持内容信任机制，如 <a href="https://oreil.ly/yKoOc">Docker 内容信任（DCT）</a>或 Notary，允许用户通过数字签名验证容器镜像的完整性和真实性。</p>
+              </dd>
+              <dt>与 CI/CD 流水线集成</dt>
+              <dd>
+                <p>容器注册表与 CI/CD 流水线无缝集成，实现自动化的镜像构建、测试和部署工作流。</p>
+              </dd>
+            </dl>
+            <p>为了最大化容器注册表的收益，企业应遵循有效管理和使用容器镜像的最佳实践。这包括：尽可能使用私有注册表（尤其是对于专有或敏感应用程序）来安全存储和管理容器镜像；根据基于角色的访问控制（RBAC）策略实施访问控制，以限制对这些镜像的访问，确保只有授权用户才能推送、拉取和修改镜像；通过 CI/CD 流水线自动化构建、标记和推送容器镜像到注册表的过程，确保镜像构建过程的一致性和可靠性；使用安全扫描工具定期对容器镜像进行漏洞扫描，并在将镜像部署到生产环境之前解决发现的问题；此外，为容器镜像采用一致的版本控制和标记策略，有助于跟踪更改和管理依赖项，并允许在需要时轻松回滚到以前的版本。</p>
+            <p>容器注册表是容器生态系统的支柱。它们为存储、管理和分发容器镜像提供了<a contenteditable="false" data-type="indexterm" data-primary="Docker Client">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker Host">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker Registry">&nbsp;</a>集中、安全的存储库。<a data-type="xref" href="#ch07_figure_3_1734552288616335">#ch07_figure_3_1734552288616335</a>展示了 Docker 客户端（Docker Client）、Docker 主机（Docker Host）和 Docker 注册表（Docker Registry）之间的交互。</p>
+            <figure id="ch07_figure_3_1734552288616335">
+              <img src="images/sdoa_0703.png"/>
+              <figcaption>Docker 生态系统</figcaption>
+            </figure>
+            <p>Docker 客户端是用户构建（<code>docker build</code>）、获取（<code>docker pull</code>）和运行（<code>docker run</code>）镜像的地方。带有 Docker 守护进程（Docker daemon）的 Docker 主机负责管理这些镜像并运行容器。Docker 注册表充当 Docker 镜像的集中存储和分发中心，使用户能够在不同环境之间推送和拉取镜像。Docker 注册表是 Docker 生态系统的支柱，确保对容器镜像的一致、可靠的访问。</p>
+            <p>在下一节中，我们将探讨<a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-tertiary="registries" data-startref="containerization-docker-registry">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" data-secondary="registries" data-startref="docker-registry">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="registries (Docker)" data-startref="registry-docker">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="container registries" data-startref="container-registry">&nbsp;</a>容器的生命周期以及管理其运行的过程。</p>
+          </section>
+          <section data-type="sect3" id="ch07_containers_1734552288630817">
+            <h3>容器</h3>
+            <p>在<a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-tertiary="container lifecycle" id="containerization-docker-lifecycle">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" data-secondary="container lifecycle" id="docker-lifecycle">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="lifecycle" id="container-lifecycle">&nbsp;</a>容器化领域，理解容器的生命周期、底层进程以及 Docker 等容器引擎的角色，对于高效部署和管理容器化应用程序至关重要。如<a data-type="xref" href="#ch07_figure_4_1734552288616355">#ch07_figure_4_1734552288616355</a>所示，容器的生命周期涵盖从创建到终止的几个阶段，每个阶段在部署和执行容器化应用程序中都起着至关重要的作用。</p>
+            <figure id="ch07_figure_4_1734552288616355">
+              <img src="images/sdoa_0704.png"/>
+              <figcaption>Docker 容器生命周期</figcaption>
+            </figure>
+            <p>让我们讨论过程的每个部分：</p>
+            <dl>
+              <dt>镜像创建</dt>
+              <dd>
+                <p>容器生命周期从创建容器镜像开始，容器镜像作为容器的蓝图。镜像通常使用 Dockerfile 创建，Dockerfile 逐层定义构建镜像的指令。</p>
+              </dd>
+              <dt>容器创建</dt>
+              <dd>
+                <p>镜像构建完成后，可以使用 <a href="https://oreil.ly/fnL5v"><code>docker run</code> 命令</a>从镜像实例化容器。在容器创建过程中，Docker 引擎根据镜像规格分配资源（如 CPU、内存和存储），并设置容器环境。</p>
+              </dd>
+              <dt>容器执行</dt>
+              <dd>
+                <p>容器创建后，会执行镜像中指定的命令，该命令通常对应于正在运行的主要应用程序或服务。容器在相互之间以及与主机系统之间的隔离环境中运行，确保应用程序的行为可预测且安全。</p>
+              </dd>
+              <dt>容器管理</dt>
+              <dd>
+                <p>在运行时，可以使用各种 Docker 命令管理容器，如 <code>docker start</code>、<code>docker stop</code>、<code>docker pause</code> 和 <code>docker restart</code>。管理员使用这些命令控制容器的生命周期，包括根据需要启动、停止、暂停和重启容器。</p>
+              </dd>
+              <dt>容器终止</dt>
+              <dd>
+                <p>当不再需要容器时，使用 <code>docker rm</code> 命令终止容器。容器终止会释放分配的资源并从主机系统中删除容器，确保资源的高效利用。</p>
+              </dd>
+            </dl>
+            <p>在容器化环境中，容器作为隔离进程运行，每个进程都有自己的命名空间、文件系统和网络栈。容器执行中涉及的关键进程包括：</p>
+            <dl>
+              <dt>初始化进程</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="init process">&nbsp;</a>每个容器都以初始化进程（init process）启动，该进程作为容器化应用程序的入口点。初始化进程通常在容器内以进程 ID（PID）1 运行，负责管理其他进程和处理信号。</p>
+              </dd>
+              <dt>应用程序进程</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="application processes">&nbsp;</a>应用程序进程代表容器化应用程序的主要功能，由初始化进程派生。这些进程在容器环境中执行，并根据需要与主机系统和其他容器交互。</p>
+              </dd>
+              <dt>辅助进程</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="supporting processes">&nbsp;</a>除应用程序进程外，容器还可能运行辅助进程，如日志守护进程、监控代理或服务发现工具。这些进程增强了容器化应用程序的功能性和可靠性，可以与应用程序进程并行运行或在同一容器内运行。<a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-tertiary="container lifecycle" data-startref="containerization-docker-lifecycle">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" data-secondary="container lifecycle" data-startref="docker-lifecycle">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="lifecycle" data-startref="container-lifecycle">&nbsp;</a></p>
+              </dd>
+            </dl>
+          </section>
+          <section data-type="sect3" id="ch07_docker_engine_and_runtime_1734552288630877">
+            <h3>Docker 引擎与运行时</h3>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-tertiary="Docker engine" id="containerization-docker-engine">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker engine" id="docker-engine">&nbsp;</a>Docker 引擎是 Docker 平台的核心组件，提供构建、运行和管理容器的功能。如<a data-type="xref" href="#ch07_figure_5_1734552288616374">#ch07_figure_5_1734552288616374</a>所示，Docker 引擎由几个关键组件组成。</p>
+            <figure id="ch07_figure_5_1734552288616374">
+              <img src="images/sdoa_0705.png"/>
+              <figcaption>Docker 引擎架构</figcaption>
+            </figure>
+            <p>Docker 引擎的组件包括：</p>
+            <dl>
+              <dt>Docker 守护进程</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="Docker daemon">&nbsp;</a>Docker 守护进程（<code>dockerd</code>）是管理容器操作的后台服务，包括镜像和容器管理、资源分配和网络配置。Docker 守护进程监听 Docker API 请求，并代表客户端执行命令。</p>
+              </dd>
+              <dt>Docker CLI</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="Docker CLI">&nbsp;</a>Docker CLI（<code>docker</code>）提供了一个与 Docker 守护进程交互并执行常见容器操作的用户友好界面，例如构建镜像、创建容器以及管理容器生命周期。</p>
+              </dd>
+              <dt>Containerd</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="containerd">&nbsp;</a>Containerd 是一个行业标准的容器运行时，作为 Docker 引擎的核心运行时组件。Containerd 管理容器的执行和生命周期，包括容器创建、运行时管理和资源隔离。</p>
+              </dd>
+              <dt>Runc</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="runc">&nbsp;</a>Runc 是一个轻量级容器运行时，实现了开放容器倡议（OCI）运行时规范。Runc 创建并执行容器进程，管理容器命名空间和文件系统，并强制执行容器安全策略。</p>
+              </dd>
+            </dl>
+            <p>容器生命周期、进程和 Docker 引擎在容器化应用程序的部署和管理中发挥着不可或缺的作用。容器化使企业能够采用云原生（cloud native）架构，简化开发工作流程，并加速数字化转型举措，在当今动态的 IT 环境中推动创新和敏捷性。</p>
+            <p>随着企业越来越多地采用容器化，对这些容器化应用程序进行高效管理和扩展的需求变得至关重要。这就是容器编排<a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-tertiary="Docker engine" data-startref="containerization-docker-engine">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker engine" data-startref="docker-engine">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-startref="containerization-docker">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" data-startref="docker">&nbsp;</a>发挥作用的地方。</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch07_container_orchestration_1734552288630938">
+          <h2>容器编排</h2>
+          <p>Kubernetes 等容器编排<a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Kubernetes" id="containerization-kubernetes">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="orchestration" id="container-orchestration">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="orchestration" id="orchestration">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Kubernetes" id="kubernetes">&nbsp;</a>平台在大规模管理容器化应用程序的部署和运行中发挥着举足轻重的作用。<em>Kubernetes</em>（通常缩写为 K8s）是一个开源容器编排平台，旨在自动化容器化应用程序的部署、扩展和管理。</p>
+          <section data-type="sect3" id="ch07_kubernetes_architecture_1734552288631001">
+            <h3>Kubernetes 架构</h3>
+            <p><a href="https://oreil.ly/WoSWJ">Kubernetes 架构</a>如<a data-type="xref" href="#ch07_figure_6_1734552288616391">#ch07_figure_6_1734552288616391</a>所示，由分布在机器集群中的几个关键组件组成。</p>
+            <figure id="ch07_figure_6_1734552288616391">
+              <img src="images/sdoa_0706.png"/>
+              <figcaption>Kubernetes 架构</figcaption>
+            </figure>
+            <p><em>节点（Node）</em>是<a contenteditable="false" data-type="indexterm" data-primary="nodes">&nbsp;</a>组成 Kubernetes 集群的单个机器，可以是物理机或虚拟机。节点分为两种类型：</p>
+            <dl>
+              <dt>管理节点或控制平面节点</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="control plane nodes">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="manager nodes">&nbsp;</a>这些节点托管控制平面组件并编排 Worker 节点。它们管理集群的整体状态，响应来自用户或外部系统的请求，并决定何时何地部署<span class='keep-together'>应用程序</span>。</p>
+              </dd>
+              <dt>Worker 节点</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="worker nodes">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="minions">&nbsp;</a>也称为<em>从属节点（minion）</em>，这些节点运行实际的容器化应用程序。每个 Worker 节点通常运行由 Kubernetes 系统管理的多个容器。</p>
+              </dd>
+            </dl>
+            <p>控制平面节点由以下几个组件组成：</p>
+            <dl>
+              <dt>API 服务器</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="API servers">&nbsp;</a>API 服务器是 Kubernetes 中的中央管理实体。它公开 Kubernetes API，允许用户、管理工具和集群的其他部分与 Kubernetes 交互。它处理 REST 操作、验证和配置数据，并更新集群 etcd 数据存储中的相应对象。</p>
+              </dd>
+              <dt>调度程序</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="schedulers">&nbsp;</a>调度程序将新创建的 Pod（容器组）放置到集群中的可用节点上。它考虑资源需求、硬件和软件约束、亲和性、反亲和性以及用户定义的其他策略等因素。</p>
+              </dd>
+              <dt>控制器管理器</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="controller managers">&nbsp;</a>控制器管理器是一个守护进程，内嵌了 Kubernetes 附带的核心控制循环。这些控制循环通过 API 服务器监视集群状态，并朝向期望状态努力。控制器示例包括节点控制器（Node Controller）、副本集控制器（ReplicaSet Controller）和部署控制器（Deployment Controller）。</p>
+              </dd>
+              <dt>Etcd</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="etcd">&nbsp;</a>尽管 etcd 严格来说不是控制平面节点的一部分，但它是一个一致且高度可用的键值存储，用作 Kubernetes 所有集群数据的后端存储。它存储集群的配置数据、状态数据和元数据。</p>
+              </dd>
+            </dl>
+            <p>Worker 节点的组件包括：</p>
+            <dl>
+              <dt>kubelet</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="kubelets">&nbsp;</a>kubelet 是在每个 Worker 节点上运行的代理，负责管理该节点上容器的生命周期。它通过各种方式（如 API 服务器或本地文件）接收 Pod 定义，确保这些 Pod 定义中描述的容器正在运行且健康，并向控制平面报告节点的健康状况。</p>
+              </dd>
+              <dt>kube-proxy</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="kube-proxy">&nbsp;</a>kube-proxy 是在每个 Worker 节点上运行的网络代理。它维护主机上的网络规则，并将连接转发到<span class='keep-together'>适当的</span>后端服务。它通过管理 TCP 和 UDP 数据包的网络路由来实现 Kubernetes 服务抽象。</p>
+              </dd>
+            </dl>
+            <p>Kubernetes 架构围绕管理集群状态的控制平面和执行工作负载的一组 Worker 节点构建。这些组件之间的交互确保了大规模容器化应用程序的高效部署和管理。</p>
+          </section>
+          <section data-type="sect3" id="ch07_kubernetes_concepts_1734552288631059">
+            <h3>Kubernetes 概念</h3>
+            <p>让我们了解 Kubernetes 的基本概念，它们构成了容器编排的基础：</p>
+            <dl>
+              <dt>Pod（容器组）</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="Pods">&nbsp;</a>Pod 是 Kubernetes 中最小的可部署单元，表示一个或多个共享网络和存储资源的容器。Pod 封装应用程序组件，并确保它们被共同定位和调度。Pod 是短暂的，可以根据需求动态扩缩或替换。</p>
+              </dd>
+              <dt>集群</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="clusters">&nbsp;</a>Kubernetes 集群由一个或多个控制平面节点和多个 Worker 节点（数据平面节点）组成，构成运行容器化应用程序的分布式计算环境。集群为容器化工作负载提供高可用性、容错性和可扩展性，确保一致的性能和可靠性。</p>
+              </dd>
+              <dt>ReplicaSet（副本集）</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="ReplicaSets">&nbsp;</a>ReplicaSet 确保在任何给定时间运行指定数量的 Pod 副本。它维护 Pod 副本的期望状态，根据需求变化扩缩 Pod，并确保容错性和<span class='keep-together'>可用性</span>。</p>
+              </dd>
+              <dt>服务</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="services (Kubernetes)">&nbsp;</a>服务（Service）为访问 Kubernetes 集群内的 Pod 提供网络抽象。它们支持负载均衡、服务发现以及基于标签和选择器自动路由流量到 Pod。服务可以在集群内部暴露，也可以向互联网外部暴露。</p>
+              </dd>
+              <dt>部署</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="deployment" data-secondary="Kubernetes">&nbsp;</a>部署（Deployment）提供了一种声明式方式来管理 Kubernetes 中的应用程序部署和更新。部署定义了应用程序的期望状态，包括副本数量、容器镜像和发布策略。部署确保期望状态得到实现和维持，从而实现无缝更新和回滚。</p>
+              </dd>
+              <dt>卷</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="volumes (Kubernetes)">&nbsp;</a>卷（Volume）为 Kubernetes 中的容器提供持久存储，允许数据在单个 Pod 的生命周期之外持续存在。卷支持容器之间、有状态应用程序和外部存储系统之间的数据共享，确保容器化工作负载的数据完整性和可用性。</p>
+              </dd>
+              <dt>ConfigMap 与密钥</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="ConfigMaps">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="secrets">&nbsp;</a>ConfigMap 和密钥（Secret）是 Kubernetes 资源，分别用于存储配置数据和敏感信息（如密码或 API 密钥）。它们提供了一种集中、安全的方式来管理应用程序配置和密钥，将配置从容器镜像中解耦，并支持动态配置更新。</p>
+              </dd>
+              <dt>Job（作业）</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="jobs (Kubernetes)">&nbsp;</a>Job 是用于运行批处理或间歇性任务直至完成的 Kubernetes 资源。Job 确保指定数量的 Pod 在终止前成功完成任务。它们非常适合在 Kubernetes 集群中运行数据处理、备份或定期维护等任务。</p>
+              </dd>
+              <dt>资源</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="resources (Kubernetes)">&nbsp;</a>CPU 和内存等资源根据 Kubernetes 清单中指定的资源请求和限制分配给容器。资源管理确保资源的高效利用，防止资源争用，并维持 Kubernetes 集群的性能和可靠性。</p>
+              </dd>
+            </dl>
+            <div data-type="note">
+              <p>我们将在<a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a>介绍 Amazon EKS，这是一项完全托管的 Kubernetes 服务，用于简化在 AWS 云上使用 Kubernetes 部署、管理和扩展容器化应用程序。EKS 管理 Kubernetes 控制平面，<a contenteditable="false" data-type="indexterm" data-primary="EKS (Elastic Kubernetes Service)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic Kubernetes Service (EKS)">&nbsp;</a>包括更新、扩展和可用性，使您能够专注于部署和管理应用程序。</p>
+            </div>
+            <p>Kubernetes 为容器编排提供了一个强大、灵活的平台，使企业能够轻松部署、扩展和管理容器化应用程序。通过利用 Kubernetes 架构及其核心组件，企业可以构建具有弹性、可扩展性和高可用性的云原生应用程序。</p>
+            <p>现在您已经对<a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Kubernetes" data-startref="containerization-kubernetes">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="orchestration" data-startref="container-orchestration">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="orchestration" data-startref="orchestration">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Kubernetes" data-startref="kubernetes">&nbsp;</a>Kubernetes 及其组件有了深入的了解，下一步是探讨这些元素如何在实际场景中应用，特别是在管理应用程序部署方面。这将引导我们了解容器部署策略的概念。</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch07_container_deployment_strategies_1734552288631117">
+          <h2>容器部署策略</h2>
+          <p><em>部署（Deployment）</em>是管理 Kubernetes 中应用程序部署的标准方式。<a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="deployment strategies" id="container-deploy-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment strategies" data-secondary="Kubernetes" id="deploy-kubernetes-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Kubernetes" data-secondary="deployment strategies" id="kubernetes-deploy-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="deployment strategies" id="containerization-deploy-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="application deployment" data-secondary="container deployment strategies" id="app-deploy-container-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment" data-secondary="container deployment strategies" id="deploy-container-strategy">&nbsp;</a>部署确保对应用程序部署进行声明式更新，维持所需的副本数量，并高效处理发布和回滚。部署根据期望状态自动创建和扩展 Pod，使管理应用程序生命周期变得简单。</p>
+          <p>在 Kubernetes 中部署应用程序不仅仅是发布新版本；它还需要深思熟虑的策略，以确保无缝更新、最小化停机时间并降低风险。以下是一些常见的部署策略：</p>
+          <dl>
+            <dt>重建部署</dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="re-creating deployments">&nbsp;</a>在 Kubernetes 中更新部署时，会涉及 Pod 的重建——现有实例被终止，然后被新版本替换。当旧版本和新版本的应用程序无法共存时，这种方法非常有益。所经历的停机时间取决于应用程序停止和重新启动所需的时长。</p>
+            </dd>
+            <dt>滚动部署</dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="rolling deployments">&nbsp;</a>滚动部署是 Kubernetes 的默认方式，旨在通过就绪探针（readiness probe）的辅助，逐步、无缝地将运行旧版本应用程序的 Pod 替换为新版本，从而最小化集群停机时间。一旦就绪探针确认新版本应用程序可用，旧版本便被逐步淘汰。如果出现问题，可以停止部署并回滚到先前版本，从而避免集群范围内的停机。然而，由于 Pod 是逐个替换的，部署可能需要一定时间，尤其是在较大的集群中。假设在正在进行的部署完成之前启动了新的部署，Kubernetes 会将版本更新为新部署的规范，而忽略尚未应用的先前版本。</p>
+              <div data-type="note">
+                <p><em>就绪探针</em>监控<a contenteditable="false" data-type="indexterm" data-primary="readiness probes">&nbsp;</a>应用程序的就绪状态。如果探针失败，流量会从 Pod 中转移，确保它在就绪之前不会接收请求。这些探针对于在服务流量前需要初始化步骤的应用程序，或在可能使应用程序暂时过载的流量激增期间尤其有用。</p>
+              </div>
+            </dd>
+            <dt>StatefulSet 部署</dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="StatefulSet deployments">&nbsp;</a>StatefulSet 部署用于在 Kubernetes 中部署有状态应用程序，如数据库或分布式系统。StatefulSet 确保 Pod 在重启后保持一致的命名、网络和持久化，为有状态工作负载维护数据完整性和可用性。</p>
+            </dd>
+            <dt>蓝/绿部署</dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="blue-green deployments">&nbsp;</a>这种策略涉及运行两个相同的生产环境，分别标记为"蓝色"和"绿色"。在任何给定时间，只有一个环境提供实时流量，而另一个保持空闲。当新版本准备就绪时，流量被路由到空闲环境，从而实现零停机部署，并在出现问题时轻松回滚。</p>
+            </dd>
+            <dt>无服务器部署</dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="serverless deployments">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="function as a service (FaaS)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="FaaS (function as a service)">&nbsp;</a>无服务器部署也称为<em>函数即服务（FaaS）</em>，它抽象了基础设施层，使开发人员可以专注于编写代码。Kubernetes 通过 Knative 或 AWS Lambda on Kubernetes 等平台提供无服务器功能，使开发人员能够部署事件驱动、自动扩展的应用程序，而无需管理底层基础设施。</p>
+            </dd>
+            <dt>金丝雀部署</dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="canary deployments">&nbsp;</a>金丝雀部署涉及将新版本的应用程序逐步发布给一小部分用户或流量段，同时监控错误或性能问题。这些部署允许早期发现问题，并在必要时提供受控的回滚机制。Kubernetes 通过流量拆分和自动回滚等功能支持金丝雀部署。</p>
+            </dd>
+          </dl>
+          <p>高级部署策略对于管理 Kubernetes 中现代云原生应用程序的复杂性至关重要。通过利用这些创新方法，企业可以实现无缝更新、最小化停机时间，并提供卓越的用户体验。Kubernetes 与基础设施即代码（IaC）实践无缝集成，允许团队在使用各种 IaC 工具定义和管理基础设施的同时，自动化容器化应用程序的部署和扩展。</p>
+          <div data-type="note">
+            <p><em>基础设施即代码（IaC）</em>是<a contenteditable="false" data-type="indexterm" data-primary="infrastructure-as-code (IaC)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IaC (infrastructure-as-code)">&nbsp;</a>一种通过代码管理 IT 基础设施的现代方法，能够在预置和配置方面实现自动化和一致性。IaC 允许团队使用声明式配置文件定义其基础设施，这些文件可以进行版本控制和轻松复制，从而促进协作和可追溯性。支持 IaC 的一些常见工具包括 <a href="https://terraform.io">Terraform</a>、<a href="https://aws.amazon.com/cloudformation">AWS CloudFormation</a>、<a href="https://ansible.com">Ansible</a>、<a href="https://pulumi.com">Pulumi</a>、<a href="https://chef.io">Chef</a>、<a href="https://puppet.com">Puppet</a> 和 <a href="https://oreil.ly/NCJvE">AWS CDK</a>。</p>
+          </div>
+          <p>Kubernetes 通过实现大规模容器化应用程序的编排，融入了 IaC 范式。使用 Kubernetes，您可以使用声明式 YAML 文件定义整个应用程序环境——容器、网络、存储和配置。这允许团队对基础设施配置进行版本控制，轻松复制环境，并自动化部署流程。Kubernetes 提供了一个强大的平台来实施这些策略，使团队能够充满信心和效率地部署、扩展和管理应用程序。</p>
+          <p>更改应部署到测试（或预发布）环境。一旦通过手动测试（或自动集成测试）在测试环境中得到确认，就可以将其传播到为真实用户流量提供服务的生产环境。让我们在下一节中更详细地讨论这个过程。<a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="deployment strategies" data-startref="container-deploy-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment strategies" data-secondary="Kubernetes" data-startref="deploy-kubernetes-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Kubernetes" data-secondary="deployment strategies" data-startref="kubernetes-deploy-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="deployment strategies" data-startref="containerization-deploy-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="application deployment" data-secondary="container deployment strategies" data-startref="app-deploy-container-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment" data-secondary="container deployment strategies" data-startref="deploy-container-strategy">&nbsp;</a></p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch07_ci_cd_pipeline_with_gitflow_and_automated_deployme_1734552288631183">
+        <h1>使用 Gitflow 和自动化部署策略的 CI/CD 流水线</h1>
+        <p>随着企业内软件项目数量的增加，<a contenteditable="false" data-type="indexterm" data-primary="application deployment" data-secondary="CI/CD pipeline" id="app-deploy-cicd">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment" data-secondary="CI/CD pipeline" id="deploy-cicd">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CI/CD pipeline" id="cicd">&nbsp;</a>管理部署的复杂性也随之增加。手动部署容易出错，需要大量工程资源来管理，最终会减缓开发生命周期。为了解决这个问题，CI/CD 提供了一个自动化流程，可以降低运营成本，并加速从代码审查到生产的部署。让我们深入探讨 CI/CD 的关键概念，从使用 Gitflow 进行代码开发开始，并探索有效实施这些概念的步骤。</p>
+        <section data-type="sect2" id="ch07_gitflow_workflow_for_branch_management_1734552288631246">
+          <h2>用于分支管理的 Gitflow 工作流</h2>
+          <p>Gitflow 是一种<a href="https://oreil.ly/hQ8Pl">分支策略</a>，<a contenteditable="false" data-type="indexterm" data-primary="Gitflow">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="branch management">&nbsp;</a>通过清晰、结构化的分支来组织开发、测试和发布流程。这确保了顺畅的集成、计划良好的发布以及快速的 bug 修复发布。</p>
+          <p>主要分支包括：</p>
+          <dl>
+            <dt>
+              <code>main</code>
+            </dt>
+            <dd>
+              <p>稳定的生产分支，包含最新审批的代码</p>
+            </dd>
+            <dt>
+              <code>develop</code>
+            </dt>
+            <dd>
+            <p>集成分支，功能在发布前合并于此</p>
+          </dd>
+          </dl>
+          <p>功能分支包括：</p>
+          <dl>
+            <dt>
+              <code>feature/*</code>
+            </dt>
+            <dd>
+              <p>为每个新功能或任务创建；完成后合并到 <code>develop</code></p>
+            </dd>
+            <dt>
+              <code>release/*</code>
+            </dt>
+            <dd>
+            <p>用于最终测试和最后调整；同时合并到 <code>main</code> 和 <code>develop</code></p>
+          </dd>
+            <dt>
+
+              <code>hotfix/*</code>
+
+            </dt>
+            <dd>
+            <p>从 <code>main</code> 创建，用于紧急生产修复；同时合并到 <code>main</code> 和 <code>develop</code></p>
+          </dd>
+          </dl>
+          <p>开发人员从 <code>develop</code> 创建功能分支，完成工作后，创建<a href="https://oreil.ly/vuqYx">拉取请求（PR）</a>以合并回 <code>develop</code>。代码准备发布后，从 <code>develop</code> 创建 <code>release</code> 分支，经测试后合并到 <code>main</code> 和 <code>develop</code>。<code>Hotfix</code> 分支用于紧急修复，从 <code>main</code> 创建并合并回 <code>main</code> 和 <code>develop</code> 以保持一致性。端到端流程如<a data-type="xref" href="#ch07_figure_7_1734552288616409">#ch07_figure_7_1734552288616409</a>所示。</p>
+          <figure id="ch07_figure_7_1734552288616409">
+            <img src="images/sdoa_0707.png"/>
+            <figcaption>Gitflow 分支策略</figcaption>
+          </figure>
+        </section>
+        <section data-type="sect2" id="ch07_continuous_integration_1734552288631306">
+          <h2>持续集成</h2>
+          <p>持续集成（CI）<a contenteditable="false" data-type="indexterm" data-primary="continuous integration (CI)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CI (continuous integration)">&nbsp;</a>旨在将多个开发人员的代码更改每天多次集成到共享存储库中。这个过程确保代码更改被定期测试、构建和验证，以便尽早发现集成问题。</p>
+          <p>开发人员在本地或云环境中开发代码后，为每个新功能或修复创建功能分支。开发完成后，他们提交拉取请求（PR），其中包含有关更改、目的和任何测试用例的详细信息。</p>
+          <p>然后，CI 启动自动化构建过程，确认代码编译无误。自动化单元测试运行以验证各个组件是否正常运行。代码质量和 lint 检查确保符合风格和最佳实践。SonarQube 或 Amazon CodeGuru 等自动化安全工具对代码进行漏洞扫描。自动化代码审查识别潜在的低效问题，人工审查则提供关于逻辑和潜在改进的反馈。如果任何步骤失败，会向开发人员提供反馈，开发人员可根据需要更新代码。</p>
+          <p>一旦所有 CI 检查通过，PR 会经过同行和自动化审查以获得额外反馈。在解决任何问题后，PR 被批准并合并到 <code>develop</code> 分支，触发合并后流水线。在合并后流水线中，CI 构建并测试新代码以验证无缝集成。对于容器化应用程序，Docker 镜像被构建并准备好部署到测试和生产环境。</p>
+        </section>
+        <section data-type="sect2" id="ch07_continuous_deployment_1734552288631360">
+          <h2>持续部署</h2>
+          <p>持续部署（CD）<a contenteditable="false" data-type="indexterm" data-primary="continuous deployment (CD)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CD (continuous deployment)">&nbsp;</a>是在 CI 检查成功后，无需人工干预，将更改部署到测试环境、预发布环境，最终到生产环境的过程。CD 提供了一种精简、响应迅速的方式，将代码快速推送到生产环境，使功能和更新的发布更加容易。</p>
+          <p>CI 成功完成后，代码被部署到测试环境进行进一步验证，通过集成测试检查应用程序的不同部分是否正确通信和运行。然后，负载测试模拟高流量以了解性能影响。对于重大更改，在继续到其他环境之前，可能需要经过审批流程。一旦测试环境得到验证，更改会被提升到预发布环境。基本功能冒烟测试确保生产就绪。</p>
+          <p>在金丝雀部署中，更新首先向一小部分用户或服务器发布。系统会持续监控关键指标（如错误率、延迟）以确保稳定性。如果检测到问题，自动回滚机制将恢复先前的稳定版本。一旦金丝雀部署成功，更新将逐步部署到其余的生产环境。</p>
+        </section>
+        <section data-type="sect2" id="ch07_monitoring_and_incident_management_1734552288631424">
+          <h2>监控与事件管理</h2>
+          <p>主动监控<a contenteditable="false" data-type="indexterm" data-primary="monitoring">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="incident management">&nbsp;</a>和事件响应对于快速识别和解决问题至关重要。对于持续监控，使用 CloudWatch、ELK Stack 或 Prometheus 等工具实时监控关键指标（如 CPU、内存、请求延迟）。设置仪表板和警报以跟踪稳定性和性能。警报与事件管理工具（如 PagerDuty、Opsgenie）集成，以通知工程师问题。自动化运行手册为常见事件提供快速响应，<a contenteditable="false" data-type="indexterm" data-primary="application deployment" data-secondary="CI/CD pipeline" data-startref="app-deploy-cicd">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment" data-secondary="CI/CD pipeline" data-startref="deploy-cicd">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CI/CD pipeline" data-startref="cicd">&nbsp;</a>确保快速恢复。</p>
+        </section>
+      </section>
+      <section class="pagebreak-before" data-type="sect1" id="ch07_conclusion_1734552288631479">
+        <h1 class="less_space">结论</h1>
+        <p>容器化对软件开发和部署产生了重大影响。在本章中，我们介绍了容器化的基础知识，探讨了 Docker 的工作原理，了解了容器镜像，讨论了容器注册表和运行时，并学习了如何使用 Kubernetes 进行编排和部署。我们还讨论了容器和虚拟机之间的区别，强调了容器如何提供更多的灵活性和可扩展性。我们强调了减小镜像大小、优化构建和高效管理镜像对于更轻松的检索和部署的重要性。我们揭示了 Kubernetes 强大的架构，包括其关键组件，如 Pod、集群和服务。我们还探讨了各种部署策略，如蓝/绿部署和无服务器部署，以帮助顺利管理应用程序的发布和更新。</p>
+        <p>在您继续容器化和编排的学习之旅时，请记住学习是一个持续的过程。不断尝试不同的部署策略，及时了解最新的工具和最佳实践，并始终寻找改进部署工作流程的方法。</p>
+        <p>在下一章中，我们将把重点转向架构设计和模式。我们将探讨大数据、发布/订阅模型、解决方案架构等各种架构模式，以及从分布式文件系统到分布式消息队列的各种使用场景。这将为您提供设计 Day N 大规模系统的知识，将系统扩展到数百万乃至更多用户。</p>
+      </section>
+    </section>

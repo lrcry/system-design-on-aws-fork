@@ -1,0 +1,766 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch10_aws_storage_services_1734552290474903">
+      <h1>AWS Storage Services</h1>
+      <p>Chapters <a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892" data-xrefstyle="select:labelnumber">#ch02_storage_types_and_relational_stores_1734552286519892</a> and <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587" data-xrefstyle="select:labelnumber">#ch03_nonrelational_stores_1734552286860587</a> introduced multiple storage types and solutions. This chapter explores <a href="https://oreil.ly/a1A_9">AWS-specific storage services</a>, which map to different kinds of storage solutions present in the market. We’ll start with traditional storage services like block storage and then move to various kinds of databases used to store data identifying business and technical requirements.</p>
+      <p>Referring to our example of Cafe Delhi Heights from <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>, the chain of restaurants is going online where customers can look for available food items and place an order. To provide the best customer experience and food-delivery services online, Cafe Delhi Heights will store data such as restaurant images, menus, marketing campaign information, and so forth on AWS storage services. Cafe Delhi Heights has given us the job of making this happen, so let’s identify their storage requirements and choose the best AWS storage solution. We need to be able to:</p>
+      <ul>
+        <li>
+          <p>Store a customer’s profile and access details like username and password</p>
+        </li>
+        <li>
+          <p>Store food information such as available menu items</p>
+        </li>
+        <li>
+          <p>Store different kinds of media, such as images of food items and reviews uploaded by customers</p>
+        </li>
+        <li>
+          <p>Perform big data analytics to improve the customer experience, such as separating good and bad reviews</p>
+        </li>
+        <li>
+          <p>Create food communities and allow people to interact in social circles</p>
+        </li>
+        <li>
+          <p>Search for food items based on multiple identifiers, such as name, restaurant location, and ratings</p>
+        </li>
+        <li>
+          <p>Archive application logs and metrics after 90 days and have them persist for a year</p>
+        </li>
+      </ul>
+      <p>AWS storage services enable customers to store, protect, and analyze data without the worry of any operational overhead. We’ll discuss storage services in two major sections: cloud storage and databases. We’ll start with cloud storage and look at block, file, and object storage services.</p>
+      <section data-type="sect1" id="ch10_cloud_storage_on_aws_1734552290475193">
+        <h1>Cloud Storage on AWS</h1>
+        <p>AWS <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="cloud storage services" id="aws-cloud-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" id="cloud-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data storage systems" data-secondary="cloud storage services (AWS)" id="data-storage-cloud">&nbsp;</a>offers multiple options for cloud storage: Amazon Elastic Block Store (EBS) as a block storage service, Amazon Elastic File System (EFS) as a file storage service, and Amazon Simple Storage Service (S3) as an object storage service. We discussed the general concepts of these storage options in <a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>. In this section, we’ll look at the services offered by AWS to support these solutions. Each of these services caters to specific storage requirements, so we’ll examine the benefits each can provide in the following sections. </p>
+        <section data-type="sect2" id="ch10_amazon_elastic_block_store_1734552290475287">
+          <h2>Amazon Elastic Block Store</h2>
+          <p><a href="https://oreil.ly/4vn6V">Amazon EBS</a> is a block storage solution<a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="EBS (Elastic Block Store)" id="cloud-storage-ebs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic Block Store (EBS)" id="elastic-block-store-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EBS (Elastic Block Store)" id="ebs-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="block-based storage" id="block-storage-ch10">&nbsp;</a> that acts like a physical hard drive attached to a personal computer. EBS can be attached to an Amazon EC2 instance (more on EC2 in <a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a>) with a lifecycle that is independent of the EC2 instance and is flexible in nature, meaning it allows for configuration modification on live production workloads, such as the ability to:</p>
+          <ul>
+            <li>
+              <p>Increase size dynamically </p>
+            </li>
+            <li>
+              <p>Change provisioned input/output operations per second (IOPS) capacity</p>
+            </li>
+            <li>
+              <p>Change volume type</p>
+            </li>
+          </ul>
+          <p>EBS volumes provide access to data stored on disk with minimum latency and are preferred for use cases requiring frequent disk access, such as:</p>
+          <ul>
+            <li>
+              <p>Creating and maintaining your own database instead of using any services offered by AWS</p>
+            </li>
+            <li>
+              <p>Creating OS boot volumes</p>
+            </li>
+          </ul>
+          <p>For use cases that require temporary block storage and better I/O performance than EBS (such as caching, device buffers, etc.), AWS offers another storage solution called an <a href="https://oreil.ly/gsMeo">instance store</a> that is<a contenteditable="false" data-type="indexterm" data-primary="instance stores">&nbsp;</a> directly attached to an instance, unlike EBS, which is network-attached storage. The data in the instance store is wiped out in scenarios such as disk failures and change in the state of an EC2 instance (stop/hibernate/terminate). Instance stores don’t come with the flexibility of EBS volumes, such as attaching to any EC2 instance, dynamic increase in size, and the like. </p>
+          <p>AWS <a contenteditable="false" data-type="indexterm" data-primary="volumes (EBS)">&nbsp;</a>offers a wide range of EBS volumes to choose from based on multiple factors, including cost and performance. Let’s look at the scenarios in which to use each kind of volume type:</p>
+          <dl>
+            <dt>Solid-state drives (SSDs)</dt>
+            <dd>
+              <p>These <a contenteditable="false" data-type="indexterm" data-primary="solid-state drives (SSDs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SSDs (solid-state drives)">&nbsp;</a>volume types, including general-purpose SSDs and provisioned-IOPS SSDs, are optimized for transactional workloads. Their major performance attribute is small I/O size.</p>
+            </dd>
+            <dt>Hard disk drives (HDDs)</dt>
+            <dd>
+              <p>These <a contenteditable="false" data-type="indexterm" data-primary="hard disk drives (HDDs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="HDDs (hard disk drives)">&nbsp;</a>volume types, including throughput-optimized SSDs and cold HDDs, are optimized for large streaming workloads. Their major performance attribute is throughput.</p>
+            </dd>
+            <dt>Magnetic disks</dt>
+            <dd>
+              <p>These <a contenteditable="false" data-type="indexterm" data-primary="magnetic disks">&nbsp;</a>volume types are mostly suitable for smaller workloads where performance is not a key factor, such as infrequent data access from a storage disk.</p>
+            </dd>
+          </dl>
+          <p>Here are few key points about EBS volumes to consider:</p>
+          <ul>
+            <li>
+              <p>Multiple EBS volumes can be attached to an EC2 instance.</p>
+            </li>
+            <li>
+              <p>The scope of the EBS volume is at the AZ level. An EBS volume in us-east-1a can’t be attached to an EC2 instance in us-east-1b. We can create point-in-time snapshots (backups) of EBS volumes to enable replication and ensure high availability across AZs or regions.</p>
+            </li>
+            <li>
+              <p>EBS volumes were first launched as nonsharing block storage, meaning an EBS volume can’t be shared among multiple EC2 instances. AWS launched the <a href="https://oreil.ly/sup6p">Multi-Attach EBS volumes feature</a> to allow users to attach a single provisioned-IOPS SSD volume to a max of 16 <a href="https://oreil.ly/Yj49e">Nitro-based EC2s</a> in the same AZ for Linux <span class='keep-together'>applications</span>.</p>
+            </li>
+            <li>
+              <p>EBS volumes are automatically replicated within an AZ to prevent any data loss.</p>
+            </li>
+          </ul>
+          <p>EBS volumes have certain limitations, such as the scope at the AZ level and data sharing across EC2 instances. AWS offers another storage solution, Amazon EFS, to overcome these<a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="EBS (Elastic Block Store)" data-startref="cloud-storage-ebs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic Block Store (EBS)" data-startref="elastic-block-store-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EBS (Elastic Block Store)" data-startref="ebs-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="block-based storage" data-startref="block-storage-ch10">&nbsp;</a> limitations.</p>
+        </section>
+        <section data-type="sect2" id="ch10_amazon_elastic_file_system_1734552290475356">
+          <h2>Amazon Elastic File System</h2>
+          <p><a href="https://oreil.ly/6Fmlc">EFS</a> is a shared file system <a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="EFS (Elastic File System)" id="cloud-storage-efs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic File System (EFS)" id="elastic-file-system-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EFS (Elastic File System)" id="efs-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="file-based storage" id="file-storage-ch10">&nbsp;</a>that allows storage sharing across multiple servers placed in a region or at an on-premises data center. EFS is a fully managed, serverless solution that supports all AWS compute platforms, such as Amazon EC2, Amazon ECS, and AWS Lambda. There is no need to preconfigure storage space, and pricing is determined based on the storage space you use for your applications.</p>
+          <p>Amazon EFS is generally used for business use cases, such as big data analytics, ML workload, and content management. Both the EFS and EBS storage solutions offer low latency for data access, though there are multiple contributing factors in overall performance, such as latency, throughput, and IOPS.</p>
+          <p>EFS offers multiple storage classes. You can select a <a contenteditable="false" data-type="indexterm" data-primary="storage classes" data-secondary="EFS">&nbsp;</a>storage class that best fits your business needs:</p>
+          <dl>
+            <dt>EFS Standard and Standard Infrequent Access (Standard IA)</dt>
+            <dd>
+              <p>Both storage classes provide the highest level of availability across the AZs in an AWS region. EFS Standard is optimal for use cases requiring frequent data access, whereas Standard IA is the better choice for infrequent data access and is a cost-optimal solution. The latency of first byte read or write is higher for the IA storage-class type.</p>
+            </dd>
+            <dt>EFS One Zone and One Zone Infrequent Access (One Zone IA)</dt>
+            <dd>
+              <p>One Zone storage classes differ from Standard storage classes in terms of availability and cost. One Zone ensures high availability within a single AZ, whereas Standard spans the AZs within a region. Because of this, One Zone is relatively cheaper. AWS Backup, which replicates the data across three AZs, can be used for better durability.</p>
+            </dd>
+          </dl>
+          <p>Cloud is still a relatively new technology for hosting business applications, and there are scenarios where you’ll rely on other filesystems, such as Windows File Server. For such use cases, AWS offers a managed service: <a href="https://oreil.ly/ldVSO">Amazon FSx</a>, which scales automatically without any operational overhead. You can leverage FSx to run popular open source and licensed filesystems without the worry of maintenance or hardware setup. There are two FSx variants that you can select as needed per your use case:</p>
+          <dl>
+            <dt>
+              <p><a href="https://oreil.ly/fW9na"><em>FSx for Windows File Server</em>
+              </a></p>
+            </dt>
+            <dd>
+              <p>This option <a contenteditable="false" data-type="indexterm" data-primary="FSx for Windows File Server">&nbsp;</a>is built on Windows Server and is accessible over the Server Message Block (SMB) protocol from Windows, Linux, or MacOS to execute use cases such as data deduplication, end-user file store, and Microsoft Active Directory (AD) integration. </p>
+            </dd>
+            <dt>
+              <p><a href="https://oreil.ly/_BuxA"><em>FSx for Lustre</em>
+              </a></p>
+            </dt>
+            <dd>
+              <p>Built on <a contenteditable="false" data-type="indexterm" data-primary="FSx for Lustre">&nbsp;</a>a popular high-performance filesystem, <a href="https://lustre.org">Lustre</a>, this option works well for compute-intensive workloads, such as ML, high-performance computing, and video rendering. It can also be linked with Amazon S3, allowing accessing and processing of data concurrently from the filesystem as well as the S3 API.</p>
+            </dd>
+          </dl>
+          <p>Note that a server is required for accessing data from EBS and EFS storage services. S3 is an unlimited storage solution offered by AWS that allows users to directly access the files over the public internet or a private AWS network without requiring a server<a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="EFS (Elastic File System)" data-startref="cloud-storage-efs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic File System (EFS)" data-startref="elastic-file-system-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EFS (Elastic File System)" data-startref="efs-ch10">&nbsp;</a> in between.</p>
+        </section>
+        <section data-type="sect2" id="ch10_amazon_simple_storage_service_1734552290475435">
+          <h2>Amazon Simple Storage Service</h2>
+          <p>AWS <a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="S3 (Simple Storage Service)" id="cloud-storage-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Simple Storage Service (S3)" id="simple-storage-service-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="S3 (Simple Storage Service)" id="s3-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="object-based storage" id="object-storage-ch10">&nbsp;</a>provides Amazon S3 as an unlimited object storage solution. You can use S3 to store and protect data for a wide range of use cases, such as websites, media storage, backups, and big data analytics. S3 stores objects in containers called <em>buckets</em>. Here are some key concepts that will deepen your understanding of how to use S3:</p>
+          <dl>
+            <dt>Bucket </dt>
+            <dd>
+              <p>A bucket <a contenteditable="false" data-type="indexterm" data-primary="buckets">&nbsp;</a>is a container identified by a unique name. You need to specify the bucket name and AWS region while creating the bucket, along with other options, such as versioning support.</p>
+            </dd>
+            <dt>Object</dt>
+            <dd>
+              <p>An object<a contenteditable="false" data-type="indexterm" data-primary="objects (S3)">&nbsp;</a> is a file that is uploaded to a bucket and identified by a key name that is unique across the bucket. An object in a bucket has exactly one key as an identifier. </p>
+            </dd>
+            <dt>Versioning</dt>
+            <dd>
+              <p>S3 allows you <a contenteditable="false" data-type="indexterm" data-primary="versioning">&nbsp;</a>to store multiple versions of the same object. This enables users to access any object version and is useful in scenarios like application failure. A unique version ID is associated with each version of the object.</p>
+            </dd>
+          </dl>
+          <section data-type="sect3" id="ch10_amazon_s3_storage_classes_1734552290475530">
+            <h3>S3 storage classes</h3>
+            <p>The<a contenteditable="false" data-type="indexterm" data-primary="storage classes" data-secondary="S3" id="storage-class-s3">&nbsp;</a> data-storage pattern can vary from use case to use case; therefore, S3 offers multiple storage classes. You can select a storage class based on business requirements, such as: do we need to access the data frequently, or do we require a data archival store? </p>
+            <p>It’s important to identify your business use case and then choose the <a href="https://oreil.ly/i3Qco">S3 storage class</a> that best fits to make the most out of S3 with minimum cost. S3 has three storage classes based on the object’s access type and redundancy.</p>
+            <section data-type="sect4" id="ch10_frequently_accessed_objects_1734552290475613">
+              <h4>Frequently accessed objects</h4>
+              <p>The <a contenteditable="false" data-type="indexterm" data-primary="frequently accessed objects storage class">&nbsp;</a>storage class for frequently accessed objects is preferred for latency-sensitive (at the millisecond level) use cases. There are two subclasses based on required redundancy support:</p>
+              <dl>
+                <dt>S3 Standard</dt>
+                <dd>
+                  <p>The default storage class when a bucket is created</p>
+                </dd>
+                <dt>Reduced redundancy</dt>
+                <dd>
+                  <p>Can be chosen for noncritical use cases with reduced redundancy compared to S3 Standard</p>
+                </dd>
+              </dl>
+              <p>AWS recommends the S3 storage class over reduced redundancy as it is more cost-effective.</p>
+            </section>
+            <section data-type="sect4" id="ch10_infrequently_accessed_objects_1734552290475677">
+              <h4>Infrequently accessed objects</h4>
+              <p>The <a contenteditable="false" data-type="indexterm" data-primary="infrequently accessed objects storage class">&nbsp;</a>storage class for infrequently accessed objects is preferred for long-lived, infrequently accessed data, such as backups. There are two subclasses based on required redundancy support:</p>
+              <dl>
+                <dt>Standard IA</dt>
+                <dd>
+                  <p>Data is stored redundantly in multiple AZs, so objects are resilient to a loss of AZ.</p>
+                </dd>
+                <dt>One Zone IA</dt>
+                <dd>
+                  <p>Data is stored in a single AZ, so data is less resilient in comparison to Standard IA, which also makes this subclass relatively cheaper. This storage class is preferred if data loss is not critical for business or if data can be re-created in some way.</p>
+                </dd>
+              </dl>
+            </section>
+            <section data-type="sect4" id="ch10_archived_objects_1734552290475736">
+              <h4>Archived objects</h4>
+              <p>The <a contenteditable="false" data-type="indexterm" data-primary="archived objects storage class">&nbsp;</a>storage class for archived objects provides low-cost data-archiving support with a resiliency like the S3 Standard storage class. There are three subclasses based on data-retrieval needs:</p>
+              <dl>
+                <dt>S3 Glacier Instant Retrieval</dt>
+                <dd>
+                  <p>This storage class is useful for rarely accessed data that requires millisecond retrieval. The storage cost is less, and the data-access cost is at the higher end when compared with Standard IA. </p>
+                </dd>
+                <dt>S3 Glacier Flexible Retrieval</dt>
+                <dd>
+                  <p>This storage class is useful for data accessibility within minutes (one to five minutes). This subclass requires a minimum storage duration period of 90 days, so even if data is removed or transitioned before that time, the cost will be calculated for the full 90 days.</p>
+                </dd>
+                <dt>S3 Glacier Deep Dive</dt>
+                <dd>
+                  <p>This storage class is the least costly, requires a minimum storage duration of 180 days, and has a default retrieval time of 12 hours. You can also use the bulk-retrieval option, with data being retrieved within 48 hours.</p>
+                </dd>
+              </dl>
+            </section>
+            <section data-type="sect4" id="ch10_lifecycle_configurations_1734552290475795">
+              <h4>Lifecycle configurations</h4>
+              <p>Consider <a contenteditable="false" data-type="indexterm" data-primary="lifecycle configurations">&nbsp;</a>a scenario requiring frequent data access for 30 days and infrequent access after that. Such use cases can be satisfied via S3 lifecycle configurations; these configurations are the rules that apply to bucket objects. There are two type of actions that you need to define as part of these configurations:</p>
+              <dl>
+                <dt>Transition actions</dt>
+                <dd>
+                  <p>Define object transition to another storage class, such as move object from Standard to Standard IA storage class after 30 days.</p>
+                </dd>
+                <dt>Expiration actions</dt>
+                <dd>
+                  <p>Define object expiration. S3 will delete objects automatically once they are expired per the configured rule.</p>
+                </dd>
+              </dl>
+            </section>
+            <section data-type="sect4" id="ch10_intelligent_tiering_1734552290475871">
+              <h4>Intelligent tiering</h4>
+              <p>S3 <a contenteditable="false" data-type="indexterm" data-primary="intelligent tiering">&nbsp;</a>optionally provides intelligent-tiering support such that data is automatically moved to different storage classes without any operational overhead. Here is the lifecycle followed by the objects to be moved to different storage classes:</p>
+              <dl>
+                <dt>Frequent access</dt>
+                <dd>
+                  <p>Objects uploaded or transitioned to S3 intelligent tiering are stored in the frequent access tier.</p>
+                </dd>
+                <dt>Infrequent access</dt>
+                <dd>
+                  <p>Objects are moved to the infrequent access tier if they are not accessed for 30 consecutive days.</p>
+                </dd>
+                <dt>Archive instant access </dt>
+                <dd>
+                  <p>Objects are moved to the archive instant access tier if they are not accessed for 90 consecutive days. S3 provides two optional archive access tiers based on the time period of data access. If activated, data is moved to archive access if it is not accessed for a minimum of 90 consecutive days and moved to deep archive access if it is not accessed for a minimum of 180 consecutive days.</p>
+                </dd>
+              </dl>
+              <p>Storage classes store data to S3 based on access patterns or required redundancy support. Another factor to consider is data security<a contenteditable="false" data-type="indexterm" data-primary="storage classes" data-secondary="S3" data-startref="storage-class-s3">&nbsp;</a> while storing objects to S3. </p>
+            </section>
+          </section>
+          <section data-type="sect3" id="ch10_amazon_s3_data_security_1734552290475936">
+            <h3>Amazon S3 data security</h3>
+            <p>Objects <a contenteditable="false" data-type="indexterm" data-primary="data security (S3)" id="data-security-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="security" data-secondary="S3" id="security-s3">&nbsp;</a>in an S3 bucket are by default accessible to the owner of the bucket. S3 provides different mechanisms for securing data and configuring access permissions for the S3 bucket and objects:</p>
+            <dl>
+              <dt>Encryption</dt>
+              <dd>
+                <p>S3 <a contenteditable="false" data-type="indexterm" data-primary="encryption">&nbsp;</a>encrypts all objects by default with server-side encryption (SSE-S3) unless a different encryption option is selected, such as AWS Key Management Service (KMS), referred to as <a href="https://oreil.ly/skNNa">SSE-KMS</a>. You can also configure client-side encryption for more security.</p>
+              </dd>
+              <dt>Object Lock</dt>
+              <dd>
+                <p><a href="https://oreil.ly/RWgqD">Object Lock</a> can be enabled on <a contenteditable="false" data-type="indexterm" data-primary="object lock">&nbsp;</a>versioned buckets. Once enabled, objects are stored using a write once, read many (WORM) model, which could be a regulatory requirement for an organization. Object Lock provides an extra protection layer for object changes and helps prevent deleting or overwriting objects for a fixed retention period or indefinitely (referred to as a <em>legal hold</em>).</p>
+              </dd>
+              <dt>Block off public access</dt>
+              <dd>
+                <p>This <a contenteditable="false" data-type="indexterm" data-primary="public access (S3)">&nbsp;</a>option is for setting up and managing centralized control on public access to the bucket. This configuration can also be applied at the account level so that it is reflected for all S3 buckets in the AWS account. In general, it is not a good idea to make a bucket public unless there is a specific business requirement, such as a bucket with publicly accessible media files. You can use <a href="https://oreil.ly/R_H-_">Access Analyzer for S3</a> to identify buckets that grant public access.</p>
+              </dd>
+              <dt>IAM policies</dt>
+              <dd>
+                <p><a href="https://oreil.ly/BWlOg">IAM policies</a> grant users or groups<a contenteditable="false" data-type="indexterm" data-primary="IAM (Identity and Access Management)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Identity and Access Management (IAM)">&nbsp;</a> read-write access to S3 resources.</p>
+              </dd>
+              <dt>Amazon Macie</dt>
+              <dd>
+                <p><a href="https://aws.amazon.com/macie">Amazon Macie</a> identifies and<a contenteditable="false" data-type="indexterm" data-primary="Macie">&nbsp;</a> secures sensitive data stored in S3 buckets, such as credit card numbers. It also helps evaluate bucket-level access controls (similar to Access Analyzer), such as publicly accessible buckets.</p>
+              </dd>
+              <dt>Access control lists (ACLs)</dt>
+              <dd>
+                <p><a href="https://oreil.ly/wVf4E">S3 ACLs</a> are attached to an S3 bucket or object <a contenteditable="false" data-type="indexterm" data-primary="access control lists (ACLs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ACLs (access control lists)">&nbsp;</a>as subresources to manage access by other users. ACLs are disabled by default, and it is recommended to keep them that way unless there is a requirement to control the access of each object individually. Instead of ACLs, you can rely on <a href="https://oreil.ly/QVffd">policies</a> for access control.</p>
+              </dd>
+              <dt>Bucket policy</dt>
+              <dd>
+                <p><a href="https://oreil.ly/qhwTP">Bucket policies</a> manage access permissions<a contenteditable="false" data-type="indexterm" data-primary="bucket policies">&nbsp;</a> to an S3 bucket as well as the objects in it. For example, they can allow account A to read objects from an S3 bucket owned by account B. Bucket policies are limited to 20 KB in size.</p>
+              </dd>
+            </dl>
+            <p>We have covered different services that allow you to store data with cloud storage and process<a contenteditable="false" data-type="indexterm" data-primary="data security (S3)" data-startref="data-security-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="security" data-secondary="S3" data-startref="security-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="S3 (Simple Storage Service)" data-startref="cloud-storage-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Simple Storage Service (S3)" data-startref="simple-storage-service-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="S3 (Simple Storage Service)" data-startref="s3-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="object-based storage" data-startref="object-storage-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="cloud storage services" data-startref="aws-cloud-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-startref="cloud-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data storage systems" data-secondary="cloud storage services (AWS)" data-startref="data-storage-cloud">&nbsp;</a> it like storage on a personal computer. Next, we’ll discuss the database services offered by AWS. You should already be familiar with how data is stored in databases from <a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a> (relational databases) and <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a> (nonrelational databases).</p>
+          </section>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch10_aws_databases_1734552290476028">
+        <h1>AWS Databases</h1>
+        <p>AWS offers <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" id="aws-database">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" id="database-aws">&nbsp;</a>a range of database services—Amazon RDS, Amazon DynamoDB, Amazon DocumentDB, Amazon ElastiCache, and more—to meet customer requirements for different use cases. These services minimize or completely remove any operational overhead of software and hardware management and enable you to gain the needed scale for your organization. We’ll start with the relational database offering, which falls under the umbrella service RDS, with support for Oracle, Microsoft SQL Server, MySQL, PostgreSQL, MariaDB, and Amazon Aurora as database engines. </p>
+        <section data-type="sect2" id="ch10_amazon_rds_1734552290476113">
+          <h2>Amazon RDS</h2>
+          <p>Without <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="RDS" id="aws-database-rds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="RDS" id="database-aws-rds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RDS (Relational Database Service)" id="rds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Relational Database Service (RDS)" id="relational-database-service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="relational databases" data-secondary="RDS" id="relational-db-rds">&nbsp;</a>Amazon RDS, you have a couple of options when you want to run relational database engines like MySQL or PostgreSQL, which were covered in <a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>. Should you want to use, for example, a MySQL database engine on your local machine, you’d need to download the installation package and install it. If you’re using AWS cloud computing services, you could install the package on an EC2 machine, but once it’s up and running, you’ll have to take care of maintaining it, attaching EBS volumes, and so on.</p>
+          <p>RDS removes all this overhead so that you can just focus on creating a DB instance and start using it with a few clicks. You can follow the steps from the <a href="https://oreil.ly/IxH3y">documentation for creating RDS DB instances</a>, but a few details are important to keep in mind when creating a database: </p>
+          <dl>
+            <dt>Engine type</dt>
+            <dd>
+              <p>You can select the database engine that meets your needs. Once you select a specific engine, you are required to specify some additional configurations, such as edition and engine version.</p>
+            </dd>
+            <dt>Templates</dt>
+            <dd>
+              <p>Templates enable you to preselect the setting options while setting up a database. The available templates are production, dev/test, and free tier.</p>
+            </dd>
+            <dt>Settings</dt>
+            <dd>
+              <p>Settings include details like DB instance identifier (which is unique across AWS accounts in the region) and credentials settings (username and password).</p>
+            </dd>
+            <dt>DB instance class</dt>
+            <dd>
+              <p>The DB instance class determines the computation and memory capacity of an instance. You can select from a list of <a href="https://oreil.ly/X87Ed">standard, memory-optimized, and burstable classes</a>, depending on your workload’s processing and memory requirements.</p>
+            </dd>
+            <dt>Storage</dt>
+            <dd>
+              <p>Storage configurations allow you to select a storage type from SSD, HDD, or magnetic disks, and a storage allocation number with autoscaling enabled or disabled.</p>
+            </dd>
+            <dt>Availability and durability</dt>
+            <dd>
+              <p>To ensure high availability of production databases, RDS has multi-AZ deployment options for creating a standby instance in different AZs. This helps overcome any database or AZ failure.</p>
+            </dd>
+            <dt>Connectivity</dt>
+            <dd>
+              <p>Connectivity configurations allow you to select a VPC DB instance. Additional configurations establish connections with DB instances, including the subnet group, the security group, whether the instance is publicly accessible, the AZ, and the database port.</p>
+            </dd>
+          </dl>
+          <p>In addition to these options, you can configure settings like backups, monitoring, and maintenance windows. </p>
+          <p>Amazon also <a contenteditable="false" data-type="indexterm" data-primary="Aurora">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Aurora">&nbsp;</a>provides its own proprietary database engine, <a href="https://oreil.ly/_7Ash">Aurora</a>, which is compatible with MySQL and PostgreSQL. Aurora is up to five times faster than MySQL and up to three times faster than PostgreSQL running on the same hardware. It also scales automatically per the application needs. Aurora creates six copies of your data distributed across three AZs and continuously backs it up to S3. Aurora also can replicate data across multiple regions for faster global access. You can use Aurora Serverless for unpredictable workloads or for development purposes when you don’t have a requirement to keep DB instances running all the time.</p>
+          <p>Here are few key considerations regarding Aurora: </p>
+          <ul>
+            <li>
+              <p>There is no requirement to configure storage requirements as with RDS—this is handled internally by Aurora.</p>
+            </li>
+            <li>
+              <p>Aurora Serverless operates based on minimum and maximum Aurora capacity units and not based on instance types like RDS.</p>
+            </li>
+            <li>
+              <p>RDS works at the VPC level. Classic RDS can be opened to the public internet or restricted to allow specific IPs to access it from the outside. With Aurora Serverless, you can’t provide public access, but you can use the <a href="https://oreil.ly/40qsr">Data API</a> or leverage an EC2 machine in the same VPC as Aurora to facilitate the connectivity. </p>
+            </li>
+            <li>
+              <p>For data security or to meet compliance requirements for data encryption at rest, <a href="https://oreil.ly/ZLguz">RDS</a> and <a href="https://oreil.ly/y33pf">Aurora</a> both have the functionality to encrypt DB instances.</p>
+            </li>
+            <li>
+              <p>An Aurora DB cluster can consist of up to <a href="https://oreil.ly/tiIKU">15 Aurora replicas</a>. The replicas scale and distribute the read workload to multiple instances, ensuring latency-optimized read operations. The read replica is promoted to the writer instance in case the writer instance goes down, increasing overall availability of the Aurora cluster.</p>
+            </li>
+          </ul>
+          <p>RDS is a beneficial service when your business requirements require support for relational structured data with complete compliance with ACID properties. Many modern applications don’t have a requirement for strong ACID compliance, full relational support, or fixed schema. NoSQL databases are viable solutions to address these kinds of use cases while also providing scalability, high performance, and no operational overhead. We described multiple types of NoSQL databases in <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a>. In this chapter, we will cover the equivalent services offered by AWS for different types of NoSQL databases, <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="RDS" data-startref="aws-database-rds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="RDS" data-startref="database-aws-rds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RDS (Relational Database Service)" data-startref="rds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Relational Database Service (RDS)" data-startref="relational-database-service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="relational databases" data-secondary="RDS" data-startref="relational-db-rds">&nbsp;</a>starting with Amazon DynamoDB as a key-value database solution.</p>
+          <div data-type="note">
+            <p>To support unlimited compute and storage scaling in relational databases for transactional workloads, AWS <a contenteditable="false" data-type="indexterm" data-primary="Aurora DSQL">&nbsp;</a>has announced Aurora DSQL. Aurora DSQL is a distributed relational database with PostgreSQL compatibility, ACID compliance, and zero maintenance overhead.</p>
+          </div>
+        </section>
+        <section data-type="sect2" id="ch10_amazon_dynamodb_1734552290476179">
+          <h2>Amazon DynamoDB</h2>
+          <p>Amazon DynamoDB <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="DynamoDB" id="aws-database-dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="DynamoDB" id="database-aws-dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" id="dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="key-value stores" data-tertiary="DynamoDB" id="nonrelational-keyvalue-dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="key-value stores" data-secondary="DynamoDB" id="keyvalue-dynamodb">&nbsp;</a>is a key-value database designed to provide single-digit millisecond latency for any workload scale. DynamoDB stores data in tables and follows a schemaless design. We discussed the primary key, partition key, and sort key in <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a> in the context of using key-value data stores to uniquely identify items. In DynamoDB architecture, the <a contenteditable="false" data-type="indexterm" data-primary="primary keys" data-secondary="in DynamoDB" data-secondary-sortas="DynamoDB">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="keys" data-secondary="in DynamoDB" data-secondary-sortas="DynamoDB">&nbsp;</a>primary key is represented by a partition key or a combination of a partition key and a sort key. Any queries on data can be performed via the AWS CLI, AWS Console, or AWS Software Development Kit (SDK) in your preferred language. DynamoDB is based on the leader-follower nodes model and internally stores the data on storage nodes called <em>partitions</em>.</p>
+          <p>Here are the keys responsible for data storage on DynamoDB:</p>
+          <dl>
+            <dt>Partition key</dt>
+            <dd>
+              <p>The <a contenteditable="false" data-type="indexterm" data-primary="partition keys" data-secondary="in DynamoDB" data-secondary-sortas="DynamoDB">&nbsp;</a>partition key must be specified when the table is created and is used as an input to the internal hash function to determine a physical partition where data should be stored. A request router (RR) component routes the request to a specific partition, as shown in <a data-type="xref" href="#ch10_figure_1_1734552290456045">#ch10_figure_1_1734552290456045</a>. RR is a stateless service that consults with the Partition Metadata Service to determine the partition; then, the request is forwarded to a specific partition. The <code>PUT</code> request is sent to the leader node, while the <code>GET</code> request can be served via the leader or the follower node, depending on the required consistency support.</p>
+            </dd>
+            <dt>Sort key</dt>
+            <dd>
+              <p>The<a contenteditable="false" data-type="indexterm" data-primary="sort keys" data-secondary="in DynamoDB" data-secondary-sortas="DynamoDB">&nbsp;</a> sort key is an optional attribute upon table creation. If it is specified, then the primary key is a combination of the partition key and the sort key; otherwise, it’s just the partition key. The combination of partition key and sort key should be unique for data storage. All items with the same partition key are stored together on the same physical partition in a sorted order by sort-key value. We recommend creating a DynamoDB table with both the partition key and the sort key per the read/write query patterns that will serve the user requests without the need for global secondary indexes (GSIs).</p>
+            </dd>
+          </dl>
+          <figure id="ch10_figure_1_1734552290456045">
+            <img src="images/sdoa_1001.png"/>
+            <figcaption>DynamoDB internal architecture</figcaption>
+          </figure>
+          <p>DynamoDB is a fully managed service. You don’t have to configure any servers or storage space. Instead, you can select from different <a href="https://oreil.ly/IbKC6">capacity modes</a> for allowed reads and writes per specific tables. DynamoDB defines <a contenteditable="false" data-type="indexterm" data-primary="read capacity units (RCUs)" id="read-capacity">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RCUs (read capacity units)" id="rcu">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="write capacity units (WCUs)" id="write-capacity">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="WCUs (write capacity units)" id="wcu">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="capacity modes (DynamoDB)" id="capacity-mode">&nbsp;</a>reads and writes as read capacity units (RCUs) and write capacity units (WCUs), respectively, and <a href="https://oreil.ly/XxmZK">pricing</a> is based on consumed RCUs and WCUs, along with required consistency or transaction support. Let’s understand the available DynamoDB capacity modes:</p>
+          <dl>
+            <dt>Provisioned</dt>
+            <dd>
+              <p>Customers can configure specific RCU and WCU values for tables that are to be supported, and DynamoDB internally manages the resources to support this scale. This is the preferred mode for applications with predictable traffic, when you can easily forecast RCU and WCU requirements.</p>
+            </dd>
+            <dt>Autoscaling</dt>
+            <dd>
+              <p>For varying workloads with undeterminable, fixed provisioned capacity, you can use autoscaling mode with lower and upper RCU and WCU limits, and DynamoDB automatically scales up or down based on the traffic.</p>
+            </dd>
+            <dt>On-demand</dt>
+            <dd>
+              <p>On-demand is a serverless kind of support where you don’t need to configure RCU and WCU values. DynamoDB manages the scale in the backend, and we as customers don’t have to worry about it. This is the preferred mode for use cases such as tables with unknown workloads or unpredictable application traffic.</p>
+            </dd>
+          </dl>
+          <p>The DynamoDB table might be responsible for serving multiple use cases, and not all of these use cases will be performant just with primary key design. DynamoDB provides<a href="https://oreil.ly/bZ5UM"> index support</a> to speed up queries, which can be created on top of the table as necessary. We can think of a DynamoDB index as a child table that is created by selecting some of the attributes from the main table. DynamoDB <a contenteditable="false" data-type="indexterm" data-primary="index support">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="local secondary indexes (LSIs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LSI (local secondary indexes)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="global secondary indexes (GSIs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="GSIs (global secondary indexes)">&nbsp;</a>supports two types of indexes: local secondary index (LSI) and global secondary index (GSI). The differences between them are listed in <a data-type="xref" href="#ch10_table_1_1734552290462351">#ch10_table_1_1734552290462351</a>.</p>
+          <table id="ch10_table_1_1734552290462351">
+            <caption>Differences between LSIs and GSIs in Amazon DynamoDB</caption>
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>LSI</th>
+                <th>GSI</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>Lifecycle</p>
+                </td>
+                <td>
+                  <p>The LSI lifecycle is the same as that of the table. It can only be created or deleted along with table creation and deletion.</p>
+                </td>
+                <td>
+                  <p>The GSI lifecycle is independent of the table and can be created or deleted as required.</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Primary key schema</p>
+                </td>
+                <td>
+                  <p>The partition key is the same as the base table with a different sort key.</p>
+                </td>
+                <td>
+                  <p>The partition key and the sort key can be different from the base table.</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Querying capability</p>
+                </td>
+                <td>
+                  <p>Scoped to the partition as of the base table—hence the term “local”—with an indexed data size limitation of 10 GB.</p>
+                </td>
+                <td>
+                  <p>Queries can span the partitions on base table data— hence the term “global”—with no size limitations.</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Provisioned capacity</p>
+                </td>
+                <td>
+                  <p>LSI shares read/write throughput capacity with the base table.</p>
+                </td>
+                <td>
+                  <p>GSI has independent settings for read/write throughput from the base table.</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Read consistency</p>
+                </td>
+                <td>
+                  <p>Offers both strong and eventual read consistency.</p>
+                </td>
+                <td>
+                  <p>Offers only eventual read consistency.</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>As we move from traditional relational databases to a wide variety of modern NoSQL databases, one key difference is transaction support. Transaction is inherently available in SQL-like databases but is not supported in all the NoSQL databases. DynamoDB provides <a contenteditable="false" data-type="indexterm" data-primary="transaction support">&nbsp;</a>transaction support, and we can choose the specific <a href="https://oreil.ly/Hr4K-">read and write APIs</a> if our use case has a requirement for transactions. Another difference is strong consistency support: DynamoDB provides both eventual and strong consistency support (though GSI only supports eventual consistency), and we can specify the required <a href="https://oreil.ly/F0DLV">support type</a> as we access the data.</p>
+          <p>We discussed identifying physical partitions based on the partition key and different capacity modes, which helps us configure read and write throughput for DynamoDB tables. The throughput values apply on a table as a whole and are equally divided among the partitions being created. The partitions have hard limits for allowing 3,000 RCUs and 1,000 WCUs (or a combination of both) per second, and requests are throttled once this limit is breached. Apart from read and write requests, there is a 10-GB upper limit as allowed storage per partition. You should carefully design the schema with an understanding of the query patterns as well as the DynamoDB architecture in mind to avoid breaching these limits. </p>
+          <p>The partition breaching the defined limits is referred to as <em>hot partition</em> (or <em>hot key</em>). A <a contenteditable="false" data-type="indexterm" data-primary="hot partitions/hot keys">&nbsp;</a>partition key can be categorized as hot if it receives disproportionately high read or write (or both) traffic compared to other partitions. Figuring out query patterns is key to coming up with the best feasible schema design for a DynamoDB table. You can use <a href="https://oreil.ly/voj-0">CloudWatch contributor insights</a> for debugging and identifying existing hot partitions or most accessed items in DynamoDB tables. </p>
+          <p>Let’s discuss a few best practices for partition key design to avoid hot partition issues in DynamoDB:</p>
+          <ul>
+            <li>
+              <p>The table schema should be designed with high cardinality of partition keys. This ensures that the data is widespread across the partitions, improving both read and write efficiency. </p>
+            </li>
+            <li>
+              <p>DynamoDB APIs (and AWS SDK in general for all AWS services) throw specific exceptions with proper details, and applications can act on these exceptions accordingly. <a href="https://oreil.ly/mmLFl">Retry</a> with exponential backoff is one recommended solution if the hot partition issue occurs rarely. For frequent hot partition issues, more detailed analysis should be done to figure out a stable solution.</p>
+            </li>
+            <li>
+              <p>Redesigning a table schema with existing data could be too much work and needs to be considered from different angles, such as migration downtime and application code changes. The following are intermittent solutions—or long term, if the use case allows—for read and write throttling due to hot partitions:</p>
+              <ul>
+                <li>
+                  <p>For reads, a cache (discussed in <a data-type="xref" href="#ch10_amazon_elasticache_1734552290476591">#ch10_amazon_elasticache_1734552290476591</a>) is a recommended solution. The cache can improve the latency and resolve the hot partition issue.</p>
+                </li>
+                <li>
+                  <p>For <a href="https://oreil.ly/Z654h">writes</a>, the solution is to attach a random (or calculated based on logic) suffix to a partition key, such as a number from 1 to 100. The read query will require additional application logic to figure out the actual partition (access all the partitions from 1 to 100 in the case of random logic or a specific partition if the suffix is based on some logic).</p>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <p>Evaluate data-access patterns to make best use of DynamoDB at a lower cost and<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="DynamoDB" data-startref="aws-database-dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="DynamoDB" data-startref="database-aws-dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-startref="dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="key-value stores" data-tertiary="DynamoDB" data-startref="nonrelational-keyvalue-dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="key-value stores" data-secondary="DynamoDB" data-startref="keyvalue-dynamodb">&nbsp;</a> zero operational burden. </p>
+        </section>
+        <section data-type="sect2" id="ch10_amazon_documentdb_1734552290476246">
+          <h2>Amazon DocumentDB</h2>
+          <p>Amazon DocumentDB <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="DocumentDB" id="aws-database-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="DocumentDB" id="database-aws-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DocumentDB" id="documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="document stores" data-tertiary="DocumentDB" id="nonrelational-document-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="document stores" data-secondary="DocumentDB" id="document-documentdb">&nbsp;</a>is a document database offered by AWS designed to store and query data as JSON-like documents. A <a href="https://oreil.ly/OqK-v">document</a> is structured as a collection of nested key-value pairs and can be useful in scenarios like storing food-item information, such as for Cafe Delhi Heights’s online store. Here is a sample document for a customer order: </p>
+          <pre data-type="programlisting">{
+  “Name”: “Mandeep Singh”,
+  “orderId”: “1234-1234-4567”,
+  “FoodItems”: [
+    {
+      “itemName”: “Biryani”,
+      “qty”: 1
+    },
+    {
+      “itemName”: “Nuggets”,
+      “qty”: 2
+    }
+  ]
+}</pre>
+          <p>We can add attributes to the food items or remove them without worrying about the fixed schema, as in relational databases. Some other business use cases include <a href="https://oreil.ly/CpG9l">content management</a>, real-time big data, and user-profile <span class='keep-together'>maintenance</span>.</p>
+          <p>For reference, <a data-type="xref" href="#ch10_table_2_1734552290462384">#ch10_table_2_1734552290462384</a> compares the terminology associated with DocumentDB with that of relational databases. </p>
+          <table id="ch10_table_2_1734552290462384">
+            <caption>SQL versus Amazon DocumentDB terminology</caption>
+            <thead>
+              <tr>
+                <th>SQL</th>
+                <th>Amazon DocumentDB</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>Table</p>
+                </td>
+                <td>
+                  <p>Collection</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Row</p>
+                </td>
+                <td>
+                  <p>Document</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Column</p>
+                </td>
+                <td>
+                  <p>Field</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Primary key</p>
+                </td>
+                <td>
+                  <p>Object ID</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>DocumentDB is compatible with <a href="https://mongodb.com">MongoDB</a>, with <a contenteditable="false" data-type="indexterm" data-primary="MongoDB">&nbsp;</a>support for powerful ad hoc queries, and it comes with <a href="https://oreil.ly/czpQE">transaction support</a> similar to DynamoDB’s. There are a few functional benefits of DocumentDB over MongoDB, such as transaction support for all CRUD statements, including operations on multiple documents. For all functional differences between MongoDB and DocumentDB, refer to the <a href="https://oreil.ly/KLy5s">AWS documentation</a>. </p>
+          <p>Unlike with DynamoDB, we need to specify the <a href="https://oreil.ly/d-Ek5">instance class</a> and number of instances for DocumentDB cluster setup. For production systems, we recommend choosing at least three instances for higher availability. The final step is to set up a username and password for authentication and to establish a connection with a DocumentDB cluster.</p>
+          <p>AWS also provides <a href="https://oreil.ly/K_wcP">migration tools</a> such as Database Migration Service (DMS) to facilitate easier migration of MongoDB workloads from on-premises or EC2 servers to<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="DocumentDB" data-startref="aws-database-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="DocumentDB" data-startref="database-aws-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DocumentDB" data-startref="documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="document stores" data-tertiary="DocumentDB" data-startref="nonrelational-document-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="document stores" data-secondary="DocumentDB" data-startref="document-documentdb">&nbsp;</a> DocumentDB. </p>
+        </section>
+        <section data-type="sect2" id="ch10_amazon_neptune_1734552290476308">
+          <h2>Amazon Neptune</h2>
+          <p>Going back <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Neptune" id="aws-database-neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="Neptune" id="database-aws-Neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Neptune" id="neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="graph databases" id="nonrelational-graph-neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="graph databases" id="graph-database-neptune">&nbsp;</a>to our Cafe Delhi Heights scenario, one of the requirements for launching an online restaurant is to create food communities for the customers that allow for tracking things like customers’ likes and dislikes of particular food items. Suppose you want to figure out if a food item is liked by everyone in your community, for example. </p>
+          <p>These kinds of use cases with highly connected data can be stored and queried at scale with AWS’s fully managed graph database service, Amazon Neptune. Neptune is optimized to store and map billions of relationships and enable real-time navigation of connections with a millisecond query response time via <a href="https://oreil.ly/dvvYF">Apache TinkerPop Gremlin</a> or <a href="http://opencypher.org">openCypher</a> for property graph databases and <a href="https://oreil.ly/hr_wX">SPARQL</a> for graph databases in Resource Description Framework (RDF) format. AWS recommends consulting the GitHub repository <a href="https://oreil.ly/i2v70">AWS Reference Architectures for Using Graph Databases</a> to look into graph data models and use cases, query languages, and sample examples of deployment architectures. </p>
+          <p>Another example use case for Neptune is to get a clear picture of your cloud infrastructure to see how different services or entities are connected to one another. You may want to know which entities use a particular IAM role, as shown in <a data-type="xref" href="#ch10_figure_2_1734552290456078">#ch10_figure_2_1734552290456078</a>, or figure out overpermissive IAM policies with * marked on resource permissions. For example, you may not want all the users in the organization to be able to modify network security groups.</p>
+          <figure id="ch10_figure_2_1734552290456078">
+            <img src="images/sdoa_1002.png"/>
+            <figcaption>Graph representation of IAM role-entities association</figcaption>
+          </figure>
+          <p>For a step-by-step guide to cluster setup, refer to the <a href="https://oreil.ly/JwbLg">AWS documentation</a>. Now, we’ll discuss some points you should be aware of while setting up your graph database cluster.</p>
+          <section data-type="sect3" id="ch10_compute_1734552290476366">
+            <h3>Compute</h3>
+            <p>The Neptune cluster is launched with a specific instance type that should be selected at the time of creating the cluster. The cluster can have a maximum of one writer instance and up to 15 read replicas; note that writer instances scale vertically, whereas read instances can scale vertically or horizontally. We recommend configuring at least one read replica for higher application availability and better read performance. If a writer instance goes down, the read replica is promoted to writer, and the writer is restarted as a read replica. In case there is only a single writer instance in a cluster, the cluster might be down for a few minutes as it restarts and comes back online.</p>
+            <p>Neptune also offers a serverless configuration, which can be useful for variable workloads. We can specify an upper capacity limit, and it is used only if needed.</p>
+          </section>
+          <section data-type="sect3" id="ch10_storage_1734552290476421">
+            <h3>Storage</h3>
+            <p>Neptune stores data six times across three AZs. Neptune’s storage layer is independent of the compute layers and scales independently and automatically as necessary. It starts with 10 GB and grows up to 128 TB as data increases.</p>
+          </section>
+          <section data-type="sect3" id="ch10_traffic_distribution_1734552290476476">
+            <h3>Traffic distribution</h3>
+            <p>Neptune <a contenteditable="false" data-type="indexterm" data-primary="load balancing" data-secondary="in Neptune" data-secondary-sortas="Neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cluster endpoints">&nbsp;</a>provides separate writer and reader endpoints. The writer endpoint (called the <em>cluster endpoint</em>) points to the primary instance and should be used for write operations and, optionally, read queries. The reader endpoint distributes requests across the read replicas in round-robin fashion and should be used<a contenteditable="false" data-type="indexterm" data-primary="instance endpoints">&nbsp;</a> for all read queries. Neptune also provides an <em>instance endpoint </em>(an endpoint that connects to a specific DB instance) and a custom endpoint that can be used to represent a set of DB instances. Neptune doesn’t offer load balancing functionality on instances. For any such requirement, it should be built into the application code.</p>
+          </section>
+          <section data-type="sect3" id="ch10_caching_1734552290476530">
+            <h3>Caching</h3>
+            <p>Neptune offers<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="in Neptune" data-secondary-sortas="Neptune">&nbsp;</a> three types of caching support to improve performance:</p>
+            <dl>
+              <dt>Buffer cache</dt>
+              <dd>
+                <p>In-memory cache to improve query performance. Neptune allocates two-thirds of memory of instance to cache. </p>
+              </dd>
+              <dt>
+                <a href="https://oreil.ly/xkShP">Lookup cache</a>
+              </dt>
+              <dd>
+                <p>An instance-level cache for improving read performance for queries with repetitive lookup of property values or RDF literals. It is enabled by default for <a href="https://oreil.ly/yo1_9">R5d instances</a> (purpose built for workloads processing large workloads in memory) and uses the instance’s NVM Express-based (NVMe-based) SSD to store these values for quick access.</p>
+              </dd>
+              <dt>
+                <a href="https://oreil.ly/GKaKi">Query results cache</a>
+              </dt>
+              <dd>
+                <p>Gremlin read-only query results can be cached to get faster responses upon query rerun. For clearing the cache, you can specify TTL for queries, clear the cache at query level, or clear the <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Neptune" data-startref="aws-database-neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="Neptune" data-startref="database-aws-Neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Neptune" data-startref="neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="graph databases" data-startref="nonrelational-graph-neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="graph databases" data-startref="graph-database-neptune">&nbsp;</a>entire cache. </p>
+              </dd>
+            </dl>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch10_amazon_elasticache_1734552290476591">
+          <h2>Amazon ElastiCache</h2>
+          <p>In-memory databases <a contenteditable="false" data-type="indexterm" data-primary="in-memory databases" data-see="caching">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="ElastiCache" id="aws-database-ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="ElastiCache" id="database-aws-ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ElastiCache" id="ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="with ElastiCache" data-secondary-sortas="ElastiCache" id="cache-elasticache">&nbsp;</a>are extensively used as caching solutions to improve system performance. Amazon ElastiCache is a managed service offered by AWS as a distributed cache environment that works with the <a contenteditable="false" data-type="indexterm" data-primary="Redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Memcached">&nbsp;</a>Redis and Memcached engines, both covered in detail in <a data-type="xref" href="#ch04_caching_policies_and_strategies_1734552287178593">#ch04_caching_policies_and_strategies_1734552287178593</a>. Redis and Memcached are in-memory, key-value caching solutions, but there are <a href="https://oreil.ly/OZoO9">associated differences</a>, and it’s important to figure out which caching engine meets your business requirements. Memcached is a simple key-value caching solution to offload reads from a primary data source with multithreading support. Redis comes with functionalities such as persistence for long-lived data, advanced data types like lists and sets, sorting and ranking datasets in memory, geospatial support, message broker, and more. The following are some key considerations for each of the caching engines available as part of ElastiCache. </p>
+          <section data-type="sect3" id="ch10_subnet_1734552290476650">
+            <h3>Subnet</h3>
+            <p>As noted in <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>, the number<a contenteditable="false" data-type="indexterm" data-primary="subnets">&nbsp;</a> of IP addresses available for use are based on subnet CIDR. As a first step in cluster creation, you should create a subnet associated with Amazon VPC with support available for the required number of IP addresses as they are assigned to nodes in the cluster.</p>
+          </section>
+          <section data-type="sect3" id="ch10_data_tiering_1734552290476706">
+            <h3>Data tiering</h3>
+            <p>Data can <a contenteditable="false" data-type="indexterm" data-primary="data tiering">&nbsp;</a>be tiered between memory and NVMe SSD storage for optimizing costs and is ideal for applications that regularly access up to 20% data. This support is available with ElastiCache for Redis for the R6gd instance family, and infrequent data is moved to SSD asynchronously once memory (DRAM) is fully utilized, as shown in <a data-type="xref" href="#ch10_figure_3_1734552290456102">#ch10_figure_3_1734552290456102</a>. The storage can scale up to 1 PB in a single cluster.</p>
+            <p>Both Redis and Memcached can be scaled horizontally and vertically. Redis works on the concept of primary node and read replicas and can be launched with two kinds of configurations:</p>
+            <dl>
+              <dt>Cluster mode disabled</dt>
+              <dd>
+                <p>There can be a maximum of one primary node and up to five replica nodes. This configuration scales horizontally for reads and vertically for writes.</p>
+              </dd>
+              <dt>Cluster mode enabled</dt>
+              <dd>
+                <p>There can be a maximum of 500 nodes and up to 5 replicas associated with each node.</p>
+              </dd>
+            </dl>
+            <figure id="ch10_figure_3_1734552290456102">
+              <img alt="A diagram of a computer system&#10;&#10;Description automatically generated" src="images/sdoa_1003.png"/>
+              <figcaption>Redis data-tiering support</figcaption>
+            </figure>
+          </section>
+          <section data-type="sect3" id="ch10_redundancy_and_replication_1734552290476764">
+            <h3>Redundancy and replication</h3>
+            <p>ElastiCache for<a contenteditable="false" data-type="indexterm" data-primary="redundancy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="replication">&nbsp;</a> Redis has <a href="https://oreil.ly/fkNRY">multi-AZ deployment</a> support similar to RDS. Whenever a primary node is down, a read replica (one to five read replicas placed in different AZs) is promoted to primary, which ensures high availability even if the entire AZ is down. The replication of data on read replicas also ensures separation of read and write workload.</p>
+          </section>
+          <section data-type="sect3" id="ch10_multithreading_1734552290476818">
+            <h3>Multithreading</h3>
+            <p>Redis is <a contenteditable="false" data-type="indexterm" data-primary="multithreading">&nbsp;</a>a single-threaded process when incoming requests are handled sequentially, while Memcached is multithreaded, meaning it makes good use of larger Amazon EC2 instance sizes with multiple cores.</p>
+          </section>
+          <section data-type="sect3" id="ch10_persistence_1734552290476872">
+            <h3>Persistence</h3>
+            <p>Redis can be used as <a contenteditable="false" data-type="indexterm" data-primary="persistence">&nbsp;</a>a standalone database for applications since it supports persistence for long-lived data. Memcached is a pure caching solution that should be used in front of any database, such as RDS, to improve read performance.</p>
+          </section>
+          <section data-type="sect3" id="ch10_encryption_and_compliance_1734552290476928">
+            <h3>Encryption and compliance</h3>
+            <p>Redis supports <a contenteditable="false" data-type="indexterm" data-primary="encryption">&nbsp;</a><a class="orm:hideurl" href="https://oreil.ly/8HW9H">Payment Card Industry Data Security Standard (PCI DSS)</a>, <a class="orm:hideurl" href="https://oreil.ly/oQIDq">Health Insurance Portability and Accountability Act (HIPAA)</a>, and <a class="orm:hideurl" href="https://oreil.ly/H4DaF">Federal Risk and Authorization Management Program (FedRAMP)</a> requirements as well as encryption capabilities. Memcached doesn’t have strong support for authentication and encryption, so the recommendation is to launch Memcached nodes in private subnets with no public connectivity to ensure higher security.</p>
+            <p>For a step-by-step guide to cluster creation, follow the <a href="https://oreil.ly/RgKCB">AWS page for Redis and Memcached</a>.</p>
+          </section>
+          <section data-type="sect3" id="ch10_amazon_dynamodb_accelerator_1734552290476998">
+            <h3>Amazon DynamoDB Accelerator</h3>
+            <p>As discussed,<a contenteditable="false" data-type="indexterm" data-primary="DynamoDB Accelerator (DAX)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DAX (DynamoDB Accelerator)">&nbsp;</a> you can use Memcached or Redis to offload your database read queries, such as RDS or DynamoDB. DynamoDB offers a custom in-memory cache offering as well, <a href="https://oreil.ly/O7Fad">DynamoDB Accelerator (DAX)</a>, to improve read performance. DAX is a cluster of primary node and read replicas that run inside VPC, as shown in <a data-type="xref" href="#ch10_figure_4_1734552290456122">#ch10_figure_4_1734552290456122</a>. To access DAX, a DAX client is installed alongside an application on the server that directs the application’s DynamoDB API requests to the DAX cluster.</p>
+            <figure id="ch10_figure_4_1734552290456122">
+              <img src="images/sdoa_1004.png"/>
+              <figcaption>DAX cluster setup</figcaption>
+            </figure>
+            <p>Here is how read and write APIs execute in the presence of both the DAX cluster and DynamoDB:</p>
+            <dl>
+              <dt>Read APIs</dt>
+              <dd>
+                <p>The eventually consistent read API calls (GetItem, BatchGetItem, Query, and Scan) are served from DAX. In the scenario of cache miss, the request is passed to DynamoDB to retrieve the response. As DynamoDB returns the result, it also writes the result to the DAX cache on the primary node.</p>
+              </dd>
+              <dt>Write APIs</dt>
+              <dd>
+                <p>For the write API calls (BatchWriteItem, UpdateItem, DeleteItem, and PutItem), data is first written to the DynamoDB table and then to the DAX cluster. The API returns success only if the write is successful <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="ElastiCache" data-startref="aws-database-ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="ElastiCache" data-startref="database-aws-ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ElastiCache" data-startref="ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="with ElastiCache" data-secondary-sortas="ElastiCache" data-startref="cache-elasticache">&nbsp;</a>on both DynamoDB and DAX.</p>
+              </dd>
+            </dl>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch10_amazon_opensearch_1734552290477057">
+          <h2>Amazon OpenSearch</h2>
+          <p>You may<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="OpenSearch" id="aws-database-OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="OpenSearch" id="database-aws-OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="OpenSearch" id="OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search databases (OpenSearch)" id="search-db-OpenSearch">&nbsp;</a> want to display search results to users based on the user’s search query; in the example of Cafe Delhi Heights, these search results could be a food item, restaurant location, or any supported filters. A search for a food item should return all the restaurant locations serving that item, and a search for a restaurant location should display all dishes served by that location. How can such data be modeled in a database for faster retrieval? For these kinds of business use cases, AWS offers a search database, OpenSearch.</p>
+          <p><a href="https://oreil.ly/S2MvR">OpenSearch</a> is an open source project derived from Elasticsearch, unlike most of the AWS services, which run on proprietary software. OpenSearch is popular for use cases like full-text search, logs and analytics, ingestion pipelines, and ML. AWS provides OpenSearch dashboards on top of the search engine, which help visualize the data. Here are a few key considerations for the OpenSearch architecture and how we as customers can get the best out of it:</p>
+          <dl>
+            <dt>Cluster setup</dt>
+            <dd>
+              <p>OpenSearch can work as a single-node or multinode cluster. As this is an open source project, you can also set up your own cluster following <a href="https://oreil.ly/sQ3dA">these steps</a>. OpenSearch is a managed service that helps you avoid the operational overhead of setup and works on instance-based (cluster manager and data nodes) or serverless mode. AWS recommends setting up an odd number of cluster manager nodes for a production OpenSearch cluster, with a minimum of three nodes. The type of cluster manager node can be decided based on the <a href="https://oreil.ly/nqOHv">number of data nodes</a> in your domain, such as setting up m5.large.search or m6g.large.search for a count of 1−10 data nodes. You can skip setting up dedicated cluster manager nodes for development use cases to save costs (one of the data nodes holds cluster manager–node responsibilities), though it is recommended to configure them for production scenarios for better cluster stability and dedicated nodes for cluster management tasks.</p>
+            </dd>
+            <dt>Storage</dt>
+            <dd>
+              <p>You can select either EBS or instance store volumes to be associated with the instances; the volume types available will depend on the chosen instance type.</p>
+            </dd>
+            <dt>Cluster access</dt>
+            <dd>
+              <p>For cluster access and networking, you can choose either VPC access or public access. VPC access allows you to operate the cluster inside your VPC as well as to configure subnets, security groups, and IAM roles. </p>
+            </dd>
+            <dt>Deployment</dt>
+            <dd>
+              <p>OpenSearch enables configuration updates, such as increasing EBS storage space or upgrading the instance type on a live-running cluster. The configurations are deployed to a new cluster via <a href="https://oreil.ly/kW07Y">blue/green deployment</a> to avoid any impact. Perform any such updates during off-peak hours.</p>
+            </dd>
+            <dt>Dashboard authentication</dt>
+            <dd>
+              <p>OpenSearch provides <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="OpenSearch" data-startref="aws-database-OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="OpenSearch" data-startref="database-aws-OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="OpenSearch" data-startref="OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search databases (OpenSearch)" data-startref="search-db-OpenSearch">&nbsp;</a>the option to configure authentication for dashboards via <a href="https://oreil.ly/rreMP">Security Assertion Markup Language (SAML) authentication</a> or <a href="https://oreil.ly/_BG_h">Amazon Cognito authentication</a>.</p>
+            </dd>
+          </dl>
+        </section>
+        <section data-type="sect2" id="ch10_amazon_timestream_1734552290477123">
+          <h2>Amazon Timestream</h2>
+          <p>Amazon Timestream <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Timestream" id="aws-database-Timestream">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="Timestream" id="database-aws-Timestream">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Timestream" id="Timestream">&nbsp;</a>is a fully managed, serverless database service offered for use cases that require time-series data operations, such as DevOps analysis data. <span class='keep-together'>Timestream</span> automatically scales to handle trillions of events per day with one-tenth the cost and is up to one thousand times faster than relational databases.</p>
+          <p>Here are few points to consider for Timestream:</p>
+          <ul>
+            <li>
+              <p>As Timestream is serverless, it is easy to use with no requirement for analyzing number or type of instances.</p>
+            </li>
+            <li>
+              <p>Timestream provides built-in analytics support with interpolation and smoothing functions for identifying trends, patterns, and anomalies using standard SQL.</p>
+            </li>
+            <li>
+              <p>Data is encrypted by default with a standard key or a customer-owned KMS key.</p>
+            </li>
+            <li>
+              <p>Timestream provides support for data-retention policies based on a configured time and for moving data to different storage tiers per policy. It supports two storage tiers: in-memory tier (preferred for latency-sensitive queries) and magnetic disk tier (preferred for analytical queries).</p>
+            </li>
+            <li>
+              <p>Records require timestamps as a mandatory dimension, and data stored to Timestream cannot be deleted or updated. Removal of data should be handled via configuration of retention policies.</p>
+            </li>
+          </ul>
+        </section>
+        <section data-type="sect2" id="ch10_amazon_keyspaces_1734552290477186">
+          <h2>Amazon Keyspaces</h2>
+          <p>We discussed <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Keyspaces" id="aws-database-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="Keyspaces" id="database-aws-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Keyspaces" id="Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="Keyspaces" id="nonrelational-column-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="Keyspaces" id="colummn-Keyspaces">&nbsp;</a>wide-column databases in <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a> and then looked at an open source variant, Apache Cassandra. The AWS-managed solution to meet similar requirements is Amazon Keyspaces.</p>
+          <p>Keyspaces is a highly scalable, available, and managed wide-column database service compatible with the open source Apache Cassandra database. Keyspaces is offered as a serverless service, meaning you don’t have to worry about resource provisioning and can simply focus on building your applications. Here a few use cases for which to consider using Keyspaces:</p>
+          <ul>
+            <li>
+              <p>You want to migrate on-premises Cassandra clusters or clusters running on EC2 instances to a fully managed AWS service. This helps reduce large cluster management overhead, such as managing deployment, figuring out best configurations for your workload like Java virtual machine (JVM) tuning for garbage collection, understanding Cassandra internals, provisioning capacity for expected workloads, upgrading to newer versions, patching and maintaining cluster infrastructure, and so on.</p>
+            </li>
+            <li>
+              <p>You have a business requirement to be compatible with open source Cassandra. </p>
+            </li>
+            <li>
+              <p>Keyspaces has better integration with AWS services like Amazon CloudWatch for monitoring purposes or AWS IAM for authentication, compared to customers managing them on their own.</p>
+            </li>
+          </ul>
+          <p>Since Keyspaces abstracts out infrastructure management, you don’t have access to low-level cluster management control plane APIs. Keyspaces offers two types of capacity modes for tables’ read and write workloads similar to DynamoDB: provisioned capacity with autoscaling and on demand. All the data in Keyspaces tables is by default encrypted and replicated in multiple AZs for high availability and durability. Refer to the <a href="https://oreil.ly/LTqIN">AWS guide</a> for the functional <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Keyspaces" data-startref="aws-database-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="Keyspaces" data-startref="database-aws-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Keyspaces" data-startref="Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="Keyspaces" data-startref="nonrelational-column-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="Keyspaces" data-startref="colummn-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-startref="aws-database">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-startref="database-aws">&nbsp;</a>differences between Cassandra and Keyspaces.</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch10_conclusion_1734552290477246">
+        <h1>Conclusion</h1>
+        <p>We discussed a wide range of storage services offered by AWS that can be used to fulfill your business needs. <a data-type="xref" href="#ch10_cloud_storage_on_aws_1734552290475193">#ch10_cloud_storage_on_aws_1734552290475193</a> focused on primitive storage options, such as block storage, file storage, and object storage, and <a data-type="xref" href="#ch10_aws_databases_1734552290476028">#ch10_aws_databases_1734552290476028</a> covered AWS services offered for relational and nonrelational databases. It’s quite important to understand the business use case for choosing the best cost-optimal storage service. To that end, let’s take another look at our Cafe Delhi Heights storage requirements. <a data-type="xref" href="#ch10_table_3_1734552290462408">#ch10_table_3_1734552290462408</a> lists which AWS storage services can be used to fulfill these requirements.</p>
+        <table id="ch10_table_3_1734552290462408">
+          <caption>Storage service identification for Cafe Delhi Heights</caption>
+          <thead>
+            <tr>
+              <th>Requirement</th>
+              <th>Storage service</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <p>Store customer’s profile and access details, such as username and password</p>
+              </td>
+              <td>
+                <p>Amazon RDS, Amazon Aurora, Amazon ElastiCache as cache on top of persistent store for frequent queries</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Store food information, such as available menu items</p>
+              </td>
+              <td>
+                <p>Amazon DynamoDB, Amazon DocumentDB, Amazon Keyspaces, Amazon OpenSearch</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Store different kinds of media, such as images of restaurant food items and customer-uploaded reviews</p>
+              </td>
+              <td>
+                <p>Amazon S3</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Big data analytics to improve the customer experience, such as separating good and bad reviews</p>
+              </td>
+              <td>
+                <p>Amazon S3, Amazon EFS, Amazon DynamoDB</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Create food communities and allow people to interact in social circles</p>
+              </td>
+              <td>
+                <p>Amazon Neptune</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Search for food items based on multiple identifiers, such as food name, restaurant location, ratings, etc.</p>
+              </td>
+              <td>
+                <p>Amazon OpenSearch</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Application logs and metrics archival after 90 days and persistence for one year</p>
+              </td>
+              <td>
+                <p>Amazon S3, Amazon OpenSearch</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div data-type="note">
+          <p>Refer to Chapters <a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892" data-xrefstyle="select:labelnumber">#ch02_storage_types_and_relational_stores_1734552286519892</a> and <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587" data-xrefstyle="select:labelnumber">#ch03_nonrelational_stores_1734552286860587</a> for general guidelines and a flowchart for choosing a storage solution based on your business use case.</p>
+        </div>
+        <p>For handling the client requests or processing on data stored on AWS storage services, we require servers or compute platforms. In the next chapter, we’ll dive deep into different kinds of compute platforms offered by AWS and discover how we can identify the best option for our business use cases.</p>
+      </section>
+    </section>

@@ -1,0 +1,121 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="preface" id="pr01_preface_1734552296336766">
+      <h1>前言</h1>
+      <p>系统设计是一门严谨的艺术，让我们一起创作大规模的杰作。</p>
+      <p><em>System Design on AWS</em> 是一本全面指南，帮助软件架构师和工程师在持续演进的云计算环境中理解、构建并扩展 Amazon Web Services（AWS）云上的复杂系统。本书提供了一套结构化的方法，用以应对 AWS 上真实世界的系统设计挑战。书中内容聚焦于基本原则、架构权衡取舍和实战使用场景，引导你从 Day 0（最小可行产品）走向 Day N（最有价值产品）。通过详尽的章节，本书将 AWS 广泛的服务体系娓娓道来，并阐明如何策略性地加以运用，以满足技术和业务两方面的需求。</p>
+      <section data-type="sect1" id="pr01_how_this_book_is_organized_1734552296336861">
+        <h1>本书结构</h1>
+        <p>本书分为三大核心部分：首先建立系统设计的基础知识，然后深入介绍用于构建高弹性架构的核心 AWS 服务，最后以实战系统设计案例收尾。书中涵盖基础系统设计模式、扩展机制、缓存策略、网络协议和部署策略。通过在云计算背景下探讨这些要素，本书为解决各行各业的大规模设计问题提供了一套实用工具集。每个部分的开篇均会列出该部分所包含的章节，请参阅各开篇以了解详细内容。本书旨在帮助你：</p>
+        <ul>
+          <li>
+            <p>扎实掌握系统设计基本原则与权衡取舍</p>
+          </li>
+          <li>
+            <p>熟练运用核心 AWS 服务及其在构建大规模系统中的作用</p>
+          </li>
+          <li>
+            <p>深入了解真实世界的使用场景，理解如何在 AWS 上构建和部署可扩展架构</p>
+          </li>
+          <li>
+            <p>掌握在 AWS 云<span class='keep-together'>环境</span>中平衡性能、可扩展性与成本的策略</p>
+          </li>
+        </ul>
+      </section>
+      <section data-type="sect1" id="pr01_what_this_book_isn_t_1734552296336931">
+        <h1>本书不涉及的内容</h1>
+        <p>本书不提供基础设施部署或应用程序业务逻辑的详细代码实现。相反，本书着重强调架构与设计过程，帮助你理解如何将系统分解为可管理的组件，并做出有据可依的架构决策。</p>
+      </section>
+      <section data-type="sect1" id="pr01_who_should_read_this_book_1734552296337009">
+        <h1>本书的目标读者</h1>
+        <p>本书非常适合希望在 AWS 上构建或扩展应用程序的软件架构师、开发人员、DevOps 工程师和系统架构师。对于正在从本地部署迁移到云基础设施，或致力于借助 AWS 构建大规模应用程序的专业人士而言，本书尤为实用。阅读本书建议具备基本的软件实现知识，并熟悉至少一门编程语言。</p>
+        <p>本书同样推荐给担任软件开发和 DevOps 领导职务的人士。书中的指导原则将帮助你在系统构建过程中为团队扫清障碍，并做出有据可依的决策。</p>
+        <p>尽管本书以 <em>System Design on AWS</em> 为题，聚焦于 AWS 云，但我们同样推荐给所有热爱在任何云平台或本地数据中心上构建系统的人，以及一切对系统构建充满好奇的读者。书中讨论的设计与扩展原则不依赖于特定的云服务商。</p>
+      </section>
+
+
+   <section data-type="sect1" id="_conventions_used_in_this_book">
+<h1>本书排版约定</h1>
+<p>本书使用以下排版约定：</p>
+<dl>
+<dt><em>斜体</em></dt>
+<dd>
+<p>表示新术语、URL、电子邮件地址、文件名及文件扩展名。</p>
+</dd>
+<dt><code>等宽字体</code></dt>
+<dd>
+<p>用于程序清单，以及段落中对程序元素的引用，例如变量名或函数名、数据库、数据类型、环境变量、语句和关键字。</p>
+</dd>
+<dt><strong><code>等宽粗体</code></strong></dt>
+<dd>
+<p>表示用户需要原样输入的命令或其他文本。</p>
+</dd>
+<dt><em><code>等宽斜体</code></em></dt>
+<dd>
+<p>表示应替换为用户提供的值或由上下文决定的值的文本。</p>
+</dd>
+</dl>
+<div data-type="note">
+<p>此图标表示一般性说明。</p>
+</div>
+<p>为阅读方便，本书中讨论的许多工具和服务在重复提及时会使用缩写。例如，<em>Amazon Elastic Compute Cloud</em> 有时会简称为 <em>Amazon EC2</em> 或直接写作 <em>EC2</em>。</p>
+</section>
+<!--<section data-type="sect1" id="_using_code_examples">
+<h1>Using Code Examples</h1>
+PROD: Please reach out to author to find out if they will be uploading code examples to oreilly.com or their own site (e.g., GitHub). If there is no code download, delete this whole section. If there is, when you email digidist with the link, let them know what you filled in for title_title (should be as close to book title as possible, i.e., learning_python_2e). This info will determine where digidist loads the files.
+<p>Supplemental material (code examples, exercises, etc.) is available for download at <a href="https://github.com/oreillymedia/title_title"><em class="hyperlink">https://github.com/oreillymedia/title_title</em></a>.</p>
+<p>If you have a technical question or a problem using the code examples, please send email to <a class="email" href="mailto:support@oreilly.com"><em>support@oreilly.com</em></a>.</p>
+  <p>This book is here to help you get your job done. In general, if example code is offered with this book, you may use it in your programs and documentation. You do not need to contact us for permission unless you're reproducing a significant portion of the code. For example, writing a program that uses several chunks of code from this book does not require permission. Selling or distributing examples from O'Reilly books does require permission. Answering a question by citing this book and quoting example code does not require permission. Incorporating a significant amount of example code from this book into your product's documentation does require permission.</p>
+<p>We appreciate, but generally do not require, attribution. An attribution usually includes the title, author, publisher, and ISBN. For example: "<em>System Design on AWS</em> by Jayanth Kumar and Mandeep Singh (O'Reilly). Copyright 2025 Jayanth Kumar and Mandeep Singh, 978-1-098-14689-4."</p>
+<p>If you feel your use of code examples falls outside fair use or the permission given above, feel free to contact us at <a class="email" href="mailto:permissions@oreilly.com"><em>permissions@oreilly.com</em></a>.</p>
+</section>-->
+<section data-type="sect1" id="_safari_books_online">
+<h1>O'Reilly 在线学习平台</h1>
+<div data-type="note" class="ormenabled">
+<p>40 多年来，<a href="https://oreilly.com" class="orm:hideurl"><em class="hyperlink">O'Reilly Media</em></a> 持续为企业提供技术与商业培训、知识和洞见，助力企业成功。</p>
+</div>
+<p>我们独特的专家和创新者网络通过书籍、文章及在线学习平台分享知识与专业技能。O'Reilly 在线学习平台让你随时获取直播培训课程、深度学习路径、互动编程环境，以及来自 O'Reilly 和 200 多家出版商的海量文字与视频内容。更多信息，请访问 <a href="https://oreilly.com" class="orm:hideurl"><em>https://oreilly.com</em></a>。</p>
+</section>
+<section data-type="sect1" id="_how_to_contact_us">
+<h1>联系我们</h1>
+<p>有关本书的意见和问题，请联系出版方：</p>
+<ul class="simplelist">
+  <li>O'Reilly Media, Inc.</li>
+  <li>1005 Gravenstein Highway North</li>
+  <li>Sebastopol, CA 95472</li>
+  <li>800-889-8969（美国或加拿大）</li>
+  <li>707-827-7019（国际或本地）</li>
+  <li>707-829-0104（传真）</li>
+  <li><a class="email" href="mailto:support@oreilly.com"><em>support@oreilly.com</em></a></li>
+  <li><a href="https://oreilly.com/about/contact.html"><em>https://oreilly.com/about/contact.html</em></a></li>
+</ul>
+<p>我们为本书设有专页，提供勘误、示例及其他补充信息，访问地址：<a href="https://oreil.ly/SystemDesignOnAWS"><em>https://oreil.ly/SystemDesignOnAWS</em></a>。</p>
+<!--Don't forget to update the link above.-->
+
+<p>有关我们的书籍和课程资讯，请访问 <a href="https://oreilly.com"><em class="hyperlink">https://oreilly.com</em></a>。</p>
+<p>在 LinkedIn 上关注我们：<a href="https://linkedin.com/company/oreilly-media"><em class="hyperlink">https://linkedin.com/company/oreilly-media</em></a>。</p>
+<p>在 YouTube 上订阅我们：<a href="https://youtube.com/oreillymedia"><em class="hyperlink">https://youtube.com/oreillymedia</em></a>。</p>
+</section>
+
+
+
+      <section data-type="sect1" id="pr01_acknowledgments_1734552296337305">
+        <h1>致谢</h1>
+        <p>本书凝聚了众多合作者和行业专家的洞见、经验与反馈。我们衷心感谢所有同事、审阅者和读者的贡献，以及他们对推动云原生系统设计发展所付出的心血。</p>
+        <p>我们向 O'Reilly 团队全体成员——无论台前幕后——致以诚挚的谢意，感谢他们对本书的贡献与反馈。若非 John Culkin 的引荐及其对我们早期提案的专业审阅，我们与 O'Reilly 团队的合作将无从开始。我们要感谢 Megan Laddusaw 在书稿提案和章节大纲准备阶段给予的支持。特别感谢开发编辑 Melissa Potter 的耐心与支持，她的初期审阅对内容结构的梳理极有帮助，使本书的价值大为提升。</p>
+        <p>衷心感谢 Swami Sivasubramanian 拨冗撰写了精彩的推荐序，他的文字完美地奠定了全书基调，我们再感激不过。感谢 Harshit Bangar、Rakesh Kumar、Neha Shetty、Dinesh Chittibala、Alankrit Kharbanda、Kristina Manukyan 和 Rohn Arya 审阅本书并提供了诸多有益建议与深刻见解。</p>
+        <p>我们还要感谢 Dragonfly DB 团队赞助在其网站上发布了两章早期内容，并向技术社区免费开放。特别感谢所有持续发布详尽工程博客、分享创新成果与深度技术解析的公司。</p>
+        <section data-type="sect2">
+          <h2>Mandeep Singh</h2>
+        <p>我要感谢我的妻子 Priyanka，感谢她的耐心与鼓励，以及对我长时间伏案写作的包容与理解。我永远感激父母为我追逐梦想所创造的一切条件，他们始终将我的利益置于自身之前。感谢所有家人的支持与指引。</p>
+        <p>感谢我的母校 Army Institute of Technology，带我走进计算机科学的大门，并帮助我成长为一个自律的人。感谢我在不同组织任职的宝贵经历：AWS、Amazon、Jupiter 和 Skytap（Kyndryl 旗下公司）。在那里我遇见了许多杰出的人，他们深刻地塑造了我在决策与系统构建方面的思维方式。也感谢一路上给予我建议和交流的朋友、老师以及职业联系人。</p>
+        <p>若没有我的合著者 Jayanth，写一本书的念头或许从未萌生。感谢你将这个机会与我共享——整个写作过程对我而言是一段全新的经历与学习之旅。</p>
+        </section>
+        <section data-type="sect2">
+          <h2>Jayanth Kumar</h2>
+        <p>这本书是我对家人和所有引导过我的老师们发自内心的感谢。我永远感激他们的支持、鼓励与智慧，这一切深刻地塑造了今天的我。撰写这样一本技术著作的灵感，来自于我的两位教授：<a class="orm:hideurl" href="https://en.wikipedia.org/wiki/Pushpak_Bhattacharyya">Pushpak Bhattacharya</a> 和 <a class="orm:hideurl" href="https://en.wikipedia.org/wiki/George_Varghese">George Varghese</a>，他们对系统和算法之美的热情深深感染了我。</p>
+        <p>我的成长历程离不开那些培育我的好奇心与能力的机构：我的母校印度理工学院孟买分校（IIT Bombay）和加州大学洛杉矶分校（UCLA）。这些环境对塑造我的知识基础、推动我在技术与系统设计领域不断探索新边界发挥了至关重要的作用。</p>
+        <p>我的职业生涯是一幅由经历绘就的画卷，由 SAP、Goodhealthapp、Delhivery、Amazon 和 Turl Street Group 的杰出导师与同事共同描绘。每一段经历都让我在不同的成长阶段构建和扩展系统：在 Goodhealthapp（初创企业）从 0 到 1，在 Delhivery（独角兽企业）从 1 到 10，在 SAP（企业级）从 10 到 1000，在 Amazon（FAANG）从 1000 到更大规模——每一阶段都给我上了关于韧性、适应力与创新的宝贵一课。</p>
+        <p>这本书的诞生离不开我的合著者 Mandeep Singh 的付出与投入。他不知疲倦地与我并肩前行，常常在我停笔之处挑灯夜战，继续推进。他的专注与对细节的一丝不苟，对本书最终完成意义重大。</p>
+        <p>还有很多人，我多希望能逐一提及，他们的贡献、指引与知识分享塑造了这本书，但篇幅所限，只能遗憾作罢。请你们知道，你们的影响我深深感受并铭记于心。我也深深感谢更广泛的技术社区，正是他们的启迪激励着我对这一领域的持续投入。我真心希望这本书能为我们共同追求的创新与学习增添一份价值。</p>
+      </section>
+      </section>
+    </section>

@@ -1,0 +1,552 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch15_designing_a_web_crawler_and_search_engine_1734552293105400">
+      <h1>设计网络爬虫<span class='keep-together'>与搜索引擎</span></h1>
+      <p>您 <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="web crawler/search engine" id="use-case-web-search">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="web crawler use case" id="web-crawl">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search engine use case" id="search-engine">&nbsp;</a>在假日季节计划与亲人们聚会。您热爱烹饪，决定亲自下厨，但没有想要烹制的菜肴食谱。此时最佳的解决方案是什么？您可以询问朋友是否有食谱，或者翻阅食谱书，但最简单且有效的方法是使用Google搜索。Google可以遍历整个互联网，为如何烹制某道特定菜肴找到最佳结果。Google是如何在如此浩瀚的信息海洋中找到完美答案的？在本章中，我们将通过深入剖析此类搜索系统的架构来探寻答案。</p>
+      <p>从宏观层面来看，整个系统由两个子系统组成：网络爬虫和搜索引擎，如图<a data-type="xref" href="#ch15_figure_1_1734552293086851">#ch15_figure_1_1734552293086851</a>所示。<em>网络爬虫</em>本质上是<a contenteditable="false" data-type="indexterm" data-primary="web crawlers">&nbsp;</a>负责抓取网络内容的软件。互联网上的内容呈指数级增长，网络爬虫需要定期抓取内容以维护最新的结果。<em>搜索引擎</em>构建在<a contenteditable="false" data-type="indexterm" data-primary="search engines">&nbsp;</a>网络爬虫积累的内容之上，并以一种能够在内容中查找用户搜索关键词的方式存储这些内容，同时呈现最有用的结果。</p>
+      <p>基于以上基本认识，让我们先从收集拟议系统的功能性需求和非功能性需求开始。</p>
+      <figure id="ch15_figure_1_1734552293086851">
+        <img src="images/sdoa_1501.png"/>
+        <figcaption>网络爬虫与搜索引擎架构的全局视图</figcaption>
+      </figure>
+      <section data-type="sect1" id="ch15_system_requirements_1734552293105607">
+        <h1>系统需求</h1>
+        <p>网络爬虫 <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="web crawler/search engine" data-tertiary="system requirements" id="use-case-web-search-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="web crawler use case" data-secondary="system requirements" id="web-crawl-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search engine use case" data-secondary="system requirements" id="search-engine-require">&nbsp;</a>可用于多种目的，因此聚焦于一个用例有助于我们朝着正确的设计方向推进。本章的核心问题陈述是通过搜索引擎进行内容检索，但您也可以探索其他问题，例如版权侵权检测等网络监控任务。系统中需要网络爬虫来收集数据，但从用户角度而言，产品是搜索引擎。</p>
+        <section data-type="sect2" id="ch15_functional_and_nonfunctional_requirements_1734552293105685">
+          <h2>功能性需求与非功能性需求</h2>
+          <p>系统的<a contenteditable="false" data-type="indexterm" data-primary="functional requirements" data-secondary="web crawler/search engine">&nbsp;</a>功能性需求包括：</p>
+          <ul>
+            <li>
+              <p>针对用户搜索查询返回最佳结果（网页标题、副标题和URL）</p>
+            </li>
+            <li>
+              <p>识别频繁更新的结果的内容新鲜度</p>
+            </li>
+          </ul>
+          <p>非功能性需求<a contenteditable="false" data-type="indexterm" data-primary="nonfunctional requirements" data-secondary="web crawler/search engine" id="nonfunctional-web-search">&nbsp;</a>包括：</p>
+          <dl>
+            <dt>高可用性</dt>
+            <dd>
+              <p>系统在绝大多数时间内能够响应用户查询。</p>
+            </dd>
+            <dt>高可靠性</dt>
+            <dd>
+              <p>查询应被正确处理。</p>
+            </dd>
+            <dt>高可扩展性</dt>
+            <dd>
+              <p>系统应能应对不断增长的规模，例如网页数量及其内容的增加。</p>
+            </dd>
+            <dt>搜索查询低延迟</dt>
+            <dd>
+              <p>即便有大量网页与用户查询匹配，系统也应在毫秒级内返回最相关的结果。</p>
+            </dd>
+            <dt>数据新鲜度</dt>
+            <dd>
+              <p>用于响应搜索查询的底层存储应定期更新。</p>
+            </dd>
+          </dl>
+          <p>数据一致性对于本用例并非至关重要。网站上的内容与可通过<a contenteditable="false" data-type="indexterm" data-primary="nonfunctional requirements" data-secondary="web crawler/search engine" data-startref="nonfunctional-web-search">&nbsp;</a>搜索引擎检索到的内容之间存在延迟是可接受的。</p>
+          <p>我们还应<a contenteditable="false" data-type="indexterm" data-primary="system boundaries">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="boundaries, system">&nbsp;</a>明确系统的<em>边界</em>，即系统不需要承担的功能。对于本用例，包括：</p>
+          <ul>
+            <li>
+              <p>系统不包含用于汇总搜索结果的推荐算法和内容相关性算法。</p>
+            </li>
+            <li>
+              <p>搜索不支持近实时搜索结果——例如，正在进行的板球比赛的实时比分。</p>
+            </li>
+          </ul>
+          <p>接下来，让我们看看该系统的预期规模。</p>
+        </section>
+        <section data-type="sect2" id="ch15_system_scale_1734552293105751">
+          <h2>系统规模</h2>
+          <p>系统包含两个组件：网络爬虫和搜索引擎。这两个组件本身可以是独立的系统，本章将分别讨论它们。这是合理的，因为两个系统的需求各不相同，预期解决的用例也不同，其中一个系统（网络爬虫）的输出作为另一个系统（搜索引擎）的输入。我们将对各系统做出一些假设，以确定系统的预期规模。</p>
+          <section data-type="sect3" id="ch15_web_crawler_1734552293105813">
+            <h3>网络爬虫</h3>
+            <p>网络爬虫<a contenteditable="false" data-type="indexterm" data-primary="scale (of system)" data-secondary="web crawler" id="scale-web-crawl">&nbsp;</a>的重要考量因素是需要抓取的网页数量以及抓取频率。据快速Google搜索结果，截至2023年6月，约有11.3亿个网站被创建，其中约2亿个处于活跃状态。网络爬虫系统只关注活跃网站。在单个网站内部，可能存在内部跳转或指向不同页面的外部跳转。外部跳转已计入2亿个网站中，但我们还需要考虑内部跳转。我们将对平均数量做出假设，并使用以下计算来确定所需的存储量：</p>
+            <div data-type="equation">
+              <p>活跃网站数 = 2亿</p>
+               <p>每个网站的平均页面数 = 50</p>
+               <p>总页面数 = 2亿 × 50 = 100亿</p>
+               <p>平均页面大小 = 2 MB</p>
+               <p>总存储量 = 2 MB × 100亿 = 20 PB</p>
+            </div>
+            <p>网页可包含不同形式的内容，如文本、图片和视频。网络爬虫应仅抓取并保留搜索引擎将使用的数据。我们将系统范围限定为仅支持英文文本查询。这也有可能减少存储空间——假设每页500 KB，总存储量为5 PB。另一个需要考虑的因素是是否需要存储整个页面。</p>
+            <div data-type="note">
+              <p>本书中计算的存储需求假设内容以接收到的原始格式存储，但实际上这可能因数据存储选择、适用的数据压缩算法、独立的缓存数据存储等因素而有所不同。</p>
+            </div>
+            <p>互联网上的内容会以新网站和新网页的形式不断增加，现有网页上的内容也在持续更新。系统需要确保内容新鲜度，以存储最相关的数据，从而提供理想的搜索<a contenteditable="false" data-type="indexterm" data-primary="scale (of system)" data-secondary="web crawler" data-startref="scale-web-crawl">&nbsp;</a>体验。</p>
+            <p>接下来，让我们了解搜索引擎系统的规模。</p>
+          </section>
+          <section data-type="sect3" id="ch15_search_engine_1734552293105874">
+            <h3>搜索引擎</h3>
+            <p>我们<a contenteditable="false" data-type="indexterm" data-primary="scale (of system)" data-secondary="search engine">&nbsp;</a>预计搜索引擎系统每秒请求数（RPS）是多少？用户打开浏览器并输入关键词进行搜索，系统应能返回与搜索查询匹配的搜索结果。让我们以Google的规模为参考，因为它基本上是世界上访问量最大的网站。Google每天约处理85亿次搜索（99,000 RPS）。为支撑该搜索规模，数据需要建立索引，这在网络爬虫需求之外还需要额外的存储空间。</p>
+            <p>我们将致力于构建一个可扩展的系统，并探讨系统中涉及的关键概念，但请记住，Google经过多年演进才支持如此规模，在单章中无法涵盖所有细节。以下是我们应该考虑的一些因素：</p>
+            <ul>
+              <li>
+                <p>搜索结果可能因地理区域而异。例如，以"最新新闻"为关键词的搜索查询，在印度和美国可能产生不同的结果。</p>
+              </li>
+              <li>
+                <p>系统可能收到来自不同用户的相似搜索查询，因此应具备良好的缓存能力以加快查询速度。</p>
+              </li>
+            </ul>
+            <p>基于这些需求和规模考量，让我们深入探讨<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="web crawler/search engine" data-tertiary="system requirements" data-startref="use-case-web-search-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="web crawler use case" data-secondary="system requirements" data-startref="web-crawl-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search engine use case" data-secondary="system requirements" data-startref="search-engine-require">&nbsp;</a>系统的设计。</p>
+          </section>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch15_starting_with_the_design_1734552293105952">
+        <h1>从设计开始</h1>
+        <p>与<a data-type="xref" href="#ch15_system_requirements_1734552293105607">#ch15_system_requirements_1734552293105607</a>中所做的一样，我们将分别讨论<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="web crawler/search engine" data-tertiary="architecture design" id="use-case-web-search-architecture">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="in web crawler/search engine" data-secondary-sortas="web crawler" id="schema-webcrawl">&nbsp;</a>网络爬虫和搜索引擎系统的设计分析。在深入设计之前，我们建议阅读<a href="http://infolab.stanford.edu/~backrub/google.html">1997年发布的Google架构论文</a>。该论文清晰地呈现了如图<a data-type="xref" href="#ch15_figure_2_1734552293086884">#ch15_figure_2_1734552293086884</a>所示的网络爬虫和搜索引擎系统的高层架构，是系统设计分析的起点。</p>
+        <figure id="ch15_figure_2_1734552293086884">
+          <img src="images/sdoa_1502.png"/>
+          <figcaption>1997年Google参考架构</figcaption>
+        </figure>
+        <p>以下是该技术论文所呈现架构的摘要：</p>
+        <ol>
+          <li>
+            <p>为启动抓取流程，<em>URL服务器</em>向爬虫系统提供URL列表，以便从互联网抓取网页。每个爬虫维护自己的DNS缓存以加速查找。</p>
+          </li>
+          <li>
+            <p><em>存储服务器</em>接收爬虫收集的网页，并将每个网页的HTML内容压缩（使用<a href="https://oreil.ly/aPr60">ZLIB压缩算法</a>）后存储到<em>存储库</em>中。存储库数据结构是一个独立组件，可用于构建设计中的所有其他数据结构。</p>
+          </li>
+          <li>
+            <p><em>索引器</em>从存储库中读取网页，解压后解析内容。索引器执行的功能包括：</p>
+            <ul>
+              <li>
+                <p>解析内容以确保删除任何错误或不需要的内容，例如非ASCII字符。</p>
+              </li>
+              <li>
+                <p>为解析网页时发现的任何新URL（网页链接）分配一个标识符，称为<em>文档ID（doc ID）</em>。链接的所有重要信息（如链接的来源和目标，以及链接的文本）被存储在称为<em>锚（anchors）</em>的数据结构中。</p>
+              </li>
+              <li>
+                <p>使用称为<em>词典（lexicon）</em>的内存哈希表将每个单词转换为<em>词语ID（word ID）</em>。</p>
+              </li>
+              <li>
+                <p>以称为<em>命中（hits）</em>的部分排序正向索引的形式，将词语ID在文档中的出现情况存储在一组<em>桶（barrels）</em>中。命中信息包括实际词语、词语在文档中的位置、近似字体大小和大小写。这些特征有助于确定词语相对于文档中其他词语的相关性；例如，文档开头的大字体可能代表文档的标题。</p>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <p><em>URL解析器</em>读取锚文件，将相对URL转换为绝对URL（映射到文档ID），并承担以下附加职责：</p>
+            <ul>
+              <li>
+                <p>将锚文本放入与锚指向的文档ID相关联的正向索引桶中</p>
+              </li>
+              <li>
+                <p>生成一个由文档ID对组成的链接数据库；链接数据库用于计算所有文档的网页排名</p>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <p>排序器将正向桶（按文档ID组织）按词语ID排序，生成标题、锚文本命中和全文的倒排索引。排序器还根据桶是否能放入主内存，进一步将桶划分为短桶或完整桶。</p>
+          </li>
+          <li>
+            <p>Web服务器运行搜索程序以响应搜索查询。处理搜索查询时，它解析查询，将词语转换为词语ID，在短桶中查找搜索查询中每个词语的文档列表起始位置，找到匹配所有词语的文档，并计算文档的排名。然后在完整桶上执行相同的操作。最后，它对匹配排名的文档进行排序，并返回排名前一千的结果作为响应。</p>
+          </li>
+        </ol>
+        <div data-type="note">
+          <p>正向索引和倒排索引<a contenteditable="false" data-type="indexterm" data-primary="forward indexes">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="inverted indexes">&nbsp;</a>是搜索用例中常用的术语。<em>正向索引</em>是文档ID到词语或关键词集合的映射。<em>倒排索引</em>是正向索引的逆向映射，包含从关键词到文档ID的映射。</p>
+        </div>
+        <section class="pagebreak-before" data-type="sect2" id="ch15_designing_the_web_crawler_1734552293106039">
+          <h2 class="less_space">设计网络爬虫</h2>
+          <p>我们将<a contenteditable="false" data-type="indexterm" data-primary="web crawler use case" data-secondary="architecture design" id="web-crawl-architecture">&nbsp;</a>在上一节架构的基础上，设计一个可扩展的网络爬虫系统。首先需要考虑的是系统<a contenteditable="false" data-type="indexterm" data-primary="seed URLs">&nbsp;</a>抓取网络时的起始URL列表（<em>种子URL</em>）。如何维护这个列表，以及如何定期更新？没有统一的来源可以用来检索种子URL列表中所需的所有URL。构建此列表的唯一方法是从最知名的域名（例如1000个最热门的域名）出发，然后在网络抓取过程中持续更新列表。构建该列表的步骤如下：</p>
+          <ol>
+            <li>
+              <p>为新网站所有者创建一个平台，让他们提交网站详情，使其可供抓取。</p>
+            </li>
+            <li>
+              <p>检索正在抓取的网站中的网站链接或引用列表。</p>
+            </li>
+            <li>
+              <p>当用户查询新网站时，检查该网站并将其添加到列表中。</p>
+            </li>
+          </ol>
+          <p>网络爬虫系统的抓取频率并非固定不变，可能因网站而异。对网站进行历史分析是确定抓取频率的一种方式，有助于判断网站更新是否频繁。新闻网站可能频繁发布新内容，而个人网站通常更新较少。</p>
+          <p>让我们讨论一种基于固定时间间隔重新抓取网页的潜在架构，如图<a data-type="xref" href="#ch15_figure_3_1734552293086912">#ch15_figure_3_1734552293086912</a>所示。该架构描述了一种可能的实现思路，包含以下步骤：</p>
+          <ol>
+            <li>
+              <p>种子URL数据库以零TTL或适当的TTL存储URL，以避免所有URL同时被推送到队列。TTL到期时的变更数据捕获实现方式可能因数据库选择而异；例如，可以利用DynamoDB流。</p>
+            </li>
+            <li>
+              <p>TTL到期后，URL被推送到队列，网络爬虫消费这些URL。</p>
+            </li>
+            <li>
+              <p>网络爬虫从互联网检索网页内容，并将其发送进行额外处理，例如构建索引。</p>
+            </li>
+            <li>
+              <p>网络爬虫以新的TTL将URL再次保存到数据库。当网络爬虫处理网页内容时，额外的网页链接也会被纳入，并被推送到队列进行处理。</p>
+            </li>
+          </ol>
+          <figure id="ch15_figure_3_1734552293086912">
+            <img src="images/sdoa_1503.png"/>
+            <figcaption>基于配置TTL的网页重新抓取</figcaption>
+          </figure>
+          <p>网络爬虫系统应部署变更检测算法，以高效判断内容是否已更新，而无需完整抓取。以下是几种实现方法：</p>
+          <ul>
+            <li>
+              <p><a href="https://oreil.ly/EvsmZ">ETag（实体标签）</a>是一个HTTP响应头<a contenteditable="false" data-type="indexterm" data-primary="ETags">&nbsp;</a>，唯一标识所请求资源的特定版本，通常是内容的哈希值。ETag值可用于判断所请求的网页是否已更改。<a href="https://oreil.ly/VosmW">Last-Modified HTTP响应头</a>包含最后修改的日期和时间，是另一种了解资源何时最后更新的方式。</p>
+            </li>
+            <li>
+              <p>内容比较可以验证内容是否被修改。然而，逐词比较肯定不是一个高效的过程——这本质上与读取整个网页相同。更高效的解决方案是找出页面中内容更新的特定部分。<a contenteditable="false" data-type="indexterm" data-primary="Merkle trees">&nbsp;</a>默克尔树（在<a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a>中讨论）是这样一种方案，它能高效评估更新的部分；数据库（如<a href="https://oreil.ly/_Esxg">Dynamo</a>）通常使用它来解决多个副本之间的反熵问题。Google爬虫使用<a href="https://oreil.ly/Su2gr">Simhash算法</a>来帮助识别网页的内容重复。</p>
+            </li>
+            <li>
+              <p>有时，一个网站因某位名人在社交媒体上分享而变得热门。网络爬虫可以检测到此类流量激增，然后重新抓取该网站以获取任何内容更新。</p>
+            </li>
+          </ul>
+          <p>前面提到了一个队列，可用于推送URL供网络爬虫消费。<a contenteditable="false" data-type="indexterm" data-primary="TTL (time to live)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="time to live (TTL)">&nbsp;</a>基于时间的TTL方式通常不直接用于大规模网络爬虫，因为下一个待抓取的页面可能取决于TTL之外的许多因素。在网络爬虫术语中，TTL因素被称为<a contenteditable="false" data-type="indexterm" data-primary="politeness">&nbsp;</a><em>爬取礼貌性（politeness）</em>，即爬虫从网页服务器获取内容的频率。如果网页中引用的URL属于同一域名，这种情况可能发生得过于频繁。另一个重要因素是找出需要优先抓取的高质量页面。在网络爬虫架构中，负责确定下一个待抓取URL的系统通常被称为<em>URL调度器（URL Frontier）</em>。</p>
+          <section data-type="sect3" id="ch15_improving_the_url_frontier_1734552293106105">
+            <h3>改进URL调度器</h3>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="URL frontier" id="url-frontier">&nbsp;</a>前述架构可以扩展，以解决其局限性，并同时兼顾优先级和爬取礼貌性。该架构参考自<a href="https://oreil.ly/qYVwX">Mercator网络爬虫架构</a>，如图<a data-type="xref" href="#ch15_figure_4_1734552293086935">#ch15_figure_4_1734552293086935</a>所示。</p>
+            <figure id="ch15_figure_4_1734552293086935">
+              <img src="images/sdoa_1504.png"/>
+              <figcaption>URL调度器架构</figcaption>
+            </figure>
+            <p>URL调度器系统各组件的功能如下：</p>
+            <dl>
+              <dt>优先级分配器与前端队列</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="prioritizers">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="front queues">&nbsp;</a>优先级分配器与前端队列（先进先出）负责确定网络爬虫系统抓取URL的优先顺序。优先级分配器为URL分配1到<em>n</em>的优先级，并根据该数值将URL推送到特定的前端队列。优先级分配算法可以综合考虑多种因素，例如两次抓取之间网页的变化百分比、网页的新鲜程度、页面的用户流量等。</p>
+              </dd>
+              <dt>前端队列选择器与后端队列路由器</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="front queue selectors">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="back queue routers">&nbsp;</a>该组件负责根据优先级获取URL并将其传递到后端队列。它维护一个附加数据库，存储域名到后端队列编号的映射，以确保来自同一主机的URL通过单个后端队列提供服务。这样做是为了确保网络爬虫对单个域名最多调用一次（或按<a href="https://oreil.ly/sq_Pp">搜索引擎级别</a>的域名配置进行调用）。</p>
+              </dd>
+              <dt>后端队列</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="back queues">&nbsp;</a>后端队列强制执行URL的爬取礼貌性，以确保不会过于频繁地轰炸Web服务器（每次仅发出一个请求，且请求之间存在一定延迟）。后端队列的数量应多于系统中可用的爬虫线程数，以确保任何时候每个线程都处于忙碌状态。可以将其配置为线程数的三倍作为起始值，后续通过系统性能测试进行调整。</p>
+              </dd>
+              <dt>优先级队列</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="priority queues">&nbsp;</a>优先级队列是一种最小堆实现，为每个后端队列存储一条记录，并提供可以再次联系特定主机（或域名）的时间。该堆基于最小堆实现，根节点提供最先可联系的URL。</p>
+              </dd>
+              <dt>后端队列选择器</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="back queue selectors">&nbsp;</a>后端队列选择器与堆交互，取出包含最短时间域名的根节点，然后从该特定后端队列中取出URL。一旦爬虫完成URL的抓取，堆将以新的时间更新，以配置新的爬取礼貌性值。</p>
+              </dd>
+            </dl>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="FIFO (first-in, first-out) queues">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="first-in, first-out (FIFO) queues">&nbsp;</a>架构中的先进先出（FIFO）队列在主内存中保留固定数量的URL，并将大多数URL存储在磁盘上，以在商用硬件上支持高抓取速率。即使使用最好的机器，考虑到互联网的规模，也需要磁盘支持。正如<a href="https://oreil.ly/Pl1eb">IRLBot研究论文</a>所指出的，磁盘存储算法可能因频繁的磁盘读写而成为处理大量URL的瓶颈，该研究测试结果显示每秒可从抓取的网页中生成184,000个新URL。<a contenteditable="false" data-type="indexterm" data-primary="IRLBot research paper">&nbsp;</a></p>
+            <div data-type="note">
+              <p>Google和Bing等大规模网络爬虫的当前设计和实现是专有的，不向公众开放。我们参考了多篇公开研究论文以及自身的知识积累，以确保网络爬虫系统的可扩展性能够支撑当今互联网的规模。</p>
+            </div>
+            <p>IRLBot建议使用带更新管理的磁盘存储库（DRUM）算法来确保URL的唯一性。DRUM维护<em>k</em>个内存数组（每个大小为M）和<em>k</em>个磁盘桶（Qi），并根据键在它们之间分配键值对。当内存数组填满时，数据被移至磁盘桶。对于拥有大量子URL（数以百万计）的页面，爬取礼貌性的速率限制可能成为瓶颈。IRLBot通过基于信誉的垃圾追踪与规避（STAR）算法解决了这一问题。页面的信誉基于来自其他域名网页的入度链接计算。总有一些网页因为是新页面或入度链接较少而显得相关性不高，但也应该对其进行抓取，以确保搜索引擎能够响应任何用户查询。这通过具备反垃圾策略的爬取预算执行（BEAST）算法来解决。BEAST为所有此类URL维护一个额外的队列，并持续重新评估其相关性，以确定网络爬虫何时应该对这些URL进行抓取。</p>
+            <p>网络爬虫系统还应确保在抓取网络时避免无限循环场景。可能出现的情况是：一个URL在单个网页中（或在系统的单次抓取过程中在多个网页上）被多次引用，或者一个URL包含<a contenteditable="false" data-type="indexterm" data-primary="URL frontier" data-startref="url-frontier">&nbsp;</a>对自身的引用。</p>
+          </section>
+          <section data-type="sect3" id="ch15_url_uniqueness_and_duplicate_detection_1734552293106171">
+            <h3>URL唯一性与重复检测</h3>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="URL duplicate detection" id="url-duplicate">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="duplicate detection for URLs" id="duplicate-url">&nbsp;</a>系统需要一种重复URL检测机制。可以在爬虫机器之间设置一个独立的全局数据库，维护单次抓取中已访问的URL列表。由于判断URL是否重复的查询需要快速，且不需要跨抓取持久化，可以使用Redis并将URL作为键存储。Redis集群可以为URL设置关联的TTL策略（不同URL的TTL不同），使URL在缓存中自动失效。</p>
+            <p>使用布隆过滤器是另一种判断URL是否已被访问的技术——此处的关键考量是布隆过滤器的概率性本质。布隆过滤器可能对已抓取的URL返回"是"，从而导致重复抓取。</p>
+            <p>爬虫还将遵守Web服务器在<em>robots.txt</em>文件中配置的任何排除规则。<em>robots.txt</em>文件决定是否允许对网页进行抓取，以及是否有特定资源不得被搜索引擎索引。除了Web服务器的排除规则外，网络爬虫还维护自己的排除规则，以避免访问和索引任何被封锁网站的内容。</p>
+            <p>让我们综合所有讨论过的组件，在图<a data-type="xref" href="#ch15_figure_5_1734552293086954">#ch15_figure_5_1734552293086954</a>中呈现网络爬虫系统的最终全貌。系统还有一些额外的注意事项：</p>
+            <ul>
+              <li>
+                <p>爬虫采用多区域部署，如果爬虫从网站所在的同一位置进行抓取，性能会得到提升。某些网站（如政府网站）禁止来自其他国家的访问，因此爬虫必须在网站所在的同一区域运行。</p>
+              </li>
+              <li>
+                <p>爬虫主要使用HTTP/1.1协议版本检索网页。根据网站是否支持更新版本（如HTTP/2），爬虫可以使用更新的HTTP版本。新版本可以为爬虫和网站都节省计算资源。</p>
+              </li>
+              <li>
+                <p>某些网站的内容可能非常庞大，网络爬虫会对带宽消耗设置上限。例如，它只下载15 MB的内容，超出部分则跳过。</p>
+              </li>
+            </ul>
+            <figure id="ch15_figure_5_1734552293086954">
+              <img src="images/sdoa_1505.png"/>
+              <figcaption>网络爬虫架构</figcaption>
+            </figure>
+            <p>网络爬虫下载完网页后，其工作即告完成。搜索引擎系统将此内容作为输入，并高效地为其建立索引，以响应用户的搜索查询。接下来，让我们<a contenteditable="false" data-type="indexterm" data-primary="URL duplicate detection" data-startref="url-duplicate">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="duplicate detection for URLs" data-startref="duplicate-url">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="web crawler use case" data-secondary="architecture design" data-startref="web-crawl-architecture">&nbsp;</a>探讨搜索引擎系统的架构。</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch15_designing_the_search_engine_1734552293106235">
+          <h2>设计搜索引擎</h2>
+          <p><a contenteditable="false" data-type="indexterm" data-primary="search engine use case" data-secondary="architecture design" id="search-engine-architecture">&nbsp;</a>搜索引擎系统以用户查询作为输入，并返回与查询相关的网页。网页由网络爬虫系统下载并存储到存储库（或某种数据库）中，我们在上一节已对此进行了讨论。搜索引擎应能从该内容存储库中找到最匹配用户搜索查询的结果。我们将定义搜索引擎系统的高层架构（如图<a data-type="xref" href="#ch15_figure_6_1734552293086975">#ch15_figure_6_1734552293086975</a>所示），并逐一探讨各个组件。</p>
+          <p>爬虫将网页下载到内容存储库后，<em>文档解析器与编码器</em>负责解析文档、去除无用数据等任务，然后将数据传递给<em>正向索引</em>。正向索引存储数据后，再将其传递给<em>倒排索引</em>进行逆向映射。对于任何用户搜索查询，查询先被解析为搜索关键词。<em>内容相关性系统</em>（如PageRank）计算出最相关的结果并返回给用户。</p>
+          <p>您可能会疑惑，为什么架构中需要正向索引，因为倒排索引本身应该足以高效响应用户查询——这是一个合理的问题。创建正向索引的原因在于，它允许按照从网页解析的顺序存储词语，使得倒排索引的创建成为一个完全独立的过程，可以异步进行。目前已有多个开源解决方案支持倒排索引数据结构的创建。让我们在下一节讨论搜索引擎系统的可选方案。</p>
+          <figure id="ch15_figure_6_1734552293086975">
+            <img src="images/sdoa_1506.png"/>
+            <figcaption>搜索引擎系统的高层架构</figcaption>
+          </figure>
+          <section data-type="sect3" id="ch15_indexing_strategies_1734552293106304">
+            <h3>索引策略</h3>
+            <p>我们将<a contenteditable="false" data-type="indexterm" data-primary="indexes" data-secondary="search engine use case" id="index-search-engine">&nbsp;</a>从探索开源搜索解决方案（如Elasticsearch和Amazon OpenSearch，我们在<a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a>中简要介绍过）的架构开始讨论。<a href="https://oreil.ly/GWimh">Netflix</a>等许多组织使用Elasticsearch构建倒排索引并在其之上构建搜索功能。Elasticsearch是一种非关系型数据存储服务，可用于存储JSON文档，并构建倒排索引以支持对存储数据的搜索查询。</p>
+            <p>索引与Amazon RDS表颇为相似。索引被进一步划分<a contenteditable="false" data-type="indexterm" data-primary="shards">&nbsp;</a>为称为<em>分片（shards）</em>的子索引（分片内部映射到<a href="https://lucene.apache.org">Lucene索引</a>；Elasticsearch基于Lucene构建）。文档存储在分片上，文档相当于RDS表中的一行。每个分片由多个段（segments）组成，这些段保存在内存中（并在磁盘上保存事务日志以应对故障），并按固定时间<a contenteditable="false" data-type="indexterm" data-primary="refresh intervals">&nbsp;</a>间隔（称为<em>刷新间隔</em>）同步到磁盘。段是一种不可变数据结构，保存到磁盘后即可用于搜索。如果用例要求数据写入后立即可供搜索，可以将刷新间隔配置为较小的值。较小的段会定期合并为较大的段，从而提升整体搜索性能（搜索需要在更少的段上进行）。我们将在<a data-type="xref" href="#ch18_designing_a_hotel_reservation_system_1734552294615548">#ch18_designing_a_hotel_reservation_system_1734552294615548</a>中进一步讨论分片配置。</p>
+            <p>为支持高可用性和读取扩展，分片被复制到多个数据节点上，如图<a data-type="xref" href="#ch15_figure_7_1734552293086996">#ch15_figure_7_1734552293086996</a>所示。数据被写入其中一个数据节点上的主分片，然后异步复制到副本分片。系统会尽量确保主分片和副本分片不位于同一数据节点上（前提是Elasticsearch集群的节点数满足分片配置要求）。</p>
+            <figure id="ch15_figure_7_1734552293086996">
+              <img alt="A diagram of a diagram&#10;&#10;Description automatically generated" src="images/sdoa_1507.png"/>
+              <figcaption>Elasticsearch分片之间的数据索引与复制</figcaption>
+            </figure>
+            <p>现在看图<a data-type="xref" href="#ch15_figure_7_1734552293086996">#ch15_figure_7_1734552293086996</a>中的数据节点1：它包含主分片1以及分片2和3的副本。副本有助于在不影响写入性能的情况下扩展读取操作，但关键考量在于，所有三个分片共享数据节点的同一CPU和RAM资源，其中一个分片负责写入，另外两个负责读取。Elasticsearch使用磁盘存储索引，并在此基础上提供<a href="https://oreil.ly/LzJdR">多种缓存技术</a>以加快查询速度。</p>
+            <p>可以通过添加更多副本来扩展读取操作，但主分片呢？如果包含主分片的数据节点出现问题，在数据节点恢复或被其他节点替换之前，可能会影响索引性能，从而成为整体架构的瓶颈。在Elasticsearch架构中，搜索引擎负责为数据建立索引，并使用相同的索引来支持用户搜索查询。这可能会引入一个操作影响另一个操作性能的瓶颈，即读写操作同时发生在同一索引上。两者中的任何一个都可能出现突发流量，影响另一个——例如，同一时刻大量用户查询同一热门搜索关键词。在<a data-type="xref" href="#part2">#part2</a>中，我们介绍了多个AWS服务的架构，其核心是解耦计算与存储（如Amazon Redshift、Amazon EMR、Amazon Aurora等）。循此思路，是否可以架构出让读写操作都能独立扩展且完全解耦的系统？</p>
+            <p>为解决这一问题，我们可以利用云对象存储作为中间存储，索引引擎将数据上传到该存储，搜索引擎再从中下载数据，如图<a data-type="xref" href="#ch15_figure_8_1734552293087016">#ch15_figure_8_1734552293087016</a>所示。分段上传和下载确保以分块方式上传大文件，提供更好的可靠性，并在操作失败时便于重新上传或下载较小的分块。保持分片大小相对较小（不要太小，仅几GB），有助于改善索引延迟。这也使得搜索和索引集群的扩展（添加或移除节点）更快，因为减少了数据重平衡的开销。</p>
+            <div data-type="note">
+              <p>我们将在<a data-type="xref" href="#ch18_designing_a_hotel_reservation_system_1734552294615548">#ch18_designing_a_hotel_reservation_system_1734552294615548</a>中进一步讨论Elasticsearch集群的最佳分片大小。</p>
+            </div>
+            <figure id="ch15_figure_8_1734552293087016">
+              <img src="images/sdoa_1508.png"/>
+              <figcaption>解耦的索引与搜索系统</figcaption>
+            </figure>
+            <p>云存储选项（如Amazon S3）的其他优势包括：无需管理持久备份的额外开销，以及跨可用区和跨区域的自动复制。简而言之，我们在搜索引擎系统中获得了云存储所有可用性方面的优势。使用云服务提供商还是在如此大规模下完全自主管理自定义解决方案，始终是一个值得探讨的问题。我们建议随着系统需求、云定价考量以及对服务控制需求的演变，定期重新评估。</p>
+            <p>我们确保了索引和搜索过程可以独立扩展。现在，为了解决写入操作中索引系统的瓶颈，系统可以采用以下机制：</p>
+            <ul>
+              <li>
+                <p>写入操作应以批量或批次方式进行，而非对每个查询进行单次写入操作。这将有助于减轻系统负载。</p>
+              </li>
+              <li>
+                <p>系统不必采用领导者-跟随者（主-从分片）架构，而可以设计为支持领导者-领导者架构，即数据同时写入多个主分片，并配备共识和仲裁算法。若只有单一领导者，则不需要共识和仲裁，因此两种方式各有权衡。</p>
+              </li>
+            </ul>
+            <p>我们明确了不使用Elasticsearch或Amazon OpenSearch来构建搜索引擎系统，需要一个自定义解决方案来构建倒排索引。该自定义解决方案可以基于Apache Lucene库构建，也可以完全从头开发，具体取决于进一步的分析。鉴于数据量庞大，倒排索引可能非常巨大，系统需要包含一种将数据划分到多台机器和集群的机制。单个大型索引集群相比多个小集群（但不要太小）更难管理，并可能成为架构的瓶颈。倒排索引应如何划分到一组机器上？我们可以将<a contenteditable="false" data-type="indexterm" data-primary="inverted indexes" id="invert-index-search-engine">&nbsp;</a>倒排索引表示为从关键词到文档ID列表及词语在文档中出现频率的映射：</p>
+            <pre data-type="programlisting">词项（键）- {文档ID，频率}（值）
+Hello - [{doc1, 5}, {doc2, 3}, {doc4, 1}]
+World - [{doc1, 5}, {doc3, 4}]</pre>
+            <p>数据划分有两种方法：</p>
+            <dl>
+              <dt>基于文档的分区</dt>
+              <dd>
+                <p>一个文档的所有词项存储在同一台机器上，优点是便于计算页面相关性（如果搜索查询中的所有词语都出现在单个文档中，系统只需从单台机器检索结果）。为汇总搜索结果，主实例将查询转发给所有工作节点实例，然后合并结果以响应用户查询。</p>
+              </dd>
+              <dt>基于词项的分区</dt>
+              <dd>
+                <p>简单举例说明：假设系统从抓取的网页中提取了100个词项，这100个词项被划分到一组机器上：10台机器，每台10个词项。为响应搜索查询，主实例可以确定需要查询哪些工作节点实例，而不像基于文档的分区那样需要查询所有工作节点。这种方法的缺点是需要创建搜索结果的交集，因为对应同一文档的词项可能分布在不同的机器上，需要通过网络进行数据传输。</p>
+              </dd>
+            </dl>
+            <p>基于这些权衡，我们将选择基于文档的分区来维护倒排索引。接下来，让我们讨论搜索节点的扩展，以支持用户的读取操作。</p>
+          </section>
+          <section data-type="sect3" id="ch15_improving_search_performance_1734552293106363">
+            <h3>提升搜索性能</h3>
+            <p>延迟<a contenteditable="false" data-type="indexterm" data-primary="latency" data-secondary="in search engine" data-secondary-sortas="search engine use case" id="latency-search-engine">&nbsp;</a>至关重要，用户查询必须在亚毫秒级内得到响应。理想建议是搜索节点应将所有数据主要保存在RAM中，即所有倒排索引都被缓存，但这会带来成本问题。磁盘的成本约为RAM的百分之一，考虑到规模需求，磁盘与RAM之间的成本差异可能非常巨大。</p>
+            <p>如果所有数据都保存在主内存中，是否还需要持久化存储？对于任何节点故障，数据都可以从云存储中重新下载。这是一个艰难的抉择，我们建议也将倒排索引作为备份保存在磁盘存储中。是的，它们始终可以从云存储下载，但这比本地磁盘寻址需要更多时间。</p>
+            <p>无论采取哪种方式——无论索引完全在内存中还是在磁盘上——都存在利弊权衡。我们可以取中间方案，将大多数索引（访问最频繁的）保留在内存中，同时以磁盘作为持久化选项。索引算法将确保数据的存储方式需要最少的磁盘寻址操作（理想情况下仅一次）。在系统中将最大量数据保存在主内存的情况下，数据压缩变得尤为重要。</p>
+          </section>
+          <section data-type="sect3" id="ch15_data_compression_1734552293106420">
+            <h3>数据压缩</h3>
+            <p>我们<a contenteditable="false" data-type="indexterm" data-primary="data compression" id="data-compress">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="compression" id="compress-search-engine">&nbsp;</a>在<a data-type="xref" href="#ch15_system_requirements_1734552293105607">#ch15_system_requirements_1734552293105607</a>中基于若干假设讨论了网络爬虫的存储空间需求。压缩的一般理念是，压缩和解压操作都会增加索引和搜索的延迟，因为系统需要花费时间先压缩数据，然后在后续阶段解压数据以支持用户搜索查询。我们100%确定的一点是，压缩可以节省存储空间。</p>
+            <p>由于解压缩可能严重影响搜索延迟，我们需要更深入地思考延迟问题。系统中搜索延迟至关重要；索引延迟也很重要，但我们可以接受少量延迟，因为这为我们节省了巨大的存储成本，而且我们接受最终一致性的系统。我们将比较倒排索引在磁盘上与完全在内存中时的考量：</p>
+            <dl>
+              <dt>内存中的倒排索引</dt>
+              <dd>
+                <p>在不压缩的情况下处理倒排索引列表需要两个步骤：将数据从内存移至CPU缓存，然后进行处理。压缩后，额外增加了解压数据的步骤。使用压缩数据时，从内存到CPU缓存的数据移动速度非常快，而解压所需的时间相对较少。因此，数据压缩实际上改善了搜索查询延迟。</p>
+              </dd>
+              <dt>磁盘上的倒排索引</dt>
+              <dd>
+                <p>这增加了将数据从磁盘移至主内存的步骤，但由于移动的数据量更少，性能仍然良好。这提高了搜索查询的评估速度，使我们在系统中同时获得低存储成本和压缩带来的性能提升。</p>
+              </dd>
+            </dl>
+            <p>综合以上考量，我们可以看到，在系统中启用压缩后，搜索查询响应用户请求的速度大幅提升。</p>
+            <p>现在考虑这样一个场景：某个特定搜索查询变得热门，系统收到大量相同的搜索查询请求——这可能成为搜索系统的瓶颈。为解决此问题，系统确保自动扩展到位，在更多节点上复制数据以响应查询。系统还在与用户同一区域维护一个缓存层，以响应相同的搜索查询，而无需触达搜索系统的倒排索引。这确保搜索系统不受影响，用户查询能够可靠、低延迟地得到响应。系统也会实现对区域缓存的定期失效机制，以维持数据新鲜度。随着搜索引擎系统创建倒排索引，它为每个页面分配评分，以确保相关内容<a contenteditable="false" data-type="indexterm" data-primary="data compression" data-startref="data-compress">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="compression" data-startref="compress-search-engine">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="latency" data-secondary="in search engine" data-secondary-sortas="search engine use case" data-startref="latency-search-engine">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="inverted indexes" data-startref="invert-index-search-engine">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="indexes" data-secondary="search engine use case" data-startref="index-search-engine">&nbsp;</a>被呈现给用户。</p>
+          </section>
+          <section data-type="sect3" id="ch15_relevance_of_search_results_1734552293106482">
+            <h3>搜索结果相关性</h3>
+            <p>对于任何<a contenteditable="false" data-type="indexterm" data-primary="relevance of search results">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search result relevance">&nbsp;</a>搜索查询，可能存在数百个搜索结果，搜索引擎系统应确保结果按排序格式呈现，高分网页排在最前面。以下是决定网页内容相关性的几个因素：</p>
+            <ul>
+              <li>
+                <p>如果大量其他网页链接到某个网页，该网页获得更高的评分。如果某个顶级域名也添加了对该页面的引用，则其相关性进一步提升。例如，被斯坦福大学网站引用的研究论文，其价值可能高于被10所知名度较低的大学网站引用的研究论文。</p>
+              </li>
+              <li>
+                <p>网页标题、标题中的词语、较大字体或任何其他特殊特征（如嵌入链接、粗体、斜体、下划线等）可以被赋予更高的权重。</p>
+              </li>
+              <li>
+                <p>网页的地理位置因素也会影响评分，因为某个网页在美国可能非常相关，但在印度并不那么相关。</p>
+              </li>
+              <li>
+                <p>除非搜索查询明确涉及负面内容，否则搜索引擎在顶部搜索结果中优先显示正面内容而非负面内容。</p>
+              </li>
+            </ul>
+            <p>还有更多属性可用于确定页面排名，但我们在此结束搜索引擎的讨论，继续在<a contenteditable="false" data-type="indexterm" data-primary="search engine use case" data-secondary="architecture design" data-startref="search-engine-architecture">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="web crawler/search engine" data-tertiary="architecture design" data-startref="use-case-web-search-architecture">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="in web crawler/search engine" data-secondary-sortas="web crawler" data-startref="schema-webcrawl">&nbsp;</a>AWS云上部署系统。</p>
+          </section>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch15_launching_the_system_on_aws_1734552293106553">
+        <h1>在AWS上部署系统</h1>
+        <p>与<a data-type="xref" href="#ch14_designing_a_url_shortener_service_1734552292687677">#ch14_designing_a_url_shortener_service_1734552292687677</a>中所做的一样，我们将遵循快速搭建应用程序并选择不需要或仅需少量专业知识的AWS服务的策略。然后，随着我们对整体系统运行情况和用户期望的深入了解，逐步解决所遇到的问题。</p>
+        <section data-type="sect2" id="ch15_day_0_architecture_1734552293106626">
+          <h2>Day 0架构</h2>
+          <p><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="web crawler/search engine" data-tertiary="Day 0 architecture" id="use-case-web-search-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="web crawler use case" data-secondary="Day 0 architecture" id="web-crawl-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search engine use case" data-secondary="Day 0 architecture" id="search-engine-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for web crawler/search engine" data-secondary-sortas="web crawler/search engine" id="dayzero-web-search">&nbsp;</a>Day 0架构基于一篇关于<a href="https://oreil.ly/EqgHU">扩展无服务器网络爬虫和搜索引擎</a>的AWS博客文章。网络爬虫系统的整个流程可以分解为一系列步骤，本质上是持续重复这些步骤，直到URL列表被抓取完毕。为将工作流程分解为步骤，AWS Step Functions（在<a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a>中讨论）是AWS云上的绝佳服务选择。图<a data-type="xref" href="#ch15_figure_9_1734552293087036">#ch15_figure_9_1734552293087036</a>展示了代表网络爬虫下载网页方式的状态机。</p>
+          <figure id="ch15_figure_9_1734552293087036">
+            <img src="images/sdoa_1509.png"/>
+            <figcaption>网络爬虫实现的状态机</figcaption>
+          </figure>
+          <p>状态机中的所有状态都可以作为独立的Lambda函数执行，并使用Step Functions的Map状态进行并行化处理。此外，还需要存储URL，这些URL可以在状态之间传递以进行评估，例如判断URL是否已被抓取或是否还有更多URL需要抓取。由于URL列表庞大，无法仅靠Step Functions在状态之间传递，系统需要持久化存储。对于数据库选择，系统不需要数据关系或强一致性，因此非关系型服务（如Amazon DynamoDB或Amazon Keyspaces）是理想选择。系统存储可用的URL及任何相关元数据，并对这些URL执行直接键操作。我们建议根据既往使用经验选择数据库，因为这两种选择都没有明显的优劣之分。出于示例说明的目的，本章将使用DynamoDB。</p>
+          <p>系统本质上需要两张表。一张是URL调度器系统的构建模块，用于跨抓取存储URL。另一张在状态机启动时创建，在状态机终止时删除；该表存储当前抓取过程中已抓取的URL，以确保单个URL不会被多次抓取。</p>
+          <p>一旦网页被爬虫系统抓取，就需要一个存储库数据库来存储所有网页内容。对于此类用例，Amazon S3是存储数据的首选，可以在架构的第二步中作为搜索引擎消费这些数据并建立索引。构建自定义搜索引擎是一项需要端到端思考的大工程，但为了快速部署系统，我们可以使用Amazon Kendra，我们在<a data-type="xref" href="#ch13_big_data_analytics_and_machine_learning_services_1734552292002899">#ch13_big_data_analytics_and_machine_learning_services_1734552292002899</a>中对其进行了简要介绍。</p>
+          <p>Kendra <a contenteditable="false" data-type="indexterm" data-primary="Kendra">&nbsp;</a>是一项提供智能搜索功能的全托管服务。它被广泛用作企业搜索解决方案，通常用于在多个平台（如Slack、Google Drive、关系数据库、Confluence文档等）的内部文档之上构建自定义搜索引擎。它提供<a href="https://oreil.ly/POkCo">连接器</a>与这些不同的数据源对接，并自动在其之上构建搜索解决方案。随着被抓取的网页数据存储到S3，可以使用<a href="https://oreil.ly/atbYQ">S3连接器</a>将S3配置为Kendra的数据源。综合所有这些组件后的网络爬虫和搜索引擎系统的完整架构如图<a data-type="xref" href="#ch15_figure_10_1734552293087056">#ch15_figure_10_1734552293087056</a>所示。</p>
+          <figure id="ch15_figure_10_1734552293087056">
+            <img src="images/sdoa_1510.png"/>
+            <figcaption>网络爬虫与搜索引擎架构</figcaption>
+          </figure>
+          <p>有趣的是，Kendra也提供了一个网络爬虫<a href="https://oreil.ly/jRr_s">连接器</a>，因此我们甚至不需要架构中的网络爬虫部分。我们只需提供种子URL，Kendra就可以抓取网站并建立索引，以支持其之上的搜索功能。现在，让我们来看看系统在扩展以服务越来越多的流量时可能面临的局限性。</p>
+        </section>
+        <section data-type="sect2" id="ch15_scaling_to_millions_and_beyond_1734552293106687">
+          <h2>扩展至百万级及更高</h2>
+          <p>如果暂时不考虑AWS云上的基础设施成本，您能想到上一节所述架构有哪些局限性吗？理想情况下，该架构使用AWS无服务器组件，因此这些组件应能根据流量特性自动扩缩容，无需用户干预。</p>
+          <p>可能存在的局限性包括：</p>
+          <ul>
+            <li>
+              <p>AWS Step Functions <a contenteditable="false" data-type="indexterm" data-primary="Step Functions">&nbsp;</a>可能面临较高的延迟和配额限制。可以通过建议使用多个Step Functions实例和Map状态来解决这一问题。</p>
+            </li>
+            <li>
+              <p>AWS Lambda <a contenteditable="false" data-type="indexterm" data-primary="Lambda" data-secondary="for web crawler/search engine" data-secondary-sortas="web crawler">&nbsp;</a>作为计算选项，可根据提供的内存配置自动扩展。冷启动不是什么大问题，因为系统可以接受少量延迟，但我们仍然可以利用一些选项，例如预置并发，来稍微加快网页下载速度。</p>
+            </li>
+            <li>
+              <p>Amazon DynamoDB <a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-secondary="for web crawler/search engine" data-secondary-sortas="web crawler">&nbsp;</a>是一项可无限扩展以支持存储需求的全托管服务。需要注意的一点是，单个分区的RCU和WCU消耗存在硬性限制：不得超过1,000个WCU和3,000个RCU，否则请求将被限流。DynamoDB表以URL为分区键创建。考虑到每个请求消耗一个RCU，如果出现以下情况，系统可能突破此限制：某个URL在大量网页中被引用，而网络爬虫同时并发处理超过3,000个URL。乐观的一面是，即使请求被限流，我们也可以假设该URL已存在于DynamoDB表中，并安全地跳过它（请求被限流是因为该分区已存在于DynamoDB中）。可能出现的问题是检索与URL关联的附加属性。</p>
+            </li>
+            <li>
+              <p>由于系统中未引入缓存，我们可以将延迟视为从DynamoDB检索URL的一个参数。此外，系统没有存储robots缓存和DNS缓存，这增加了向Web服务器发起调用的整体延迟。</p>
+            </li>
+            <li>
+              <p>网页内容存储在S3中，S3提供无限存储并自动复制数据以实现高可用性，因此这里不存在瓶颈。</p>
+            </li>
+            <li>
+              <p>Amazon Kendra <a contenteditable="false" data-type="indexterm" data-primary="Kendra">&nbsp;</a>是一项全托管服务，因此我们无法控制数据的存储方式或向客户提供的容量。该服务为客户提供<a href="https://oreil.ly/jS1wH">固定容量</a>的存储和查询，可以通过AWS支持进一步增加。如果系统需要支持巨大规模，客户端通常更希望拥有这种控制权，因为这样可以轻松地根据需要定制软件。</p>
+            </li>
+          </ul>
+          <p>如果您的系统以Google的规模运营，或者哪怕只有该规模的十分之一，自主管理实现而不依赖Kendra等托管服务也是合理的选择。这不仅可以节省成本，还能对系统底层配置提供精细化控制。</p>
+          <div data-type="note">
+            <p>我们并非劝阻您使用AWS托管服务——这些服务非常出色，无需您承担任何运维负担和积累额外专业知识，即可大大缩短软件构建周期。建议定期审视您的系统架构，选择最适合自身需求的方案。</p>
+          </div>
+          <p>在Day 0架构中，我们使用Kendra来实现搜索引擎功能。现在，让我们确定哪些微服务可以替代Kendra（参考<a data-type="xref" href="#ch15_figure_10_1734552293087056">#ch15_figure_10_1734552293087056</a>中的功能），并从头构建架构：</p>
+          <dl>
+            <dt>文本预处理服务</dt>
+            <dd>
+              <p>该服务负责文本过滤，删除不需要的停用词，然后使用相关词语集合创建正向索引。这并不是简单地直接删除词语，可能需要考虑多种选项。例如，您可以在Google搜索中输入用双引号括起来的完整句子（为支持此类搜索查询，系统需要对整个句子建立索引）。</p>
+            </dd>
+            <dt>倒排索引创建服务</dt>
+            <dd>
+              <p>该服务负责以正向索引为输入创建倒排索引。倒排索引被上传到S3，并由倒排索引读取服务下载。</p>
+            </dd>
+            <dt>倒排索引读取服务</dt>
+            <dd>
+              <p>该服务下载倒排索引，并处理来自搜索关键词解析服务的读取查询。</p>
+            </dd>
+            <dt>内容相关性服务</dt>
+            <dd>
+              <p>该服务负责托管算法，以获取给定搜索关键词的最相关内容。可能存在多个内容相关性服务，每个服务基于不同的标准（如地理位置接近度或用户个人兴趣）运作。</p>
+            </dd>
+            <dt>搜索关键词解析服务</dt>
+            <dd>
+              <p>该服务将用户输入解析为一组关键词，供内容相关性服务和倒排索引读取服务进一步使用。结果被合并后返回给前端服务。</p>
+            </dd>
+            <dt>前端服务</dt>
+            <dd>
+              <p>该服务对用户请求执行操作，例如应用速率限制和丢弃不需要的流量。它本质上是一个网关服务，仅将真实流量转发给后端服务。</p>
+            </dd>
+          </dl>
+          <p>系统中可能发生许多情况，系统应具有弹性以优雅地处理故障场景。您可以通过有意在生产环境中破坏已知参数，并观察系统是否能够处理故障来建立信心。这种实践被<a contenteditable="false" data-type="indexterm" data-primary="chaos engineering">&nbsp;</a>称为<em>混沌工程</em>：通过对系统进行受控实验，建立对系统在生产环境中承受动荡条件能力的信心。实验可以像一个EC2实例宕机那样简单——系统是否会自动用另一个实例替换它？在AWS云环境中，您可以使用<a href="https://aws.amazon.com/fis">AWS故障注入服务（FIS）</a>。还有大量开源替代方案可用于运行这些实验。</p>
+          <p>现在，让我们整合所有组件，完成<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="web crawler/search engine" data-tertiary="Day 0 architecture" data-startref="use-case-web-search-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="web crawler use case" data-secondary="Day 0 architecture" data-startref="web-crawl-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search engine use case" data-secondary="Day 0 architecture" data-startref="search-engine-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for web crawler/search engine" data-secondary-sortas="web crawler/search engine" data-startref="dayzero-web-search">&nbsp;</a>AWS上的最终架构。</p>
+        </section>
+        <section data-type="sect2" id="ch15_day_n_architecture_1734552293106754">
+          <h2>Day N架构</h2>
+          <p>您可以<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="web crawler/search engine" data-tertiary="Day N architecture" id="use-case-web-search-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for web crawler/search engine" data-secondary-sortas="web crawler/search engine" id="dayn-web-search">&nbsp;</a>从单个AWS账户开始，但对于Day N架构，我们建议将架构分解为子组件，并进行适当的资源隔离——正如我们在前几节中所做的那样。首先，假设组织中有两个团队分别独立负责网络爬虫和搜索引擎系统（实际上可能更多，例如负责机器学习计划的团队、基础设施管理团队，或网络爬虫和搜索引擎系统的子团队）。两个团队将其架构部署到在父AWS账户下管理的独立AWS账户中。</p>
+          <p>关于应该拥有多少个AWS账户，没有严格的指导原则。不同的组织根据其需求采取不同的方法。例如，很多组织会为每个微服务设置独立的账户（甚至在多区域部署关键服务时，在区域级别也设置不同的AWS账户），而某些组织则使用单个AWS账户来管理所有微服务的资源。在<a data-type="xref" href="#ch14_designing_a_url_shortener_service_1734552292687677">#ch14_designing_a_url_shortener_service_1734552292687677</a>中，我们提到多个AWS账户会增加数据流转成本，但同时也简化了某些方面，如账单管理、完整的资源隔离以及团队的开发灵活性。</p>
+          <p>与前几节一样，我们现在将呈现分解为两个子系统的最终架构，首先是网络爬虫。</p>
+          <section data-type="sect3" id="ch15_web_crawler_1734552293106821">
+            <h3>网络爬虫</h3>
+            <p>让我们<a contenteditable="false" data-type="indexterm" data-primary="web crawler use case" data-secondary="Day N architecture" id="web-crawl-dayn">&nbsp;</a>重新审视<a data-type="xref" href="#ch15_figure_5_1734552293086954">#ch15_figure_5_1734552293086954</a>，并确定可用于在AWS云上部署建议架构的AWS服务和资源，从使用的多个数据库开始。网络爬虫研究论文建议采用不同的数据结构实现来存储和引用数据，但我们将在表<a data-type="xref" href="#ch15_table_1_1734552293092988">#ch15_table_1_1734552293092988</a>中评估AWS上现有的存储选项是否能满足该用例的需求。</p>
+           <table id="ch15_table_1_1734552293092988" class="border">
+              <caption>网络爬虫数据存储</caption>
+              <thead>
+                <tr>
+                  <th>用例</th>
+                  <th>AWS服务</th>
+                  <th>备注</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <p>种子URL</p>
+                  </td>
+                  <td>
+                    <p>DynamoDB</p>
+                  </td>
+                  <td>
+                    <p>URL调度器系统从此系统获取URL以开始抓取流程。DynamoDB是首选，因为它维护直接映射（URL到附加元数据的键值对），无需跨数据库索引的数据关系和强一致性要求。</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>URL存储与URL唯一性</p>
+                  </td>
+                  <td>
+                    <p>DynamoDB</p>
+                  </td>
+                  <td>
+                    <p>存储系统在抓取网页过程中发现的所有URL列表。URL在添加到该数据库前会先检查是否已存在。</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>URL过滤器</p>
+                  </td>
+                  <td>
+                    <p>DynamoDB</p>
+                  </td>
+                  <td>
+                    <p>该数据库维护爬虫系统不希望抓取的被封锁URL列表。</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>robots缓存</p>
+                  </td>
+                  <td>
+                    <p>DynamoDB和/或ElastiCache</p>
+                  </td>
+                  <td rowspan="2">
+                    <p>这两种缓存解决方案都有助于节省抓取时间。ElastiCache可以单独使用，也可以与磁盘持久化结合使用（以在节点故障时恢复数据）。</p>
+                    <p>robots缓存帮助系统在抓取之前识别后续抓取中的任何排除规则。</p>
+                    <p>DNS缓存维护Web服务器的IP地址，无需往返互联网进行解析。</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>DNS缓存</p>
+                  </td>
+                  <td>
+                    <p>DynamoDB和/或ElastiCache</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>网页内容</p>
+                  </td>
+                  <td>
+                    <p>S3和DynamoDB</p>
+                  </td>
+                  <td>
+                    <p>S3是一种对象存储解决方案，是存储文本文件、图片、视频等内容的首选，因此我们可以用它存储网页。DynamoDB可以存储任何元数据，例如网页内容的URL到S3文件路径的映射（这在多次网页抓取中都很有用）。</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p>实现URL调度器系统需要用于URL处理的队列，以便将URL推送到队列并由网络爬虫系统消费以进行进一步处理。我们将结合使用Amazon SQS和Amazon SNS来实现此目的；Amazon MSK也可用于同样的目的。URL调度器将URL发布到单个SNS主题，并可以根据消息中的优先级属性路由已订阅的SQS FIFO队列。URL抓取器系统还需要额外的NAT网关和互联网网关，以通过互联网与外部通信来检索网页。</p>
+            <p>整个爬虫处理本质上是一系列步骤，使用AWS Step Functions或Amazon MWAA（在<a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a>中讨论）作为状态机在大规模场景下同样合理。我们当然可以自行构建状态机，但使用这些AWS服务有助于利用内置的调试功能和错误处理机制。网络爬虫系统架构非常适合事件驱动系统：一个系统完成处理并宣告完成状态，另一个系统以此输出为输入开始处理，依此类推。我们也可以通过SNS-SQS架构而非Step Functions来实现这一点。我们在<a data-type="xref" href="#ch08_architectural_designs_and_patterns_1734552289324317">#ch08_architectural_designs_and_patterns_1734552289324317</a>中比较了编排和协调设计模式，同样的原则在此适用：编排方式（AWS Step Functions）可能优于协调方式（SQS-SNS），因为AWS Step Functions具有额外的内置功能，如错误处理和便于调试。</p>
+            <p>选择计算选项是应用程序部署的另一个重要因素，我们建议参考<a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a>中关于不同计算类型的经验。简而言之，没有完美的答案，我们通过选择Amazon EKS EC2部署选项来寻求折中方案。基于我们对相关技术的既往经验以及AWS强制执行的流量分析或配额限制，我们认为这是折中选择。与<a data-type="xref" href="#ch14_designing_a_url_shortener_service_1734552292687677">#ch14_designing_a_url_shortener_service_1734552292687677</a>中一样，为了更好的资源隔离，我们将在不同的VPC中部署微服务，并为每个微服务使用独立的Amazon EKS集群，如图<a data-type="xref" href="#ch15_figure_11_1734552293087078">#ch15_figure_11_1734552293087078</a>所示。</p>
+            <figure id="ch15_figure_11_1734552293087078">
+              <img src="images/sdoa_1511.png"/>
+              <figcaption>网络爬虫架构</figcaption>
+            </figure>
+            <div data-type="note">
+              <p>为使架构图保持简洁，AWS监控、访问管理和日志记录服务未包含在架构中。请将其视为任何架构中用于整体可观测性的必备组成部分。</p>
+            </div>
+            <p>随着网页被摄入内容存储系统，网络爬虫系统通知搜索引擎系统有新内容。收到此通知后，搜索引擎系统开始创建索引的处理流程。接下来，我们将讨论<a contenteditable="false" data-type="indexterm" data-primary="web crawler use case" data-secondary="Day N architecture" data-startref="web-crawl-dayn">&nbsp;</a>搜索引擎系统的AWS架构。</p>
+          </section>
+          <section data-type="sect3" id="ch15_search_engine_1734552293106882">
+            <h3>搜索引擎</h3>
+            <p>我们<a contenteditable="false" data-type="indexterm" data-primary="search engine use case" data-secondary="Day N architecture" id="search-engine-dayn">&nbsp;</a>在<a data-type="xref" href="#ch15_figure_6_1734552293086975">#ch15_figure_6_1734552293086975</a>中描述了搜索引擎系统的高层架构，并在<a data-type="xref" href="#ch15_scaling_to_millions_and_beyond_1734552293106687">#ch15_scaling_to_millions_and_beyond_1734552293106687</a>中描述了其微服务。我们将采用与网络爬虫系统类似的框架进行应用程序部署。对于创建正向索引和倒排索引，我们不会依赖任何AWS服务（如Amazon OpenSearch的搜索功能）；相反，我们将按照<a data-type="xref" href="#ch15_designing_the_search_engine_1734552293106235">#ch15_designing_the_search_engine_1734552293106235</a>中制定的指导方针创建自定义解决方案。图<a data-xrefstyle="select:labelnumber" data-type="xref" href="#ch15_figure_12_1734552293087098">#ch15_figure_12_1734552293087098</a>和图<a data-xrefstyle="select:labelnumber" data-type="xref" href="#ch15_figure_13_1734552293087118">#ch15_figure_13_1734552293087118</a>展示了搜索引擎系统在AWS云上的架构。</p>
+            <figure id="ch15_figure_12_1734552293087098">
+              <img src="images/sdoa_1512.png"/>
+              <figcaption>用于创建倒排索引的搜索引擎架构</figcaption>
+            </figure>
+            <figure id="ch15_figure_13_1734552293087118">
+              <img alt="A screenshot of a computer&#10;&#10;Description automatically generated" src="images/sdoa_1513.png"/>
+              <figcaption>用于响应用户查询的搜索引擎系统</figcaption>
+            </figure>
+            <p><em>内容读取应用</em>从网络爬虫系统存储的存储库中读取内容，执行预处理操作，并使内容为正向索引创建做好准备。我们将使用S3存储大型文件（如网页）以及正向索引和倒排索引，并在整个系统中共享使用。Amazon DynamoDB用于架构中的任何元数据存储需求。<em>正向索引创建系统</em>使用上一步的输出构建正向索引，该正向索引作为<em>倒排索引创建系统</em>的输入，用于构建倒排索引。</p>
+            <p><em>倒排索引读取应用</em>下载由倒排索引创建系统生成的倒排索引，并对其进行读取操作。<em>内容相关性系统</em>由多个应用组成，用于确定搜索结果的相关性，可以使用Amazon SageMaker等服务运行机器学习算法。<em>前端系统</em>接收用户查询，借助<em>查询解析系统</em>对其进行预处理，然后在<a contenteditable="false" data-type="indexterm" data-primary="search engine use case" data-secondary="Day N architecture" data-startref="search-engine-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="web crawler/search engine" data-tertiary="Day N architecture" data-startref="use-case-web-search-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for web crawler/search engine" data-secondary-sortas="web crawler/search engine" data-startref="dayn-web-search">&nbsp;</a>相关性系统和读取系统的帮助下返回结果。</p>
+          </section>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch15_conclusion_1734552293106942">
+        <h1>结语</h1>
+        <p>网络爬虫和搜索引擎系统架构复杂，需要经过大量迭代，才能高效地抓取网络内容并向用户呈现最相关的搜索结果。内容相关性算法在搜索引擎中占据极其重要的地位，因为用户只在乎搜索结果的质量，别无其他。这对任何系统设计都适用——只要能以最佳方式服务用户，其他因素都退而其次。设计决策应将用户输入作为具体的功能性需求来落实。</p>
+        <p>多年来，学界已相继发表多篇关于分布式网络爬虫和搜索引擎的论文，我们建议在构建自己的系统之前先阅读这些论文。这将帮助您避免重复造轮子，从前人的工作中汲取灵感。在为系统架构选择技术时，我们做出了一些关键性比较，例如内存倒排索引与磁盘倒排索引，以及使用Amazon OpenSearch与构建自定义解决方案之间的取舍。针对所有可用<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="web crawler/search engine" data-startref="use-case-web-search">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="web crawler use case" data-startref="web-crawl">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search engine use case" data-startref="search-engine">&nbsp;</a>方案，创建一份与系统需求相对应的利弊清单，以最终确定解决方案。</p>
+        <p>在下一章中，我们将做出设计决策，架构一个类似Facebook或LinkedIn的社交网络系统。</p>
+      </section>
+    </section>

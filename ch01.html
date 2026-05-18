@@ -1,0 +1,850 @@
+<section data-type="chapter" id="ch01_system_design_trade_offs_and_guidelines_1734552285979675" xmlns="http://www.w3.org/1999/xhtml">
+<h1>System Design Trade-offs and Guidelines</h1>
+
+<p>Today’s modern technological revolution is happening because of large-scale software systems. Big enterprise companies like Google, Amazon, Oracle, and SAP have all built large-scale software systems to run their (and their customers’) businesses. Building and operating such large-scale software systems requires first-principles thinking to design and develop the technical architecture before actually putting the system into code. This is because we don’t want to be in a state where these systems will not work or scale as more users need them.</p>
+
+<p>If the design is right in the first place, the rest of the implementation journey becomes smooth. This requires looking at the business requirements, understanding the needs and objectives of the customer, evaluating different trade-offs, thinking about error handling and edge cases, and contemplating future changes and robustness while worrying about basic details like algorithms and data structures. Enterprises can avoid the mistake of wasted software-development effort by carefully thinking about systems and investing time in understanding bottlenecks, system requirements, users being targeted, user access patterns, and many such decisions, which, in short, is <em>system design</em>.</p>
+
+<p>This chapter covers the basics of system design with the goal of helping you understand the fundamental concepts, the trade-offs that naturally arise in such large-scale software systems, the fallacies to avoid in building such systems, and the guidelines of system design—those lessons that have been learned from building large-scale software systems over the years. This chapter is intended to introduce you to the essentials—we’ll dig into the details in later chapters, but we want you to have a good foundation to start. Let’s begin with the basic concepts of system design.</p>
+
+<section data-type="sect1" id="ch01_system_design_concepts_1734552285980090">
+<h1>System Design Concepts</h1>
+
+<p>To understand the building blocks of system design, we should understand the fundamental concepts around systems. We can <a contenteditable="false" data-type="indexterm" data-primary="abstraction">&nbsp;</a>leverage<em> abstraction</em> here: the concept in computer science of obfuscating the inner details to create a model of these system design concepts, which can help us grasp the bigger picture. The concepts in system design, be it any software system, revolve around communication, consistency, availability, reliability, scalability, system maintainability, and fault tolerance. We will go over each of these concepts in detail, creating a mental model while also exploring how they are applied in large-scale system design.</p>
+
+<section data-type="sect2" id="ch01_communication_1734552285980214">
+<h2>Communication</h2>
+
+<p>A <a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="communication" id="sysdesign-concept-comms">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" id="comms">&nbsp;</a>large-scale software system is composed of small subsystems, known as <em>servers</em>, that communicate with one another—that is, they exchange information or data over the network to solve a business problem, provide business logic, and compose functionality. Communication can take place in either a synchronous or an asynchronous fashion, depending on the needs and requirements of the system. <a data-type="xref" href="#ch01_figure_1_1734552285950529">#ch01_figure_1_1734552285950529</a> shows the differences in the sequence of actions in synchronous and asynchronous communication.</p>
+
+<div data-type="note">
+	<p>We will cover the communication protocols as well as mechanisms for asynchronous communication in detail in <a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a>.</p>
+	</div>
+	
+<figure id="ch01_figure_1_1734552285950529"><img src="images/sdoa_0101.png" />
+<figcaption>Sequence diagram for synchronous versus asynchronous communication</figcaption>
+</figure>
+
+<section data-type="sect3" id="ch01_synchronous_communication_1734552285980295">
+<h3>Synchronous communication</h3>
+
+<p>Imagine<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="synchronous" id="comms-synchronous">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="synchronous communication" id="synchronous-comms">&nbsp;</a> having a phone conversation with your friend: you hear them and speak with them at the same time and use pauses in between to allow the conversation to complete. This is an example of <em>synchronous communication</em>: a type of communication in which two or more parties communicate with one another in real time. This type of communication is more immediate and allows for quicker resolution of issues or questions.</p>
+
+<p>In system design, a communication mechanism is synchronous when the sender will block (or wait) for the call or execution to return before continuing. This means that until a response is returned by the receiver, the application will not execute any further, which could be perceived by the user as latency or performance lag in the application.</p>
+</section>
+
+<section data-type="sect3" id="ch01_asynchronous_communication_1734552285980368">
+<h3>Asynchronous communication</h3>
+
+<p>Now, imagine <a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="asynchronous">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="asynchronous communication">&nbsp;</a>that instead of a phone conversation, you switch to email. As you communicate over email with your friend, you send the message and wait for the reply to come at a later time (but within an acceptable time limit). You also follow a practice to follow up if there is no response after this time limit has passed. This is an example of <em>asynchronous communication</em>: a type of communication in which two or more parties do not communicate with one another in real time. Asynchronous communication can also take place through messaging platforms, forums, and social media, where users can post messages and responses may not be immediate.</p>
+
+<p>In system design, a communication mechanism is asynchronous when the sender does not block (or wait) for the call or execution to return from the receiver. Execution continues in your program or system, and when the call returns from the receiving server, <a contenteditable="false" data-type="indexterm" data-primary="callbacks">&nbsp;</a>a <em>callback</em> function is executed. Asynchronous communication is often used in system design when an immediate response is not required or when the system needs to be more flexible and tolerant of delays or failures.</p>
+
+<p>In general, the choice of synchronous or asynchronous communication in system design depends on the specific requirements and constraints of the system. Synchronous communication is often preferred when real-time response is needed (such as the communication between the frontend UI and the backend), while asynchronous communication is often preferred when flexibility and robustness are more important (such as checking the status of <a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="communication" data-startref="sysdesign-concept-comms">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-startref="comms">&nbsp;</a>a long-running job).</p>
+</section>
+</section>
+
+<section data-type="sect2" id="ch01_consistency_1734552285980446">
+<h2>Consistency</h2>
+
+<p><em>Consistency</em>—being <a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="consistency" id="sysdesign-concept-consistent">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="consistency" id="consist">&nbsp;</a>consistent or in accordance with a set of rules or standards—is an important requirement when it comes to communication between servers in a software system. Consistency can refer to a variety of concepts and contexts in system design.</p>
+
+<p>In the context of distributed systems, consistency can be the property<a contenteditable="false" data-type="indexterm" data-primary="replica nodes">&nbsp;</a> of all <em>replica</em> nodes (more on this in a moment) or servers having the same view of data at a given point in time. This means that all replica nodes have the same data, and any updates to the data are immediately reflected on all replica nodes.</p>
+
+<p>In the context of data storage and retrieval, consistency refers to the property of each read request returning the value of the most recent write. This means that if a write operation updates the value of a piece of data, any subsequent read requests for that data should return the updated value. Let’s discuss each of these in more detail.</p>
+
+<section data-type="sect3" id="ch01_consistency_in_distributed_systems_1734552285980531">
+<h3>Consistency in distributed systems</h3>
+
+<p><em>Distributed systems</em> are <a contenteditable="false" data-type="indexterm" data-primary="consistency" data-secondary="in distributed systems" data-secondary-sortas="distributed systems">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="distributed systems" data-secondary="consistency in">&nbsp;</a>software systems that are separated physically but connected over the network to achieve common goals using shared computing resources.</p>
+
+<p>Ensuring consistency—that is, providing the same view of the data to each server in a distributed system—can be challenging because multiple replica servers may be in different physical locations and may be subject to different failures or delays.</p>
+
+<p>To address these challenges and ensure data consistency in distributed systems, we can use various techniques:</p>
+
+<dl>
+	<dt>Data replication</dt>
+	<dd>
+	<p>In <a contenteditable="false" data-type="indexterm" data-primary="data replication">&nbsp;</a>this approach, multiple copies of the data are maintained on different replica nodes, and updates to the data are made on all replica nodes simultaneously through blocking synchronous communication. This ensures that all replica nodes have the same view of the data at any given time.</p>
+	</dd>
+	<dt>Consensus protocols</dt>
+	<dd>
+	<p>Consensus <a contenteditable="false" data-type="indexterm" data-primary="consensus protocols">&nbsp;</a>protocols ensure that all replica nodes agree on the updates to be made to the data. They can use a variety of mechanisms, such as voting or leader election, to make sure all replica nodes are in agreement before updating the data.</p>
+	</dd>
+	<dt>Conflict resolution</dt>
+	<dd>
+	<p>If <a contenteditable="false" data-type="indexterm" data-primary="conflict resolution">&nbsp;</a>two or more replica nodes try to update the same data simultaneously, conflict resolution algorithms are used to determine which update should be applied. These algorithms can employ various strategies, such as last writer wins or merge algorithms, to resolve conflicts.</p>
+	</dd>
+</dl>
+</section>
+
+<section data-type="sect3" id="ch01_consistency_in_data_storage_and_retrieval_1734552285980610">
+<h3>Consistency in data storage and retrieval</h3>
+
+<p>Large-scale <a contenteditable="false" data-type="indexterm" data-primary="consistency" data-secondary="in data storage systems" data-secondary-sortas="data storage systems" id="consistency-data-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data storage systems" data-secondary="consistency in" id="data-storage-consistency">&nbsp;</a>software systems produce and consume a large amount of data, and thus, ensuring consistency in data storage and retrieval is important for maintaining the accuracy and integrity of the data in these systems. For example, consider a database that stores the balance of a bank account. If we withdraw money from the account, the database should reflect the updated balance immediately. If the database does not ensure consistency, it is possible for a read request to return an old balance, which could lead to incorrect financial decisions or even financial losses for us or our banks.</p>
+
+<p>To address these challenges and ensure read consistency in data storage systems, we can use various techniques:</p>
+
+<dl>
+	<dt>Write-ahead logging</dt>
+	<dd>
+	<p>In <a contenteditable="false" data-type="indexterm" data-primary="write-ahead logging">&nbsp;</a>this technique, writes to the data are first recorded in a log before they are applied to the actual data. This ensures that if the system crashes or fails, the data can be restored to a consistent state by replaying the log.</p>
+	</dd>
+	<dt>Locking</dt>
+	<dd>
+	<p>Locking<a contenteditable="false" data-type="indexterm" data-primary="locking">&nbsp;</a> mechanisms are used to ensure that only one write operation can be performed at a time. This ensures that multiple writes do not interfere with one another and that reads always return the value of the most recent write.</p>
+	</dd>
+	<dt>Data versioning</dt>
+	<dd>
+	<p>In this<a contenteditable="false" data-type="indexterm" data-primary="data versioning">&nbsp;</a> technique, each write operation is assigned a version number, and reads always return the value of the most recent version. This allows for multiple writes to be performed concurrently while still ensuring that reads return the value of the most recent write.</p>
+	</dd>
+</dl>
+
+<div data-type="note">
+<p>We <a contenteditable="false" data-type="indexterm" data-primary="consistency" data-secondary="in data storage systems" data-secondary-sortas="data storage systems" data-startref="consistency-data-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data storage systems" data-secondary="consistency in" data-startref="data-storage-consistency">&nbsp;</a>will discuss some of these techniques for ensuring consistency in detail in Chapters <a data-type="xref" data-xrefstyle="select:labelnumber" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a> and <a data-type="xref" data-xrefstyle="select:labelnumber" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a>.</p>
+</div>
+</section>
+
+<section data-type="sect3" id="ch01_consistency_spectrum_model_1734552285980708">
+<h3>Consistency spectrum model</h3>
+
+<p>Since <a contenteditable="false" data-type="indexterm" data-primary="consistency" data-secondary="consistency spectrum model" id="consistency-consist-spectrum-model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="consistency spectrum model" id="consistency-spectrum-model">&nbsp;</a>consistency can mean different things, the <em>consistency spectrum model</em> helps us reason about whether a distributed system is working correctly when it’s doing multiple things at the same time, like reading, writing, and updating data. The consistency spectrum model represents the various consistency guarantees that a distributed system can offer, ranging from eventual consistency to strong consistency. The consistency guarantee chosen depends on the specific requirements and constraints of the system. Let’s walk through the consistency levels in the consistency spectrum model:</p>
+
+<dl>
+	<dt>Strong consistency</dt>
+	<dd>
+	<p>At <a contenteditable="false" data-type="indexterm" data-primary="strong consistency">&nbsp;</a>one end of the spectrum, strong consistency guarantees that all replica nodes have the same view of the data at all times and that any updates to the data are immediately reflected on all replica nodes. This ensures that the data is always accurate and up to date, but it can be difficult to achieve in practice as it requires all replica nodes to be in constant communication with one another.</p>
+
+	<div data-type="note">
+	<p>We will cover the strong consistency requirements of relational databases as part of the ACID model in <a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>.</p>
+	</div>
+	</dd>
+	<dt>Monotonic read consistency</dt>
+	<dd>
+	<p>Monotonic read consistency<a contenteditable="false" data-type="indexterm" data-primary="monotonic read consistency">&nbsp;</a> guarantees that once a client has read a value from a replica node, all subsequent reads from that client will return the same value or a more recent value. This means that a client will not see “stale” data that has been updated by another client. This provides a stronger consistency guarantee than eventual consistency because it ensures that a client will not see outdated data.</p>
+	</dd>
+	<dt>Monotonic write consistency</dt>
+	<dd>
+	<p>Monotonic write consistency <a contenteditable="false" data-type="indexterm" data-primary="monotonic read consistency">&nbsp;</a>guarantees that once a write operation has been acknowledged by a replica node, all subsequent reads from that replica node will return the updated value. This means that a replica node will not return outdated data to clients after a write operation has been acknowledged. This provides a stronger consistency guarantee than eventual consistency because it ensures that a replica node will not return outdated data to clients.</p>
+	</dd>
+	<dt>Causal consistency</dt>
+	<dd>
+	<p>Causal consistency<a contenteditable="false" data-type="indexterm" data-primary="causal consistency">&nbsp;</a> works by categorizing operations into dependent and independent operations. Dependent operations are also called <em>causally related operations</em>. Causal consistency preserves the order of the causally related operations. It guarantees that if two operations are causally related in dependent and independent operations, then they will be seen in the same order by all processes in the system. This means that if operation A must happen before operation B, then all processes in the system will see A before they see B. This provides a stronger consistency guarantee than eventual consistency because it ensures that the order of related operations is preserved.</p>
+	</dd>
+	<dt>Eventual consistency</dt>
+	<dd>
+	<p>At the<a contenteditable="false" data-type="indexterm" data-primary="eventual consistency">&nbsp;</a> other end of the spectrum, eventual consistency guarantees that, given enough time, all replica nodes will eventually have the same view of the data. This allows for more flexibility and tolerance of delays or failures but can result in temporary inconsistencies in the data.</p>
+	</dd>
+</dl>
+
+<div data-type="note">
+<p>We will cover the<a contenteditable="false" data-type="indexterm" data-primary="tunable consistency">&nbsp;</a> tunable consistency feature of some of the nonrelational columnar databases like Cassandra in <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a>.</p>
+</div>
+
+<p><a data-type="xref" href="#ch01_figure_2_1734552285950582">#ch01_figure_2_1734552285950582</a> shows the difference in the results of performing a sequence of actions under either strong consistency or eventual consistency. As you can see on the left showing strong consistency, when <em>x</em> is read from a replica node after updating it from 0 to 2, it will block the request until replication happens and then return 2 as the result. On the right illustrating eventual consistency, you can see that when the replica node is queried, it will give a stale result of <em>x</em> as 0 before replication completes.</p>
+
+<p>The consistency spectrum model therefore provides a framework for understanding the trade-offs between consistency and availability in distributed systems and helps system designers choose the appropriate consistency guarantee for their specific needs.</p>
+
+<figure id="ch01_figure_2_1734552285950582"><img src="images/sdoa_0102.png" />
+<figcaption>Sequence diagrams for strong consistency and eventual consistency</figcaption>
+</figure>
+
+<p>The <a contenteditable="false" data-type="indexterm" data-primary="distributed systems" data-secondary="complexity and consistency">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="complexity of distributed systems">&nbsp;</a>level of consistency that a distributed system aims to achieve directly affects its complexity: stricter consistency models (like strong consistency) require extensive coordination, synchronization, and consensus across nodes, increasing latency and operational costs and making failure handling more challenging. This complexity is especially pronounced in geographically distributed systems, where network latency and scalability constraints complicate synchronization of global data. Conversely, relaxing consistency requirements (as in eventual consistency) reduces system complexity, enabling higher scalability and availability at the cost of allowing temporary data inconsistencies. Ultimately, there’s a trade-off between data accuracy and system simplicity, with each choice tailored to the specific needs and tolerance for latency, availability, and correctness in <a contenteditable="false" data-type="indexterm" data-primary="consistency" data-secondary="consistency spectrum model" data-startref="consistency-consist-spectrum-model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="consistency spectrum model" data-startref="consistency-spectrum-model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="consistency" data-startref="sysdesign-concept-consistent">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="consistency" data-startref="consist">&nbsp;</a>the application.</p>
+</section>
+</section>
+
+<section data-type="sect2" id="ch01_availability_1734552285980801">
+<h2>Availability</h2>
+
+<p>In <a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="availability" id="sysdesign-concept-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" id="available">&nbsp;</a>a large-scale software system, subsystems or servers can go down and may not be fully available to respond to the client’s requests; this is referred to as the system’s <em>availability</em>. A system that is highly available can process requests and return responses in a timely manner, even under heavy load or when there are failures or errors. Let’s try to quantify the measurement of availability of the system.</p>
+
+<section data-type="sect3" id="ch01_measuring_availability_1734552285980894">
+<h3>Measuring availability</h3>
+
+<p>Availability<a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="measuring" id="available-measure">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="measuring" data-secondary="availability" id="measure-available">&nbsp;</a> can be measured mathematically as the percentage of the time the system was up (total time − time system was down) over the total time the system should have been running:</p>
+
+<div data-type="equation">
+	<p data-type="tex">\begin{equation} \text{Availability} \% = \frac{(\text{Total Time} - \text{Sum total of time system was down})}{\text{Total Time}} \times 100 \end{equation}
+	</p></div>
+
+<p>Availability percentages are represented in nines based on this formula over a period of time. You can see a breakdown of what these numbers really work out to in <a data-type="xref" href="#ch01_table_1_1734552285961064">#ch01_table_1_1734552285961064</a>.</p>
+
+<table id="ch01_table_1_1734552285961064">
+	<caption>Availability percentages represented in nines</caption>
+	<thead>
+		<tr>
+			<th>Availability percentage</th>
+			<th>Downtime per year</th>
+			<th>Downtime per month</th>
+			<th>Downtime per week</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>
+			<p>90% (1 nine)</p>
+			</td>
+			<td>
+			<p>36.5 days</p>
+			</td>
+			<td>
+			<p>72 hours</p>
+			</td>
+			<td>
+			<p>16.8 hours</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>99% (2 nines)</p>
+			</td>
+			<td>
+			<p>3.65 days</p>
+			</td>
+			<td>
+			<p>7.2 hours</p>
+			</td>
+			<td>
+			<p>1.68 hours</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>99.5% (2 nines)</p>
+			</td>
+			<td>
+			<p>1.83 days</p>
+			</td>
+			<td>
+			<p>3.60 hours</p>
+			</td>
+			<td>
+			<p>50.4 minutes</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>99.9% (3 nines)</p>
+			</td>
+			<td>
+			<p>8.76 hours</p>
+			</td>
+			<td>
+			<p>43.8 minutes</p>
+			</td>
+			<td>
+			<p>10.1 minutes</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>99.99% (4 nines)</p>
+			</td>
+			<td>
+			<p>52.56 minutes</p>
+			</td>
+			<td>
+			<p>4.32 minutes</p>
+			</td>
+			<td>
+			<p>1.01 minutes</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>99.999% (5 nines)</p>
+			</td>
+			<td>
+			<p>5.26 minutes</p>
+			</td>
+			<td>
+			<p>25.9 seconds</p>
+			</td>
+			<td>
+			<p>6.05 seconds</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>99.9999% (6 nines)</p>
+			</td>
+			<td>
+			<p>31.5 seconds</p>
+			</td>
+			<td>
+			<p>2.59 seconds</p>
+			</td>
+			<td>
+			<p>0.605 seconds</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>99.99999% (7 nines)</p>
+			</td>
+			<td>
+			<p>3.15 seconds</p>
+			</td>
+			<td>
+			<p>0.259 seconds</p>
+			</td>
+			<td>
+			<p>0.0605 seconds</p>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>The goal for availability usually is to achieve the highest level possible, such as “five nines” (99.999%) or even “six nines” (99.9999%). However, the level of availability that is considered realistic or achievable depends on several factors, including the complexity of the system, the resources available for maintenance and redundancy, and the specific requirements of the application or service.</p>
+
+<p>Achieving higher levels of availability becomes progressively more challenging and resource intensive. Each additional nine requires an exponential increase in redundancy, fault-tolerant architecture, and rigorous maintenance practices. It often involves implementing redundant components, backup systems, load balancing, <span class='keep-together'>failover</span> mechanisms, and continuous monitoring to minimize downtime and ensure rapid recovery in case of failures.</p>
+
+<p>While some critical systems, such as financial trading platforms or emergency services, may strive for the highest levels of availability, achieving and maintaining them can be extremely difficult and costly. In contrast, for less critical applications or services with a lower level of availability, such as 99% or 99.9%, may be more realistic and achievable within reasonable resource constraints.</p>
+
+<p>Ultimately, determining what level of availability is realistic and achievable depends on a careful evaluation of the specific requirements, resources, costs, and trade-offs involved in <a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="measuring" data-startref="available-measure">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="measuring" data-secondary="availability" data-startref="measure-available">&nbsp;</a>each case.</p>
+</section>
+
+<section data-type="sect3" id="ch01_availability_in_parallel_versus_in_sequence_1734552285980992">
+<h3>Availability in parallel versus in sequence</h3>
+
+<p>The <a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="sequential systems versus parallel systems" id="available-sequence-parallel">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="sequential systems, availability" id="sequence-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="parallel systems, availability" id="parallel-available">&nbsp;</a>availability of a system that consists of multiple subsystems depends on whether the components are arranged in sequence or in parallel with respect to serving the request. <a data-type="xref" href="#ch01_figure_3_1734552285950616">#ch01_figure_3_1734552285950616</a> shows the arrangement of components in the sequential system on the left, where the request needs to be served from each component in sequence, and the parallel system on the right, where the request can be served from either component in parallel.</p>
+
+<figure id="ch01_figure_3_1734552285950616"><img src="images/sdoa_0103.png" />
+<figcaption>Sequential system versus parallel system</figcaption>
+</figure>
+
+<p>If the components are in sequence, the overall availability of the service will be the product of the availability of each component. For example, if two components with 99.9% availability are in sequence, their total availability will be 99.8%:</p>
+
+<div data-type="equation">
+		<p data-type="tex">$ \begin{aligned} &amp;\text{Availability of two components in sequence} \\ &amp;= \text{Availability of component 1} \times \text{Availability of component 2} \\ &amp;= .999 \times .999 = .998001 \sim 99.8\% \end{aligned} $
+		</p></div>
+
+<p>On the other hand, if the components are in parallel, the overall availability of the service will be the sum of the availability of each component minus the product of their unavailability. For example, if two components with 99.9% availability are in parallel, their total availability will be 99.9999%. This can lead to significantly higher availability compared to the same components arranged in sequence (from 3 nines to 6 nines in the example):</p>
+
+
+<div data-type="equation">
+	<p data-type="tex">$ \begin{aligned} &amp;\text{Availability of two components in parallel} \\ &amp;= 1 - \text{Unavailability of both components} \\ &amp;= 1 - (\text{P(Component 1 going down}) \times \text{P(Component 2 going down})) \\ &amp;= 1 - (\text{.001} \times \text{.001}) = 1 - \text{.000001} \\ &amp;= \text{.999999} \sim \text{99.9999}\% \\ \end{aligned} $
+	</p></div>
+
+<p>The arrangement of components in a service can have a significant impact on its overall availability, so it is important to consider this when designing a system for <a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="sequential systems versus parallel systems" data-startref="available-sequence-parallel">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="sequential systems, availability" data-startref="sequence-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="parallel systems, availability" data-startref="parallel-available">&nbsp;</a>high availability.</p>
+</section>
+
+<section data-type="sect3" id="ch01_ensuring_availability_1734552285981068">
+<h3>Ensuring availability</h3>
+
+<p>Ensuring<a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="ensuring">&nbsp;</a> availability in a system is critical for maintaining the performance and reliability of the system. There are several ways to increase the availability of a system:</p>
+
+<dl>
+	<dt>Redundancy</dt>
+	<dd>
+	<p>When <a contenteditable="false" data-type="indexterm" data-primary="redundancy">&nbsp;</a>a system has multiple copies of critical components or subsystems, it can continue to function even if one component fails. This can be achieved by using redundant load balancers, failover systems, or replicated data stores.</p>
+	</dd>
+	<dt>Fault tolerance</dt>
+	<dd>
+	<p>Systems <a contenteditable="false" data-type="indexterm" data-primary="fault tolerance">&nbsp;</a>designed to be resistant to failures or errors can continue to function even when there are unexpected events. This can be achieved by using error-handling mechanisms, redundant hardware, or self-healing systems.</p>
+	</dd>
+	<dt>Load balancing</dt>
+	<dd>
+	<p>By distributing<a contenteditable="false" data-type="indexterm" data-primary="load balancing">&nbsp;</a> incoming requests among multiple servers or components, a system can more effectively handle heavy loads and maintain high availability. This can be achieved by using multiple load balancers or distributed systems.</p>
+	</dd>
+</dl>
+
+<div data-type="note">
+<p>We will cover load balancing in detail in <a data-type="xref" href="#ch05_load_balancing_approaches_and_techniques_1734552287463010">#ch05_load_balancing_approaches_and_techniques_1734552287463010</a> and explore the different types of AWS load balancers in <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>.</p>
+</div>
+</section>
+
+<section data-type="sect3" id="ch01_availability_patterns_1734552285981143">
+<h3>Availability patterns</h3>
+
+<p>There are <a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="patterns" id="available-pattern">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="patterns of availability" id="pattern-available">&nbsp;</a>two major complementary patterns to support high availability: failover and replication.</p>
+
+<section data-type="sect4" id="ch01_failover_patterns_1734552285981218">
+<h4>Failover patterns</h4>
+
+<p><em>Failover </em>refers to<a contenteditable="false" data-type="indexterm" data-primary="failover patterns" id="failover">&nbsp;</a> the process of switching to a redundant or backup system in the event of a failure or error in the primary system. The failover pattern chosen depends on the specific requirements and constraints of the system, including the desired level of availability and the cost of implementing the failover solution. The two main types of failover patterns are active-active and active-passive:</p>
+
+<dl>
+	<dt>Active-active failover</dt>
+	<dd>
+	<p>In an<a contenteditable="false" data-type="indexterm" data-primary="active-active failover pattern">&nbsp;</a> active-active failover pattern, as shown on the left in <a data-type="xref" href="#ch01_figure_4_1734552285950648">#ch01_figure_4_1734552285950648</a>, multiple systems are used in parallel, and all systems are actively processing requests. If one system fails, the remaining systems can continue to process requests and maintain high availability. This approach allows for more flexibility and better utilization of resources but can be more complex to implement and maintain because it requires more sophisticated load balancing and failover mechanisms.</p>
+	</dd>
+	<dt>Active-passive failover</dt>
+	<dd>
+	<p>In an<a contenteditable="false" data-type="indexterm" data-primary="active-passive failover pattern">&nbsp;</a> active-passive failover pattern, as shown on the right in <a data-type="xref" href="#ch01_figure_4_1734552285950648">#ch01_figure_4_1734552285950648</a>, one system is designated as the primary system and actively processes requests while one or more backup systems are maintained in a passive state. If the primary system fails, the backup system is activated to take over processing of requests. This approach is simpler to implement and maintain because data only needs to be replicated in one direction: from the active server to the passive server. It also avoids the complexities of data conflicts and the synchronization issues that can occur in an active-active setup. However, this can result in reduced availability if the primary system fails, as there is a delay in switching to the backup system.</p>
+	</dd>
+</dl>
+
+
+<p>Failover patterns can require additional hardware and can add complexity to the system. There is also the potential for data loss if the active system fails before newly written data can be replicated to the passive system. The choice of failover pattern depends on the specific requirements and constraints of the system, including the desired level of availability and the cost of implementing the failover solution.</p>
+
+<div data-type="note">
+<p>These failover patterns are employed in relational data stores, nonrelational data stores, caches, and load balancers, which we will cover in Chapters <a data-type="xref" data-xrefstyle="select:labelnumber" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>, <a data-type="xref" data-xrefstyle="select:labelnumber" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a>, <a data-type="xref" data-xrefstyle="select:labelnumber" href="#ch04_caching_policies_and_strategies_1734552287178593">#ch04_caching_policies_and_strategies_1734552287178593</a>, and <a data-type="xref" data-xrefstyle="select:labelnumber" href="#ch05_load_balancing_approaches_and_techniques_1734552287463010">#ch05_load_balancing_approaches_and_techniques_1734552287463010</a>, respectively.</p>
+</div>
+<figure id="ch01_figure_4_1734552285950648"><img src="images/sdoa_0104.png" />
+<figcaption>Active-active failover system setup versus active-passive failover system setup</figcaption>
+</figure>
+</section>
+
+<section data-type="sect4" id="ch01_replication_patterns_1734552285981301">
+<h4>Replication patterns</h4>
+
+<p><em>Replication</em> is <a contenteditable="false" data-type="indexterm" data-primary="replication patterns" id="replicate-pattern">&nbsp;</a>the process of maintaining multiple copies of data or other resources to improve availability and fault tolerance. The replication pattern chosen depends on the specific requirements and constraints of the system, including the desired level of availability and the cost of implementing the replication solution. The two main types of replication patterns are multileader and single leader:</p>
+
+<dl>
+	<dt>Multileader replication</dt>
+	<dd>
+	<p>In a <a contenteditable="false" data-type="indexterm" data-primary="multileader replication">&nbsp;</a>multileader replication pattern, as shown on the left in <a data-type="xref" href="#ch01_figure_5_1734552285950683">#ch01_figure_5_1734552285950683</a>, multiple systems are used in parallel, and all systems can read and write data. This allows for more flexibility and better utilization of resources because all systems can process requests and updates to the data simultaneously. A load balancer is required or application logic changes need to be made to support multiple leaders and identify on which leader node to write. Most multileader systems either are loosely consistent or have increased write latency for synchronization to remain consistent. Conflict resolution comes more into play as more write nodes are added, leading to increases in latency. This approach can become complex to implement and maintain because it requires careful management of conflicts and errors.</p>
+	</dd>
+	<dt>Single-leader replication</dt>
+	<dd>
+	<p>In a <a contenteditable="false" data-type="indexterm" data-primary="single-leader replication">&nbsp;</a>single-leader replication pattern, as shown on the right in <a data-type="xref" href="#ch01_figure_5_1734552285950683">#ch01_figure_5_1734552285950683</a>, one system is designated as the leader system and is responsible for both reading and writing data while one or more follower systems are used to replicate the data. The follower systems can be used only for reading data; updates to the data must be made on the leader system. Additional logic is required to be implemented to promote a follower to the leader. This approach is simpler to implement and maintain but can result in reduced availability if the leader system fails because updates to the data can be made only on the leader system and there is a risk of losing the data updates.</p>
+	</dd>
+</dl>
+
+<figure id="ch01_figure_5_1734552285950683"><img src="images/sdoa_0105.png" />
+<figcaption>Multileader versus single-leader replication system setup</figcaption>
+</figure>
+
+<p>There is a risk of data loss if the leader system fails before newly written data can be replicated to other nodes. The more read replicas that are used, the more writes need to be replicated, which can lead to greater replication lag. In addition, using read replicas can affect the performance of the system because the system may get bogged down with replaying writes and become unable to process as many reads. Furthermore, replication can require additional hardware that can add complexity to the system. Finally, some systems may have more efficient write performance on the leader system since it can spawn multiple threads to write in parallel, while read replicas may only support writing sequentially with a single thread. The choice of replication pattern depends on the specific requirements and constraints of the system, including the desired level of availability and the cost of implementing the replication solution.</p>
+
+<div data-type="note">
+<p>We will cover how relational and nonrelational data stores ensure availability using single-leader and multileader replication in Chapters <a data-type="xref" data-xrefstyle="select:labelnumber" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a> and <a data-type="xref" data-xrefstyle="select:labelnumber" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a>. Do look out for leaderless replication using consistent hashing to ensure availability in nonrelational stores like key-value stores and <a contenteditable="false" data-type="indexterm" data-primary="replication patterns" data-startref="replicate-pattern">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="patterns" data-startref="available-pattern">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="patterns of availability" data-startref="pattern-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="availability" data-startref="sysdesign-concept-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-startref="available">&nbsp;</a>columnar stores in <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a>.</p>
+</div>
+</section>
+</section>
+</section>
+
+<section class="pagebreak-before" data-type="sect2" id="ch01_reliability_1734552285981380">
+<h2 class="less_space">Reliability</h2>
+
+<p>In <a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="reliability" id="sysdesign-concept-reliable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="reliability" id="reliable">&nbsp;</a>system design, <em>reliability</em> refers to the ability of a system or component to perform its intended function consistently and without failure over a given period of time. It is a measure of the dependability or trustworthiness of the system. Reliability is typically expressed as a probability or percentage of time that the system will operate without failure. For example, a system with a reliability of 99% will fail only 1% of the time. Let’s try to quantify the measurement of reliability of the system.</p>
+
+<section data-type="sect3" id="ch01_measuring_reliability_1734552285981470">
+<h3>Measuring reliability</h3>
+
+<p>One <a contenteditable="false" data-type="indexterm" data-primary="measuring" data-secondary="reliability" id="measure-reliable">&nbsp;</a>way to measure the reliability of a system is by using mean time between failures (MTBF) and mean time to repair (MTTR).</p>
+
+<section data-type="sect4" id="ch01_mean_time_between_failures_1734552285981547">
+<h4>Mean time between failures</h4>
+
+<p>MTBF is<a contenteditable="false" data-type="indexterm" data-primary="mean time between failures (MTBF)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MTBF (mean time between failures)">&nbsp;</a> a measure of the average amount of time that a system can operate without experiencing a failure. It is typically expressed in hours or other units of time. The higher the MTBF, the more reliable the system is considered to be:</p>
+
+
+<div data-type="equation">
+	<p data-type="tex">\begin{equation} \label {Mean time between failures (MTBF)} \text{Mean time between failures (MTBF)} = \frac{(\text{Total Elapsed Time} - \text{Sum total of time system was down})}{\text{Total Number of Failures}} \end{equation}
+	</p></div>
+	
+
+<p>For mission-critical systems, an MTBF of tens of thousands of hours or more is generally desired, while consumer electronics may have lower MTBF values. For example, high-reliability servers typically aim for an MTBF of 50,000 hours or more; consumer-grade laptops may have an MTBF of around 5,000−10,000 hours.</p>
+
+<p>MTBF helps estimate the frequency of failures, allowing for better planning and budgeting of maintenance activities. If MTBF is low for a critical component, redundancy can be implemented to minimize downtime. In high-availability setups, multiple servers or components with lower MTBFs may be clustered to achieve overall reliability. As MTBF increases with design changes, you can quantitatively assess reliability improvements, ultimately leading to fewer failures and reduced operational costs.</p>
+</section>
+
+<section data-type="sect4" id="ch01_mean_time_to_repair_1734552285981621">
+<h4>Mean time to repair</h4>
+
+<p>MTTR is<a contenteditable="false" data-type="indexterm" data-primary="mean time to repair (MTTR)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MTTR (mean time to repair)">&nbsp;</a> a measure of the average amount of time it takes to repair a failure in the system. It is also typically expressed in hours or other units of time. The lower the MTTR, the more quickly the system can be restored to operation after a failure:</p>
+
+
+<div data-type="equation">
+	<p data-type="tex">\begin{equation} \label {Mean time to repair (MTTR)} \text{Mean time to repair (MTTR)} = \frac{(\text{Total Maintenance Tim}e)}{\text{Total Number of Repairs}} \end{equation}
+	</p></div>
+
+<p>Together, MTBF and MTTR can be used to understand the overall reliability of a system. For example, a system with a high MTBF and a low MTTR is considered to be more reliable than a system with a low MTBF and a high MTTR as it is less likely to experience failures and can be restored to operation more quickly when failures <a contenteditable="false" data-type="indexterm" data-primary="measuring" data-secondary="reliability" data-startref="measure-reliable">&nbsp;</a>do occur.</p>
+</section>
+</section>
+
+<section data-type="sect3" id="ch01_reliability_and_availability_1734552285981700">
+<h3>Reliability and availability</h3>
+
+<p>It is <a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="reliability and">&nbsp;</a>important to note that reliability and availability are not mutually exclusive. A system can be both reliable and available, or it can be neither. A system that is reliable but not available is not particularly useful since it may be reliable but not able to perform its intended function when needed. A system that is available but not reliable is also not useful since it may be able to perform its intended function when needed, but it may not do so consistently or without failure.</p>
+
+<p>To achieve high reliability and availability to meet agreed<a contenteditable="false" data-type="indexterm" data-primary="service-level objectives (SLOs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SLOs (service-level objectives)">&nbsp;</a> service-level objectives (SLOs), it is important to design and maintain systems with redundant components and robust failover mechanisms. Performing maintenance and testing regularly also ensures that the system is operating at its optimal level of performance. In general, the reliability of a system is an important consideration in system design because it can affect the performance and availability of the system over time.</p>
+
+<div data-type="note">
+<p>SLOs and goals, including change management, problem management, and service request management, of AWS Managed Services (which will be introduced in <a href="#part2" data-type="xref">#part2</a>) are provided <a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="reliability" data-startref="sysdesign-concept-reliable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="reliability" data-startref="reliable">&nbsp;</a>in the <a href="https://oreil.ly/oex3G">AWS documentation</a>.</p>
+</div>
+</section>
+</section>
+
+<section data-type="sect2" id="ch01_scalability_1734552285981791">
+<h2>Scalability</h2>
+
+<p>In <a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="scalability" id="sysdesign-concept-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scalability" id="scale">&nbsp;</a>system design, we need to ensure that the performance of the system increases with the resources added based on the increasing workload, which can be either request workload or data storage workload. This is referred to as <em>scalability</em> in system design, which requires the system to respond to increased demand and load. For example, a social network needs to scale with the increasing number of users as well as the content feed on the platform that it indexes and serves.</p>
+
+<p>The two major complementary patterns to scale a system are vertical scaling and horizontal scaling:</p>
+
+<dl>
+	<dt>Vertical scaling</dt>
+	<dd>
+	<p>Vertical scaling <a contenteditable="false" data-type="indexterm" data-primary="scalability" data-secondary="vertical scaling">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="vertical scaling">&nbsp;</a>involves meeting the load requirements of the system by increasing the capacity of a single server by upgrading it with more resources (CPU, RAM, graphics processing units, storage, etc.), as shown on the left in <a data-type="xref" href="#ch01_figure_6_1734552285950724">#ch01_figure_6_1734552285950724</a>. Vertical scaling is useful when dealing with predictable traffic since it allows for more resources to be used to handle the existing demand. However, there are limitations to how much a single server can scale up based on its current configuration. The cost of scaling up is also generally high as adding more higher-end resources to the existing server will require a greater investment.</p>
+	</dd>
+	<dt>Horizontal scaling</dt>
+	<dd>
+	<p>Horizontal scaling <a contenteditable="false" data-type="indexterm" data-primary="scalability" data-secondary="horizontal scaling">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="horizontal scaling">&nbsp;</a>involves meeting the load requirements of the system by increasing the number of the servers by adding more commodity servers to serve the requests, as shown on the right in <a data-type="xref" href="#ch01_figure_6_1734552285950724">#ch01_figure_6_1734552285950724</a>. Horizontal scaling is useful when dealing with unpredictable traffic because there is increased capacity to handle more requests, and if demand arises, more servers can be added to the pool cost-effectively. Although horizontal scaling provides a better cost proposition for scaling, the complexity of managing multiple servers and ensuring that they work collectively as an abstracted single server to handle the workload is the catch here.</p>
+	</dd>
+</dl>
+
+<figure id="ch01_figure_6_1734552285950724"><img src="images/sdoa_0106.png" />
+<figcaption>Vertical scaling versus horizontal scaling</figcaption>
+</figure>
+
+<div data-type="note">
+<p>We will cover both scaling approaches and mechanisms in detail in <a data-type="xref" href="#ch05_load_balancing_approaches_and_techniques_1734552287463010">#ch05_load_balancing_approaches_and_techniques_1734552287463010</a>.</p>
+</div>
+
+<p>In early-stage systems, you can start scaling up by vertically scaling the system and adding better configurations to it. Later, when you hit the limitation in scaling up, you can move to horizontally scaling the<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="scalability" data-startref="sysdesign-concept-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scalability" data-startref="scale">&nbsp;</a> system.</p>
+</section>
+
+<section data-type="sect2" id="ch01_maintainability_1734552285981862">
+<h2>Maintainability</h2>
+
+<p>In <a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="maintainability">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="maintainability">&nbsp;</a>system design, <em>maintainability</em> is the system’s ability to be modified, adapted, or extended to meet the changing needs of its users while ensuring smooth operations. For a software system to be maintainable, it must be designed to be flexible and easy to modify or extend. Maintainability involves these three underlying aspects of the system:</p>
+
+<dl>
+	<dt>Operability</dt>
+	<dd>
+	<p>This<a contenteditable="false" data-type="indexterm" data-primary="operability">&nbsp;</a> requires the system to operate smoothly under normal conditions and even return to normal operations within a stipulated time after a fault. When a system is maintainable in terms of operability, that reduces the time and effort required to keep the system running smoothly. This is important because efficient operations and management contribute to overall system stability, reliability, and availability.</p>
+	</dd>
+	<dt>Lucidity</dt>
+	<dd>
+	<p>This requires <a contenteditable="false" data-type="indexterm" data-primary="lucidity">&nbsp;</a>the system to be simple and clear to understand, to extend by adding features, and even to fix bugs. When a system is lucid, that enables efficient collaboration among team members, simplifies debugging and maintenance tasks, and facilitates knowledge transfer. It also reduces the risk of introducing errors during modifications or updates.</p>
+	</dd>
+	<dt>Modifiability</dt>
+	<dd>
+	<p>This <a contenteditable="false" data-type="indexterm" data-primary="modifiability">&nbsp;</a>requires the system to be built in a modular way to allow it to be changed and extended easily, without disrupting the functionality of other subsystems. Modifiability is vital because software systems need to evolve to adapt to new business needs, technological advancements, or user feedback. A system that lacks modifiability can become stagnant, resistant to change, and difficult to enhance or adapt to future demands.</p>
+	</dd>
+</dl>
+
+<p>By prioritizing maintainability, organizations can reduce downtime, lower maintenance costs, enhance productivity, and increase the longevity and value of their software systems.</p>
+</section>
+
+<section data-type="sect2" id="ch01_fault_tolerance_1734552285981937">
+<h2>Fault Tolerance</h2>
+
+<p>Large-scale <a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="fault tolerance" id="sysdesign-concept-fault">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="fault tolerance" id="fault-tolerance">&nbsp;</a>systems generally employ a large number of servers and storage devices to handle and respond to user requests and store data. <em>Fault tolerance</em> requires the system to recover from any failure (either hardware or software failure) and continue to serve the requests. This means avoiding single points of failure in a large system and being able to reroute requests to functioning subsystems to complete the workload.</p>
+
+<p>Fault tolerance needs to be supported at hardware as well as software levels while ensuring data safety—that is, making sure the data is not lost. The two major mechanisms to ensure data safety are replication and checkpointing.</p>
+
+<section data-type="sect3" id="ch01_replication_1734552285982009">
+<h3>Replication</h3>
+
+<p>Replication-based <a contenteditable="false" data-type="indexterm" data-primary="replication-based fault tolerance">&nbsp;</a>fault tolerance ensures both data safety and serving the request by replicating the service through multiple replica servers and replicating the data as multiple copies across multiple storage servers. During a failure, the failed node is swapped with a fully functioning replica node. Similarly, data is served again from a replica store in case the data store has failed. We discussed replication patterns in <a data-type="xref" href="#ch01_availability_1734552285980801">ch01_availability_1734552285980801</a>.</p>
+</section>
+
+<section data-type="sect3" id="ch01_checkpointing_1734552285982079">
+<h3>Checkpointing</h3>
+
+<p>Checkpointing-based fault tolerance<a contenteditable="false" data-type="indexterm" data-primary="checkpointing" id="checkpoint">&nbsp;</a> ensures that data is reliably stored and backed up, even after the initial processing is completed. It allows for a system to recover from any potential data loss by restoring a previous system state and preventing data loss. Checkpointing is commonly used to ensure system and data integrity, especially when dealing with large datasets. It can also be used to verify that data is not corrupted or missing because it can quickly detect any changes or issues in the data and then take corrective measures. Checkpointing is an important tool for data integrity, reliability, and security.</p>
+
+<div data-type="note">
+<p>Recovery managers of databases use checkpointing to ensure the durability and reliability of the database in the event of failures or crashes. This will be covered in detail in <a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>.</p>
+</div>
+
+<p>Checkpointing can be done using either synchronous or asynchronous mechanisms:</p>
+
+<dl>
+	<dt>Synchronous checkpointing</dt>
+	<dd>
+	<p>Synchronous checkpointing<a contenteditable="false" data-type="indexterm" data-primary="synchronous checkpointing">&nbsp;</a> in a system is achieved by stopping all the data mutation requests and allowing only read requests while waiting for the checkpointing process to complete for the current data mutation. This always ensures a consistent data state across all the nodes.</p>
+	</dd>
+	<dt>Asynchronous checkpointing</dt>
+	<dd>
+	<p>Asynchronous checkpointing<a contenteditable="false" data-type="indexterm" data-primary="asynchronous checkpointing">&nbsp;</a> in a system is done by checkpointing asynchronously on all the nodes while continuing to serve all the requests (including data mutation requests) without waiting for the acknowledgment of the checkpointing process to complete. This mechanism suffers from the possibility of having an inconsistent data state across the servers.</p>
+	</dd>
+</dl>
+
+<p>In checkpointing-based fault tolerance, recovery time objective (RTO) and recovery point objective (RPO) are key metrics that help define the effectiveness of data recovery and system reliability:</p>
+
+<dl>
+	<dt>Recovery point objective</dt>
+	<dd>
+	<p>RPO <a contenteditable="false" data-type="indexterm" data-primary="recovery point objective (RPO)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RPO (recovery point objective)">&nbsp;</a>defines the maximum acceptable amount of data loss measured in time. It represents how much data a system can afford to lose before that significantly affects operations. In checkpointing, RPO determines how frequently checkpoints should be created. For instance, if the RPO is set to 15 minutes, the system should take a checkpoint every 15 minutes to ensure that no more than 15 minutes’ worth of data is lost during recovery. A smaller RPO (more frequent checkpoints) provides better data protection but can increase system load and storage requirements. For large datasets, achieving a low RPO requires efficient data storage and fast checkpointing.</p>
+	</dd>
+	<dt>Recovery time objective</dt>
+	<dd>
+	<p>RTO <a contenteditable="false" data-type="indexterm" data-primary="recovery time objective (RTO)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RTO (recovery time objective)">&nbsp;</a>specifies the maximum acceptable downtime following a failure, indicating how quickly the system should be restored to operational status. Checkpointing helps reduce RTO by allowing the system to resume from the most recent checkpoint rather than restarting from scratch. Faster recovery time is critical when handling large datasets or processing real-time data, where any downtime can impact users or services. The effectiveness of checkpointing on RTO depends on the ease of restoring data from the checkpoint and the system’s ability to resume operations quickly without extensive <a contenteditable="false" data-type="indexterm" data-primary="checkpointing" data-startref="checkpoint">&nbsp;</a>reprocessing.</p>
+	</dd>
+</dl>
+
+<p>You should now understand the basic concepts and requirements of a large-scale system. We strive toward building a performant and scalable system—one that is also highly available, reliable, maintainable, and fault tolerant. Before getting into how to build such systems, let’s go through the inherent fallacies as well as the trade-offs in <a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="fault tolerance" data-startref="sysdesign-concept-fault">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="fault tolerance" data-startref="fault-tolerance">&nbsp;</a>designing them.</p>
+</section>
+</section>
+</section>
+
+<section data-type="sect1" id="ch01_fallacies_of_distributed_computing_1734552285982155">
+<h1>Fallacies of Distributed Computing</h1>
+
+<p>Because <a contenteditable="false" data-type="indexterm" data-primary="distributed systems" data-secondary="fallacies of" id="distributed-system-fallacy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="fallacies of distributed systems" id="sysdesign-fallacy">&nbsp;</a>a large-scale software system involves multiple distributed systems, it is often subject to certain fallacies that can lead to incorrect assumptions and implementations. <a href="https://oreil.ly/Byb-U">These fallacies</a> were introduced by <a href="https://oreil.ly/rKk8M">L. Peter Deutsch</a>. They cover the false assumptions that software developers commonly make when implementing distributed systems. The eight fallacies are as follows:</p>
+
+<dl>
+	<dt>Reliable network</dt>
+	<dd>
+	<p>The <a contenteditable="false" data-type="indexterm" data-primary="reliable network fallacy">&nbsp;</a>first fallacy is assuming that “the network is reliable.” Networks are complex, dynamic, and often unpredictable. Small issues like switch or power failures can bring the entire network of a data center down, making the network unreliable. Thus, it is important to account for the potential of an unreliable network when designing large-scale systems, ensuring network fault tolerance from the start. Given that networks are inherently unreliable, to build reliable services on top we must rely on protocols that can cope with network outages and packet loss.</p>
+	</dd>
+	<dt>Zero latency</dt>
+	<dd>
+	<p>The <a contenteditable="false" data-type="indexterm" data-primary="zero latency fallacy">&nbsp;</a>second fallacy is assuming that “latency is zero.” Latency is an inherent limitation of networks, constrained by the speed of light—that is, even in theoretically perfect systems, the data can’t transfer between the nodes faster than the speed of light. To account for latency, the system should be designed to bring clients close to the data through edge computing and even by choosing the servers in geographic data centers nearer to the clients and routing the traffic wisely.</p>
+	</dd>
+	<dt>Infinite bandwidth</dt>
+	<dd>
+	<p>The <a contenteditable="false" data-type="indexterm" data-primary="infinite bandwidth fallacy">&nbsp;</a>third fallacy is assuming that “bandwidth is infinite.” When a high volume of data is flowing through the network, there is always network resource contention, leading to queuing delays, bottlenecks, packet drops, and network congestion. To account for finite bandwidth, build the system using lightweight data formats for the data in transit that will preserve the network bandwidth and avoid network congestion.</p>
+	</dd>
+	<dt>Secure network</dt>
+	<dd>
+	<p>The <a contenteditable="false" data-type="indexterm" data-primary="secure network fallacy">&nbsp;</a>fourth fallacy is assuming that “the network is secure.” Assuming a network is always secure when there are multiple ways it can be compromised (including software bugs, OS vulnerabilities, viruses and malware, cross-site scripting, unencrypted communication, malicious middle actors, etc.) can lead to system compromise and failure. To account for insecure networks, build systems with a security-first mindset and perform defense testing and threat modeling on the built system.</p>
+	</dd>
+	<dt>Fixed topology</dt>
+	<dd>
+	<p>The <a contenteditable="false" data-type="indexterm" data-primary="fixed topology fallacy">&nbsp;</a>fifth fallacy is assuming that “topology doesn’t change.” In distributed systems, the topology changes continuously because of node failures or node additions. Building a system that assumes a fixed topology will lead to system issues and failures due to latency and bandwidth constraints. Hence, the underlying topology must be abstracted out, and the system must be built oblivious to the underlying topology and tolerant to its changes.</p>
+	</dd>
+	<dt>Single administrator</dt>
+	<dd>
+	<p>The <a contenteditable="false" data-type="indexterm" data-primary="single administrator fallacy">&nbsp;</a>sixth fallacy is assuming that “there is one administrator.” This can be a fair assumption in a very small system like a personal project, but this assumption breaks down in large-scale distributed computing, where multiple systems have separate OS, separate teams working on them, and thus, multiple administrators. To account for this, the system should be built in a decoupled manner, ensuring that repair and troubleshooting become easy and distributed, too.</p>
+	</dd>
+	<dt>Zero transport cost</dt>
+	<dd>
+	<p>The <a contenteditable="false" data-type="indexterm" data-primary="zero transport cost fallacy">&nbsp;</a>seventh fallacy is assuming that “transport cost is zero.” Network infrastructure has costs, including the costs of network servers, switches, routers, other hardware, the OS of that hardware, and the team cost to keep it all running smoothly. Thus, the assumption that the cost of transporting data from one node to another is negligible is false and must consequently be noted in budgets to avoid vast shortfalls.</p>
+	</dd>
+	<dt>Homogeneous network</dt>
+	<dd>
+	<p>The <a contenteditable="false" data-type="indexterm" data-primary="homogeneous network fallacy">&nbsp;</a>eighth fallacy is assuming that “the network is homogeneous.” A network is built with multiple devices with different configurations and using multiple protocols at different layers. Taking into consideration the heterogeneity of the network as well as focusing on the interoperability of the system (i.e., ensuring that subsystems can communicate and work together despite having such differences) will help to avoid this pitfall.</p>
+	</dd>
+</dl>
+
+<div data-type="note">
+<p>The <a href="https://oreil.ly/_4X-y">AWS Well-Architected Framework</a> consists<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="AWS Well-Architected Framework">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Well-Architected Framework (AWS)">&nbsp;</a> of six core pillars that provide guidance and best practices for designing and building systems on the AWS cloud to avoid these fallacies and pitfalls. The Operational Excellence pillar avoids the fallacy of single administrator and homogeneous network. The Security pillar avoids the secure-network fallacy. The Reliability pillar avoids the fallacy of a reliable network and fixed topology. The Performance Efficiency pillar avoids the fallacy of zero latency and infinite bandwidth. The Cost Optimization and Sustainability pillars avoid the fallacy of zero transport cost. We won't cover the Well-Architected Framework in detail here.</p>
+</div>
+
+<p>These fallacies cover the basic assumptions we should avoid when building large-scale systems. Overall, neglecting the fallacies of distributed computing can lead to a range of issues, including system failures, performance bottlenecks, data inconsistencies, security vulnerabilities, scalability challenges, and increased complexity of system administration. It is important to acknowledge and account for these fallacies during the design and implementation of distributed systems to ensure their robustness, reliability, and effective operation in real-world <a contenteditable="false" data-type="indexterm" data-primary="distributed systems" data-secondary="fallacies of" data-startref="distributed-system-fallacy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="fallacies of distributed systems" data-startref="sysdesign-fallacy">&nbsp;</a>environments.</p>
+
+<p>Now, let’s go through the trade-offs that are generally encountered when designing large-scale software systems.</p>
+</section>
+
+<section data-type="sect1" id="ch01_system_design_trade_offs_1734552285982236">
+<h1>System Design Trade-offs</h1>
+
+<p>System design<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="trade-offs" id="sysdesign-tradeoff">&nbsp;</a> involves making a number of trade-offs that can have a significant impact on the performance and usability of a system. When designing a system, you must consider factors like cost, scalability, reliability, maintainability, and robustness. These factors must be balanced to create a system that is optimized for the particular needs of the user. Ultimately, the goal is to create a system that meets user needs without sacrificing any of these important factors.</p>
+
+<p>For example, if a system needs to be highly reliable but also have scalability, then you need to consider the trade-offs between cost and robustness. A system with a high level of reliability may require more expensive components, but these components may also be robust and allow for scalability in the future. On the other hand, if cost is a priority, then you may have to sacrifice robustness or scalability to keep the system within budget.</p>
+
+<p>Trade-offs in addition to cost and scalability must be taken into account when designing a system. Performance, security, maintainability, and usability are all important considerations that must be weighed. In this section, we will discuss some theoretical trade-offs that arise in system design.</p>
+
+<section data-type="sect2" id="ch01_time_versus_space_1734552285982313">
+<h2>Time Versus Space</h2>
+
+<p>Time-space <a contenteditable="false" data-type="indexterm" data-primary="time-space trade-offs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="storage capacity" data-secondary="time-space trade-offs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="memory capacity, time-space trade-offs">&nbsp;</a>trade-offs or time-memory trade-offs arise inherently in implementing algorithms in computer science for the workload, even in distributed systems. These trade-offs are necessary because system designers need to consider the time limitations of the algorithms and sometimes use extra memory or storage to make sure everything works optimally. One example of such a trade-off is using look-up tables in memory or data storage instead of performing recalculations and thus serving more requests by just looking up precalculated values.</p>
+</section>
+
+<section data-type="sect2" id="ch01_latency_versus_throughput_1734552285982387">
+<h2>Latency Versus Throughput</h2>
+
+<p>Another <a contenteditable="false" data-type="indexterm" data-primary="latency" data-secondary="throughput versus" id="latency-throughput">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="throughput" data-secondary="latency versus" id="throughput-latency">&nbsp;</a>trade-off that arises inherently in system design is latency versus throughput. Before diving into the trade-off, let’s make sure you understand these concepts.</p>
+
+<section data-type="sect3" id="ch01_latency_processing_time_and_response_time_1734552285982463">
+<h3>Latency, processing time, and response time</h3>
+
+<p><em>Latency</em> is the time that a request waits to be handled. <em>Processing time</em>, <a contenteditable="false" data-type="indexterm" data-primary="processing time">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="response time">&nbsp;</a>on the other hand, is the time taken by the system to process the request once it is picked up. Hence, the overall response time is the duration between the request that was sent and the corresponding response that was received, accounting for network and server latencies. Mathematically, it can be represented by the following formula:</p>
+
+<div data-type="equation">
+<p>Response Time = Latency + Processing Time</p>
+</div>
+</section>
+
+<section data-type="sect3" id="ch01_throughput_and_bandwidth_1734552285982536">
+<h3>Throughput and bandwidth</h3>
+
+<p>Throughput <a contenteditable="false" data-type="indexterm" data-primary="bandwidth">&nbsp;</a>and bandwidth are metrics of network data capacity and are used to account for network scalability and load. <em>Bandwidth</em> refers to the maximum amount of data that could theoretically travel from one point in the network to another in a given time. <em>Throughput</em> refers to the actual amount of data transmitted and processed throughout the network. Thus, bandwidth describes the theoretical limit, and throughput provides the empirical metric. The throughput is always lower than the bandwidth unless the network is operating at its maximum efficiency.</p>
+
+<p>Bandwidth is a limited resource because each network device can handle and process only a limited capacity of data before passing it to the next network device, and some devices consume more bandwidth than others. Insufficient bandwidth can lead to network congestion, which slows connectivity.</p>
+
+<p>Since latency measures how long the packets take to reach the destination in a network, while throughput measures how many packets are processed within a specified period of time, they have an inverse relationship. Higher latency causes packets to queue up in the network, slowing packet processing and ultimately reducing throughput.</p>
+
+<p>Because the system is being gauged for lower latency under high throughput or load, the metric to capture latency is through percentiles, such as p50, p90, p99, and so on. For example, the p90 latency is the highest latency value (slowest response) of the fastest 90% of requests. In other words, 90% of requests have responses that are equal to or faster than the p90 latency value. Note that average latency of a workload is not used as a metric because averages as point estimates are susceptible to outliers.</p>
+
+<p>Because of the latency versus throughput trade-off, the latency will also increase as the load is increased on the system for higher throughput. Hence, systems should be designed with an aim for maximal throughput within <a contenteditable="false" data-type="indexterm" data-primary="latency" data-secondary="throughput versus" data-startref="latency-throughput">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="throughput" data-secondary="latency versus" data-startref="throughput-latency">&nbsp;</a>acceptable latency.</p>
+</section>
+</section>
+
+<section data-type="sect2" id="ch01_performance_versus_scalability_1734552285982608">
+<h2>Performance Versus Scalability</h2>
+
+<p>As <a contenteditable="false" data-type="indexterm" data-primary="scalability" data-secondary="performance versus">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="performance" data-secondary="scalability versus">&nbsp;</a>discussed in <a data-type="xref" href="#ch01_scalability_1734552285981791">#ch01_scalability_1734552285981791</a>, <em>scalability</em> is the system’s ability to respond to increased demand and load. On the other hand, <em>performance</em> is how fast the system responds to a single request. A service is scalable if it results in increased performance in a manner proportional to resources added. When a system has performance problems, it is slow for a single user (p50 latency = 100 ms), but when the system has scalability problems, the system may be fast for some users (p50 latency = 1 ms for one hundred requests) but slow under heavy load for the users (p50 latency = 100 ms under one hundred thousand requests).</p>
+</section>
+
+<section data-type="sect2" id="ch01_consistency_versus_availability_1734552285982683">
+<h2>Consistency Versus Availability</h2>
+
+<p><em>Strong consistency</em> in <a contenteditable="false" data-type="indexterm" data-primary="strong consistency">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="high availability">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="consistency" data-secondary="availability versus" id="consistent-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="consistency versus" id="available-consistent">&nbsp;</a>data storage and retrieval is the guarantee that every read receives the most recent write, while <em>high availability</em> is the requirement of the system to always provide a nonerror response to the request. In a distributed system where the network fails (i.e., packets get dropped or delayed due to the fallacies of distributed computing leading to partitions), there emerges an inherent trade-off between strong consistency and high availability. This trade-off is <a contenteditable="false" data-type="indexterm" data-primary="CAP theorem" id="cap-theorem">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Brewer’s theorem" data-see="CAP theorem">&nbsp;</a>called the <em>CAP theorem</em>, also known as <em>Brewer's theorem</em>.</p>
+
+<section data-type="sect3" id="ch01_cap_theorem_1734552285982775">
+<h3>CAP theorem</h3>
+
+<p>The CAP theorem, illustrated as a Venn diagram in <a data-type="xref" href="#ch01_figure_7_1734552285950752">#ch01_figure_7_1734552285950752</a>, states that it is impossible for a distributed system to simultaneously provide all three of the following guarantees: consistency (C), availability (A), and partition tolerance (P). According to the theorem, a distributed system can provide at most two of these guarantees at any given time. Systems need to be designed to handle network partitions because networks aren’t reliable, and hence, partition tolerance needs to be built in. So the CAP theorem implies that in the presence of a network partition, one has to choose between consistency and availability.</p>
+
+<figure id="ch01_figure_7_1734552285950752"><img src="images/sdoa_0107.png" />
+<figcaption>CAP theorem Venn diagram</figcaption>
+</figure>
+
+<p>However, the CAP theorem is frequently misunderstood to mean that one has to choose to abandon one of the three guarantees at all times. In fact, the choice is really between consistency and availability only when a network partition or failure happens; at all other times, the trade-off has to be made based on the PACELC theorem.</p>
+</section>
+
+<section data-type="sect3" id="ch01_pacelc_theorem_1734552285982851">
+<h3>PACELC theorem</h3>
+
+<p>The <a contenteditable="false" data-type="indexterm" data-primary="PACELC theorem">&nbsp;</a>PACELC theorem, illustrated as a decision flowchart in <a data-type="xref" href="#ch01_figure_8_1734552285950777">#ch01_figure_8_1734552285950777</a>, is a more nuanced version of the CAP theorem. It states that in the case of network partitioning (P) in a distributed computer system, one must choose between availability (A) and consistency (C) as per the CAP theorem, but otherwise (E), even when the system is running normally in the absence of partitions, one has to choose between latency (L) and consistency (C). This trade-off arises naturally because to handle network partitions, data and services are replicated in large-scale systems, leading to the choice between the consistency spectrum and the corresponding latency.</p>
+
+<figure id="ch01_figure_8_1734552285950777"><img alt="A diagram of a hard work flow
+
+Description automatically generated" src="images/sdoa_0108.png" />
+<figcaption>PACELC theorem decision flowchart</figcaption>
+</figure>
+
+<p>If the system tries to provide for strong consistency at one end of the consistency spectrum model, it has to do replication with synchronous communication and blocking to ensure that all the read replicas receive the most recent write, waiting on the acknowledgment from all the replica nodes, which adds to high latency. On the other hand, if the system does asynchronous replication without waiting for acknowledgment from all nodes, it will end up providing eventual consistency (i.e., the read request will eventually reflect the last recent write) when the replica node has acknowledged the data mutation change for serving the requests.</p>
+
+<p>The CAP and PACELC theorems are important concepts in distributed systems design that provide a framework for understanding the trade-offs involved in designing highly available and strongly consistent systems.</p>
+
+<div data-type="note">
+<p>We will cover how nonrelational stores navigate the <a contenteditable="false" data-type="indexterm" data-primary="CAP theorem" data-startref="cap-theorem">&nbsp;</a>CAP theorem trade-off by discussing BASE properties in detail in <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a>.</p>
+</div>
+
+<p>Given such requirements, fallacies, and trade-offs in system design, to avoid repeating mistakes of the past, we should adhere to a set of guidelines that the <a contenteditable="false" data-type="indexterm" data-primary="consistency" data-secondary="availability versus" data-startref="consistent-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="consistency versus" data-startref="available-consistent">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="trade-offs" data-startref="sysdesign-tradeoff">&nbsp;</a>previous generation of software design practitioners learned. Let’s dig into those now.</p>
+</section>
+</section>
+</section>
+
+<section class="pagebreak-before" data-type="sect1" id="ch01_system_design_guidelines_1734552285982930">
+<h1 class="less_space">System Design Guidelines</h1>
+
+<p>System design<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="guidelines" id="sysdesign-guideline">&nbsp;</a> will always present the most interesting and challenging trade-offs, and a system designer should be aware of the hidden costs and be well equipped to get it right—though not perfect! These guidelines, which have emerged over years of practicing system design, help us avoid pitfalls and handle trade-offs when designing large-scale systems. These guidelines aren’t just vague generalities but rather virtues that help us reflect on why the system was designed and implemented the way it was and why that was the right thing to do.</p>
+
+<section data-type="sect2" id="ch01_guideline_of_isolation_build_it_modularly_1734552285983011">
+<h2>Guideline of Isolation: Build It Modularly</h2>
+
+<blockquote data-type="epigraph">
+<p>Controlling complexity is the essence of computer programming.</p>
+
+<p data-type="attribution">Brian Kernighan</p>
+</blockquote>
+
+<p>The first <a contenteditable="false" data-type="indexterm" data-primary="modular systems">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="isolation">&nbsp;</a>guideline is to build the system modularly—that is, break a complex system down into smaller, independent components or modules that can function independently yet also work together to form the larger system. Building a large-scale system modularly helps improve all its requirements:</p>
+
+<dl>
+	<dt>Maintainability</dt>
+	<dd>
+	<p>Modules can be updated or replaced individually without affecting the rest of the system.</p>
+	</dd>
+	<dt>Reusability</dt>
+	<dd>
+	<p>Modules can be reused in different systems or projects, reducing the amount of new development required.</p>
+	</dd>
+	<dt>Scalability</dt>
+	<dd>
+	<p>Modules can be added or removed and even scaled independently as needed to accommodate changes in requirements or to support growth.</p>
+	</dd>
+	<dt>Reliability</dt>
+	<dd>
+	<p>Modules can be tested and validated independently, reducing the risk of system-wide failures.</p>
+	</dd>
+</dl>
+
+<p>Modular systems can be implemented in a variety of ways, including through the use of microservice architecture, component-based development, and modular programming, which we will cover in more detail in <a data-type="xref" href="#ch07_containerization_orchestration_and_deployments_1734552288630240">#ch07_containerization_orchestration_and_deployments_1734552288630240</a>. However, designing modular systems can be challenging as it requires careful consideration of the interfaces between modules, data sharing and flow, and dependencies.</p>
+</section>
+
+<section class="pagebreak-before" data-type="sect2" id="ch01_guideline_of_simplicity_keep_it_simple_silly_1734552285983088">
+<h2 class="less_space">Guideline of Simplicity: Keep It Simple, Silly</h2>
+
+<blockquote data-type="epigraph">
+<p>Everything should be made as simple as possible, but no simpler.</p>
+
+<p data-type="attribution">attributed to Albert Einstein</p>
+</blockquote>
+
+<p>The <a contenteditable="false" data-type="indexterm" data-primary="simplicity">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="KISS (Keep It Simple, Silly)">&nbsp;</a>second guideline is to keep the design simple by avoiding complex and unnecessary features and overengineering. To build simple systems using the KISS (Keep It Simple, Silly) guideline, designers can follow these principles:</p>
+
+<dl>
+	<dt>Identify the core requirements</dt>
+	<dd>
+	<p>Determine the essential features and functions the system must have and prioritize them.</p>
+	</dd>
+	<dt>Minimize the number of components</dt>
+	<dd>
+	<p>Reduce the number of components or modules in the system, making sure each component serves a specific purpose.</p>
+	</dd>
+	<dt>Avoid overengineering</dt>
+	<dd>
+	<p>Don’t add unnecessary complexity to the system, such as features that are not necessary for its functioning.</p>
+	</dd>
+	<dt>Make the system easy to use</dt>
+	<dd>
+	<p>Ensure that the system is intuitive and straightforward for users to use and understand.</p>
+	</dd>
+	<dt>Test and refine</dt>
+	<dd>
+	<p>Test the system to ensure that it works as intended, and make changes to simplify the system if necessary.</p>
+	</dd>
+</dl>
+
+<p>By following the KISS guideline, you as a system designer can build simple, efficient, and effective systems that are easier to maintain and less prone to failure.</p>
+</section>
+
+<section data-type="sect2" id="ch01_guideline_of_performance_metrics_don_t_lie_1734552285983169">
+<h2>Guideline of Performance: Metrics Don’t Lie</h2>
+
+<blockquote data-type="epigraph">
+<p>Performance problems cannot be solved only through the use of Zen meditation.</p>
+
+<p data-type="attribution">Jeffrey C. Mogul</p>
+</blockquote>
+
+<p>The<a contenteditable="false" data-type="indexterm" data-primary="performance" data-secondary="measuring" id="performance-measure">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="measuring" data-secondary="performance" id="measure-performance">&nbsp;</a> third guideline is to measure, then build, and rely on the metrics since you can’t cheat the performance and scalability. Metrics and observability are crucial for understanding the behavior and performance of large-scale systems and for identifying potential issues before they become problems.</p>
+
+<p><em>Metrics</em> are <a contenteditable="false" data-type="indexterm" data-primary="metrics">&nbsp;</a>quantitative measures that are used to assess the performance of a system. They provide a way to track key performance indicators, such as resource utilization, response times, and error rates, and to identify trends and patterns in system behavior. By monitoring metrics, engineers can detect performance bottlenecks and anomalies and take corrective actions to improve the overall performance and reliability of the system.</p>
+
+<p><em>Observability</em> refers to<a contenteditable="false" data-type="indexterm" data-primary="observability">&nbsp;</a> the degree to which the state of a system can be inferred from its externally visible outputs. This includes being able to monitor system health and diagnose problems in real time. Observability is important in large-scale systems because it provides a way to monitor the behavior of complex systems and detect issues that may be affecting their performance.</p>
+
+<p>Together, metrics and observability provide the information needed to make informed decisions about the operation and management of large-scale systems. By ensuring that systems are properly instrumented with metrics and that observability is designed into the system, you can detect and resolve issues more quickly, prevent outages, and improve the system’s overall performance <a contenteditable="false" data-type="indexterm" data-primary="performance" data-secondary="measuring" data-startref="performance-measure">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="measuring" data-secondary="performance" data-startref="measure-performance">&nbsp;</a>and reliability.</p>
+</section>
+
+<section data-type="sect2" id="ch01_guideline_of_trade_offs_there_is_no_such_thing_as_1734552285983248">
+<h2>Guideline of Trade-offs: There Is No Such Thing as a Free Lunch</h2>
+
+<blockquote data-type="epigraph">
+<p>Get it right. Neither abstraction nor simplicity is a substitute for getting it right.</p>
+
+<p data-type="attribution">Butler Lampson</p>
+</blockquote>
+
+<p>The <a contenteditable="false" data-type="indexterm" data-primary="“there is no such thing as a free lunch”" data-primary-sortas="there is no such thing">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="trade-offs guideline">&nbsp;</a>fourth guideline is “there is no such thing as a free lunch” (TINSTAAFL), or the realization that all decisions come with trade-offs and that optimizing for one aspect of a system often comes at the expense of others. There are always trade-offs and compromises that must be made when designing a system. For example, choosing a highly optimized solution for a specific problem might result in reduced maintainability or increased complexity. Conversely, opting for a simple solution might result in lower performance or increased latency.</p>
+
+<p>The TINSTAAFL guideline highlights the need for careful consideration and balancing of competing factors in system design, such as performance, scalability, reliability, maintainability, and cost. Designers must weigh the trade-offs between these factors and make informed decisions that meet the specific requirements and constraints of each project. Ultimately, you need to realize that there is no single solution that is optimal in all situations and that, to build the right system, you as the system designer must carefully consider the trade-offs and implications of your design decisions.</p>
+</section>
+
+<section data-type="sect2" id="ch01_guideline_of_use_cases_it_always_depends_1734552285983323">
+<h2>Guideline of Use Cases: It Always Depends</h2>
+
+<blockquote data-type="epigraph">
+<p>Not everything worth doing is worth doing well.</p>
+
+<p data-type="attribution">Tom West</p>
+</blockquote>
+
+<p>The <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="as system design guideline" data-secondary-sortas="system design guideline">&nbsp;</a>fifth guideline is <em>design always depends</em> because system design is a complex, multifaceted process that is influenced by a variety of factors, including requirements, user needs, technological constraints, cost, scalability, maintenance, and even regulations. By considering these and other factors, you can develop systems that meet the needs of the users, are feasible to implement, and are sustainable over time. Since there are many ways to design a system to solve a common problem, this guideline indicates a stronger underlying truth: there is no one “best” way to design the system. In other words, there is no silver bullet. Thus, we settle for something reasonable and hope<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="guidelines" data-startref="sysdesign-guideline">&nbsp;</a> it is good enough.</p>
+</section>
+</section>
+
+<section data-type="sect1" id="ch01_conclusion_1734552285983395">
+<h1>Conclusion</h1>
+
+<p>This chapter has given you a solid introduction to how we design software systems. We’ve talked about the main concepts underlying system design, the trade-offs we must make when dealing with big software systems, the fallacies to avoid in building such large-scale systems, and smart guidelines for avoiding such fallacies.</p>
+
+<p>Think of system design as like balancing on a seesaw: you must find the right equilibrium between different trade-offs. As an overall guideline, system design is always a trade-off between competing factors, and you as a system designer must carefully weigh these factors to create systems that are effective and efficient.</p>
+
+<p>In the rest of <a data-type="xref" href="#part1">#part1</a>, we’re going to explore the basic building blocks of systems. We’ll talk about important topics like where we store data, how we speed things up with caches, how we distribute work with load balancers, and how different parts of a system talk to one another through networking and orchestration.</p>
+
+<p>Once you’ve got a handle on those basics, we’ll dive into the world of AWS systems in <a data-type="xref" href="#part2">#part2</a>. This will help you understand how to make big and powerful systems using Amazon Web Services. All this knowledge will come together in <a data-type="xref" href="#part3">#part3</a>, where we’ll put everything into practice and learn how to design and build large-scale systems on AWS for specific use cases.</p>
+
+<p>Before we get there, our next stop is exploring different ways to store data and introducing you to relational databases.</p>
+</section>
+</section>

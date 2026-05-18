@@ -1,0 +1,470 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch13_big_data_analytics_and_machine_learning_services_1734552292002899">
+      <h1>大数据、分析与<span class='keep-together'>机器学习服务</span></h1>
+      <p>在信息技术领域，数据正以惊人的规模不断产生。这些数据可能只是在线外卖应用中所有注册用户的基本信息，也可能是应用实时捕获的用户行为数据。如此大规模产生的数据被称为<em>大数据</em>。若需要存储这些数据，可根据需求，利用我们在<a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a>中讨论的存储方案。本章重点介绍如何大规模处理数据。我们如何通过在现有存储数据或实时流数据上运行数据分析或机器学习模型来生成洞察？例如，我们可能希望根据地理位置确定最受欢迎的外卖菜品，或找出某一地区评分最高的餐厅。</p>
+      <p>本章第一部分将介绍 AWS 大数据、实时流处理和分析服务，包括 Amazon Elastic MapReduce（EMR）、AWS Glue、Amazon Athena、Amazon QuickSight 和 Amazon Redshift。第二部分将探讨如何在 AWS 云上运行机器学习工作负载，以及支持这些工作负载的各类服务。</p>
+      <section data-type="sect1" id="ch13_aws_big_data_and_analytics_1734552292003119">
+        <h1>AWS 大数据与分析</h1>
+        <p>信息<a contenteditable="false" data-type="indexterm" data-primary="analytics" data-see="big data analytics">&nbsp;</a>对于做出业务决策或更好地服务客户至关重要，但数据量正在快速增长，从 TB 级到 PB 级乃至更多。数据的种类也在增加——数据可呈现出任意形式。我们需要特定工具来存储和处理大数据。传统工具可能会成为瓶颈，因为我们不能再依赖单台机器进行数据处理。另一个挑战是数据产生的速度：我们需要工具能够近乎实时地处理数据并从中产生洞察，以发挥数据的最大价值。本节将介绍数据处理工具，如 Amazon EMR、AWS Glue、Amazon Athena 和 Amazon Redshift，以及商业智能服务 Amazon QuickSight。</p>
+        <section data-type="sect2" id="ch13_amazon_elastic_mapreduce_1734552292003220">
+          <h2>Amazon Elastic MapReduce</h2>
+          <p>在<a data-type="xref" href="#ch08_architectural_designs_and_patterns_1734552289324317">#ch08_architectural_designs_and_patterns_1734552289324317</a>中，我们<a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="EMR (Elastic MapReduce)" id="big-data-emr">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EMR (Elastic MapReduce)" id="emr">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic MapReduce (EMR)" id="elastic-mapreduce">&nbsp;</a>向大家介绍了大数据架构、其背后的多种概念，以及处理大数据的开源工具，如 Hadoop、MapReduce、Spark、Presto 和 HDFS。AWS 提供了直接构建于这些开源软件之上的托管服务，让您能够以零（或极低）运维开销轻松上手。Hadoop 开源软件因其在大数据处理方面的优势而广受欢迎；Amazon EMR 是一项托管服务，用于执行数据处理框架和工具，如 <a href="https://oreil.ly/fz6-c">MapReduce</a>、<a href="https://spark.apache.org">Apache Spark</a>、<a href="https://hive.apache.org">Apache Hive</a>、<a href="https://hbase.apache.org">Apache HBase</a> 和 <a href="https://prestodb.io">Presto</a>。</p>
+          <p>搭建和管理大规模集群需要时间和专业知识，但 EMR 通过提供托管服务简化了这一过程——您可以在几分钟内启动集群并运行大型数据处理工作负载。开源 Hadoop 集群默认使用 <a href="https://oreil.ly/3nV3d">HDFS</a> 进行数据存储。您也可以探索使用社区中的不同工具，将存储扩展到 Amazon S3。</p>
+          <p>HDFS 与<a contenteditable="false" data-type="indexterm" data-primary="HDFS (Hadoop Distributed File System)" id="HDFS">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Hadoop Distributed File System (HDFS)" id="hadoop-distr-fs">&nbsp;</a>本地磁盘紧密绑定，一旦集群终止，这些磁盘数据也将消失。由于我们的用例是处理大数据，存储需求会随时间增长，而由于 HDFS 与计算实例绑定，实例数量也会随之增加。在某些场景下，存储需求可能很高，但计算需求相对较低，这意味着我们在为计算付费，但并未充分利用计算资源。在这种情况下，<a href="https://oreil.ly/82GWO">EMR 文件系统（EMRFS）</a>可能是更好的解决方案。</p>
+          <section data-type="sect3" id="ch13_emrfs_1734552292003291">
+            <h3>EMRFS</h3>
+            <p>EMRFS<a contenteditable="false" data-type="indexterm" data-primary="EMRFS (EMR File System)" id="emrfs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="filesystems" data-secondary="EMRFS" id="filesystem-emrfs">&nbsp;</a>使用 Amazon S3 作为数据处理的文件系统，而非本地 HDFS，从本质上说，它是连接 EMR 集群与 S3 的桥梁。EMRFS 确保数据直接流式传输到 S3，并将 HDFS 用作中间存储。</p>
+            <p>在深入了解 EMRFS 之前，请注意它并非万能解决方案，不应将其视为 HDFS 的替代品。对于在同一数据集上进行迭代读取的作业，或 I/O 密集型工作负载（即需要频繁磁盘访问并跨网络检索数据的场景，这类操作可能带来较高延迟），HDFS 仍可能是更好的选择。您可以结合使用 S3 和 HDFS，通过利用 <a href="https://oreil.ly/fYJ97">S3DistCP</a> 等工具在 S3 和 HDFS 之间复制数据，来解决 HDFS 临时数据存储的局限性（集群终止后数据丢失）。</p>
+            <p>接下来，我们来看看 EMRFS 相较于传统 HDFS 的一些优势：</p>
+            <ul>
+              <li>
+                <p>在需要多个集群访问同一数据的场景中，由于 HDFS 与单个集群绑定而无法在集群间共享，您需要将数据从一个集群复制到另一个集群。使用 EMRFS 作为存储选项可以节省这部分成本。EMRFS 允许多个集群从同一位置访问数据，将计算与存储完全解耦，支持两者的独立弹性扩展。</p>
+              </li>
+              <li>
+                <p>您可能并不总是需要 EMR 集群持续运行。因此，您可以终止集群，存储数据保留在 S3 中，从而节省计算成本。</p>
+              </li>
+              <li>
+                <p>为了确保数据可用性，HDFS 根据副本因子在多个节点上复制数据。例如，副本因子为三时，存储成本将是原来的三倍。EMRFS 以 S3 为后端，因此您无需担心<a href="https://oreil.ly/JVPs6">数据持久性</a>，因为 S3 已经对此进行了处理。</p>
+              </li>
+            </ul>
+            <p>以上几点清晰地说明了 EMRFS 为何是值得考虑的存储工具。遵循与工具相关的最佳实践，才能将其价值发挥到极致。以下是使用 EMRFS 的一些建议：</p>
+            <ul>
+              <li>
+                <p>应对数据进行分区，使 EMR 集群仅获取处理所需的数据。这既能加快数据检索速度，又能降低成本。</p>
+              </li>
+              <li>
+                <p>应优化文件大小，避免文件数量过多或过少。开始使用 EMRFS 时，尽量避免小于 128 MB 的文件，因为这样可以减少对 S3 的调用次数以及 HDFS 请求次数。</p>
+              </li>
+              <li>
+                <p>我们还建议考虑数据压缩，以减少 S3 上存储空间的使用。这有助于从两个方面降低成本：存储成本和数据检索的网络成本。</p>
+              </li>
+              <li>
+                <p>数据访问模式会因用例而异。您可能只对所有列中的部分列感兴趣，或只对所有行中的部分行感兴趣。<a href="https://parquet.apache.org">Apache Parquet</a> 和 <a href="https://orc.apache.org">Apache ORC</a> 是列式文件格式，可为前一种用例提供更高的读取性能；而 <a href="https://oreil.ly/pSj-M">Apache Avro</a> 是一种行优化文件格式，适用于后一种用例。</p>
+              </li>
+            </ul>
+            <p>现在您已经充分了解了 EMRFS 作为存储选项的概念，让我们继续探索其他 EMR 特性和<a contenteditable="false" data-type="indexterm" data-primary="HDFS (Hadoop Distributed File System)" data-startref="HDFS">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Hadoop Distributed File System (HDFS)" data-startref="hadoop-distr-fs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EMRFS (EMR File System)" data-startref="emrfs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="filesystems" data-secondary="EMRFS" data-startref="filesystem-emrfs">&nbsp;</a>规格。</p>
+          </section>
+          <section data-type="sect3" id="ch13_emr_cluster_considerations_1734552292003356">
+            <h3>EMR 集群注意事项</h3>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="clusters" id="cluster-emr">&nbsp;</a>数据处理作业在一组服务器上运行，可根据工作负载需求选择实例类型。作为计算选项，您可以选择在 <a href="https://oreil.ly/fN_7O">EC2 实例</a>或 <a href="https://oreil.ly/eCRHT">EKS</a> 上运行 EMR 集群，也可以选择完全<a href="https://oreil.ly/zIhxj">无服务器</a>方式。</p>
+            <p>EMR 集群架构可以包含三种类型的节点，如图<a data-type="xref" href="#ch13_figure_1_1734552291986472">#ch13_figure_1_1734552291986472</a>所示：</p>
+            <dl>
+              <dt>主节点（Primary node）</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="primary nodes">&nbsp;</a>主节点是 EMR 集群中的核心节点。主节点使用 YARN 资源管理器服务进行应用程序资源管理，并运行 HDFS NameNode 服务，用于跟踪集群上提交的作业状态，以及监控实例组的健康状况。</p>
+              </dd>
+              <dt>核心节点（Core node）</dt>
+              <dd>
+                <p>核心节点<a contenteditable="false" data-type="indexterm" data-primary="core nodes">&nbsp;</a>运行用于 HDFS 数据存储的数据守护进程和用于在数据上执行计算任务的任务追踪守护进程。EMR 集群最多可以有一个核心<a href="https://oreil.ly/dMjJZ">实例组或实例队列</a>。</p>
+              </dd>
+              <dt>任务节点（Task node）</dt>
+              <dd>
+                <p>任务节点<a contenteditable="false" data-type="indexterm" data-primary="task nodes">&nbsp;</a>不提供数据存储功能——它们应作为 EMR 集群额外的计算能力来使用。EMR 默认确保任何作业的应用程序主进程运行在核心节点上，以确保在任务节点终止时（如 EC2 竞价实例的情况）作业不会中断。您最多可以配置 48 个任务实例组，具体取决于作业需求。</p>
+              </dd>
+            </dl>
+            <figure id="ch13_figure_1_1734552291986472">
+              <img src="images/sdoa_1301.png"/>
+              <figcaption>EMR 集群节点</figcaption>
+            </figure>
+            <p>EMR 集群允许您从可用的应用程序中进行选择，并自动安装所有软件，无需任何手动操作。有时可能还需要在 EMR 节点上安装自定义软件或修改配置。为此，您可以使用<a href="https://oreil.ly/1_9Y_">引导操作（bootstrap actions）</a>，这些操作在集群实例启动后执行。</p>
+            <p>根据需求，EMR 集群可能包含大量节点，这无疑会增加 AWS 资源成本。您可以引入一些节省成本的机制：</p>
+            <ul>
+              <li>
+                <p>EMR 提供自动终止集群的配置选项。这可确保集群在提交的作业完成后自动终止。</p>
+              </li>
+              <li>
+                <p>对于长期运行的集群，如果您对容量需求有把握，可以考虑使用预留实例和 AWS 节省计划。</p>
+              </li>
+              <li>
+                <p>如果 EMR 工作负载对业务不是至关重要的，可以使用 EC2 竞价实例（在<a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a>中有所讨论）。与按需实例相比，竞价实例最高可享受 90% 的折扣，可大幅降低成本。您也可以使用竞价实例与按需实例混合的集群，在控制集群费用的同时确保集群始终可用。</p>
+              </li>
+              <li>
+                <p>对于长期运行集群上的可变工作负载，可以对实例组使用自动扩展策略来添加或移除实例。</p>
+              </li>
+            </ul>
+            <p>在结束对 EMR 的讨论之前，我们来思考一些确保 EMR 集群上运行的工作负载高可靠性的注意事项：</p>
+            <ul>
+              <li>
+                <p>集群中的实例应分布在多个可用区（AZ），以避免单个可用区停机的影响。默认情况下，<a href="https://oreil.ly/Ai0f0">Hive</a> 元数据存储在主节点的文件系统中。建议将元数据存储<a href="https://oreil.ly/FghKi">保存在 EMR 集群外部</a>，例如多可用区 RDS 集群或 Amazon Aurora 中，以避免集群终止时数据丢失。</p>
+              </li>
+              <li>
+                <p>建议使用多主节点的 EMR，而非单主节点。主节点是单点故障，一旦其失败，整个集群都会宕机。多主节点的设置提供了安全保障。</p>
+              </li>
+              <li>
+                <p>关键数据应保存在 S3 中，而非本地 HDFS，以避免数据依赖问题。</p>
+              </li>
+              <li>
+                <p>建议仅对任务节点使用 EC2 竞价实例，而非核心节点。由于 HDFS 由核心节点管理数据存储，终止这些节点可能导致数据丢失。</p>
+              </li>
+            </ul>
+            <p>为满足定期启动 EMR 集群的需求，您可以利用 Amazon EventBridge，并通过 AWS Step Functions（或 Apache Airflow）实现工作流自动化：创建具有特定配置的 EMR 集群，向集群提交作业，作业完成后终止集群。</p>
+            <p>在某些场景下，我们只关心执行 ETL 作业，而无需担心实例或存储管理。AWS Glue 是一款完全无服务器的数据集成应用程序，用于在<a contenteditable="false" data-type="indexterm" data-primary="clusters" data-startref="cluster-emr">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="EMR (Elastic MapReduce)" data-startref="big-data-emr">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EMR (Elastic MapReduce)" data-startref="emr">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic MapReduce (EMR)" data-startref="elastic-mapreduce">&nbsp;</a>大数据上执行分析任务。</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch13_aws_glue_1734552292003425">
+          <h2>AWS Glue</h2>
+          <p>AWS Glue 是<a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="Glue" id="big-data-glue">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Glue" id="glue">&nbsp;</a>一种数据集成服务，通过多种功能帮助您理解数据。在深入了解这些功能之前，先来快速了解一些与 Glue 相关的术语：</p>
+          <dl>
+            <dt>分类器（Classifier）</dt>
+            <dd>
+              <p><a href="https://oreil.ly/wCZ76">分类器</a>用于验证它是否<a contenteditable="false" data-type="indexterm" data-primary="classifiers (Glue)">&nbsp;</a>能够处理特定格式的数据，如果可以，则将其分类为一个 <code>StructType</code> 对象。您可以使用 Glue 提供的分类器，也可以根据需要<a href="https://oreil.ly/I1Ahs">定义自定义分类器</a>，例如当数据文件格式不被 Glue 支持时。</p>
+            </dd>
+            <dt>元数据（Metadata）</dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="metadata">&nbsp;</a>元数据是分类器从任意数据存储中的可用数据推断出的 Schema（模式）。</p>
+            </dd>
+            <dt>数据库（Database）</dt>
+            <dd>
+              <p>数据库<a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="Glue">&nbsp;</a>是保存元数据表的地方。一张表只能关联到一个数据库，如果未指定数据库，Glue 将使用默认数据库。</p>
+            </dd>
+            <dt>数据目录（Data catalog）</dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="data catalogs">&nbsp;</a>数据目录用于维护数据库，而数据库则由一个或多个元数据表组成。这些表既可用作数据源，也可用作数据目标。</p>
+            </dd>
+            <dt>数据爬网程序（Data crawler）</dt>
+            <dd>
+              <p>数据爬网程序<a contenteditable="false" data-type="indexterm" data-primary="data crawlers">&nbsp;</a>从 Amazon S3 等数据源爬取数据，通过分类器找出 Schema，然后在 Glue 数据目录中创建所需的表或分区。对于数据 Schema 频繁变化的用例，您可以<a href="https://oreil.ly/xAgEh">按计划运行爬网程序</a>，它会自动识别自上次运行以来的变更，并根据需求创建新表或新分区。</p>
+            </dd>
+            <dt>表分区（Table partitioning）</dt>
+            <dd>
+              <p>分区<a contenteditable="false" data-type="indexterm" data-primary="table partitioning">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="partitioning">&nbsp;</a>是一种提升数据查询性能的方式。结合图<a data-type="xref" href="#ch13_figure_2_1734552291986508">#ch13_figure_2_1734552291986508</a>中的示例来理解。您的应用程序处理销售数据并将其存储在 S3 中，按父文件夹（年）和子文件夹（月和日）划分目录。根据数据类型和数量，还可以进一步设置子文件夹（如小时或分钟）。如果数据以这种方式进行分区，查询将变得非常便捷。要提取 2022 年 2 月的数据，只需进入年份 2022 对应的文件夹，再进入月份 02 的子文件夹，查询速度大幅提升。一张表可以有多个分区键，您还可以创建<a href="https://oreil.ly/NNT2o">分区索引</a>（即分区的子集），以避免加载所有分区。</p>
+            </dd>
+          </dl>
+          <figure id="ch13_figure_2_1734552291986508">
+            <img alt="A screenshot of a computer&#10;&#10;Description automatically generated" src="images/sdoa_1302.png"/>
+            <figcaption>Amazon S3 中通过文件夹进行数据分区</figcaption>
+          </figure>
+          <dl>
+            <dt>数据引擎（Data engine）</dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="data engines">&nbsp;</a>数据引擎在数据之上运行数据处理作业。截至本书撰写时，Glue 支持三种数据引擎：<a href="https://oreil.ly/HhVFY">AWS Glue for Apache Spark</a>、<a href="https://oreil.ly/1D89I">AWS Glue for Ray</a> 和 <a href="https://oreil.ly/OMzCx">AWS Glue for Python Shell</a>。您可以根据工作负载需求选择其中一种：</p>
+
+            <ul>
+              <li>
+                <p>使用 Glue for Apache Spark，您可以用 Python 和 Scala 语言编写 ETL 代码，代码在分布式环境中执行。Glue 上的 Spark 环境可以理解为由 AWS 运营的无服务器 EMR 集群。Spark 引擎同时支持批处理和实时流数据处理。Glue 还通过提供 <a href="https://oreil.ly/82tDZ">Cloud Shuffle 插件</a>，解决了因数据混洗（集群内数据重新分配）而导致磁盘溢出的常见问题。该插件允许您在数据溢出情况下使用 S3 或其他对象存储。由于该插件作为开源软件提供，它也可用于自定义 Spark 作业。</p>
+              </li>
+              <li>
+                <p>使用 Glue for Python，单节点 Python 引擎可运行用 Python 编写的工作负载。它默认集成了 <em>numpy</em> 或 <em>pandas</em> 等开源库，您也可以添加自定义库。客户可能面临的一个问题是随着数据增长的工作负载扩展，这可以通过使用 <a href="https://oreil.ly/zdbuC">Glue for Ray</a> 来解决。</p>
+              </li>
+              <li>
+                <p>Glue for Ray 允许您在分布式环境中执行 Python 代码，可扩展到数百个节点。该处理引擎基于开源计算框架 <a href="https://ray.io">Ray</a>，被广泛用于大规模运行 Python 工作负载，如深度学习模型。</p>
+              </li>
+            </ul>
+             </dd>
+
+            <dt>数据处理单元（DPU）</dt>
+            <dd>
+              <p>Glue 允许<a contenteditable="false" data-type="indexterm" data-primary="data processing units (DPUs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DPUs (data processing units)">&nbsp;</a>客户配置用于运行数据处理作业的工作节点类型，即 DPU（数据处理单元）。您可以<a href="https://oreil.ly/EHo56">分析工作负载需求</a>，以找到最佳的 DPU 配置。</p>
+            </dd>
+          </dl>
+          <p>现在，我们将对这些不同概念的理解整合成一个简单架构，以了解 Glue 的运作方式，如图<a data-type="xref" href="#ch13_figure_3_1734552291986532">#ch13_figure_3_1734552291986532</a>所示。一旦创建了数据结构，您就可以使用任意数据引擎创建并运行 Glue ETL 作业，用于进一步的可视化和分析。</p>
+          <figure id="ch13_figure_3_1734552291986532">
+            <img src="images/sdoa_1303.png"/>
+            <figcaption>AWS Glue 架构概览</figcaption>
+          </figure>
+          <p>图<a data-type="xref" href="#ch13_figure_3_1734552291986532">#ch13_figure_3_1734552291986532</a>展示了 Glue 如何管理和运行 ETL 作业的高层视图。接下来，我们将讨论 Glue 的一些附加功能和产品，您可以按需使用：</p>
+          <dl>
+            <dt>Glue Studio</dt>
+            <dd>
+              <p>Glue Studio 支持可视化工作流、内置转换和 Glue Studio Notebook。这有助于您对数据进行测试，一旦对测试满意，Notebook 中的代码可以导入到 ETL 作业中。</p>
+            </dd>
+            <dt>数据质量（Data Quality）</dt>
+            <dd>
+              <p><a href="https://oreil.ly/V1spg">数据质量功能</a>会自动找出验证数据质量的条件或逻辑，您可以根据需要进行覆盖。以销售数据为例：某销售公司于 2021 年开始运营，但部分数据中年份标记为 2019 年。该功能会提示我们这是无效数据，应该剔除或设置告警。此功能适用于静态数据和动态数据。</p>
+            </dd>
+            <dt>个人身份信息（PII）</dt>
+            <dd>
+              <p><a href="https://oreil.ly/bo4_p">PII 数据</a>的验证功能可用于检测敏感数据，并采取适当措施，如对其进行脱敏处理。</p>
+            </dd>
+            <dt>自动扩展（Autoscaling）</dt>
+            <dd>
+              <p>为降低计算成本并配置运行 Glue 作业的最优 DPU 数量，您可以利用<a href="https://oreil.ly/dhP2b">自动扩展功能</a>。该功能将根据工作负载需求自动添加或移除工作节点。您还可以配置最大工作节点数，确保 Glue 不会将工作节点配置超过特定上限。</p>
+            </dd>
+            <dt>弹性作业类型（Flex job type）</dt>
+            <dd>
+              <p>在<a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a>中，我们讨论了 EC2 竞价实例及其如何帮助降低总体计算成本。Glue 通过<a href="https://oreil.ly/w91db">弹性作业类型</a>提供类似功能，最高可节省 34% 的成本。您可以将其用于非关键工作负载。</p>
+            </dd>
+            <dt>调度（Scheduling）</dt>
+            <dd>
+              <p>在某些用例中，<a href="https://oreil.ly/5PC-d">按特定时间或固定间隔调度爬网程序或作业</a>运行将非常有用。Glue 内置支持这一功能。您也可以通过 Amazon EventBridge 基于外部事件触发作业和爬网程序。</p>
+            </dd>
+            <dt>版本控制（Version control）</dt>
+            <dd>
+              <p>Glue 提供与 <a href="https://oreil.ly/j9fPm">GitHub 和 AWS CodeCommit</a> 的便捷集成，用于管理 Glue 作业的源代码版本控制。</p>
+            </dd>
+            <dt>架构注册表（Schema registry）</dt>
+            <dd>
+              <p><a href="https://oreil.ly/LpeCM">Glue 架构注册表</a>是一个注册表，您可以在其中发布 Schema，并强制执行数据流服务集成，例如 Amazon MSK、Apache Kafka、Amazon KDS、Amazon KDA 和 AWS Lambda。</p>
+            </dd>
+          </dl>
+          <p>上述丰富的功能足以表明，Glue 是一项强大的 ETL 服务，能够有效降低运维开销，并可在大规模场景下稳定运行。在了解了 EMR 和 Glue 之后，您可能想知道在 EMR 无服务器选项上运行的 Spark 应用程序与 Glue Spark 有何不同。由于这两个选项看起来非常相似，我们在表<a data-type="xref" href="#ch13_table_1_1734552291991892">#ch13_table_1_1734552291991892</a>中进行说明。</p>
+          <table id="ch13_table_1_1734552291991892">
+            <caption>Amazon EMR 无服务器与 AWS Glue 的比较</caption>
+            <thead>
+              <tr>
+                <th>参数</th>
+                <th>Amazon EMR 无服务器</th>
+                <th>AWS Glue</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>功能特性</p>
+                </td>
+                <td>
+                  <p>利用开源软件的数据处理和分析工具</p>
+                </td>
+                <td>
+                  <p>端到端 ETL 解决方案，对软件进行抽象封装，提供 AWS 定制化方案，专注于数据集成、数据目录及数据源上的转换运行</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>运维开销</p>
+                </td>
+                <td>
+                  <p>全托管服务</p>
+                </td>
+                <td>
+                  <p>客户指定 DPU 的数量和类型</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>支持的大数据应用程序</p>
+                </td>
+                <td>
+                  <p>Apache Spark 和 Apache Hive</p>
+                </td>
+                <td>
+                  <p>Apache Spark 和 Python 作业</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>Glue 与<a contenteditable="false" data-type="indexterm" data-primary="EMR (Elastic MapReduce)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic MapReduce (EMR)">&nbsp;</a>EMR 在基本功能上有所不同，作为客户，我们应清晰梳理自身需求，以选择适合工作负载的服务。Amazon EMR 几乎集成了所有开源组件，我们可以轻松地预装这些服务来部署集群。我们讨论了一些您可能会倾向于选择 Glue 而非 EMR 的理由，这些理由通常与运维开销和系统专业知识有关。</p>
+          <p>与 EMR 和 Glue 类似，Amazon Athena 也是一项 AWS 服务，用于查询和分析存储在 Amazon S3 中的数据。您可以将 Athena 与运行在 EMR 集群上的 Presto 进行比较，两者提供类似的功能。此类解决方案的主要优势在于，可以对原始数据直接进行数据分析，无需在<a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="Glue" data-startref="big-data-glue">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Glue" data-startref="glue">&nbsp;</a>客户端进行任何转换。</p>
+        </section>
+        <section data-type="sect2" id="ch13_amazon_athena_1734552292003521">
+          <h2>Amazon Athena</h2>
+          <p>Amazon Athena<a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="Athena" id="big-data-athena">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Athena" id="athena">&nbsp;</a>是一款完全托管的无服务器大数据分析工具，支持在存储于 S3 中的数据之上执行 SQL 查询。数据分析无需将数据迁移到其他数据存储，可以直接从 S3 对象中读取并查询数据。</p>
+          <p>Athena 要求我们作为客户定义数据库和带有 Schema 的表。您可以手动完成此操作，也可以利用 Glue 数据爬网程序和 <a href="https://oreil.ly/Lx1qY">Apache Hive Metastore</a> 来代劳。数据库和表定义完成后，您即可使用简单的 SQL 查询这些数据。当您执行 SQL 查询时，Athena 在内部以异步方式提交作业，查询响应将保存到 S3。此外，您还可以将 Athena 与各类<a href="https://oreil.ly/Apj0y">商业智能工具</a>集成，以进行交互式分析，例如我们下一节将要介绍的 Amazon QuickSight。</p>
+          <p>与许多其他服务一样，Athena 的主要优势在于您无需担心基础设施管理。下面我们将讨论使用该服务进行数据分析时的一些其他特性和注意事项：</p>
+          <dl>
+            <dt>联合查询（Federated query）</dt>
+            <dd>
+              <p>我们提到<a contenteditable="false" data-type="indexterm" data-primary="federated query">&nbsp;</a>Athena 用于查询存储在 S3 中的数据，但对于存储在其他 AWS 数据存储（如 Amazon DynamoDB）或本地数据源中的数据该怎么办？针对这类用例，Athena 提供了一项称为<a href="https://oreil.ly/6Kjbc">联合查询</a>的功能。此功能允许您对 AWS 云上或本地的各类数据存储运行 SQL 查询。Athena 通过基于 Lambda 的数据源连接器来实现这一功能，该连接器本质上是建立连接并检索数据的桥梁。此外，Athena 可以并行发起多个 Lambda 调用，以加速数据处理任务。数据可能无法完全放入 Lambda 内存，对此，数据将溢出到 S3，避免任何数据丢失。</p>
+            </dd>
+            <dt>用户定义函数（UDF）</dt>
+            <dd>
+            <p><a href="https://oreil.ly/SjivZ">UDF</a> 是 Athena 通过联合查询 SDK 支持的<a contenteditable="false" data-type="indexterm" data-primary="user-defined functions (UDFs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="UDFs (user-defined functions)">&nbsp;</a>另一项功能。它允许您在 Lambda 上编写自定义 Java 代码，并直接从 SQL 查询中调用，以对数据执行任何预处理或后处理任务。以敏感数据处理场景为例：为避免将敏感信息作为 Athena 查询响应的一部分存储到 S3，可通过 UDF 中执行的逻辑对其进行脱敏处理。</p>
+             </dd>
+            <dt>机器学习模型（ML models）</dt>
+
+            <dd>
+              <p>Athena 允许您使用部署在 Amazon SageMaker 上的机器学习模型。您可以直接在 SQL 查询中<a href="https://oreil.ly/R81Hk">调用这些模型</a>进行所需的数据分析。一个示例是检测我们在线外卖平台上的负面评价。</p>
+            </dd>
+          </dl>
+          <p>为支持工作流的定期调度或基于特定事件的触发，我们可以利用 Amazon EventBridge。对于工作流编排和与其他服务集成的用例，我们可以使用 AWS Step Functions。</p>
+          <p>相较于自管理的 Amazon EMR 集群或 Amazon Redshift（将在后文讨论），使用 Amazon Athena 的局限性在于对大型数据集执行查询所需的时间较长，因此对于延迟敏感型操作而言，它可能不是最佳选择。</p>
+          <p>Amazon EMR、AWS Glue 和 Amazon Athena 是强大的大数据分析工具。接下来，我们将讨论 AWS 提供的<a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="Athena" data-startref="big-data-athena">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Athena" data-startref="athena">&nbsp;</a>商业智能工具 Amazon QuickSight。</p>
+        </section>
+        <section data-type="sect2" id="ch13_amazon_quicksight_1734552292003582">
+          <h2>Amazon QuickSight</h2>
+          <p>回顾一下，<a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="QuickSight" id="big-data-quicksight">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="dashboards (QuickSight)" id="dashboard-quicksight">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="QuickSight" id="quicksight">&nbsp;</a>我们的在线外卖应用将数据存储在多个数据存储中，例如某特定区域的总订单量、评分最高的餐厅以及最受欢迎的菜品。如何在不向所有人直接开放数据存储访问权限的情况下，创建一个连接不同数据存储的统一仪表板？使用 Amazon QuickSight 即可轻松实现。QuickSight 是一款完全托管的无服务器商业智能服务，提供分析、可视化和报告功能。它可以连接到不同类型的数据存储，并将其汇聚到单一仪表板中。数据可以包括 AWS 数据、第三方数据、电子表格数据、SaaS 数据等。</p>
+          <p>以下是 QuickSight 的主要特性和注意事项：</p>
+          <ul>
+            <li>
+              <p>QuickSight 本质上使每位用户都能以较低的专业门槛对您的用例进行数据分析和可视化。有了 QuickSight，您无需依赖商业智能团队来满足您的数据请求。</p>
+            </li>
+            <li>
+              <p>QuickSight 有两个版本：<a href="https://oreil.ly/G8oGk">标准版和企业版</a>。标准版包含前面描述的所有功能。企业版则包含更多高级功能，例如由机器学习驱动的自动化和可定制数据洞察，以及安全功能（包括联合用户身份、单点登录和静态加密）。企业版还支持通过按会话付费的定价模式将仪表板货币化，您所创建的仪表板的使用者将按使用量付费。</p>
+            </li>
+            <li>
+              <p>企业版还提供一项附加功能：<a href="https://oreil.ly/r0C0r">QuickSight Q</a>。这是一款自然语言处理工具，您无需编写查询，可以直接提问，例如"孟买评分最高的五家餐厅是哪些？"</p>
+            </li>
+            <li>
+              <p>QuickSight 支持通过 SPICE（超快速并行内存计算引擎）进行快速高级计算来提供数据服务。要使用这个内存数据存储，您应在数据库创建或编辑过程中启用它，并需要配置所需的 <a href="https://oreil.ly/KLg8m">SPICE 容量</a>。</p>
+            </li>
+          </ul>
+          <p>我们提到 QuickSight 有助于挖掘洞察，并能对任何数据源执行此操作。其中一个<a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="QuickSight" data-startref="big-data-quicksight">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="dashboards (QuickSight)" data-startref="dashboard-quicksight">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="QuickSight" data-startref="quicksight">&nbsp;</a>数据源便是 Amazon Redshift。</p>
+        </section>
+        <section data-type="sect2" id="ch13_amazon_redshift_1734552292003647">
+          <h2>Amazon Redshift</h2>
+          <p>简单来说，<a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="Redshift" id="big-data-redshift">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Redshift" id="redshift">&nbsp;</a>Amazon Redshift 是一款数据仓库工具，能够汇聚来自多个数据源的数据，并支持在单一位置运行 SQL 查询进行数据分析。Redshift 是 AWS 托管服务，通过<a href="https://oreil.ly/JXUz6">弹性扩展</a>选项可扩展至 PB 级数据。此外还提供<a href="https://oreil.ly/ETobh">无服务器选项</a>，帮助您免去资源预置和工作负载管理的负担。</p>
+          <p>我们将首先讨论 Redshift 的架构，然后介绍该服务提供的主要功能。Redshift 是基于领导者-跟随者集群架构的列式 PostgreSQL 存储，其中领导者节点作为查询协调器，负责解析和编译查询，然后将查询转发给跟随者（计算）节点，这些节点并行工作以收集结果。该架构如图<a data-type="xref" href="#ch13_figure_4_1734552291986557">#ch13_figure_4_1734552291986557</a>所示。Redshift 集群可以有 2 到 128 个节点，若使用无服务器选项，整个架构细节对客户是透明的。查询可以通过 <a href="https://oreil.ly/3_SxR">JDBC（Java 数据库连接）</a>或 <a href="https://oreil.ly/qXcYO">ODBC（开放式数据库连接）</a>连接从 SQL 客户端发起，也可以使用 Data API。<a href="https://oreil.ly/90nj2">Data API</a> 支持同步和异步两种查询执行方式，并可通过查询 ID 在 24 小时内查询结果。</p>
+          <figure id="ch13_figure_4_1734552291986557">
+            <img src="images/sdoa_1304.png"/>
+            <figcaption>Amazon Redshift 架构</figcaption>
+          </figure>
+          <p>在 Redshift 架构中，计算节点被分割为多个切片（slice），每个切片拥有独立分配的磁盘和内存，用于并行处理。数据以不可变<a href="https://oreil.ly/TMx2I">数据块</a>的形式存储。一个数据块由跨多行的列数据组成，一个完整的数据块可以包含数百万个值，大小为 1 MB。</p>
+          <p>为提升数据块的查询性能，Redshift 维护着称为<em> </em><a href="https://oreil.ly/bjhjH"><em>区间映射（zone maps）</em></a>的内存元数据信息。<a contenteditable="false" data-type="indexterm" data-primary="zone maps">&nbsp;</a>它存储数据块的最小值和最大值，并有效过滤掉不包含特定查询数据的数据块。可以使用<a href="https://oreil.ly/h6cao">排序键（sort key）</a>来优化区间映射，排序键定义了数据在物理磁盘上的排序方式。排序键在绝大多数场景下效果良好，但在极少数情况下不适用：当每个切片的每列只有一个数据块时；当数据块内的值拥有相同前缀时（对于长度超过 8 字节的字符串——Redshift 取前 8 字节作为前缀，因此若前缀相同则排序无效）；以及当列只包含单个唯一值时（排序无效，因为最小值和最大值一致）。</p>
+          <p>为优化查询性能，您可以选择为数据指定<a href="https://oreil.ly/BN5J8">数据分布方式</a>。这可确保数据均匀分布在集群中，从而充分利用并行处理的优势。Redshift 支持<a contenteditable="false" data-type="indexterm" data-primary="distribution styles (Redshift)">&nbsp;</a>四种数据分布方式：</p>
+          <dl>
+            <dt>AUTO 选项（默认）</dt>
+            <dd>
+              <p>Redshift 根据表数据的大小选择分布方式，并根据数据大小在不同分布方式之间内部切换。</p>
+            </dd>
+            <dt>EVEN 选项</dt>
+            <dd>
+              <p>数据由领导节点以轮询方式分布在计算节点切片中。当表上没有连接操作时，推荐使用此选项。</p>
+            </dd>
+            <dt>KEY 选项</dt>
+            <dd>
+              <p>领导节点检查列值，并将其放置在与该值匹配的计算节点切片上。</p>
+            </dd>
+            <dt>ALL 选项</dt>
+            <dd>
+              <p>整张表的数据在每个节点上都有副本。仅当表上的插入或更新操作极少时，才推荐使用此选项。</p>
+            </dd>
+          </dl>
+          <p>Redshift 提供<a contenteditable="false" data-type="indexterm" data-primary="Redshift Spectrum">&nbsp;</a>Amazon Redshift Spectrum 功能，可以使用 S3 作为存储，计算节点仅负责收集结果。这使客户无需将数据加载到 Redshift 集群，即可直接查询 S3 中的数据。需要注意的是，对 S3 的重复读取可能存在问题，因为该存储不遵循事务保证。</p>
+          <p>Redshift 还提供<a contenteditable="false" data-type="indexterm" data-primary="Redshift Managed Storage (RMS)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RMS (Redshift Managed Storage)">&nbsp;</a>Redshift 托管存储（RMS），允许客户独立扩展计算和存储。它使用 S3 作为持久化存储，并提供高速、基于 SSD 的一级缓存支持。RMS 支持每个实例最多 128 TB，每个集群最多 16 PB 的存储容量。若需进一步扩展，可始终使用 S3 作为存储。</p>
+          <p>您可以为 Redshift 集群选择<a href="https://oreil.ly/lbvDY">不同的实例类型</a>。该功能由新型 Redshift 实例类型 <a href="https://oreil.ly/1iAee">RA3</a> 支持。其他实例类型包括以 SSD 为存储的 DC2（密集计算型）和以磁盘为存储的 DS2（密集存储型）。DS2 实例类型属于上一代产品，不建议用于新的工作负载。</p>
+          <p>Amazon Redshift Spectrum 与 Athena 类似，都是在存储于 S3 的数据之上进行查询。两者最大的区别在于 Redshift Spectrum 可配置计算资源，使查询速度更快。在为您的工作负载选择其中一个服务之前，应评估两者的附加功能集：</p>
+          <dl>
+            <dt>物化视图（Materialized views）</dt>
+            <dd>
+              <p>Redshift 允许<a contenteditable="false" data-type="indexterm" data-primary="materialized views">&nbsp;</a>您从一张或多张表<a href="https://oreil.ly/L8csr">创建物化视图</a>，以加速查询。物化视图包含基于表连接（包含所有列或列的子集）、聚合及过滤条件预先计算的结果集。您还可以在已创建的物化视图之上继续创建物化视图，就像操作基表一样。</p>
+            </dd>
+            <dt>工作负载管理工具（WLM）</dt>
+            <dd>
+              <p>Redshift 提供<a href="https://oreil.ly/Hg1JD">工作负载管理（WLM）工具</a>，用于<a contenteditable="false" data-type="indexterm" data-primary="workload management (WLM) tools">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="WLM (workload management) tools">&nbsp;</a>分离不同的查询工作负载并分配优先级，确保重要查询得以执行，而不太重要的查询可以被限流或中止。</p>
+            </dd>
+            <dt>数据复制（Data copying）</dt>
+            <dd>
+              <p>您<a contenteditable="false" data-type="indexterm" data-primary="data copying">&nbsp;</a>可以使用 <a href="https://oreil.ly/pOZQc">COPY</a> 命令从 Amazon S3、Amazon DynamoDB、Amazon EMR 或可通过 SSH 访问的远程主机向 Redshift 加载数据。此外，还支持<a href="https://oreil.ly/k1SGb">自动复制（autocopy）</a>功能，可自动将 Amazon S3 中的数据摄入 Redshift 集群。</p>
+            </dd>
+            <dt>数据摄入（Data ingestion）</dt>
+            <dd>
+              <p>您可以将<a contenteditable="false" data-type="indexterm" data-primary="data ingestion">&nbsp;</a>Redshift 与 Amazon MSK 或 Amazon KDS 集成，用于摄入实时流数据，并使用 <a href="https://oreil.ly/naeCZ">Informatica Data Loader for Amazon Redshift</a> 访问本地或第三方应用程序中的数据。</p>
+            </dd>
+            <dt>联合查询（Federated query）</dt>
+            <dd>
+              <p>您可以<a contenteditable="false" data-type="indexterm" data-primary="federated query">&nbsp;</a>使用 Redshift 的<a href="https://oreil.ly/OcRRv">联合查询功能</a>，访问来自外部数据存储的实时数据，如 RDS PostgreSQL 和 MySQL，以及 Aurora PostgreSQL 和 MySQL，而无需将其加载到 Redshift 集群。</p>
+            </dd>
+            <dt>数据共享（Data sharing）</dt>
+            <dd>
+              <p>Redshift<a contenteditable="false" data-type="indexterm" data-primary="data sharing">&nbsp;</a>支持集群间的<a href="https://oreil.ly/3HIfR">数据共享</a>。这有助于在不跨集群复制数据的情况下隔离读取工作负载。</p>
+              <p>Redshift 与 Amazon Aurora 提供<a href="https://oreil.ly/4rX2L">直接集成</a>，无需客户搭建任何数据管道，数据推送到 Aurora 后，可在数秒内直接在 Redshift 中使用。</p>
+              <p><a href="https://oreil.ly/u9WgB">Amazon Redshift Advisor</a> 会就查询性能和成本节省方面提出集群优化建议，例如查询调优建议、删除未使用的集群以及表数据压缩等。</p>
+            </dd>
+          </dl>
+          <p>Redshift 是大数据仓库和分析用例的优质工具，可扩展至 PB 级数据。下一节我们将了解 AWS 提供的不同机器学习服务，以及它们如何适用于<a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="Redshift" data-startref="big-data-redshift">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Redshift" data-startref="redshift">&nbsp;</a>各类用例。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch13_machine_learning_on_aws_1734552292003724">
+        <h1>AWS 上的机器学习</h1>
+        <p>为支持<a contenteditable="false" data-type="indexterm" data-primary="machine learning" id="machine-learning">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ML (machine learning)" id="ml">&nbsp;</a>机器学习和 AI 用例，AWS 提供了<a href="https://oreil.ly/AXCws">一系列服务</a>，从构建和运行自定义机器学习模型到利用针对特定用途的全托管应用程序，不一而足。例如，Amazon Polly 将文本转换为语音，Amazon Comprehend 帮助您从非结构化数据中挖掘洞察和关系，而 Amazon CodeGuru 则提供智能建议以提升代码质量。请访问 AWS 产品页面了解其在 AI 和机器学习领域的最新功能。</p>
+        <p>这些服务大致可分为三大类：应用服务、平台服务以及框架与硬件解决方案。应用服务是针对特定用例的定制化解决方案。Amazon SageMaker 是一项平台服务，使您能够通过训练和部署机器学习模型来创建自己的服务。AWS 提供不同的框架，如 <a href="https://pytorch.org">PyTorch</a>、<a href="https://keras.io">Keras</a> 和 <a href="https://tensorflow.org">TensorFlow</a>，以及具有定制化 <a href="https://oreil.ly/hGljt">CPU</a> 和 <a href="https://oreil.ly/ACYPT">GPU</a> 的专用硬件，用于运行机器学习工作负载。我们将首先讨论 Amazon SageMaker，然后简要介绍其他产品。</p>
+        <div data-type="note">
+          <p><em>智能（Intelligence）</em>是指<a contenteditable="false" data-type="indexterm" data-primary="intelligence">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AI (artificial intelligence)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="artificial intelligence (AI)">&nbsp;</a>我们提出问题并为这些问题的答案提供推理的能力。当这种智能由机器展现时，我们称之为<em>人工智能（AI）</em>。<em>机器学习（Machine learning）</em>是 AI 的一个分支，基于历史数据和算法来体现这种智能。本书不会介绍机器学习的概念，而是探讨 AWS 提供的几项具备机器学习能力的服务。</p>
+        </div>
+        <section data-type="sect2" id="ch13_amazon_sagemaker_1734552292003791">
+          <h2>Amazon SageMaker</h2>
+          <p><a contenteditable="false" data-type="indexterm" data-primary="SageMaker" id="sagemaker">&nbsp;</a>选择 AWS 云的默认优势在于无需担忧基础设施管理即可运行任何服务。Amazon SageMaker 是一项 AWS 托管服务，允许客户快速准备数据并构建、训练和部署机器学习模型。SageMaker 提供了完成上述各步骤所需的功能，并最终帮助您轻松部署模型，以最小的投入获得最佳效果：</p>
+          <dl>
+            <dt>数据准备（Prepare data）</dt>
+            <dd>
+              <p>SageMaker 提供用于初始数据准备的工具，使您能够在数据之上进行构建，例如 <a href="https://oreil.ly/kdw5W">Data Wrangler</a>。Data Wrangler 可集成到 <a href="https://oreil.ly/oRElj">Amazon SageMaker Studio</a> 的机器学习工作流中，用于导入、准备、转换、识别特征以及分析数据。</p>
+            </dd>
+            <dt>构建（Build）</dt>
+            <dd>
+              <p>客户可以在 SageMaker Studio 中使用 Jupyter Notebook 构建机器学习模型。AWS 提供了其自行构建的算法，这些算法能在 AWS 基础设施上高效运行，同时也支持 TensorFlow 和 PyTorch 等流行的开源框架。如果现有解决方案不符合您的用例需求，您也可以编写自定义代码。</p>
+            </dd>
+            <dt>训练（Train）</dt>
+            <dd>
+              <p>由于 SageMaker 管理所有基础设施，您无需担心训练事宜。您可以使用从存储到计算的全套托管基础设施。</p>
+            </dd>
+            <dt>部署（Deploy）</dt>
+            <dd>
+              <p>机器学习模型的部署同样由 SageMaker 负责处理。部署模型有多种方式，可根据用例选择特定方法。对于低延迟需求的工作负载，建议使用<a href="https://oreil.ly/SdNn6">实时推理</a>；对于可容忍冷启动问题的全托管工作负载，建议使用<a href="https://oreil.ly/xsLLb">无服务器推理</a>；对于大负载（最高 1 GB）且有近实时处理需求的工作负载，建议使用<a href="https://oreil.ly/K1jnb">异步推理</a>；对于处理整个数据集，建议使用<a href="https://oreil.ly/1Gpok">批量转换</a>。</p>
+            </dd>
+          </dl>
+          <p>SageMaker 还通过在单个端点后面启用多个机器学习模型，支持 A/B 测试。A/B 测试有助于了解不同模型的表现，以及它们是否符合预期。</p>
+          <p>根据您的用例，您可以决定在构建和部署整个流水线时，将 SageMaker 用于部分或全部功能。例如，您可以在 SageMaker 上部署一个已在本地基础设施上完成训练的模型。</p>
+          <p>SageMaker 还提供以下主要功能：</p>
+          <dl>
+            <dt>Clarify</dt>
+            <dd>
+              <p>SageMaker 包含多项有助于改善机器学习模型的功能，例如 <a href="https://oreil.ly/5CFmG">SageMaker Clarify</a>。顾名思义，它能检测潜在偏差，并通过特征归因方法帮助阐明机器学习模型所做的预测。</p>
+            </dd>
+            <dt>Debugger</dt>
+            <dd>
+              <p>指标是可视化性能的重要工具。要可视化机器学习模型的性能，您可以使用 <a href="https://oreil.ly/G3b5_">SageMaker Debugger</a>。它还可以通过 CPU、GPU、GPU 内存、网络和数据 I/O 等指标识别 EC2 实例作业的系统瓶颈。</p>
+            </dd>
+            <dt>Pipelines</dt>
+            <dd>
+              <p>我们提到 SageMaker 支持从数据准备到模型部署的全流程。随着系统规模的扩大，对 SageMaker 进行自动化管理以降低运维开销变得至关重要。<a href="https://oreil.ly/lgPN_">SageMaker Pipelines</a> 有助于实现这种自动化，并构建端到端的 CI/CD 流水线。</p>
+            </dd>
+            <dt>自动模型调优（AMT）</dt>
+            <dd>
+              <p>机器学习模型的性能会因超参数值的不同而有所差异。SageMaker <a href="https://oreil.ly/mPD1Q">AMT</a> 会多次运行训练作业，以找出模型的最佳版本。</p>
+            </dd>
+            <dt>Ground Truth</dt>
+            <dd>
+              <p>在高质量数据集上训练机器学习模型对于充分发挥其潜力至关重要。<a href="https://oreil.ly/Azeul">SageMaker Ground Truth</a> 通过创建高质量的标注数据集来自动化这一过程。对于数据标注任务，您可以选择所需的劳动力，例如独立承包商、您自己的私有劳动力，或 AWS Marketplace 上的供应商公司。</p>
+            </dd>
+          </dl>
+          <p>SageMaker 是在 AWS 云上构建机器学习解决方案的绝佳工具。请访问 <a href="https://oreil.ly/VFlK7">SageMaker 文档</a>，深入了解其功能，因为本章篇幅有限，无法涵盖所有内容。</p>
+          <p>在某些用例中，您可能没有构建自定义解决方案的专业知识。在这些场景下，您可以利用 AWS 提供的不同服务来解决<a contenteditable="false" data-type="indexterm" data-primary="SageMaker" data-startref="sagemaker">&nbsp;</a>特定用例。</p>
+        </section>
+        <section data-type="sect2" id="ch13_aws_ml_application_services_1734552292003857">
+          <h2>AWS 机器学习应用服务</h2>
+          <p>自行构建机器学习解决方案既耗时又需要专业知识，而您可能并不想在这方面投入大量精力。如果您有通用的机器学习用例，可以使用 AWS 提供的全托管服务，无需担心构建、部署和维护机器学习模型。其中一些服务包括：</p>
+          <dl>
+            <dt>Amazon CodeWhisperer</dt>
+            <dd>
+              <p>您<a contenteditable="false" data-type="indexterm" data-primary="CodeWhisperer">&nbsp;</a>可能对结对编程的概念有所了解——两个人经过讨论后共同编写代码。<a href="https://oreil.ly/EnFbX">Amazon CodeWhisperer</a> 就是您的编程伙伴，通过生成从小代码片段到完整函数的代码建议来提供帮助。它还可以标记代码中的安全问题，并提供整改建议，这些功能可以轻松集成到您常用的代码编辑器中。</p>
+            </dd>
+            <dt>Amazon Comprehend</dt>
+            <dd>
+              <p>Amazon Comprehend<a contenteditable="false" data-type="indexterm" data-primary="Comprehend">&nbsp;</a>用于从单个文档或文档集合中提取洞察。在我们的在线外卖应用示例中，客户会对所点的食品撰写评价。我们可以使用 Comprehend 来识别评价倾向（正面/负面）或找出被讨论的具体食品。Comprehend 可以识别实体（人名、地点、事物等）、PII、文档语言、情感（正面、负面、中性或混合）等洞察信息。</p>
+            </dd>
+            <dt>Amazon Kendra</dt>
+            <dd>
+              <p><a href="https://oreil.ly/wL4LK">Amazon Kendra</a> 是一款基于机器学习的搜索引擎，<a contenteditable="false" data-type="indexterm" data-primary="Kendra">&nbsp;</a>可在结构化或非结构化数据存储库之上工作。它使用自然语言处理来确定哪份文档与用户的搜索查询最相关。您可以将 Kendra 与 <a href="https://oreil.ly/9dBhV">Amazon Lex</a><a contenteditable="false" data-type="indexterm" data-primary="Lex">&nbsp;</a>结合使用，<a href="https://oreil.ly/aGejD">构建 AI 聊天机器人</a>，用于我们在线外卖应用中的客户支持等用例，以解答用户的问题。</p>
+            </dd>
+            <dt>Amazon Forecast</dt>
+            <dd>
+              <p><a href="https://oreil.ly/pqJWg">Amazon Forecast</a> 可用于<a contenteditable="false" data-type="indexterm" data-primary="Forecast">&nbsp;</a>准确的时间序列预测。以一个在线业务为例：如何根据历史流量预测即将到来的促销活动的流量？或者在进入新区域时如何预估增长情况？Forecast 会自动找出适合您数据集的机器学习算法组合，帮助您完成预测。</p>
+            </dd>
+            <dt>Amazon Rekognition</dt>
+            <dd>
+              <p><a href="https://oreil.ly/bwstV">Amazon Rekognition</a> 是一项图像和视频分析的识别服务，<a contenteditable="false" data-type="indexterm" data-primary="Rekognition">&nbsp;</a>可以支持图像和视频内容搜索、人脸识别与验证、成人内容检测以及图像中的文字提取等用例。</p>
+            </dd>
+            <dt>Amazon Transcribe</dt>
+            <dd>
+              <p><a href="https://oreil.ly/sWm_0">Amazon Transcribe</a> 是一项语音转文字<a contenteditable="false" data-type="indexterm" data-primary="Transcribe">&nbsp;</a>服务。在我们的在线外卖应用示例中，我们可能会提供一项服务，让客户通过电话提交对所点食品的反馈。Transcribe 可以帮助从这些通话中<a href="https://oreil.ly/iwSIc">提取有价值的洞察</a>。其他适用场景包括：将语音输入转换为文本供系统处理、将音视频内容转换为可文本搜索的格式，以及为视频生成字幕。</p>
+            </dd>
+          </dl>
+          <p>这些定制化服务通过极少的工作量实现了与应用程序的直接集成。举例来说，假设您拥有一个博客托管服务，用户可以管理自己的博客并与粉丝分享内容。要添加文本转音频功能，您既可以自行构建解决方案，也可以使用 Amazon Polly<a contenteditable="false" data-type="indexterm" data-primary="Polly">&nbsp;</a>来更快速地开始。如前所述，如果用例发生变化或您在现有解决方案中发现瓶颈，您随时可以改进方案。关键点在于上市时间：如果从自定义解决方案入手，与直接集成 Polly 等服务相比，启动服务可能需要更长时间。</p>
+          <p>下一节我们将讨论 AWS 为构建机器学习工作负载提供的专用基础设施支持。</p>
+        </section>
+        <section data-type="sect2" id="ch13_aws_ml_infrastructure_1734552292003918">
+          <h2>AWS 机器学习基础设施</h2>
+          <p>AWS 提供<a contenteditable="false" data-type="indexterm" data-primary="EC2 (Elastic Compute Cloud)" data-secondary="for machine learning" data-secondary-sortas="machine learning">&nbsp;</a>专门用于处理机器学习工作负载（包括训练和推理）的 EC2 实例。这些实例包含基于硬件的加速器（也称为<a contenteditable="false" data-type="indexterm" data-primary="coprocessors">&nbsp;</a><em>协处理器</em>），用于提升计算能力，以更高效的方式执行图形处理、浮点数计算和数据模式匹配等任务，相比运行在通用 CPU 上的软件效率更高。加速器的例子包括 <a href="https://oreil.ly/gMe3N">GPU</a>、<a href="https://oreil.ly/5ouKn">现场可编程门阵列（FPGA）</a>、<a href="https://oreil.ly/0f_9a">AWS Inferentia</a> 和 <a href="https://oreil.ly/4Fr45">AWS Trainium</a>。接下来介绍 AWS 提供的用于加速机器学习工作负载的定制化解决方案：</p>
+          <dl>
+            <dt>AWS Trainium</dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="Trainium">&nbsp;</a>Amazon EC2 Trainium 实例与同类 EC2 实例相比，训练成本最高可降低 50%。这些实例经过优化，可运行<a href="https://oreil.ly/iPkt7">深度学习</a>训练工作负载，原生支持多种数据类型，如 FP32、TF32、BF16、FP16、UINT8 和可配置的 FP8。它支持 AWS Neuron SDK，该 SDK 与 <a href="https://oreil.ly/WbC27">PyTorch</a> 和 <a href="https://oreil.ly/Tbypv">TensorFlow</a> 原生集成，因此现有的框架应用程序只需极少的代码修改即可使用。</p>
+            </dd>
+            <dt>AWS Inferentia</dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="Inferentia">&nbsp;</a>Amazon EC2 Inferentia 实例专为以高吞吐量、低延迟运行机器学习推理应用程序而设计，与通用 EC2 实例相比可节省成本。此类实例在加速器之间提供高速连接，支持在 Inferentia EC2 实例的多个加速器上部署数十亿参数的模型。</p>
+            </dd>
+          </dl>
+          <div data-type="note">
+            <p><em>推理（Inference）</em>是指<a contenteditable="false" data-type="indexterm" data-primary="inference">&nbsp;</a>根据逻辑推理和证据得出结论，因此<em>机器学习推理</em>本质上是指在实时数据上运行机器学习模型以获得最终答案（或做出预测）。训练是推理的前置阶段，我们在训练阶段让机器学习应用从现有数据中学习，然后在推理时利用这种智能。</p>
+          </div>
+          <p>这些 EC2 实例专为优化计算密集型任务而构建，例如运行大型模型、自然语言处理、语音识别和计算机视觉。您可能会考虑成本问题：如果这些 EC2 实例中的加速器使处理速度如此之快，它们肯定很昂贵，您需要判断是否能够承担这笔开销。由于这些实例专为机器学习工作负载设计，与具有类似能力的 EC2 实例相比，它们反而更具成本效益。例如，<a href="https://oreil.ly/8J34f">Amazon EC2 Inf1 实例</a>的吞吐量是同类 EC2 实例的 2.3 倍，每次推理成本最低可降低 70%。<a href="https://oreil.ly/rtYkL">EC2 Inf2 实例</a>比 Inf1 更便宜，吞吐量提升 4 倍，延迟降低 10 倍。使用 AWS 云的一大优势在于 AWS 会代表客户持续创新。我们作为客户可能对 Amazon EC2 Inf1 实例的性能和成本效益感到满意，但 AWS 已经推出了针对现有<a contenteditable="false" data-type="indexterm" data-primary="machine learning" data-startref="machine-learning">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ML (machine learning)" data-startref="ml">&nbsp;</a>选项进行改进的新版本。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch13_conclusion_1734552292003976">
+        <h1>总结</h1>
+        <p>本章向您介绍了在任意规模下构建和运行大数据分析及机器学习工作负载时有用的 AWS 服务。您通常需要结合多项服务来最好地满足您的用例需求，例如使用 Amazon EMR 处理发布到 Amazon MSK 的实时流数据，或通过 Amazon QuickSight 绘制 Amazon Redshift 数据的图表。由于 AWS 与其所有服务之间提供了便捷的集成，使用任何服务并将其与其他服务组件结合以满足您的需求都是一种无缝体验。</p>
+        <p>本章第二部分，我们深入了解了 AWS 的机器学习产品，这些产品基本上能以零或极低的运维开销运行机器学习工作负载。AWS 提供多项服务来解决特定用例，帮助我们无需具备深厚的机器学习概念知识即可利用其能力。例如，试想自行构建一款语言翻译工具与使用 <a href="https://aws.amazon.com/translate">Amazon Translate</a> 的差别。Amazon Translate 将大大缩短您的应用程序上线时间。</p>
+        <p>最后，我们介绍了专为大规模运行机器学习工作负载而设计的多种基础设施选项，与同类通用硬件相比，这些选项具有更高的吞吐量和更低的成本。</p>
+        <p>这是<a data-type="xref" href="part2">#part2</a>的最后一章。我们相信，您现在已经可以利用<a data-type="xref" href="part1" data-xrefstyle="select:labelnumber">#part1</a>和<a data-type="xref" href="part2" data-xrefstyle="select:labelnumber">#part2</a>所涵盖内容的理解，构建实时、大规模的系统。在<a data-type="xref" href="part3">#part3</a>中，我们将逐步介绍在 AWS 云上构建不同系统的用例，从 URL 短链服务开始。</p>
+      </section>
+    </section>

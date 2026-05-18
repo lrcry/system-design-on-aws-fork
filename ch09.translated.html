@@ -1,0 +1,834 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch09_aws_network_services_1734552289953244">
+      <h1>AWS 网络服务</h1>
+      <p>人们通过互联网与多个应用程序进行交互（或相互通信）。<a contenteditable="false" data-type="indexterm" data-primary="Amazon Web Services" data-see="AWS">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cloud computing services" data-see="networking services (AWS)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-seealso="networking services (AWS)">&nbsp;</a>我们在<a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a>中首先探讨了通信网络与协议的基本概念；本章是该章的延伸，将向您介绍 AWS 网络服务：Amazon VPC、Amazon Route 53、AWS 弹性负载均衡器（ELB）、Amazon API Gateway 和亚马逊 CloudFront。本章的目标是帮助您在学习不同服务相关网络概念的同时，在 AWS 云上搭建网络基础架构，并了解如何建立各服务之间的连接。</p>
+      <p>企业过去倾向于在本地数据中心自建基础设施，以提升系统可靠性和安全性，并确保其符合业务需求，但这会带来高昂的基础设施管理成本。如果您刚刚在推进创业想法，自建数据中心的费用可能过于高昂。云计算在对所有资源进行全面成本分析和充分优化后，能够带来显著的成本优势和极大的灵活性。例如，出售一台为搭建个人数据中心而购买的物理服务器，远比在 AWS 云中关闭一台 Amazon EC2 实例（服务器）困难得多。</p>
+      <p>AWS <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="shared responsibility model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="shared responsibility model">&nbsp;</a>遵循<a href="https://oreil.ly/L-Dyu">责任共担模型</a>，即客户与 AWS 共同协作，以安全且高效的方式使用服务：AWS 负责"云自身的安全"，客户负责"云上的安全"。在深入了解 AWS 网络组件之前，让我们先来了解这些服务的位置以及如何按客户进行隔离。</p>
+      <section data-type="sect1" id="ch09_getting_started_with_aws_1734552289953522">
+        <h1>AWS 入门</h1>
+        <p>要开始使用<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="account creation">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="accounts (AWS), creating">&nbsp;</a> AWS 云计算服务，客户需要<a href="https://oreil.ly/ELJQZ">创建一个 AWS 账户</a>。账户是 AWS 中的基本实体，可用于访问各类服务。它保存了与 AWS 资源（如计算实例、存储、网络等）的创建、管理、运营、支持和计费相关的所有信息。通过 AWS 账户，您可以预置和配置资源、监控使用情况和成本、设置安全与访问控制，并与各种 AWS 服务进行交互。</p>
+        <p>确定需要多少个 AWS 账户非常重要，这因用例而异，取决于组织的运营规模。以下是在决定配置多少个 AWS 账户时可参考的一些通用建议：</p>
+        <dl>
+          <dt>应用程序完全隔离</dt>
+          <dd>
+            <p>每个应用程序在单独的 AWS 账户中启动。此方案具有完全隔离和有效管理应用程序成本的优势，但也面临运营成本过高的挑战。</p>
+          </dd>
+          <dt>按业务类型划分 AWS 账户</dt>
+          <dd>
+            <p>例如，一家网约车公司的业务涵盖车辆调度、支付和数据分析等领域。与单一业务相关的所有应用程序在同一账户中运行，这样做的优点是使相邻应用程序之间的关联更紧密、延迟更低，并降低了跨账户服务连接的资源配置要求。这些应用程序可根据用例在 Amazon VPC 或可用区（AZ）中进行分隔。</p>
+          </dd>
+          <dt>按软件领域划分 AWS 账户</dt>
+          <dd>
+            <p>例如，为网络、监控、存储以及安全与审计分别设立独立账户。这种配置方式便于运维管理。例如，所有网络配置都集中在一个账户中，仅由网络工程团队负责管理。</p>
+          </dd>
+        </dl>
+        <p>AWS 建议采用多账户架构，以实现职责的清晰划分，同时兼顾未来系统的扩展需求。例如，独立的网络账户有助于将所有网络配置集中在一处，并仅对网络团队开放访问权限。AWS 提供 <a href="https://oreil.ly/xCpIY">Landing Zone 服务</a>，<a contenteditable="false" data-type="indexterm" data-primary="Landing Zone">&nbsp;</a>为多账户架构、IAM、治理、数据安全、网络设计和日志记录提供基础配置起点。AWS Landing Zone（着陆区）可由客户自行编排，也可作为托管服务使用。AWS Control Tower 便是此类服务之一，可用于建立初始的规范化配置，随着组织规模的扩大，可进行进一步定制。</p>
+        <section data-type="sect2" id="ch09_aws_regions_1734552289953597">
+          <h2>AWS 区域</h2>
+          <p>创建<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="regions">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="regions (AWS)">&nbsp;</a> AWS 账户后，您就可以在云中启动第一台服务器了。不过，一个有趣的问题随之而来：这个云究竟在哪里？AWS 云运行于实体地理位置，这些位置可能在您附近，也可能相距甚远。AWS 将其在全球范围内运营数据中心的地理分布位置定义为 <a href="https://oreil.ly/R4lE5">AWS 区域</a>（AWS Region）。例如，美国北弗吉尼亚区域称为 <em>us-east-1</em>。每个区域都是独立隔离的地理区域，与其他区域相互独立。您可以根据业务需求（如延迟限制、合规要求或 AWS 服务在该区域的可用性）选择相应的 AWS 区域来启动资源。例如，Netflix 的架构覆盖三个 AWS 区域，即使某个区域发生故障，也能保持高可用性。将资源部署在多个地理位置有助于构建弹性系统，这一点在<a data-type="xref" href="#part1">#part1</a>中已有所涉及。Amazon 提供了全球所有可用区域的完整列表。部分全球性服务（如 <a href="https://aws.amazon.com/iam">AWS IAM</a>）无需选择区域。</p>
+          <div data-type="note">
+            <p>并非所有 AWS 服务都在您所在的 AWS 区域中可用。</p>
+          </div>
+        </section>
+        <section data-type="sect2" id="ch09_aws_availability_zones_1734552289953662">
+          <h2>AWS 可用区</h2>
+          <p>客户<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="availability zones">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability zones (AWS)">&nbsp;</a>选择在多个区域部署资源，以提升可用性、降低延迟并满足其他业务需求。需要注意的是，并非所有人都能承担在多个 AWS 区域复制资源的成本。这是否意味着他们必须牺牲应用程序的可用性？<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="shared responsibility model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="shared responsibility model">&nbsp;</a>云服务商遵循<em>责任共担模型</em>，这意味着为确保云上业务的顺畅运行，客户和云服务商必须携手合作。一个简单的例子是将服务器部署在<a href="https://oreil.ly/TC6rf">多个可用区（AZ）</a>而非仅一个可用区，这样即使某个 AZ 发生故障，其他 AZ 中的服务器仍可正常处理流量。您可以将单个区域理解为一组数据中心的集合，每个数据中心（或若干数据中心的组合）即构成一个可用区。AZ 之间在物理上保持足够的距离，拥有独立的电力和冷却系统，并通过快速、私有、低延迟的光纤网络相互连接。AZ 的设计目的是通过将应用程序和数据分散部署在同一区域内的多个 AZ 中，实现容错、弹性和高可用性。AZ 以区域名称后缀标识，例如 <em>us-east-1a</em> 或 <em>us-east-1b</em> 均为 us-east-1 区域内的可用区。</p>
+        </section>
+        <section data-type="sect2" id="ch09_aws_local_zones_1734552289953723">
+          <h2>AWS 本地区域</h2>
+          <p>设想<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="local zones">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="local zones (AWS)">&nbsp;</a>这样一个场景：您准备为印度新德里的用户推出一款创业产品。应用的需求是 API 操作的 p99.99 延迟为个位数毫秒级，但距离最近的 AWS 区域却在印度孟买。在运营已充分优化且业务场景不允许使用预缓存数据（如利用 CDN 或从特定 AZ 的服务器检索数据）的情况下，如何解决这一问题？解决方案之一是将数据库实例部署在靠近用户的位置，这可以通过 AWS 本地区域（Local Zones）实现。本地区域支持您在靠近用户的地方部署基础设施，且该基础设施通过高速网络与 AWS 区域相连。在<a data-type="xref" href="ch21_designing_an_online_stock_trading_platform_1734552295606829">#ch21_designing_an_online_stock_trading_platform_1734552295606829</a>中，我们还将讨论在设计股票经纪应用时使用 AWS 本地区域的潜在方案。</p>
+          <p>AWS 本地区域是 AWS 区域的扩展，旨在将对低延迟有需求的 AWS 服务部署到特定地理区域附近。本地区域在地理上与其父区域相互独立，位于都市圈内。它们提供 AWS 服务的子集，主要面向对延迟敏感、需要靠近最终用户或特定本地部署资源的工作负载。您可以查看<a href="https://oreil.ly/dQ9pT">所有可用的本地区域位置</a>及<a href="https://oreil.ly/vKAyW">受支持的 AWS 服务</a>列表。</p>
+        </section>
+        <section data-type="sect2" id="ch09_aws_edge_locations_1734552289953782">
+          <h2>AWS 边缘站点</h2>
+          <p>试想<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="edge locations">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="edge locations (AWS)">&nbsp;</a>这样一个场景：HBO 计划在某个周日上午 8 点播出《权力的游戏》新一季的第一集。《权力的游戏》风靡全球，新集预计将有来自多个国家的大批观众同时观看。HBO 如何确保为用户提供全高清画质、零缓冲的极致观看体验？<a contenteditable="false" data-type="indexterm" data-primary="CloudFront">&nbsp;</a> AWS CDN 服务<a class="orm:hideurl" href="https://aws.amazon.com/cloudfront">亚马逊 CloudFront</a> 可以将内容分发到离观众更近的位置，这些位置称为<em>边缘站点</em>（edge location），从而以最短的时间为用户提供服务。</p>
+          <p>AWS 边缘站点是分布于全球的接入点（PoP），旨在将 AWS 服务更贴近最终用户。边缘站点作为 CloudFront 的缓存和内容分发端点，通过降低延迟、提升数据传输速度来改善内容分发性能。</p>
+          <p>您可以将 AWS 边缘站点理解为与 AWS 区域相连、支持数据高速上传和下载的数据中心。其他一些服务（如亚马逊 DNS 服务 Amazon Route 53）也利用相同的基础设施加速 DNS 查询解析。<a data-type="xref" href="#ch09_figure_1_1734552289929141">#ch09_figure_1_1734552289929141</a>展示了用户通过 AWS 边缘站点连接 AWS 区域的方式。</p>
+          <figure id="ch09_figure_1_1734552289929141">
+            <img src="images/sdoa_0901.png"/>
+            <figcaption>通过边缘站点连接 AWS 区域</figcaption>
+          </figure>
+          <p>以上高层次概览介绍了 AWS 云的部署方式及全球访问机制。接下来，让我们深入了解如何与 AWS 云建立连接，以及云内部的各类网络组件。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch09_introduction_to_aws_networking_services_1734552289953855">
+        <h1>AWS 网络服务简介</h1>
+        <p><a data-type="xref" href="#ch09_figure_1_1734552289929141">#ch09_figure_1_1734552289929141</a>展示了<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="networking services" data-see="networking services (AWS)">&nbsp;</a>用户如何与 AWS 区域内的服务建立连接。理解这种可访问性的维护机制，以及 AWS 云如何为您的私有数据中心提供类似的抽象，至关重要。本节将介绍 AWS 在网络与连接方面提供的各项服务。</p>
+        <section data-type="sect2" id="ch09_amazon_vpc_1734552289953935">
+          <h2>Amazon VPC</h2>
+          <p>自建<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" id="network-aws-vpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" id="vpc-service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="virtual private clouds" data-see="VPC service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Amazon VPC" data-see="VPC service">&nbsp;</a>数据中心，无论是货币成本还是运维管理成本都相当高昂。Amazon VPC（虚拟私有云）提供了与个人私有数据中心相近的基础设施隔离级别。您可以将 VPC 理解为位于 AWS 云内部的专属数据中心。</p>
+          <p>Amazon VPC 服务允许您在云中创建虚拟网络，并对网络环境拥有完全的控制权，包括选择 IP 地址范围、创建子网、配置路由表和网络网关。VPC 支持您在 AWS 云的逻辑隔离区域内安全地启动 Amazon EC2 实例、Amazon RDS 和 AWS ELB 等资源。</p>
+          <div data-type="note">
+            <p>本书不涉及基础设施搭建的具体步骤，而将重点放在 AWS 的核心概念上。我们会提供 AWS 文档链接以指导配置，并建议您访问相应的产品页面了解更多详情。</p>
+          </div>
+          <p>大量客户使用 AWS 云，Amazon VPC 在划定客户资源边界方面发挥着至关重要的作用。AWS 账户默认附带一个 VPC 用于启动资源，还可以根据用例需求创建更多 VPC。每个账户每个区域默认最多可创建五个 VPC（可调整上限），如需提高上限，可向 AWS Support 中心提交申请。接下来我们将深入介绍 VPC，从一些基础网络知识入手，以便为您搭建 VPC 时做出更合理的决策提供参考。</p>
+          <section data-type="sect3" id="ch09_ip_addresses_1734552289954021">
+            <h3>IP 地址</h3>
+            <p>让<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="IP addresses" id="network-aws-vpc-ip">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="IP addresses" id="vpc-service-ip">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IP addresses" id="ip-address">&nbsp;</a>我们以一个现实中的例子来说明。您非常期待与一位新朋友见面，并约好在印度古尔冈安贝斯购物中心三楼 301-302 号的 Cafe Delhi Heights 碰面。但您还需要一个更精确的位置——餐厅内的具体桌号，而不仅仅是餐厅地址。在网络世界中，这个精确定位就称为 <em>IP 地址</em>：一种用于标识每台计算机的唯一字符串。互联网上的每台设备都需要一个 IP 地址才能与其他设备进行通信。IP 地址分为 IPv4 和 IPv6 两种类型。</p>
+            <section data-type="sect4" id="ch09_ipv4_1734552289954090">
+              <h4>IPv4</h4>
+              <p><em>IPv4</em> 是<a contenteditable="false" data-type="indexterm" data-primary="IP addresses" data-secondary="IPv4" id="ip-address-ipv4">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IPv4" id="ipv4">&nbsp;</a>一种 32 位（4 字节）的地址空间，每个字节用十进制数表示（即二进制八位组），各字节之间以点（.）分隔，例如 192.168.1.0。我们如何判断流量应被路由到哪个目的地？邮政服务如何将邮件送达您家门口？您又是如何知道要去 Cafe Delhi Heights 的 21 号桌与新朋友见面的？一般需要两个组成部分来实现唯一标识：对于实物邮件，这两个部分是邮政编码（或区号，具体取决于所在国家）和门牌号；对于与新朋友见面，则是安贝斯购物中心的餐厅位置和餐厅内的桌号。</p>
+              <p>类似地，将网络数据包传递到个人计算机也需要两个组成部分：<a contenteditable="false" data-type="indexterm" data-primary="network ID">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="host ID">&nbsp;</a>网络组件（<em>网络 ID</em>）和主机组件（<em>主机 ID</em>）。例如，您所在的办公室网络对应一个网络 ID，而您的个人电脑则对应一个主机 ID。</p>
+              <p>网络 ID 与主机 ID 各自应分配多少位，由 IP 地址类别定义，如<a data-type="xref" href="#ch09_figure_2_1734552289929179">#ch09_figure_2_1734552289929179</a>所示。IP 地址共分 A 至 E 五个类别，其中 D 类保留用于多播，E 类保留用于科研目的。</p>
+              <figure id="ch09_figure_2_1734552289929179">
+                <img src="images/sdoa_0902.png"/>
+                <figcaption>IP 地址类别</figcaption>
+              </figure>
+              <p>A、B、C 三类地址之间的一个区别在于分配给网络 ID 和主机 ID 的位数，另一个区别在于各类地址允许的 IP 地址范围，具体见<a data-type="xref" href="#ch09_table_1_1734552289937307">#ch09_table_1_1734552289937307</a>。</p>
+              <table id="ch09_table_1_1734552289937307">
+                <caption>各类别 IPv4 地址范围</caption>
+                <thead>
+                  <tr>
+                    <th>IP 地址类别</th>
+                    <th>IP 范围</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <p>A 类</p>
+                    </td>
+                    <td>
+                      <p>1.0.0.0−127.255.255.255</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <p>B 类</p>
+                    </td>
+                    <td>
+                      <p>128.0.0.0−191.255.255.255</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <p>C 类</p>
+                    </td>
+                    <td>
+                      <p>192.0.0.0−223.255.255.255</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <p>选择哪种类别取决于对网络数量和每个网络内主机数量的具体需求。例如，A 类提供 126 个网络 ID 和 16,777,214 个主机 ID，而 C 类则提供 2,097,152 个网络 ID 和 254 个主机 ID。通过子网掩码可实现 IP 地址或网络空间向网络地址和主机地址的划分。C 类地址最常用于家庭网络和小型企业等通用场景。</p>
+              <p>顾名思义，<a contenteditable="false" data-type="indexterm" data-primary="subnets">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="subnet masks">&nbsp;</a><em>子网</em>（subnet）将父网络划分为多个子网络。<em>网络掩码</em>（subnet mask）用于将 IP 地址划分为网络地址和主机地址，是一个 32 位的数字，主机位设为 0，网络位设为 1。Amazon VPC 在区域级别对资源进行逻辑隔离，通过子网可进一步划分到可用区层级——我们将在后续创建 VPC 的章节中详细介绍。<a data-type="xref" href="#ch09_figure_3_1734552289929204">#ch09_figure_3_1734552289929204</a>展示了一个 IPv4 地址及其网络掩码的示例表示。</p>
+              <figure id="ch09_figure_3_1734552289929204">
+                <img src="images/sdoa_0903.png"/>
+                <figcaption>IPv4 地址与网络掩码的表示</figcaption>
+              </figure>
+              <p>IPv4 地址存在一个特殊问题：相较于全球设备和网络的数量，可用地址数量极为有限。缓解 IPv4 地址<a contenteditable="false" data-type="indexterm" data-primary="Classless Inter-Domain Routing (CIDR)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CIDR (Classless Inter-Domain Routing)">&nbsp;</a>耗尽的临时解决方案是采用<em>无类别域间路由（CIDR）</em>。</p>
+              <div data-type="note">
+                <p>请注意，每个子网 CIDR 块中的前四个 IP 地址和最后一个 IP 地址均保留用于<a href="https://oreil.ly/GQvXO">特殊用途</a>，因此无法分配给主机（或资源）。</p>
+              </div>
+              <p>CIDR 是一种表示 IP 地址及其网络掩码的方式。无类别的概念于 1993 年引入，旨在缓解 IPv4 地址耗尽问题。CIDR 支持可变长度的网络掩码，跳过了按类别进行标准划分的限制，从而优化了 IP 地址的类别空间利用率。如<a data-type="xref" href="#ch09_figure_4_1734552289929225">#ch09_figure_4_1734552289929225</a>所示。</p>
+              <figure id="ch09_figure_4_1734552289929225">
+                <img src="images/sdoa_0904.png"/>
+                <figcaption>可变长度网络掩码</figcaption>
+              </figure>
+              <p>然而，长期解决方案是迁移到<a contenteditable="false" data-type="indexterm" data-primary="IP addresses" data-secondary="IPv4" data-startref="ip-address-ipv4">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IPv4" data-startref="ipv4">&nbsp;</a>IPv6 地址。</p>
+            </section>
+            <section data-type="sect4" id="ch09_ipv6_1734552289954149">
+              <h4>IPv6</h4>
+              <p><em>IPv6</em> 为 128 位，<a contenteditable="false" data-type="indexterm" data-primary="IP addresses" data-secondary="IPv6">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IPv6">&nbsp;</a>与 32 位的 IPv4 地址相比，提供了更大的地址空间。IPv6 由八组四位十六进制数表示，各组之间以冒号分隔，例如 <em>ab90:cd00:0000:0cef:0123:0000:211f:345d</em>。<a data-type="xref" href="#ch09_figure_5_1734552289929244">#ch09_figure_5_1734552289929244</a>描述了一种简化的 IPv6 表示法：站点前缀表示由 ISP 或区域互联网注册机构分配的公共拓扑；子网 ID 表示特定网络内部的私有拓扑；接口 ID 表示通过 IEEE 扩展唯一标识符（EUI-64）格式由接口 MAC 地址配置的唯一设备标识符。</p>
+              <figure id="ch09_figure_5_1734552289929244">
+                <img src="images/sdoa_0905.png"/>
+                <figcaption>IPv6 地址的简化表示</figcaption>
+              </figure>
+              <p>IPv4 和 IPv6 地址均可根据可见性进一步划分为公有 IP 地址和私有 IP 地址。由于 IPv4 地址数量有限，公私有地址的划分概念在 IPv4 中更为普遍。以下将以 IPv4 地址为例进行说明。</p>
+            </section>
+            <section data-type="sect4" id="ch09_private_and_public_ip_addresses_1734552289954213">
+              <h4>私有与公有 IP 地址</h4>
+              <p>回到<a contenteditable="false" data-type="indexterm" data-primary="IP addresses" data-secondary="private" id="ip-address-private">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="private IP addresses" id="private-ip">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IP addresses" data-secondary="public" id="ip-address-public">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="public IP addresses" id="public-ip">&nbsp;</a>我们的例子，您和朋友约好在 Cafe Delhi Heights 的 21 号预留桌就座，享受餐厅的美食与氛围。出于好奇，您想参观一下烹制美食的厨房，但餐厅老板拒绝了您，说只有特定人员才能进入厨房。在这里，厨房是私有空间，普通就餐区是公共空间。当然，也存在进入私有空间（即本例中的厨房）的途径，我们将在后续章节中探讨。</p>
+              <p>或者设想您的居家办公场景：您有一台 WiFi 路由器，所有设备（如手机、办公笔记本、个人笔记本等）都通过这台路由器访问互联网。如果您在所有设备上搜索"我的 IP 是什么"，得到的结果是同一个 IP 地址。这个 IP 地址称为<em>公有 IP 地址</em>，由 ISP 分配。您可能会疑惑，一个 IP 地址如何供多台设备共用通信？这就是 NAT 的作用，我们将在<a data-type="xref" href="#ch09_nat_gateway_1734552289954876">#ch09_nat_gateway_1734552289954876</a>中详细介绍。重启路由器可能会获得不同的 IP 地址，但连接同一 ISP 的所有设备始终共用同一个对外 IP 地址。</p>
+              <p>所有这些设备可以通过<em>私有 IP 地址</em>在不经过互联网的情况下相互通信。路由器会为每台连接的设备分配一个私有 IP 地址。<a data-type="xref" href="#ch09_table_2_1734552289937340">#ch09_table_2_1734552289937340</a>列出了私有 IP 地址允许的地址范围，其余地址均可用于公有网络空间。</p>
+              <table id="ch09_table_2_1734552289937340">
+                <caption>各类别私有 IPv4 地址空间</caption>
+                <thead>
+                  <tr>
+                    <th>IP 地址类别</th>
+                    <th>IP 地址范围</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <p>A 类</p>
+                    </td>
+                    <td>
+                      <p>10.0.0.0−10.255.255.255</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <p>B 类</p>
+                    </td>
+                    <td>
+                      <p>172.16.0.0−172.31.255.255</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <p>C 类</p>
+                    </td>
+                    <td>
+                      <p>192.168.0.0−192.168.255.255</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <p>创建 AWS 资源时，系统会从所提供的 IP 地址范围内动态分配 IP 地址。如需为资源绑定特定的 IP 地址，可使用弹性 IP 地址。</p>
+            </section>
+            <section data-type="sect4" id="ch09_elastic_ip_address_1734552289954272">
+              <h4>弹性 IP 地址</h4>
+              <p><em>弹性 IP 地址</em>是<a contenteditable="false" data-type="indexterm" data-primary="IP addresses" data-secondary="elastic">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="elastic IP addresses">&nbsp;</a>一种与 AWS 账户关联的静态公有 IPv4 地址，可分配给 Amazon EC2 实例或网络接口。它适用于需要固定 IP 地址且不随时间变化的场景。例如，当一台故障的 EC2 实例被健康实例替换时，弹性 IP 地址能够保持 IP 地址不变。</p>
+              <p>请注意，弹性 IP 地址会产生额外费用。弹性 IP 地址按区域购买，<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="IP addresses" data-startref="network-aws-vpc-ip">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="IP addresses" data-startref="vpc-service-ip">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IP addresses" data-startref="ip-address">&nbsp;</a>一个区域的 IP 地址不可在其他区域使用。</p>
+            </section>
+          </section>
+          <section data-type="sect3" id="ch09_creating_an_amazon_vpc_1734552289954331">
+            <h3>创建 Amazon VPC</h3>
+            <p>前文<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="creating VPC" id="network-aws-vpc-create">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="creating VPC" id="vpc-service-create">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CIDR blocks" id="cidr-block">&nbsp;</a>介绍的网络概念将帮助我们搭建第一个 VPC。VPC 创建向导需要输入 IPv4 CIDR 块、IPv6 CIDR 块和租用方式。IPv4 CIDR 块为必填项，必须填写才能继续。VPC 支持双栈模式，可同时使用 IPv4 和 IPv6。IPv4 允许的 CIDR 块范围为 /16 至 /28；IPv6 固定为 /64。</p>
+            <p>配置 CIDR 块时，需考虑以下几点：</p>
+            <ul>
+              <li>
+                <p>创建 VPC 需要初始的 IPv4 CIDR 块，尽管您可能有仅使用 IPv6 地址空间的用例。VPC 支持在单个 VPC 内同时使用 IPv4 和 IPv6 地址空间，可在创建时指定。</p>
+              </li>
+              <li>
+                <p>CIDR 块应从 RFC 1918 规定的范围内选取，建议使用私有 IP 地址范围，但也可以选择公有地址。</p>
+              </li>
+              <li>
+                <p>CIDR 块一旦创建，大小便无法更改。客户应仔细规划 CIDR 的大小，充分考虑未来需求，以避免后续返工。简言之，若目前尚无明确规划，可选择较大的 CIDR 块以保留更多灵活性。</p>
+              </li>
+              <li>
+                <p>CIDR 块不得与已关联到 VPC 的现有 CIDR 块重叠。这对于使用 VPC 对等连接和 AWS Direct Connect 等服务同样至关重要，各 VPC 之间的 CIDR 块不得重叠。</p>
+              </li>
+              <li>
+                <p>每个 VPC 最多可关联五个附加 CIDR 块（此为可调整上限，最高可提升至 50 个）；附加 CIDR 块的范围须严格小于主 CIDR 块。</p>
+              </li>
+            </ul>
+            <div data-type="note">
+              <p><em>可调整上限</em>（软性限制）是指<a contenteditable="false" data-type="indexterm" data-primary="soft limit">&nbsp;</a>该上限可通过 AWS Service Quotas 或 AWS 支持团队协助进行调整和提升。</p>
+            </div>
+            <p>接下来，我们需要考虑租用方式。回到现实中的例子：预订 Cafe Delhi Heights 有两种方式。第一种是包场——如果这是一次极为私密的会面，您不希望在预订时间内有其他人在场，这称为<a contenteditable="false" data-type="indexterm" data-primary="dedicated tenancy">&nbsp;</a><em>专用租赁</em>（dedicated tenancy）。</p>
+            <p>第二种是预订一张双人桌——其他空桌仍可供其他人预订。<a contenteditable="false" data-type="indexterm" data-primary="shared tenancy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="tenancy">&nbsp;</a>这称为<em>共享租赁</em>（shared tenancy）。除非有特殊原因（如需要保密的会议），从成本角度来看选择第二种方案更为合理。向 AWS 申请服务器时同样如此：实例可以运行在共享硬件上（通过虚拟化与其他用户的实例共用同一台物理机），也可以运行在专用硬件上（您的实例与其他客户的资源物理隔离），具体取决于您的业务需求。该选项可在创建 VPC 时配置，默认情况下，在该 VPC 中启动的所有实例均采用相同选项，除非单独覆盖。</p>
+            <div data-type="note">
+              <p>AWS 提供多种创建资源的工具，如 AWS CLI、AWS 云开发工具包（CDK）以及 AWS 控制台。初学者可以从 AWS 控制台开始尝试，但随着系统规模的扩大，我们建议维护一套代码仓库，通过<a contenteditable="false" data-type="indexterm" data-primary="infrastructure-as-code (IaC)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IaC (infrastructure-as-code)">&nbsp;</a><em>基础设施即代码（IaC）</em>的方式来预置 AWS 资源。这在多个方面都大有裨益，例如将相同资源复制到其他区域，或维护基础设施<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="creating VPC" data-startref="network-aws-vpc-create">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="creating VPC" data-startref="vpc-service-create">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CIDR blocks" data-startref="cidr-block">&nbsp;</a>审计记录。</p>
+            </div>
+            <p>VPC 配置的下一步是设置子网，子网用于将资源分散部署到多个可用区中。</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch09_subnets_1734552289954390">
+          <h2>子网</h2>
+          <p>如<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="subnets" id="network-aws-vpc-subnet">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="subnets" id="vpc-service-subnet">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="subnets" id="subnet">&nbsp;</a>前所述，<em>子网</em>（subnet）即子网络，是 VPC CIDR 块内 IP 地址范围的逻辑细分。为什么要将网络空间划分为多个子网络？其核心思路是将资源按可用区分散部署，以确保应用程序的高可用性。每个子网关联一个 AWS 区域内的可用区，通过将资源关联到特定子网，可确保资源在该可用区内启动。值得注意的是，子网与可用区的映射关系可能因客户而异：对您而言的 us-east-1a 可用区，对您的朋友来说可能是 us-east-1b。AWS 会对客户屏蔽这些细节，以确保资源（按可用性）的均衡分配。</p>
+          <p>每个子网应像 VPC 一样分配一个 CIDR 块，该 CIDR 块可与 VPC 的 CIDR 块相同，也可以是其子集。关键在于，同一 VPC 内各子网的 CIDR 块不得重叠。每个子网 CIDR 块中的前四个和最后一个 IP 地址均保留，不可分配给资源。</p>
+          <p>子网<a contenteditable="false" data-type="indexterm" data-primary="public subnets" id="public-subnet">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="private subnets" id="private-subnet">&nbsp;</a>可以是公有子网或私有子网，取决于其与互联网的连接方式。公有子网和私有子网在外观上相似，区别在于能否访问互联网。例如，Web 应用服务器可放置在公有子网中，使应用可通过互联网公开访问；而数据库服务器则可放置在私有子网中，以限制公众访问，如<a data-type="xref" href="#ch09_figure_6_1734552289929264">#ch09_figure_6_1734552289929264</a>所示。正如 Cafe Delhi Heights 的厨房位于私有空间（即私有子网）而拒绝您进入，您却可以自由在普通就餐区（即公有空间或公有子网）走动。</p>
+          <figure id="ch09_figure_6_1734552289929264">
+            <img src="images/sdoa_0906.png"/>
+            <figcaption>各类网络组件概览</figcaption>
+          </figure>
+          <p>公有子网中的资源可以访问互联网，因为存在指向<a class="orm:hideurl" href="https://oreil.ly/rKh2C">互联网网关</a>（IGW）的直接路由（如<a data-type="xref" href="#ch09_figure_6_1734552289929264">#ch09_figure_6_1734552289929264</a>中自定义路由表的 igw-id 条目所示）；而<a contenteditable="false" data-type="indexterm" data-primary="Internet Gateway (IGW)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IGW (Internet Gateway)">&nbsp;</a>私有子网中的资源则需要 NAT 服务或 NAT 实例才能访问互联网（路由表中的 nat-gateway-id 条目）。本章后续章节将详细介绍网络访问控制列表（NACL）、路由表、NAT 网关和互联网网关。关键在于，指向互联网网关的直接路由是区分公有子网和私有子网的唯一因素。具有公有 IPv4 地址但没有指向互联网网关的直接路由的子网称为<em>私有子网</em>。</p>
+          <p>在 AWS 账户中配置 VPC 和子网时，请遵循以下最佳实践：</p>
+          <dl>
+            <dt>使用多个子网</dt>
+            <dd>
+              <p>在不同可用区中创建多个子网，以实现容错和高可用性。</p>
+            </dd>
+            <dt>隔离资源</dt>
+            <dd>
+              <p>为不同类型的资源使用独立的子网，以提升安全性和网络分段能力。</p>
+            </dd>
+            <dt>区分公有和私有子网</dt>
+            <dd>
+              <p>将需要公开访问的资源放置在公有子网中，将敏感资源放置在<a contenteditable="false" data-type="indexterm" data-primary="public subnets" data-startref="public-subnet">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="private subnets" data-startref="private-subnet">&nbsp;</a>私有子网中。</p>
+            </dd>
+          </dl>
+          <p>VPC 在 AWS 云中提供了一个逻辑隔离的网络，但这个网络如何与互联网连接？互联网流量又如何访问子网中的资源？接下来<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="subnets" data-startref="network-aws-vpc-subnet">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="subnets" data-startref="vpc-service-subnet">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="subnets" data-startref="subnet">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-startref="network-aws-vpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-startref="vpc-service">&nbsp;</a>我们来探讨这个问题。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch09_internet_connectivity_1734552289954482">
+        <h1>互联网连接</h1>
+        <p>流量路由和资源安全保护通过路由表、互联网网关和安全组等组件来实现，本节将重点介绍这些组件。</p>
+        <section data-type="sect2" id="ch09_route_tables_1734552289954563">
+          <h2>路由表</h2>
+          <p>在<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="internet connectivity" data-tertiary="route tables" id="network-aws-internet-routetable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="internet connectivity" data-secondary="route tables" id="internet-routetable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="route tables" id="routetable">&nbsp;</a>AWS 云中，您只需在路由表中配置所需路由，而无需担心路由器的搭建问题。<em>路由表</em>是一组规则的集合，这些规则称为<em>路由</em>，用于决定来自子网或网关的网络流量的去向。我们可以认为 AWS 在内部维护着一台路由器来实现这种路由功能。</p>
+          <p>每个子网都必须关联一张路由表，系统会隐式创建主路由表，以提供子网之间的私有访问连接。您可以根据需要创建更多自定义路由表并将其分配给子网——同一张路由表可以关联到多个子网。这里的关键考量是，创建路由表时应明确划分路由责任，避免将路由集中在单张路由表中造成混乱，从而提升路由的可维护性和可读性。</p>
+          <p>路由表分为两类：主路由表和自定义路由表。</p>
+              <p>主路由表在创建 VPC 时自动生成，默认包含用于 VPC 内本地路由的第一条记录，使不同子网中的资源可以相互通信。每次创建子网时，该子网都会隐式关联到主路由表。如有需要，客户可以创建自定义路由表并将其显式关联到子网。</p>
+              <p>关于主路由表，需注意以下几点：</p>
+            <ul>
+              <li>
+                <p>主路由表不可删除，自定义路由表也不能设置为主路由表，但主路由表可替换为自定义路由表用于子网关联。</p>
+              </li>
+              <li>
+                <p>可以向主路由表添加额外路由——但我们建议避免这样做，应创建自定义路由表来添加自定义路由。</p>
+              </li>
+              <li>
+                <p>默认配置的路由为通用路由，可能并非所有用例的最优安全配置。在生产环境使用前，请先审查这些路由。</p>
+              </li>
+            </ul>
+              <p>自定义路由表默认不包含任何路由，需根据网络流量路由需求进行配置。自定义路由表与主路由表不同，可以删除，但执行删除操作前，该路由表不能有任何子网关联。</p>
+          <p>了解了两类路由表及其用途之后，让我们来看看路由是如何添加的以及路由的格式。路由表中有两个重要的输入项（示例见<a data-type="xref" href="#ch09_table_3_1734552289937365">#ch09_table_3_1734552289937365</a>）：</p>
+          <dl>
+            <dt>目标地址（Destination）</dt>
+            <dd>
+              <p>以 CIDR 格式填写，即指定网络数据包应发往的 IP 地址范围，例如 10.0.0.0/16</p>
+            </dd>
+            <dt>目标（Target）</dt>
+            <dd>
+              <p>指定网络数据包到达目标地址的方式，可以是网关、网络接口或连接——例如，用于将流量路由到互联网的互联网网关（IGW），或 VPC 对等连接</p>
+            </dd>
+          </dl>
+          <table id="ch09_table_3_1734552289937365">
+            <caption>通过 IGW 实现互联网连接的路由表</caption>
+            <thead>
+              <tr>
+                <th>目标地址</th>
+                <th>目标</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>VPC CIDR</p>
+                </td>
+                <td>
+                  <p>Local</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>0.0.0.0/0</p>
+                </td>
+                <td>
+                  <p>igw-id</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>路由表负责引导子网内外的网络流量，但不对流量应用任何安全过滤。AWS 提供软件防火墙——安全组（SG）和网络访问控制列表（NACL）——来实施流量过滤，从而有效控制网络流量的访问权限。这些组件有助于管控<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="internet connectivity" data-tertiary="route tables" data-startref="network-aws-internet-routetable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="internet connectivity" data-secondary="route tables" data-startref="internet-routetable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="route tables" data-startref="routetable">&nbsp;</a>VPC 的出入流量。</p>
+        </section>
+        <section data-type="sect2" id="ch09_security_groups_1734552289954638">
+          <h2>安全组</h2>
+          <p>安全组（SG）<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="internet connectivity" data-tertiary="security groups" id="network-aws-internet-securitygroup">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="internet connectivity" data-secondary="security groups" id="internet-securitygroup">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="security groups" id="security-group">&nbsp;</a>定义了允许进出资源的流量规则。安全组在 VPC 级别创建，在实例级别分配，基于协议、端口和 IP 地址控制实例级别的入站和出站流量。您的 EC2 实例可以关联一个或多个安全组。每个实例必须关联至少一个安全组，如果未手动创建，则会自动关联在创建 VPC 时生成的默认安全组。</p>
+          <p>为保护实例并限制出入流量的访问，您需要在安全组中添加入站规则和出站规则。<em>入站规则</em><a contenteditable="false" data-type="indexterm" data-primary="inbound rules">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="outbound rules">&nbsp;</a>定义允许进入实例的流量，<em>出站规则</em>定义允许从实例发出的流量。</p>
+          <p>关于安全组，需注意以下几点：</p>
+          <ul>
+            <li>
+              <p>安全组是有状态的。例如，您从个人笔记本向一台 EC2 实例发送请求获取数据，您的 IP 地址被添加到入站规则中，即便没有配置针对您笔记本的出站规则，您仍然可以收到响应。简言之，一个方向允许的规则会自动允许相反方向的流量，无需显式添加。</p>
+            </li>
+            <li>
+              <p>默认安全组不可删除。我们建议按需创建自定义安全组。一个实例可以关联多个安全组，但在创建时应考虑未来的扩展需求。例如，应避免规则重复的安全组，尽量复用已有安全组。</p>
+            </li>
+            <li>
+              <p>只应开放必要的访问权限，避免过度暴露资源。例如，SSH 连接应仅允许指定 IP 地址范围的访问，而非对整个互联网开放 22 端口。</p>
+            </li>
+            <li>
+              <p>安全组不支持配置显式拒绝规则，所有不匹配允许规则的流量将被隐式拒绝访问资源。</p>
+            </li>
+          </ul>
+          <p>在入站或出站规则的每条规则中，需指定以下参数，如<a data-type="xref" href="#ch09_table_4_1734552289937387">#ch09_table_4_1734552289937387</a>所示：</p>
+          <dl>
+            <dt>类型（Type）</dt>
+            <dd>
+              <p>表示流量类型。AWS 会根据所选类型自动确定协议和端口范围，同时提供自定义类型以便手动填写自定义值（如端口范围）。</p>
+            </dd>
+            <dt>来源或目标（Source or Destination）</dt>
+            <dd>
+              <p>入站规则添加来源属性，出站规则添加目标属性。可填写特定 IP 地址、完整 CIDR 块或其他安全组。</p>
+            </dd>
+            <dt>描述（Description）</dt>
+            <dd>
+              <p>有助于说明添加某条规则的原因或其用途。该字段为可选项，但我们建议填写，<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="internet connectivity" data-tertiary="security groups" data-startref="network-aws-internet-securitygroup">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="internet connectivity" data-secondary="security groups" data-startref="internet-securitygroup">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="security groups" data-startref="security-group">&nbsp;</a>以便日后查阅。</p>
+            </dd>
+          </dl>
+          <table id="ch09_table_4_1734552289937387">
+            <caption>安全组出站规则示例</caption>
+            <thead>
+              <tr>
+                <th>类型</th>
+                <th>协议</th>
+                <th>端口范围</th>
+                <th>目标</th>
+                <th>描述</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>SSH</p>
+                </td>
+                <td>
+                  <p>TCP</p>
+                </td>
+                <td>
+                  <p>22</p>
+                </td>
+                <td>
+                  <p>117.212.92.68</p>
+                </td>
+                <td>
+                  <p>SSH 规则测试</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+        <section data-type="sect2" id="ch09_network_access_control_lists_1734552289954699">
+          <h2>网络访问控制列表</h2>
+          <p><em>网络访问控制列表（NACL）</em><a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="internet connectivity" data-tertiary="NACLs" id="network-aws-internet-nacl">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="internet connectivity" data-secondary="NACLs" id="internet-nacl">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="NACLs (network access control lists)" id="nacl">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="network access control lists (NACLs)" id="network-access-control-list">&nbsp;</a>是挂载在子网级别的无状态数据包过滤器。与安全组不同，NACL 支持在子网级别添加允许或拒绝出入流量的规则。可以将其视为安全组之上的额外安全层，用于在安全组配置过于宽松时拦截流量。</p>
+          <p>回到 Cafe Delhi Heights 厨房的例子：即使您被允许进入厨房，厨房里的厨师仍可以拒绝与您交流。</p>
+          <p>关于 NACL，有以下几个要点需要牢记：</p>
+          <ul>
+            <li>
+              <p>NACL 是无状态的。客户需要为入站和出站流量分别显式添加允许或拒绝规则。</p>
+            </li>
+            <li>
+              <p>Amazon VPC 会附带一个默认 NACL，它将挂载到 VPC 内的所有子网，并允许所有入站/出站流量。如需进行细粒度的流量控制，可以创建自定义 NACL 或修改现有规则——我们建议按需创建自定义 NACL。</p>
+            </li>
+            <li>
+              <p>NACL 定义的入站或出站规则用于允许或拒绝特定动作。规则将按顺序逐一评估，一旦某条规则匹配成功，其后的规则将被跳过。若所有规则均未匹配，则标记为 * 的最终规则将执行拒绝动作。</p>
+            </li>
+          </ul>
+          <p>每条入站或出站规则需指定以下参数，如<a data-type="xref" href="#ch09_table_5_1734552289937413">#ch09_table_5_1734552289937413</a>所示：</p>
+          <dl>
+            <dt>规则编号（Rule number）</dt>
+            <dd>
+              <p>规则编号即规则的评估顺序，取值范围为 1 至 32766。</p>
+            </dd>
+            <dt>类型（Type）</dt>
+            <dd>
+              <p>表示流量类型。AWS 会根据所选类型自动填充协议和端口范围，也可根据所选类型手动填写自定义协议和端口范围。</p>
+            </dd>
+            <dt>来源（Source）</dt>
+            <dd>
+              <p>来源表示入站规则，以 CIDR 块填写。</p>
+            </dd>
+            <dt>目标（Destination）</dt>
+            <dd>
+              <p>目标表示出站规则，以 CIDR 块填写。</p>
+            </dd>
+            <dt>允许或拒绝（Allow or Deny）</dt>
+            <dd>
+              <p>每条规则都需要明确指定"允许"或"拒绝"动作，该动作决定是否允许该流量通过。</p>
+            </dd>
+          </dl>
+          <table id="ch09_table_5_1734552289937413">
+            <caption>NACL 入站规则示例</caption>
+            <thead>
+              <tr>
+                <th>规则编号</th>
+                <th>类型</th>
+                <th>协议</th>
+                <th>端口范围</th>
+                <th>来源</th>
+                <th>允许/拒绝</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>100</p>
+                </td>
+                <td>
+                  <p>所有流量</p>
+                </td>
+                <td>
+                  <p>全部</p>
+                </td>
+                <td>
+                  <p>全部</p>
+                </td>
+                <td>
+                  <p>0.0.0.0/0</p>
+                </td>
+                <td>
+                  <p>允许</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>*</p>
+                </td>
+                <td>
+                  <p>所有流量</p>
+                </td>
+                <td>
+                  <p>全部</p>
+                </td>
+                <td>
+                  <p>全部</p>
+                </td>
+                <td>
+                  <p>0.0.0.0/0</p>
+                </td>
+                <td>
+                  <p>拒绝</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>路由表、安全组和 NACL 帮助您配置路由和网络安全。为实现按已配置路由的连接，AWS 提供了互联网网关（IGW）<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="internet connectivity" data-tertiary="NACLs" data-startref="network-aws-internet-nacl">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="internet connectivity" data-secondary="NACLs" data-startref="internet-nacl">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="NACLs (network access control lists)" data-startref="nacl">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="network access control lists (NACLs)" data-startref="network-access-control-list">&nbsp;</a>和 NAT 网关。</p>
+        </section>
+        <section data-type="sect2" id="ch09_amazon_vpc_to_internet_connectivity_1734552289954762">
+          <h2>Amazon VPC 与互联网的连接</h2>
+          <p>我们将<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="internet connectivity" data-tertiary="to VPC service" data-tertiary-sortas="VPC service" id="network-aws-internet-vpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="internet connectivity" data-secondary="to VPC service" data-secondary-sortas="VPC service" id="internet-vpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="internet connectivity to" id="vpc-service-internet">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="internet connectivity to" id="network-service-vpc-internet">&nbsp;</a> VPC 描述为 AWS 云中的个人数据中心。那么，用户如何与这个个人数据中心建立连接，该数据中心又如何连接到互联网？本节将深入介绍 AWS 中用于解决这些连接问题的不同组件。</p>
+          <section data-type="sect3" id="ch09_internet_gateway_1734552289954820">
+            <h3>互联网网关</h3>
+            <p>在<a data-type="xref" href="#ch09_table_3_1734552289937365">#ch09_table_3_1734552289937365</a>中，我们展示了<a contenteditable="false" data-type="indexterm" data-primary="Internet Gateway (IGW)" id="internet-gateway">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IGW (Internet Gateway)" id="igw">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="public subnets" id="public-subnet-internet-gateway">&nbsp;</a>目标地址为 0.0.0.0/0、目标为 igw-id 的路由，用于为资源开通互联网访问权限。该路由的目标地址指向整个互联网，目标为互联网网关（IGW）的标识符。</p>
+            <p>IGW 是 AWS 托管的 VPC 软件组件，提供 VPC 与互联网之间的连接。IGW 是一种高可用、冗余且可水平扩展的应用，挂载到 VPC 后可跨越不同可用区中的子网。</p>
+            <p>在 Cafe Delhi Heights 的例子中，IGW 相当于进出餐厅的前门。正如您只能进入公共就餐区而不能进入厨房一样，IGW 只与公有子网中的资源建立连接。</p>
+            <p>关于 IGW，有以下几个要点：</p>
+            <ul>
+              <li>
+                <p>IGW 支持双向连接，即从互联网到 VPC 以及从 VPC 到互联网，均通过公有 IP 地址进行通信。</p>
+              </li>
+              <li>
+                <p>IGW 为子网中具有公有 IPv4 地址的实例提供网络地址转换（NAT）支持。对于从实例发往互联网的流量，IGW 确保将响应返回到公有 IPv4 地址；对于发往具有公有 IPv4 地址的资源的流量，IGW 在将流量送达 VPC 之前完成到实例私有 IP 地址的转换。</p>
+              </li>
+              <li>
+                <p>IGW 与路由表协同工作，共同决定网络流量的路径。与 VPC 关联的路由表将发往互联网的流量引导至 IGW，IGW 作为出站流量的默认网关，将其路由到适当的目标地址。</p>
+              </li>
+              <li>
+                <p>IGW 支持 VPC 资源通过互联网与 Amazon S3 或 Amazon DynamoDB 等其他 AWS 服务进行通信。</p>
+              </li>
+              <li>
+                <p>IGW 是无状态的，不维护网络连接状态信息，每个数据包都会根据路由规则和安全设置独立进行评估。</p>
+              </li>
+              <li>
+                <p>IGW 具有高可用性和可扩展性，会自动在区域内的多个可用区中进行复制，提供冗余和容错能力。</p>
+              </li>
+            </ul>
+            <p>IGW 可为公有子网建立互联网连接，但私有子网又如何访问互联网呢？某些场景下，私有子网中的资源可能需要访问互联网，例如下载最新的软件更新。私有子网与公有互联网之间的连接<a contenteditable="false" data-type="indexterm" data-primary="Internet Gateway (IGW)" data-startref="internet-gateway">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IGW (Internet Gateway)" data-startref="igw">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="public subnets" data-startref="public-subnet-internet-gateway">&nbsp;</a>通过 NAT 网关实现。</p>
+          </section>
+          <section data-type="sect3" id="ch09_nat_gateway_1734552289954876">
+            <h3>NAT 网关</h3>
+            <p>在<a contenteditable="false" data-type="indexterm" data-primary="NAT gateways" id="nat-gateway">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="private subnets" id="private-subnet-nat-gateway">&nbsp;</a>餐厅的例子中，厨房里的厨师们希望向大厅中的顾客征求对所上菜肴的反馈意见；只有主厨才被允许直接在主餐厅区域与顾客互动，厨师只在厨房工作——这样做是为了避免顾客被过多打扰，以及大厅人员过于拥挤。</p>
+            <p>NAT 网关在子网中扮演着主厨的角色——它通过 IGW 将私有子网中的实例与互联网相连。您可以将 NAT 网关理解为 IGW 与私有实例之间的桥梁。IGW 需要公有 IP 才能与互联网交互，NAT 网关负责提供这种支持，适用于 TCP、UDP 和 ICMP 协议。</p>
+            <p>NAT 网关是 AWS 托管的网络设备，允许 VPC 私有子网中的资源发起出站互联网连接，同时通过隐藏其私有 IP 地址，防止来自互联网的直接入站访问。进一步来看，NAT 将私有 IP 地址转换为 NAT 设备的公有 IP 地址，当互联网返回响应时，再将其映射回原始的私有 IP 地址。为建立连接，您需要分配一个弹性 IP（EIP）地址并将其与 NAT 网关关联，EIP 作为代表 NAT 网关的静态公有 IP 地址，用于与互联网进行通信。</p>
+            <p>关于 NAT 网关，有以下几个要点需要考虑：</p>
+            <ul>
+              <li>
+                <p>为实现高可用性，NAT 网关应在可用区级别进行部署，这样当某个可用区发生故障时，不会影响其他可用区的流量服务能力。</p>
+              </li>
+              <li>
+                <p>在可用区级别分别部署 NAT 网关的另一个原因是，避免每秒数据包数超过 1000 万时出现数据包丢失。</p>
+              </li>
+              <li>
+                <p>外部互联网无法通过 NAT 网关主动发起对私有子网实例的连接。</p>
+              </li>
+              <li>
+                <p>NAT 网关支持公有（默认）和私有两种连接类型。公有类型适用于访问外部互联网，私有类型则适用于连接其他 VPC 或本地部署网络。</p>
+              </li>
+              <li>
+                <p>与 IGW（定价基于流经 IGW 的流量）不同，NAT 网关本身会产生额外的基础设施费用。</p>
+              </li>
+            </ul>
+            <p>我们已经讨论了与个人数据中心（即 VPC）的连接方式，但也可能存在拥有多个数据中心的场景。下一节将探讨<a contenteditable="false" data-type="indexterm" data-primary="private subnets" data-startref="private-subnet-nat-gateway">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="NAT gateways" data-startref="nat-gateway">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="internet connectivity" data-tertiary="to VPC service" data-tertiary-sortas="VPC service" data-startref="network-aws-internet-vpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="internet connectivity" data-secondary="to VPC service" data-secondary-sortas="VPC service" data-startref="internet-vpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="internet connectivity to" data-startref="vpc-service-internet">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="internet connectivity to" data-startref="network-service-vpc-internet">&nbsp;</a>AWS 为实现跨 VPC 连接提供的不同机制。</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch09_connectivity_between_amazon_vpcs_1734552289954936">
+          <h2>Amazon VPC 之间的连接</h2>
+          <p>您可能<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="cross-VPC connectivity" id="network-service-vpc-cross">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="cross-VPC connectivity" id="vpc-service-cross">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cross-VPC connectivity" id="cross-vpc">&nbsp;</a>面临诸如跨 VPC 集成 AWS 资源、安全隔离或多区域部署等需求，在这些场景中，位于不同 VPC 中的组件——可能属于同一 AWS 账户，也可能跨账户——需要在保持隔离的同时相互通信。回到餐厅的例子：Cafe Delhi Heights 越来越受欢迎，餐厅老板开了一家新店以接待更多顾客，但食物仍在原来的厨房里制作。现在需要建立一套良好的连接机制，以便将食物快速、安全地配送到新店。类似地，当两个微服务分别运行在不同的 VPC（甚至不同的 AWS 账户）中时，为使这些微服务之间能够安全通信，AWS 提供了多种连接选项。</p>
+          <p>这些连接选项主要分为两类关系：多对多和轮辐型（hub-and-spoke）。在多对多 VPC 关系中，每个 VPC 之间的流量单独管理；而在轮辐型模式中，由一个中心资源统一管理各 VPC 之间的流量路由。</p>
+          <section data-type="sect3" id="ch09_amazon_vpc_peering_1734552289954994">
+            <h3>Amazon VPC 对等连接</h3>
+            <p><a href="https://oreil.ly/5SQMv">VPC 对等连接</a>采用多对多方式，<a contenteditable="false" data-type="indexterm" data-primary="VPC peering" id="vpc-peering">&nbsp;</a>一个 VPC 与另一个 VPC 建立对等关系，实现完全的双向私有网络连接。它使不同 VPC 中的资源能够像在同一网络中一样，通过私有 IP 地址相互通信。VPC 对等连接不支持传递依赖，当 VPC 数量少于 10 个时，这是一种成本较低的互连方式。随着 VPC 数量增加，对等连接网状拓扑的管理和运维复杂度会大幅上升。</p>
+            <p>您可以通过路由表、安全组和 NACL 来管理连接，以允许特定资源或子网使用 VPC 对等连接。VPC 之间的网络数据包通过 AWS 私有网络传输，无带宽限制——此配置无需任何物理硬件，仅按数据传输量计费。</p>
+            <p>设想这样一个场景：所有 Cafe Delhi Heights 分店都有自己的酒吧，但食物统一在中央位置制作并供应给各分店。将此例延伸到系统架构中，假设 Web 前端和后端分别托管在独立的 VPC 中，可以通过 VPC 对等连接建立两者之间的连接。<a data-type="xref" href="#ch09_figure_7_1734552289929283">#ch09_figure_7_1734552289929283</a>展示了通过 VPC 对等连接，不同 VPC 中的服务器之间的连接方式。</p>
+            <figure id="ch09_figure_7_1734552289929283">
+              <img src="images/sdoa_0907.png"/>
+              <figcaption>VPC 对等连接</figcaption>
+            </figure>
+            <p>随着规模扩大，VPC 对等连接存在一定<a href="https://oreil.ly/mpf8e">局限性</a>，各 VPC 之间的路由配置管理也会越来越复杂。为克服这些瓶颈，AWS 提供了<a contenteditable="false" data-type="indexterm" data-primary="VPC peering" data-startref="vpc-peering">&nbsp;</a>Transit Gateway（中转网关）服务。</p>
+          </section>
+          <section data-type="sect3" id="ch09_aws_transit_gateway_1734552289955050">
+            <h3>AWS Transit Gateway</h3>
+            <p>AWS Transit Gateway（中转网关）<a contenteditable="false" data-type="indexterm" data-primary="Transit Gateway" id="transit-gateway">&nbsp;</a>是一种可扩展的解决方案，用于建立多个 VPC、本地部署网络与其他 AWS 服务之间的互连。基于轮辐型（hub-and-spoke）模型，Transit Gateway 是一种区域级资源，通过路由表在单一位置统一管理所有网络路由，无论是 VPC 路由，还是<a href="https://aws.amazon.com/vpn">虚拟专用网络（VPN）</a>或 AWS Direct Connect 等混合连接方式。</p>
+            <p>为更好地管控网络路由，Transit Gateway 可部署在独立的网络 AWS 账户中，由网络工程师集中<span class='keep-together'>统一</span>管理。<a data-type="xref" href="#ch09_figure_8_1734552289929302">#ch09_figure_8_1734552289929302</a>展示了 Transit Gateway 作为中心资源，为 VPC、Direct Connect 和 VPN 连接提供互连的示意图。</p>
+            <figure id="ch09_figure_8_1734552289929302">
+              <img src="images/sdoa_0908.png"/>
+              <figcaption>AWS Transit Gateway</figcaption>
+            </figure>
+            <p>Transit Gateway 与 VPC 对等连接的核心区别在于规模：Transit Gateway 可扩展支持数千个 VPC 之间的连接。而 VPC 对等连接在成本更低、无带宽限制和延迟更低等方面具有优势。</p>
+            <p><a data-type="xref" href="#ch09_figure_7_1734552289929283">#ch09_figure_7_1734552289929283</a>展示了前端层和后端层通过不同 VPC 中的 VPC 对等连接实现连接的方式。这种配置还有另一种解决方案，即使用<a contenteditable="false" data-type="indexterm" data-primary="Transit Gateway" data-startref="transit-gateway">&nbsp;</a>AWS PrivateLink（私有链接）。</p>
+          </section>
+          <section data-type="sect3" id="ch09_aws_privatelink_1734552289955106">
+            <h3>AWS PrivateLink</h3>
+            <p>AWS PrivateLink（私有链接）以私有方式<a contenteditable="false" data-type="indexterm" data-primary="PrivateLink" id="privatelink">&nbsp;</a>将应用程序暴露给另一个 VPC 中的调用方，确保流量在 AWS 骨干网络内传输，不经过公网。其与 VPC 对等连接的核心区别在于流量方向：VPC 对等连接提供双向连接，而当客户端仅需通过私有 IP 地址访问服务时，AWS PrivateLink 更适合实现这种单向连接需求。</p>
+            <p>PrivateLink 由两方建立：开放特定服务访问权限的一方是<a contenteditable="false" data-type="indexterm" data-primary="service providers">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="consumers">&nbsp;</a><em>服务提供方</em>，使用该服务的其他方则是<em>消费方</em>。</p>
+            <p>服务提供方在某个区域内创建端点服务，并将其与网络负载均衡器（NLB）关联（应用程序负载均衡器不能直接与端点服务关联），以便在该区域提供服务。服务消费方通过指定服务名称来创建 VPC 端点，以将其 VPC 连接到端点服务。如<a data-type="xref" href="#ch09_figure_9_1734552289929322">#ch09_figure_9_1734552289929322</a>所示，端点可以是接口端点或网关端点。接口端点建立到另一个 VPC 中端点服务的连接，网关端点则通过私有 IP 地址连接到 Amazon S3 或 Amazon DynamoDB。此外还有网关负载均衡器类型，可用于管理第三方虚拟设备，例如用于合规检查的设备（更多关于负载均衡器的内容见后文）。</p>
+            <figure id="ch09_figure_9_1734552289929322">
+              <img src="images/sdoa_0909.png"/>
+              <figcaption>通过端点服务建立连接</figcaption>
+            </figure>
+            <div data-type="note">
+              <p>配置管理和理解 VPC 对等连接、Transit Gateway、PrivateLink 等不同网络特性需要专业知识。AWS 提供<a contenteditable="false" data-type="indexterm" data-primary="VPC Lattice">&nbsp;</a>Amazon VPC Lattice 作为托管服务，消除所有相关开销，简化跨 VPC 和 AWS 账户的应用程序连接。</p>
+            </div>
+            <p>部分企业仍在使用本地部署数据中心。在迁移到云的过程中，可能存在某些业务由本地部署数据中心提供服务、其余业务由 AWS 云计算服务承载的中间状态。接下来，让我们探讨 AWS 提供的不同解决方案，以在这两种独立的<a contenteditable="false" data-type="indexterm" data-primary="PrivateLink" data-startref="privatelink">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="cross-VPC connectivity" data-startref="network-service-vpc-cross">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="cross-VPC connectivity" data-startref="vpc-service-cross">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cross-VPC connectivity" data-startref="cross-vpc">&nbsp;</a>数据中心之间建立连接。</p>
+          </section>
+        </section>
+        <section class="pagebreak-before" data-type="sect2" id="ch09_hybrid_connectivity_1734552289955164">
+          <h2 class="less_space">混合连接</h2>
+          <p>Cafe Delhi Heights<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="hybrid connectivity" id="network-service-vpc-hybrid">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="hybrid connectivity" id="vpc-service-hybrid">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hybrid connectivity" id="hybrid-vpc">&nbsp;</a>目前的基础设施是：食物在中央位置统一制作，每个分店各有一个酒吧。为提升运营效率，我们计划将大部分食物制作转移到各个分店，但部分特色菜仍在中央位置制作。在这种方案下，运营同时在两个地方进行——这就是<em>混合连接</em>（hybrid connectivity）的含义。</p>
+          <p>您可能最初使用的是本地部署数据中心，但随着时间推移决定迁移到 AWS 云。此时 AWS 负责维护服务基础设施，而数据库仍由本地部署数据中心管理。为支持这种模式，需要建立本地部署数据中心与 AWS 数据中心之间的连接机制——这就是 VPN 的作用。</p>
+          <section data-type="sect3" id="ch09_aws_virtual_private_network_1734552289955224">
+            <h3>AWS 虚拟专用网络</h3>
+            <p>如何<a contenteditable="false" data-type="indexterm" data-primary="VPNs (virtual private networks)" id="vpn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="virtual private networks (VPNs)" id="virtual-private-network">&nbsp;</a>安全地将本地部署数据中心连接到 Amazon VPC？确保数据安全的服务框架就是 VPN（虚拟专用网络）。<a data-type="xref" href="#ch09_figure_10_1734552289929340">#ch09_figure_10_1734552289929340</a>展示了通过 AWS VPN 从客户数据中心连接到 AWS 区域内 VPC 的连接配置示例。</p>
+            <p>VPN 配置的组成部分如下：</p>
+            <dl>
+              <dt>客户网关（Customer gateway）</dt>
+              <dd>
+                <p>在客户端设置的软件或硬件组件，具体的<a href="https://oreil.ly/SKSOs">设备要求</a>请参阅相关文档。</p>
+              </dd>
+              <dt>VPN 连接（VPN connection）</dt>
+              <dd>
+                <p>客户网关与 VPN 网关之间安全的加密连接通道。为避免因故障或计划维护导致可用性问题，会建立两条隧道。</p>
+              </dd>
+              <dt>VPN 网关（VPN gateway）</dt>
+              <dd>
+                <p>位于 AWS 侧，确保 VPC 与 VPN 连接之间的通信畅通。</p>
+              </dd>
+            </dl>
+            <p>VPN 通过互联网以匿名方式传输数据包。AWS 还提供另一项服务——Direct Connect，用于配置专用网络连接。</p>
+            <figure id="ch09_figure_10_1734552289929340">
+              <img src="images/sdoa_0910.png"/>
+              <figcaption>VPN 连接</figcaption>
+            </figure>
+          </section>
+          <section data-type="sect3" id="ch09_aws_direct_connect_1734552289955285">
+            <h3>AWS Direct Connect</h3>
+            <p>AWS Direct Connect <a contenteditable="false" data-type="indexterm" data-primary="Direct Connect" id="direct-connect">&nbsp;</a>提供配置专用网络连接（以太网光纤电缆）的能力，无需经过互联网，即可将客户数据中心的数据传输至 Direct Connect 站点。Direct Connect 站点配置有路由器，负责路由流量并连接到 AWS 骨干网。它提供稳定的高带宽连接，适用于大规模或对延迟敏感的工作负载。您可以使用 <a href="https://oreil.ly/0-HcF">Direct Connect 弹性工具包</a>，确保从个人数据中心到 Direct Connect 站点的连接达到最高可用性。<a data-type="xref" href="#ch09_figure_11_1734552289929353">#ch09_figure_11_1734552289929353</a>展示了通过 Direct Connect 站点从客户数据中心连接到 VPC 的示例配置。</p>
+            <figure id="ch09_figure_11_1734552289929353">
+              <img alt="A diagram of a blockchain&#10;&#10;Description automatically generated" src="images/sdoa_0911.png"/>
+              <figcaption>通过 Direct Connect 连接本地部署数据中心与 Amazon VPC</figcaption>
+            </figure>
+            <p>主要组件如下：</p>
+            <dl>
+              <dt>客户路由器（Customer router）</dt>
+              <dd>
+                <p>安装在本地部署数据中心，存储所有网络规则，负责将数据中心的流量路由至 Direct Connect 站点。客户路由器通过 802.1Q VLAN 以太网电缆与 Direct Connect 站点的路由器相连。</p>
+              </dd>
+              <dt>Direct Connect 站点（Direct Connect location）</dt>
+              <dd>
+                <p>Direct Connect 在全球<a href="https://oreil.ly/AME1w">多个站点</a>提供服务。您可以选择距本地部署数据中心最近的站点，以降低成本和延迟。具体网络要求请参阅 <a href="https://oreil.ly/sjruP">AWS 文档</a>。</p>
+              </dd>
+              <dt>Direct Connect 网关（Direct Connect gateway）</dt>
+              <dd>
+                <p>Direct Connect 网关通过私有虚拟接口建立 VPC 与 Direct Connect 站点之间的连接。</p>
+              </dd>
+              <dt>虚拟接口（VIF，Virtual interface）</dt>
+              <dd>
+                <p>虚拟接口（VIF）<a contenteditable="false" data-type="indexterm" data-primary="virtual interface (VIF)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VIF (virtual interface)">&nbsp;</a>用于建立到所需资源（如 S3）的私有安全连接，而无需经过互联网。可根据用例选择公有 VIF、私有 VIF 或中转 VIF：</p>
+
+              <ul>
+                <li>
+                  <p>公有 VIF：通过公有 IP 地址连接至 Amazon S3 等 AWS 资源。</p>
+                </li>
+                <li>
+                  <p>私有 VIF：通过私有 IP 地址连接至托管在 Amazon VPC 中的 AWS 资源。</p>
+                </li>
+                <li>
+                  <p>中转 VIF：通过 Transit Gateway 使用私有 IP 地址连接至托管在 Amazon VPC 中的 AWS 资源。</p>
+                </li>
+              </ul>
+               </dd>
+            </dl>
+            <p>我们已探讨了网络数据包在 Amazon 网络内部传输的多种方式，以及 AWS 提供的多种连接选项。本章其余部分将重点介绍随着应用程序规模扩大时这些网络数据包的入口，例如 Amazon Route 53、负载均衡器（LB）和 Amazon API Gateway。最后，我们将讨论 AWS 的 CDN 服务——亚马逊 CloudFront，通过将数据内容部署在靠近用户的位置，实现<a contenteditable="false" data-type="indexterm" data-primary="Direct Connect" data-startref="direct-connect">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="hybrid connectivity" data-startref="network-service-vpc-hybrid">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="hybrid connectivity" data-startref="vpc-service-hybrid">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hybrid connectivity" data-startref="hybrid-vpc">&nbsp;</a>更快速的内容检索。</p>
+          </section>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch09_amazon_route_53_1734552289955345">
+        <h1>Amazon Route 53</h1>
+        <p>Amazon Route 53 是 AWS 生态中一项可扩展的、<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="Route 53 (DNS services)" id="network-service-route53">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Route 53" id="route53">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DNS (Domain Name System)" id="dns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Domain Name System (DNS)" id="domain-name-system">&nbsp;</a>高可用的域名系统（DNS）服务，用于域名注册、DNS 路由和健康检查。我们在<a data-type="xref" href="#ch09_ip_addresses_1734552289954021">#ch09_ip_addresses_1734552289954021</a>中提到，互联网上的每台设备都需要 IP 地址才能与其他设备建立连接，但如果连接的一端是人呢？记住所有 IP 地址可能非常困难——除非您拥有过目不忘的记忆力。</p>
+        <p>人类记名字比记数字容易得多；记住 <em>www.google.com</em> 比记住 142.251.46.174 容易得多，正如记住"安贝斯购物中心的 Cafe Delhi Heights"远比记住北纬 28.525446566084423°、东经 77.09008858115097° 的坐标更为轻松。DNS 通过将域名转换为 IP 地址，让我们的网络访问变得更加便捷。</p>
+        <p>了解在浏览器中输入 <em>www.google.com</em> 时发生了什么，有助于我们理解互联网上的数据流。<a data-type="xref" href="#ch09_figure_12_1734552289929377">#ch09_figure_12_1734552289929377</a>展示了 Route 53 如何将 <em>www.google.com</em> 等域名解析为 IP 地址，并使最终用户可以访问。完成步骤 1 至 5 的 DNS 解析后，浏览器与谷歌 Web 服务器建立 TCP 连接，并向服务器发送 HTTP 请求（步骤 6）。服务器处理请求并在最后一步（步骤 7）返回 HTTP 响应，浏览器在标签页中渲染该响应，以供用户进一步交互。</p>
+        <figure id="ch09_figure_12_1734552289929377">
+          <img src="images/sdoa_0912.png"/>
+          <figcaption>通过 Amazon Route 53 进行 DNS 解析</figcaption>
+        </figure>
+        <p>使用 Amazon Route 53 时，需注意以下几点：</p>
+        <ul>
+          <li>
+            <p>Route 53 可用于注册新域名，也可将现有 DNS 转移至其管理。</p>
+          </li>
+          <li>
+            <p>您可以通过 Route 53 创建、更新和管理公有 DNS 记录，并配置健康检查，监控应用程序、Web 服务器及相关资源的运行状况。</p>
+          </li>
+          <li>
+            <p>您可以为 DNS 记录配置<a href="https://oreil.ly/FfkRt">路由策略</a>进行流量管理，指定 Route 53 响应查询的方式。</p>
+          </li>
+          <li>
+            <p>Route 53 支持多种 DNS 记录类型，如 A、AAAA、CNAME、邮件交换（MX）、TXT 等，支持灵活的 DNS 配置。Route 53 特有的<a href="https://oreil.ly/mhDPH">别名记录</a>功能支持将流量路由到 AWS 资源，DNS 查询本身零额外费用。</p>
+          </li>
+          <li>
+            <p>域名的 DNS 记录统一存储在托管区域（hosted zone）中，用于响应域名查询。</p>
+          </li>
+          <li>
+            <p>Route 53 使用任播（Anycast）作为其网络与路由技术，通过将请求路由到最近的数据中心来降低延迟，并通过多台服务器响应流量来提高可用性，<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="Route 53 (DNS services)" data-startref="network-service-route53">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Route 53" data-startref="route53">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DNS (Domain Name System)" data-startref="dns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Domain Name System (DNS)" data-startref="domain-name-system">&nbsp;</a>而非依赖单一源站服务器。</p>
+          </li>
+        </ul>
+      </section>
+      <section data-type="sect1" id="ch09_aws_elastic_load_balancer_1734552289955408">
+        <h1>AWS 弹性负载均衡器</h1>
+        <p>如<a data-type="xref" href="#ch05_load_balancing_approaches_and_techniques_1734552287463010">#ch05_load_balancing_approaches_and_techniques_1734552287463010</a>所述，负载均衡器通过将流量分发到健康目标上来提升<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="ELB (Elastic Load Balancer)" id="network-service-elb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ELBs (Elastic Load Balancers)" id="elb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic Load Balancers (ELBs)" id="elastic-load-balancer">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)" data-secondary="ELB (Elastic Load Balancer)" id="lb-elb">&nbsp;</a>应用程序的可用性、可扩展性和容错能力。负载均衡器可根据流量模式和健康检查结果自动扩缩，确保最优性能。</p>
+        <p>弹性负载均衡（ELB）是一种托管服务，可实时根据客户流量进行扩展，并提供以下能力：</p>
+        <ul>
+          <li>
+            <p>将入站流量分发到资源池中的各个资源</p>
+          </li>
+          <li>
+            <p>在添加新资源或移除旧资源时不中断请求服务</p>
+          </li>
+          <li>
+            <p>通过 ELB 提供的健康检查监控资源运行状况</p>
+          </li>
+        </ul>
+        <p>AWS ELB 提供以下几种类型：</p>
+        <dl>
+          <dt>应用程序负载均衡器（ALB）</dt>
+          <dd>
+            <p>在<a contenteditable="false" data-type="indexterm" data-primary="application load balancer (ALB)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ALB (application load balancer)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)" data-secondary="ALB (application load balancer)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="load balancers (LBs)" data-secondary="ALB (application load balancer)">&nbsp;</a>应用层（L7）运行，支持 HTTP、HTTPS 和 gRPC 协议</p>
+          </dd>
+          <dt>网络负载均衡器（NLB）</dt>
+          <dd>
+            <p>在<a contenteditable="false" data-type="indexterm" data-primary="network load balancers (NLBs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="NLBs (network load balancers)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)" data-secondary="NLB (network load balancer)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="load balancers (LBs)" data-secondary="NLB (network load balancer)">&nbsp;</a>网络层（L4）运行，支持 TCP、UDP 和 TLS 协议</p>
+          </dd>
+          <dt>经典负载均衡器（CLB）</dt>
+          <dd>
+            <p>旧版<a contenteditable="false" data-type="indexterm" data-primary="classic load balancer (CLB)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CLB (classic load balancer)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)" data-secondary="CLB (classic load balancer)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="load balancers (LBs)" data-secondary="CLB (classic load balancer)">&nbsp;</a>负载均衡器，同时支持 L4 和 L7 流量</p>
+          </dd>
+          <dt>网关负载均衡器（GWLB）</dt>
+          <dd>
+            <p>用作<a contenteditable="false" data-type="indexterm" data-primary="gateway load balancer (GWLB)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="GWLB (gateway load balancer)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)" data-secondary="GWLB (gateway load balancer)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="load balancers (LBs)" data-secondary="GWLB (gateway load balancer)">&nbsp;</a>IP 协议的 L3 网关和 L4 负载均衡器</p>
+          </dd>
+        </dl>
+        <p>AWS 提供了<a href="https://oreil.ly/aMRtW">详细的产品对比页面</a>。</p>
+        <p>我们建议采用自底向上的方法，先明确特定工作负载的基础功能需求，再结合价格因素综合评估，确定最适合的负载均衡器类型，ELB 提供的其他附加功能将锦上添花。<a data-type="xref" href="#ch09_figure_13_1734552289929398">#ch09_figure_13_1734552289929398</a>展示了 ELB 将流量分发到不同类型目标的示意图。</p>
+        <p>ELB 的主要组成部分如下：</p>
+        <dl>
+          <dt>负载均衡器（Load balancer）</dt>
+          <dd>
+            <p>负载均衡器是从客户端视角来看的单一联系点，负责将请求转发给已配置的监听器。</p>
+          </dd>
+          <dt>监听器（Listeners）</dt>
+          <dd>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="listeners">&nbsp;</a>监听器是一个进程，通过配置的协议和端口号检查客户端请求，并根据监听器关联的规则将请求转发到目标组。</p>
+          </dd>
+          <dt>目标组（Target groups）</dt>
+          <dd>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="target groups">&nbsp;</a>目标组使用配置的端口和协议，将流量路由到所配置的目标，例如 EC2 实例、IP 地址等。</p>
+          </dd>
+        </dl>
+        <figure id="ch09_figure_13_1734552289929398">
+          <img alt="A diagram of a diagram&#10;&#10;Description automatically generated" src="images/sdoa_0913.png"/>
+          <figcaption>AWS ELB 配置</figcaption>
+        </figure>
+        <p>使用 ELB 时，需注意以下几点：</p>
+        <ul>
+          <li>
+            <p>NLB 的目标可以是 ALB、容器、实例和 IP 地址；ALB 的目标可以是容器、实例、IP 地址和 Lambda 函数；GWLB 的目标可以是 IP 地址和实例。</p>
+          </li>
+          <li>
+            <p>GWLB 适用于防火墙、入侵检测与防御系统以及深度包检测系统等场景，支持客户部署、扩展和管理虚拟设备。一个典型的检测系统应用场景是将 GWLB 放置在数据源和目标之间，进行数据包分析和监控。</p>
+          </li>
+          <li>
+            <p>ALB 不支持 PrivateLink 和入站流量的静态 IP 地址，这种场景下 NLB 是合适的选择。当需要同时发挥 ALB 和 NLB 各自优势时，可将 ALB 设置为 NLB 的目标，从而兼得两者的优点。</p>
+          </li>
+          <li>
+            <p>由于 ALB 可访问请求头数据，支持多种请求路由方式，如基于路径、基于主机、基于查询字符串参数和基于源 IP 地址的路由。相比之下，NLB 无法检查 HTTP 请求，因此处理开销更小，延迟比 ALB 更低。</p>
+          </li>
+          <li>
+            <p>NLB 针对突发流量峰值进行了优化；对于 ALB，如果预期到流量峰值，最佳实践是提前通知 AWS Support 以预先分配容量。</p>
+          </li>
+          <li>
+            <p>NLB 支持长连接 TCP 连接，ALB 则不支持。这对于需要大量持久连接的场景（如在线游戏应用的 WebSocket 连接）非常有帮助。</p>
+          </li>
+          <li>
+            <p>ALB 支持 AWS Web 应用程序防火墙（WAF）以及 Amazon Cognito 和 OpenID Connect 等身份验证机制，将相应责任从应用程序卸载，使其更轻量。</p>
+          </li>
+          <li>
+            <p>负载均衡器位于公有子网中，后端资源可托管于私有子网中，外部流量无法直接访问。</p>
+          </li>
+          <li>
+            <p>ALB 的空闲超时配置范围为 1 至 4,000 秒（默认 60 秒），而 NLB 的此项配置<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="ELB (Elastic Load Balancer)" data-startref="network-service-elb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ELBs (Elastic Load Balancers)" data-startref="elb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic Load Balancers (ELBs)" data-startref="elastic-load-balancer">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)" data-secondary="ELB (Elastic Load Balancer)" data-startref="lb-elb">&nbsp;</a>为 350 秒。</p>
+          </li>
+        </ul>
+      </section>
+      <section data-type="sect1" id="ch09_amazon_api_gateway_1734552289955479">
+        <h1>Amazon API Gateway</h1>
+        <p>Amazon API Gateway 是一项全托管的<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="API Gateway" id="network-aws-api-gateway">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="API Gateway (AWS)" id="api-gateway-aws">&nbsp;</a>AWS 服务，用于创建、发布、维护、监控和保护 REST、HTTP 和 WebSocket API。设想这样一个场景：Cafe Delhi Heights 不再由人工上菜，而是部署机器人完成这项工作。顾客通过桌上安装的点餐终端下单，食物做好后由机器人送上——顾客并不知道厨房里的食物是由机器人还是人工烹制的。这正是资源抽象之美：客户通过 API Gateway 发布的 API 大规模执行特定功能，而 API Gateway 可在内部连接任何 AWS 服务，如<a data-type="xref" href="#ch09_figure_14_1734552289929419">#ch09_figure_14_1734552289929419</a>所示。</p>
+        <figure id="ch09_figure_14_1734552289929419">
+          <img src="images/sdoa_0914.png"/>
+          <figcaption>Amazon API Gateway 与 AWS 服务的连接</figcaption>
+        </figure>
+        <p>使用 API Gateway 时，需注意以下几点：</p>
+        <ul>
+          <li>
+            <p>API Gateway 同时支持无状态和有状态 API：</p>
+            <ul>
+              <li>
+                <p>REST API 和 HTTP API 是无状态的。两者功能基本相同，均基于 HTTP 协议，支持 <code>GET</code>、<code>PUT</code>、<code>POST</code> 等标准方法。REST API 支持一些额外功能，如 API 密钥、按客户端的速率和用量限流，以及请求校验。</p>
+              </li>
+              <li>
+                <p>WebSocket API 是有状态的，基于 WebSocket 协议运行，支持客户端与服务器之间的全双工通信。</p>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <p>API Gateway 支持通过 AWS IAM 策略、AWS Lambda 授权器函数和 Amazon Cognito 用户池进行身份验证。</p>
+          </li>
+          <li>
+            <p>API Gateway 通过 CloudWatch 和 CloudTrail 服务提供监控能力。</p>
+          </li>
+          <li>
+            <p>API Gateway 可通过集成 AWS WAF 来防范 SQL 注入等<span class='keep-together'>Web 漏洞攻击</span>。</p>
+          </li>
+          <li>
+            <p>API Gateway 可通过服务 API 直接与 Amazon DynamoDB 等 AWS 服务连接，降低中间基础设施成本。例如，在通过分区键检索 DynamoDB 记录的场景中，常规实现需要调用 Lambda 函数，再由 Lambda 连接 DynamoDB 获取数据；而 API Gateway 无需 Lambda 中转，可直接连接 DynamoDB 并返回响应。</p>
+          </li>
+          <li>
+            <p>与 ELB 不同，API Gateway 不为后端资源提供健康检查功能。</p>
+          </li>
+          <li>
+            <p>API Gateway 上 REST API 的超时配置范围为 50 毫秒至 29 秒；HTTP API 的超时为 30 秒。WebSocket API 的连接持续时间为 2 小时，空闲超时为 10 分钟。</p>
+          </li>
+          <li>
+            <p>API Gateway 支持跨账户或跨区域集成。例如，不同团队根据业务需求将 Lambda 函数部署在不同 AWS 账户中，但统一通过中央 AWS 账户中的 API Gateway 对外提供服务。</p>
+          </li>
+          <li>
+            <p>API Gateway 支持对端点响应进行缓存，减少流量到达端点的频率并改善延迟。缓存的 TTL 可设置范围为 0（禁用缓存）至 3,600 秒，默认为 300 秒。</p>
+          </li>
+        </ul>
+        <p>API Gateway 和负载均衡器有助于将后端基础设施从客户端抽象出来。设想这样一个场景：客户请求到达 API Gateway，其中某个微服务需要从 Amazon S3 获取数据；如果文件较大，这个操作的延迟会相当明显。通过 AWS CDN 服务——亚马逊 CloudFront，将内容部署到靠近客户位置的节点，<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="API Gateway" data-startref="network-aws-api-gateway">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="API Gateway (AWS)" data-startref="api-gateway-aws">&nbsp;</a>可以有效降低这种延迟。</p>
+      </section>
+      <section data-type="sect1" id="ch09_amazon_cloudfront_1734552289955538">
+        <h1>亚马逊 CloudFront</h1>
+        <p>我们简要介绍过<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="CloudFront" id="network-aws-cloudfront">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CloudFront" id="cloudfront">&nbsp;</a>Cafe Delhi Heights 管理食物制作与配送的两种方式：（1）在中央位置统一制作食物，按需配送到各分店；（2）在所有分店各自设立厨房。在每个分店都设立厨房必然会产生额外成本。还有另一种方案：分析各类食物的需求量，提前在中央位置制作好，再提前存放到各分店。这样食物只需在一个地方制作，所有分店的顾客都能在最短时间内得到服务。</p>
+        <p>在软件系统中，提升用户体验的关键因素之一是以最低延迟响应请求。一种潜在解决方案是在多个 AWS 区域部署基础设施并利用 AWS 本地区域，但这一方案应作为业务架构的最后手段，且延迟本身不应是选择这条路的决定性因素。另一种更具成本效益的方案是通过 CDN 将内容缓存到靠近用户的位置，如<a data-type="xref" href="#ch04_caching_policies_and_strategies_1734552287178593">#ch04_caching_policies_and_strategies_1734552287178593</a>所述。亚马逊 CloudFront 是一个遍布全球的数据中心网络，<a contenteditable="false" data-type="indexterm" data-primary="edge locations (AWS)">&nbsp;</a>称为<em>边缘站点</em>，通过 AWS Shield、AWS IAM、AWS WAF 和 TLS 证书，帮助您以安全的方式实现静态和动态内容的低延迟分发。</p>
+        <p>使用时需注意以下几点：</p>
+        <ul>
+          <li>
+            <p>CloudFront 可通过 HTTP 或 WebSocket 协议分发静态和动态内容。例如，存放在 S3 存储桶中的静态内容，或由任何 Web 服务（如运行在 EC2 服务器上的服务）动态生成的内容，均可通过 CloudFront 直接分发，如<a data-type="xref" href="#ch09_figure_15_1734552289929441">#ch09_figure_15_1734552289929441</a>所示。</p>
+            <figure id="ch09_figure_15_1734552289929441">
+              <img src="images/sdoa_0915.png"/>
+              <figcaption>通过亚马逊 CloudFront 进行内容分发</figcaption>
+            </figure>
+          </li>
+          <li>
+            <p>CloudFront 默认集成 AWS Shield，帮助抵御分布式拒绝服务（DDoS）攻击，也可与 AWS WAF 集成实现应用层安全防护。</p>
+          </li>
+          <li>
+            <p>CloudFront 提供静态加密和传输加密。边缘站点上的数据始终以加密格式存储，传输中的流量可使用 Amazon Certificate Manager 或自定义证书进行加密。</p>
+          </li>
+          <li>
+            <p>为实现用户级别的内容访问控制，CloudFront 提供签名 Cookie、签名 URL 和地理限制等选项。</p>
+          </li>
+        </ul>
+        <p>总而言之，CloudFront 支持您将内容缓存到靠近用户的位置，<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="CloudFront" data-startref="network-aws-cloudfront">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CloudFront" data-startref="cloudfront">&nbsp;</a>从而更快速地响应用户请求。</p>
+      </section>
+      <section data-type="sect1" id="ch09_conclusion_1734552289955592">
+        <h1>总结</h1>
+        <p>本章首先介绍了 AWS 云计算服务的入门知识，随后深入探讨了 AWS 提供的各类网络概念和服务，以帮助您在 AWS 云上构建网络基础设施。由于 AWS 提供了数量庞大的服务，理解特定服务如何解决具体问题至关重要。</p>
+        <p>自建个人数据中心既不容易，也并非人人都能负担得起，AWS 通过提供 Amazon VPC 来解决这一问题。在需要多个数据中心互联的场景下，AWS 提供了多种连接机制来支持这一需求。同时，确保只有授权用户才能访问 AWS 云中托管的资源，可通过安全组、NACL 以及路由表中的合理规则配置来实现。</p>
+        <p>最后，我们讨论了如何通过 AWS ELB 和 Amazon API Gateway 等方案将内部资源从外部用户视角进行抽象。AWS 还提供高度可扩展的 DNS 服务——Amazon Route 53，用于管理域名。这里举一个简单的例子来说明 Route 53 的应用：最初我们使用 NLB，用户访问该端点；后来我们发现 ALB 比 NLB 更合适。在这种情况下，有三种选择：将新的 ALB 端点告知客户；保留 NLB 作为前端，由 NLB 将流量转发到 ALB，再由 ALB 将流量路由到应用程序；或者使用 Amazon Route 53 域名，让客户始终访问同一个域名，而内部资源的变更对客户完全透明。</p>
+        <p>数据存储解决方案在云上存储和管理数据时是重要的考量因素。下一章将探讨不同类型的 AWS 存储服务，如 DynamoDB、Amazon S3 和关系型数据库，并结合各服务最适合的用例进行逐一介绍。</p>
+      </section>
+    </section>

@@ -1,0 +1,834 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch09_aws_network_services_1734552289953244">
+      <h1>AWS Network Services</h1>
+      <p>People interact <a contenteditable="false" data-type="indexterm" data-primary="Amazon Web Services" data-see="AWS">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cloud computing services" data-see="networking services (AWS)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-seealso="networking services (AWS)">&nbsp;</a>with multiple applications (or with one another) via the internet. We first explored communication network and protocol concepts in <a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a>; this chapter is an extension of <a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a> that will introduce you to the AWS networking services Amazon VPC, Amazon Route 53, AWS Elastic Load Balancer (ELB), Amazon API Gateway, and Amazon CloudFront. The goal is to help you set up your networking infrastructure on the AWS cloud as you learn about the networking concepts related to the different services and how to establish connectivity between them.</p>
+      <p>Companies used to prefer setting up their own infrastructures in on-premises data centers to make their systems more reliable and safer and to ensure that they operated per business requirements, but that comes with a high cost for infrastructure management. If you are just launching your startup idea, it will likely be too costly for you to set up a personal data center. The cloud provides cost benefits (when analyzing the costs of all the resources and optimizing them to their full potential) along with a lot of flexibility. For example, it's much harder to sell back a physical server that you bought for setting up your personal data center than it is to turn off an Amazon EC2 machine (server) in the AWS cloud. </p>
+      <p>AWS <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="shared responsibility model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="shared responsibility model">&nbsp;</a>operates on a <a href="https://oreil.ly/L-Dyu">shared responsibility model</a>, meaning the customer and AWS work together to make best use of services in a secure and cost-effective way, where AWS is responsible for “security of the cloud” and customers are responsible for “security in the cloud.” Before we examine AWS’s networking components, let’s dig into where these services are located and how they are segregated per customer.</p>
+      <section data-type="sect1" id="ch09_getting_started_with_aws_1734552289953522">
+        <h1>Getting Started with AWS</h1>
+        <p>To start <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="account creation">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="accounts (AWS), creating">&nbsp;</a>with AWS’s cloud computing services, customers need to <a href="https://oreil.ly/ELJQZ">create an AWS account</a>. This account is a fundamental entity in AWS that provides access to a wide range of services. It holds all the information related to the creation, management, operations, support, and billing of your AWS resources (such as compute instances, storage, networking, etc.). With an AWS account, you can provision and configure resources, monitor usage and costs, set security and access controls, and interact with various AWS services. </p>
+        <p>It will be very important to identify how many AWS accounts to set up. This will vary from one use case to another and will depend on the scale your organization operates on. The following are some general suggestions to consider when deciding how many AWS accounts to configure: </p>
+        <dl>
+          <dt>Complete separation of applications</dt>
+          <dd>
+            <p>Every application is launched in a new AWS account. This option has the benefits of full separation and effective cost management of applications but presents challenges in the form of too much operational cost. </p>
+          </dd>
+          <dt>Separation of AWS accounts based on business type</dt>
+          <dd>
+            <p>For example, a cab-booking company operates in domains like cab availability, payments, and analytics. All applications related to a single business will operate in a single account, which has the advantages of correlating applications located near one another, optimizing latency, and offloading requirements of resource setup for service connection among different accounts. These applications can be segregated in Amazon VPCs or availability zones (AZs) depending on the use case.</p>
+          </dd>
+          <dt>Separation of AWS accounts based on software domains</dt>
+          <dd>
+            <p>For example, there are separate accounts for networking, monitoring, storage, and security and auditing. This kind of setup provides for easier operations management. For example, all the networking configurations are in a single account that can be managed by the network engineering team.</p>
+          </dd>
+        </dl>
+        <p>AWS recommends creating a multiaccount setup to ensure that there is clear division of responsibility while keeping future scaling of systems in mind. For example, separate networking accounts will help keep all networking configurations in a single place, with access only to the networking team. AWS offers the <a href="https://oreil.ly/xCpIY">Landing Zone service</a>, which provides<a contenteditable="false" data-type="indexterm" data-primary="Landing Zone">&nbsp;</a> a baseline to get started with multiaccount architecture, IAM, governance, data security, network design, and logging. AWS Landing Zone can be orchestrated by customers themselves or as a managed service. One such service, AWS Control Tower, can be used to set up initial prescriptive configurations, and further customizations can be made as organizations scale.</p>
+        <section data-type="sect2" id="ch09_aws_regions_1734552289953597">
+          <h2>AWS Regions</h2>
+          <p>Once <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="regions">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="regions (AWS)">&nbsp;</a>you have created an AWS account, you’re ready to launch the first server in the cloud. A very intriguing question, though, is: where is this cloud? The AWS cloud operates from a physical location, which might be near you or far from you. AWS defines the geographically distributed locations around the world where it operates data centers as <a href="https://oreil.ly/R4lE5">AWS regions</a>. For example, the US North Virginia region is called <em>us-east-1</em>. Each region is a separate and independent geographic area, isolated from other regions. You can choose the AWS region to launch resources per your business requirements, such as latency constraints or compliance regulations, or for AWS service availability in the region. For example, Netflix architecture has presence in three AWS regions, ensuring high availability even in cases of regional failure. Keeping resources at multiple locations helps build resilient systems, which we touched on in <a data-type="xref" href="#part1">#part1</a>. Amazon provides a complete list of regions available across the globe. There are some global services, such as <a href="https://aws.amazon.com/iam">AWS IAM</a>, where region selection is not a requirement. </p>
+          <div data-type="note">
+            <p>There is a possibility that not all AWS services are present in your AWS region.</p>
+          </div>
+        </section>
+        <section data-type="sect2" id="ch09_aws_availability_zones_1734552289953662">
+          <h2>AWS Availability Zones</h2>
+          <p>Customers <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="availability zones">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability zones (AWS)">&nbsp;</a>choose to deploy resources in multiple regions to improve availability, latency, and many other business use cases. A key point to note is that not everyone can afford to replicate resources in multiple AWS regions. Does that mean they must compromise application availability? <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="shared responsibility model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="shared responsibility model">&nbsp;</a>Cloud providers work on a <em>shared responsibility model</em>, which means that to ensure a good run on the cloud, customers and cloud providers must work together. A simple example could be deploying your servers in <a href="https://oreil.ly/TC6rf">multiple availability zones</a> instead of just one. That way, even if one AZ goes down, there are servers operational in other AZs to serve the traffic. You can think of a single region as a cluster of data centers and each data center (or combination of data centers) as an availability zone. An AZ is physically isolated from other AZs by meaningful distance, with independent power and cooling and fast, private, fiber-optic, low-latency network connectivity. The purpose of AZs is to provide fault tolerance, resilience, and high availability by allowing you to distribute your applications and data across multiple AZs within a region. AZs are classified with suffixes to region names; for example, <em>us-east-1a</em> or <em>us-east-1b</em> are AZs within the us-east-1 region.</p>
+        </section>
+        <section data-type="sect2" id="ch09_aws_local_zones_1734552289953723">
+          <h2>AWS Local Zones</h2>
+          <p>Consider the<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="local zones">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="local zones (AWS)">&nbsp;</a> following scenario: you are all set to launch your startup for the people of New Delhi, India. The application setup requires single-digit p99.99 latency for API operations, but the nearest AWS region is Mumbai, India. The operations are optimized well, and your use case doesn’t allow you to use precached data, such as utilizing a CDN or retrieving data from servers located at a specific AZ. How can you overcome such an issue? This can potentially be solved by placing database instances near customers, which can be achieved via AWS local zones. Local zones enable you to set up infrastructure near your customers, and the infrastructure is connected to an AWS region via a fast-paced network. We'll also discuss potential use of AWS Local Zones in <a data-type="xref" href="ch21_designing_an_online_stock_trading_platform_1734552295606829">#ch21_designing_an_online_stock_trading_platform_1734552295606829</a> while designing stock broker application.</p>
+          <p>AWS local zones are an extension of an AWS region and are designed to bring AWS services with low-latency requirements closer to specific geographic areas. Local zones are geographically separated from their parent regions and are located in metropolitan areas. They provide a subset of AWS services and are primarily intended for latency-sensitive workloads that require proximity to end users or specific on-premises resources. You can check <a href="https://oreil.ly/dQ9pT">all available locations for local zones</a> and a list of the <a href="https://oreil.ly/vKAyW">supported AWS services</a>.</p>
+        </section>
+        <section data-type="sect2" id="ch09_aws_edge_locations_1734552289953782">
+          <h2>AWS Edge Locations</h2>
+          <p>Imagine <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="edge locations">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="edge locations (AWS)">&nbsp;</a>that HBO is planning to stream a new season of <em>Game of Thrones</em>, and the first episode will be out on an upcoming Sunday morning at 8 A.M. <em>Game of Thrones</em> is popular worldwide, and the new episode is expected to be watched by many viewers in multiple countries at the same time. How can HBO ensure the best customer experience via full high-definition video quality with no video buffering? The<a contenteditable="false" data-type="indexterm" data-primary="CloudFront">&nbsp;</a> AWS CDN service <a class="orm:hideurl" href="https://aws.amazon.com/cloudfront">Amazon CloudFront</a> can place the content near viewers at locations called <em>edge locations</em> so that customers can be served in the minimum time possible. </p>
+          <p>AWS edge locations are points of presence (PoPs) distributed globally to bring AWS services closer to end users. Edge locations improve the performance of content delivery by acting as caching and content delivery endpoints for CloudFront, thus reducing latency and increasing data-transfer speeds. </p>
+          <p>You can think of AWS edge locations as data centers that are connected with AWS regions to support fast uploading and downloading of data. Some other services—such as Amazon Route 53, an Amazon DNS service—use the same setup for faster resolution of DNS queries. <a data-type="xref" href="#ch09_figure_1_1734552289929141">#ch09_figure_1_1734552289929141</a> shows the connectivity of users via AWS edge locations to AWS regions.</p>
+          <figure id="ch09_figure_1_1734552289929141">
+            <img src="images/sdoa_0901.png"/>
+            <figcaption>Connectivity to an AWS region via an edge location</figcaption>
+          </figure>
+          <p>This high-level view covered how the AWS cloud is set up and made accessible to customers across the globe. Let’s jump right into how connectivity can be established with the AWS cloud and the different networking components within it.</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch09_introduction_to_aws_networking_services_1734552289953855">
+        <h1>Introduction to AWS Networking Services</h1>
+        <p><a data-type="xref" href="#ch09_figure_1_1734552289929141">#ch09_figure_1_1734552289929141</a> showed <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="networking services" data-see="networking services (AWS)">&nbsp;</a>how users establish connections to AWS services located within an AWS region. It’s important to understand how this accessibility is maintained and how the AWS cloud provides a similar abstraction for your private data center. This section will introduce you to offerings that AWS provides in the context of networking and connectivity.</p>
+        <section data-type="sect2" id="ch09_amazon_vpc_1734552289953935">
+          <h2>Amazon VPC</h2>
+          <p>Setting up<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" id="network-aws-vpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" id="vpc-service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="virtual private clouds" data-see="VPC service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Amazon VPC" data-see="VPC service">&nbsp;</a> your own data center could be costly in terms of both monetary costs and operations management. Amazon VPC provides a similar level of infrastructure separation to what you’d have in a personal, private data center. You can think of VPC as your personal data center located inside the AWS cloud.</p>
+          <p>Amazon’s VPC service allows you to create a virtual network in the cloud. It gives you control over your network environment, including selection of an IP address range, creation of subnets, configuration of route tables, and network gateways. VPC enables you to securely launch resources like Amazon EC2 instances, Amazon RDS, and AWS ELBs within a logically isolated section of the AWS cloud.</p>
+          <div data-type="note">
+            <p>This book will not outline the steps in setting up the infrastructure but will focus more on core concepts of AWS. We will provide links to AWS documentation for guidance on setup and recommend you visit the product pages for more details.</p>
+          </div>
+          <p>A lot of customers use the AWS cloud. Amazon VPC plays a vital role in setting up boundaries between customer resources. AWS accounts come with one default VPC to launch resources, and more VPCs can be created per the use case requirements. There is a default limit of five VPCs per account per region, which can be increased by raising a query with AWS Support Center. We’ll dig into VPC in more detail, starting with some basic networking knowledge that will be helpful for making better decisions about how to set up your VPC.</p>
+          <section data-type="sect3" id="ch09_ip_addresses_1734552289954021">
+            <h3>IP addresses</h3>
+            <p>Let’s <a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="IP addresses" id="network-aws-vpc-ip">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="IP addresses" id="vpc-service-ip">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IP addresses" id="ip-address">&nbsp;</a>consider a real-world example. You’re very excited to meet a new friend in person, and both of you have agreed to meet at Cafe Delhi Heights, Third Floor, 301 and 302, Ambience Mall, Gurugram, India. However, you need a specific location—a table number in this restaurant, not just the restaurant location. This pinpointed location in the networking world is called an<em> IP address</em>: a unique string of characters that identifies each computer. Every device should have an IP address to connect with another device on the internet. IP addresses can be of type IPv4 or IPv6. </p>
+            <section data-type="sect4" id="ch09_ipv4_1734552289954090">
+              <h4>IPv4</h4>
+              <p><em>IPv4</em> is <a contenteditable="false" data-type="indexterm" data-primary="IP addresses" data-secondary="IPv4" id="ip-address-ipv4">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IPv4" id="ipv4">&nbsp;</a>a 32-bit or 4-byte address space where each byte is represented via decimal numbers (binary octet) and separated by a dot (.), such as 192.168.1.0. How can we identify which destination the traffic should be routed to? How does the postal service deliver mail to your doorstep, or how do you know to meet your new friend at table 21 at Cafe Delhi Heights? Two components are generally required for unique identification. For physical mail, these would be your zip code, postal code, or area PIN code (depending on your country) and your house number, and for meeting your new friend, they would be the restaurant location in Ambience Mall, Gurugram, and the table number inside this restaurant.</p>
+              <p>Similarly, two components are involved in delivering network packets to your personal computer: a <a contenteditable="false" data-type="indexterm" data-primary="network ID">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="host ID">&nbsp;</a>network component (<em>network ID</em>) and a host component (<em>host ID</em>). For example, your office network will map to a network ID, and your personal computer will map to a host ID.</p>
+              <p>The division of the number of bits that should be allocated to the network ID and host ID is defined via IP classes, as shown in <a data-type="xref" href="#ch09_figure_2_1734552289929179">#ch09_figure_2_1734552289929179</a>. There are in total five IP classes from A to E, out of which Class D is reserved for multitasking and Class E is reserved for research purposes. </p>
+              <figure id="ch09_figure_2_1734552289929179">
+                <img src="images/sdoa_0902.png"/>
+                <figcaption>IP address classes</figcaption>
+              </figure>
+              <p>One difference between classes A, B, and C is the number of bits assigned to each network ID and host ID. Another is the range of IP addresses that are allowed in each class, which are listed in <a data-type="xref" href="#ch09_table_1_1734552289937307">#ch09_table_1_1734552289937307</a>.</p>
+              <table id="ch09_table_1_1734552289937307">
+                <caption>IPv4 address range by class</caption>
+                <thead>
+                  <tr>
+                    <th>IP address class</th>
+                    <th>IP range</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <p>Class A</p>
+                    </td>
+                    <td>
+                      <p>1.0.0.0−127.255.255.255</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <p>Class B</p>
+                    </td>
+                    <td>
+                      <p>128.0.0.0−191.255.255.255</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <p>Class C</p>
+                    </td>
+                    <td>
+                      <p>192.0.0.0−223.255.255.255</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <p>Deciding which class suits your specific use case depends on the requirements for the number of networks and number of hosts in a network. For example, Class A provides 126 network IDs and 16,777,214 host IDs, whereas Class C provides 2,097,152 network IDs and 254 host IDs. Division of IP address or network space into network and host address is achieved via subnet masks. Class C addresses are most common for general-purpose use cases, such as home networks and small-business setups.</p>
+              <p>As the <a contenteditable="false" data-type="indexterm" data-primary="subnets">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="subnet masks">&nbsp;</a>name suggests, <em>subnets</em> divide the parent network into subnetworks. The <em>subnet mask</em> is the division of the IP address into the network and host address. It is a 32-bit number where host bits are set to 0 and network bits are set to 1. Amazon VPC logically isolates the resources at regional level, and further division into AZs can be achieved via subnets—we’ll be exploring this while creating our first VPC in follow-up sections. <a data-type="xref" href="#ch09_figure_3_1734552289929204">#ch09_figure_3_1734552289929204</a> shows an example IPv4 address along with its subnet mask representation.</p>
+              <figure id="ch09_figure_3_1734552289929204">
+                <img src="images/sdoa_0903.png"/>
+                <figcaption>Representation of an IPv4 address and subnet mask</figcaption>
+              </figure>
+              <p>A specific problem that arises with IPv4 addresses is the very limited number of addresses available in comparison to the number of devices and networks across the world. The intermittent solution to <a contenteditable="false" data-type="indexterm" data-primary="Classless Inter-Domain Routing (CIDR)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CIDR (Classless Inter-Domain Routing)">&nbsp;</a>slow exhaustion of IPv4 addresses is via <em>Classless Inter-Domain Routing (CIDR)</em>.</p>
+              <div data-type="note">
+                <p>Keep in mind that the first four IP addresses and last IP address in each subnet CIDR block are reserved for <a href="https://oreil.ly/GQvXO">special purposes</a> and therefore can’t be assigned to hosts (or resources). </p>
+              </div>
+              <p>CIDR is a way of representing an IP address and its subnet mask. The classless concept was introduced in 1993 to slow the exhaustion of IPv4 addresses. CIDR helps in varying subnet mask length, skipping standard division via classes. This kind of division optimizes the class space of IP addresses. You can see this represented in <a data-type="xref" href="#ch09_figure_4_1734552289929225">#ch09_figure_4_1734552289929225</a>.</p>
+              <figure id="ch09_figure_4_1734552289929225">
+                <img src="images/sdoa_0904.png"/>
+                <figcaption>Variable length subnet mask</figcaption>
+              </figure>
+              <p>However, the long-term solution is migration to <a contenteditable="false" data-type="indexterm" data-primary="IP addresses" data-secondary="IPv4" data-startref="ip-address-ipv4">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IPv4" data-startref="ipv4">&nbsp;</a>IPv6 addresses.</p>
+            </section>
+            <section data-type="sect4" id="ch09_ipv6_1734552289954149">
+              <h4>IPv6</h4>
+              <p><em>IPv6 </em>is 128 bits, <a contenteditable="false" data-type="indexterm" data-primary="IP addresses" data-secondary="IPv6">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IPv6">&nbsp;</a>which provides a much larger network space as compared to 32-bit IPv4 addresses. IPv6 is represented by eight groups of four hexadecimal digits and separated by colons, such as <em>ab90:cd00:0000:0cef:0123:0000:211f:345d</em>. <a data-type="xref" href="#ch09_figure_5_1734552289929244">#ch09_figure_5_1734552289929244</a> describes a simple IPv6 notation where the site prefix represents public topology allocated by an ISP or regional internet registry; the subnet ID represents a private topology, which is internal to a specific network; and the interface ID represents a unique device identifier, which is configured via the interface’s MAC address using IEEE’s extended unique identifier (EUI-64) format.</p>
+              <figure id="ch09_figure_5_1734552289929244">
+                <img src="images/sdoa_0905.png"/>
+                <figcaption>Simple IPv6 address representation</figcaption>
+              </figure>
+              <p>Both IPv4 and IPv6 addresses can be further divided into public and private IP addresses based on their visibility. The concept of public-private is used more for IPv4 addresses, considering the limited availability of addresses. We’ll be using examples of IPv4 addresses to walk through it.</p>
+            </section>
+            <section data-type="sect4" id="ch09_private_and_public_ip_addresses_1734552289954213">
+              <h4>Private and public IP addresses</h4>
+              <p>Returning <a contenteditable="false" data-type="indexterm" data-primary="IP addresses" data-secondary="private" id="ip-address-private">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="private IP addresses" id="private-ip">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IP addresses" data-secondary="public" id="ip-address-public">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="public IP addresses" id="public-ip">&nbsp;</a>to our example, you agreed to meet your friend at a reserved table, number 21, at Cafe Delhi Heights to enjoy the restaurant's positive vibe and food. You got curious and decided to visit the kitchen where this delicious food was prepared, but the restaurant owner denied you access, saying that only specific individuals can go to the kitchen. Here, the kitchen is private space, and the general sitting area is public space. Certainly, there are ways to get to the private space (aka the kitchen in this scenario), which we’ll explore in follow-up sections.</p>
+              <p>Or consider your work-from-home setup: you have a router for WiFi connection, and all your devices (such as your mobile phone, office laptop, personal laptop, etc.) connect with this router to access the internet. If you run a Google search on all the devices for “What’s my IP?” you’ll get the same IP address. This IP address is called a <em>public IP address</em> and is assigned by the ISP. You might wonder how a single IP address can be used by multiple devices for communication; that is where NAT comes in, which we’ll discuss more in <a data-type="xref" href="#ch09_nat_gateway_1734552289954876">#ch09_nat_gateway_1734552289954876</a>. Restarting the router might generate a different IP address, but it will still be the same across all the devices connected to the same ISP. </p>
+              <p>All these devices can connect with one another without going over the internet via <em>private IP addresses</em>. The router assigns a private IP address to each device connected to it. <a data-type="xref" href="#ch09_table_2_1734552289937340">#ch09_table_2_1734552289937340</a> shows the range of addresses allowed for private IP addresses—the rest can all be used for public network space.</p>
+              <table id="ch09_table_2_1734552289937340">
+                <caption>Private IPv4 address space per class</caption>
+                <thead>
+                  <tr>
+                    <th>IP address class</th>
+                    <th>IP address range</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <p>Class A</p>
+                    </td>
+                    <td>
+                      <p>10.0.0.0−10.255.255.255</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <p>Class B</p>
+                    </td>
+                    <td>
+                      <p>172.16.0.0−172.31.255.255</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <p>Class C</p>
+                    </td>
+                    <td>
+                      <p>192.168.0.0−192.168.255.255</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <p>IP addresses are assigned dynamically from the provided IP address range upon creating an AWS resource. In case there is a requirement to associate specific IP addresses to a resource, we can use elastic IP addresses.</p>
+            </section>
+            <section data-type="sect4" id="ch09_elastic_ip_address_1734552289954272">
+              <h4>Elastic IP address</h4>
+              <p>An <em>elastic IP address</em> is a <a contenteditable="false" data-type="indexterm" data-primary="IP addresses" data-secondary="elastic">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="elastic IP addresses">&nbsp;</a>static, public IPv4 address associated with an AWS account that can be assigned to an Amazon EC2 instance or network interface. This can be used for scenarios requiring a static IP address that should not change over time. For example, an elastic IP address maintains the same IP address if an unhealthy EC2 instance is replaced by a healthy instance. </p>
+              <p>Note that there is an additional cost associated with elastic IP addresses. They are chargeable and are bought for a specific region; IP addresses of one region are not accessible in <a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="IP addresses" data-startref="network-aws-vpc-ip">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="IP addresses" data-startref="vpc-service-ip">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IP addresses" data-startref="ip-address">&nbsp;</a>other regions. </p>
+            </section>
+          </section>
+          <section data-type="sect3" id="ch09_creating_an_amazon_vpc_1734552289954331">
+            <h3>Creating an Amazon VPC</h3>
+            <p>The <a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="creating VPC" id="network-aws-vpc-create">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="creating VPC" id="vpc-service-create">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CIDR blocks" id="cidr-block">&nbsp;</a>networking ideas we discussed in the previous sections will help us set up our first VPC. The VPC wizard asks for the IPv4 CIDR block, IPv6 CIDR block, and tenancy. The IPv4 CIDR block is a required input that must be added to proceed further. The VPC can work in dual mode, operating with both IPv4 and IPv6. The allowed CIDR block for IPv4 is between /16 and /28; for IPv6, it is fixed to /64.</p>
+            <p>You’ll need to consider the following points for the CIDR block:</p>
+            <ul>
+              <li>
+                <p>Creating a VPC requires an initial IPv4 CIDR block, although you might have a use case to just use an IPv6 address space. VPC supports both IPv4 and IPv6 address spaces in a single VPC, which can be specified during creation.</p>
+              </li>
+              <li>
+                <p>The CIDR block should be specified from the RFC 1918 range, and it is recommended to use a private IP address range, although public can also be chosen.</p>
+              </li>
+              <li>
+                <p>The size of the CIDR block can’t be changed once created. Customers should carefully plan the size of CIDR considering future needs to avoid hurdles or rework in the future. In short, bigger CIDR blocks can be chosen to have more flexibility in the future if you’re not able to gather concrete details now.</p>
+              </li>
+              <li>
+                <p>The CIDR block should not overlap with existing CIDR blocks associated with VPCs. This is also essential for using services like VPC peering and AWS Direct Connect; the CIDR blocks should not overlap across the VPCs. </p>
+              </li>
+              <li>
+                <p>You can associate up to five additional CIDR blocks to a VPC (this is a soft limit and can be adjusted up to 50); the additional CIDR blocks’ ranges should be strictly smaller than the primary CIDR block.</p>
+              </li>
+            </ul>
+            <div data-type="note">
+              <p><em>Soft limit </em>means the<a contenteditable="false" data-type="indexterm" data-primary="soft limit">&nbsp;</a> limit is adjustable and can be increased by following AWS Service Quotas or with help of the AWS support team.</p>
+            </div>
+            <p>Next, we need to consider tenancy. Let’s go back to our real-world example. There are two ways to book Cafe Delhi Heights for meeting your new friend. The first option is to book the entire restaurant if this is a top-secret meeting and you don’t want any other people there during your booked time. This is<a contenteditable="false" data-type="indexterm" data-primary="dedicated tenancy">&nbsp;</a> called <em>dedicated tenancy</em>.</p>
+            <p>The second option is to reserve a table for two—other available tables can be booked by other people. This<a contenteditable="false" data-type="indexterm" data-primary="shared tenancy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="tenancy">&nbsp;</a> is called <em>shared tenancy</em>. Because of the cost, it’s logical to go with the second option unless there is a specific reason not to, such as a secret meeting. The same concept applies when we request servers from AWS. The instances can run either on shared hardware (other people’s instances can run on the same hardware via virtualization) or on dedicated hardware where your instances are separated from other customer’s resources, depending on your business needs. This option can be selected at the time of creating the VPC, and all the instances launched in the VPC are created with the same option by default, unless overridden.</p>
+            <div data-type="note">
+              <p>AWS provides multiple tools for creating resources, such as the AWS CLI, and the AWS Cloud Development Kit (CDK), or via the AWS Console. As a beginner, you can start by experimenting with the AWS Console, but as systems scale, we recommend maintaining a code repository to <a contenteditable="false" data-type="indexterm" data-primary="infrastructure-as-code (IaC)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IaC (infrastructure-as-code)">&nbsp;</a>provision any AWS resources, which is popularly known as <em>infrastructure-as-code (IaC)</em>. This could help on multiple fronts, such as replicating the same resources in another region or maintaining an infrastructure<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="creating VPC" data-startref="network-aws-vpc-create">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="creating VPC" data-startref="vpc-service-create">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CIDR blocks" data-startref="cidr-block">&nbsp;</a> audit.</p>
+            </div>
+            <p>The next step in VPC configuration is setting up subnets. Subnets separate resources across multiple AZs.</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch09_subnets_1734552289954390">
+          <h2>Subnets</h2>
+          <p>As <a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="subnets" id="network-aws-vpc-subnet">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="subnets" id="vpc-service-subnet">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="subnets" id="subnet">&nbsp;</a>we've mentioned, <em>subnet</em> means a subnetwork: a logical subdivision of the IP address range inside the VPC CIDR block. Why should you divide network space into multiple subnetworks? The general idea of separation of resources per AZ is to ensure high application availability. Each subnet is associated with an AZ within an AWS region. By associating resources to specific subnets, we ensure that resources are launched into that AZ. One interesting fact about mapping subnets to AZs is it can vary from customer to customer: the us-east-1a AZ for you can be us-east-1b for your friend. AWS abstracts out these details from customers to ensure uniform allocation (per availability) of resources.</p>
+          <p>Each subnet should be assigned a CIDR block similar to the VPC; the CIDR block to be assigned can be the same as the VPC CIDR block or a subset of it. The key point is that the CIDR block across the subnets inside your VPC should not overlap. The first four and the last IP address in each subnet CIDR block are reserved and can’t be assigned to resources. </p>
+          <p>The subnet can <a contenteditable="false" data-type="indexterm" data-primary="public subnets" id="public-subnet">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="private subnets" id="private-subnet">&nbsp;</a>be a public subnet or a private subnet, depending on its connectivity to the internet. Public and private subnets look similar; the difference lies in their accessibility to the internet. For example, a web application’s servers can be placed in a public subnet so that the application is accessible to the general public via the internet, and the database servers can be placed in a private subnet to limit accessibility from the general public; see <a data-type="xref" href="#ch09_figure_6_1734552289929264">#ch09_figure_6_1734552289929264</a> for reference. You were denied access to the kitchen at Cafe Delhi Heights because it’s located in a private space (or private subnet), although you can freely roam in the general sitting area as this is public space or public subnet.</p>
+          <figure id="ch09_figure_6_1734552289929264">
+            <img src="images/sdoa_0906.png"/>
+            <figcaption>Overview of different networking components</figcaption>
+          </figure>
+          <p>The resources in the public subnet can access the internet because of the presence of a direct route to an <a class="orm:hideurl" href="https://oreil.ly/rKh2C">internet gateway</a> (shown as igw-id in the custom route table in <a data-type="xref" href="#ch09_figure_6_1734552289929264">#ch09_figure_6_1734552289929264</a>), whereas <a contenteditable="false" data-type="indexterm" data-primary="Internet Gateway (IGW)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IGW (Internet Gateway)">&nbsp;</a>resources in the private subnet require a NAT service or a NAT instance to access the internet (nat-gateway-id entry in the route table). Later sections in this chapter will provide more details on network access control lists (NACLs), route tables, the NAT gateway, and the internet gateway. The key point is that the direct route to the internet gateway is the only differentiating factor between public and private subnets. A subnet with resources having a public IPv4 address but no direct route to the internet gateway is called a <em>private subnet</em>.</p>
+          <p>When setting up your VPCs and subnets inside your AWS account, consider these following best practices:</p>
+          <dl>
+            <dt>Use multiple subnets</dt>
+            <dd>
+              <p>Create multiple subnets within different AZs to achieve fault tolerance and high availability.</p>
+            </dd>
+            <dt>Isolate resources</dt>
+            <dd>
+              <p>Use separate subnets for different types of resources to improve security and network segmentation.</p>
+            </dd>
+            <dt>Separate public and private subnets</dt>
+            <dd>
+              <p>Place resources with public access in public subnets and sensitive resources in <a contenteditable="false" data-type="indexterm" data-primary="public subnets" data-startref="public-subnet">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="private subnets" data-startref="private-subnet">&nbsp;</a>private subnets.</p>
+            </dd>
+          </dl>
+          <p>VPC provides a logically isolated network in the AWS cloud, but how does this network connect with the internet? Or how can internet traffic access the resources located in the subnets? Let’s discuss <a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="subnets" data-startref="network-aws-vpc-subnet">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="subnets" data-startref="vpc-service-subnet">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="subnets" data-startref="subnet">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-startref="network-aws-vpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-startref="vpc-service">&nbsp;</a>that next.</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch09_internet_connectivity_1734552289954482">
+        <h1>Internet Connectivity</h1>
+        <p>Routing traffic and securing resources are achieved via components like route tables, internet gateways, and security groups, which we’ll focus on in this section.</p>
+        <section data-type="sect2" id="ch09_route_tables_1734552289954563">
+          <h2>Route Tables</h2>
+          <p>In the <a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="internet connectivity" data-tertiary="route tables" id="network-aws-internet-routetable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="internet connectivity" data-secondary="route tables" id="internet-routetable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="route tables" id="routetable">&nbsp;</a>AWS cloud, you just need to configure required routes in the route table; you don’t have to worry about setting up a router. A <em>route table</em> is a collection of rules, called <em>routes</em>, that determine where network traffic from your subnet or gateway is directed. We can assume that AWS internally maintains a router to facilitate this routing.</p>
+          <p>Every subnet should be associated with a route table, and the main route table is created implicitly to provide private access among the subnets. You should create more custom route tables as required and assign them to subnets—note that the same route table can be associated with multiple subnets. The key consideration here should be to create a route table for clear division of routing responsibility; this helps provide better maintainability and readability of routes by not overcrowding a single route table.</p>
+          <p>There are two kinds of route tables: main route tables and custom route tables.</p>
+              <p>The main route table automatically comes with a VPC and by default contains the first entry for local routing in the VPC, which helps resources in different subnets establish connectivity with one another. Every creation of a subnet leads to implicit association to the main route table. If required, customers can create a custom route table and explicitly associate it to a subnet.</p>
+              <p>You need to consider the following about the main route table:</p>
+            <ul>
+              <li>
+                <p>It can’t be deleted, and a custom route table can’t be set as the main route table, though the main route table can be replaced with a custom route table for subnet association.</p>
+              </li>
+              <li>
+                <p>You can add additional routes to the main table—our recommendation would be to avoid this and create custom route tables for adding custom routes.</p>
+              </li>
+              <li>
+                <p>The configured routes are general-purpose routes and might not be the optimal security configuration for all use cases. Audit the routes before using them in production environments.</p>
+              </li>
+            </ul>
+              <p>Custom route tables don’t contain any routes by default and should be updated per the requirements for network traffic routing. Custom route tables can be deleted, unlike the main route table, though there should be no subnet associations for this operation to be successful.</p>
+          <p>Now that you know the two types of route tables and their purposes, let’s see how routes are added and what they look like. There are two important inputs in the route table (see <a data-type="xref" href="#ch09_table_3_1734552289937365">#ch09_table_3_1734552289937365</a> for an example):</p>
+          <dl>
+            <dt>Destination </dt>
+            <dd>
+              <p>Added as CIDR; basically, a range of IP addresses that specifies where the network packets should go, such as 10.0.0.0/16</p>
+            </dd>
+            <dt>Target </dt>
+            <dd>
+              <p>Specifies how the network packets will reach the destination, such as gateway, network interface, or a connection—for example, internet gateway (IGW) for routing traffic to the internet or VPC peering connection</p>
+            </dd>
+          </dl>
+          <table id="ch09_table_3_1734552289937365">
+            <caption>Route table with internet connectivity via IGW</caption>
+            <thead>
+              <tr>
+                <th>Destination</th>
+                <th>Target</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>VPC CIDR</p>
+                </td>
+                <td>
+                  <p>Local</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>0.0.0.0/0</p>
+                </td>
+                <td>
+                  <p>igw-id</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>Route tables direct network traffic in and out of a subnet, but they don’t apply any security filters on this traffic. AWS provides software firewalls, security groups (SGs), and NACLs to implement traffic filters, which are useful for controlling the network traffic permissions. These components help control the traffic that can flow in and out <a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="internet connectivity" data-tertiary="route tables" data-startref="network-aws-internet-routetable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="internet connectivity" data-secondary="route tables" data-startref="internet-routetable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="route tables" data-startref="routetable">&nbsp;</a>of the VPC. </p>
+        </section>
+        <section data-type="sect2" id="ch09_security_groups_1734552289954638">
+          <h2>Security Groups</h2>
+          <p>SGs define <a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="internet connectivity" data-tertiary="security groups" id="network-aws-internet-securitygroup">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="internet connectivity" data-secondary="security groups" id="internet-securitygroup">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="security groups" id="security-group">&nbsp;</a>the rules for the traffic allowed to (and from) the resources. SGs are created at the VPC level and assigned at an instance level, controlling inbound and outbound traffic at the instance level based on protocols, ports, and IP addresses. Your EC2 instance can have one or more SGs. There will always be one SG associated to an instance, and, if not created, a default SG will be associated, which is created at the time of VPC creation.</p>
+          <p>To secure and limit access for incoming and outgoing traffic to instances, you need to add inbound and outbound rules to your SG.<em> Inbound rules</em> define traffic <a contenteditable="false" data-type="indexterm" data-primary="inbound rules">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="outbound rules">&nbsp;</a>that is allowed to the instance, and <em>outbound rules</em> define traffic that is allowed from the instance.</p>
+          <p>Keep in mind the following facts about SGs:</p>
+          <ul>
+            <li>
+              <p>SGs are stateful. For example, you fire one request from your personal laptop to an EC2 instance to get some data, and your IP address is added as part of the inbound rules. You’ll get a response back even if there are no outbound rules included for your personal laptop. In short, rules allowed in one direction will automatically be allowed in the opposite direction; there is no requirement to explicitly add them.</p>
+            </li>
+            <li>
+              <p>You can’t delete the default SG. Our recommendation is to create a custom SG as needed. Multiple SGs can be associated to an instance, but you should create SGs keeping future scale in mind. For example, you should avoid duplicate-rules SGs and reuse wherever possible.</p>
+            </li>
+            <li>
+              <p>You should only add required access and not overexpose the resources. For example, for SSH connections, only allow Port 22 for a set of IP addresses and not the entire internet.</p>
+            </li>
+            <li>
+              <p>SGs don’t provide an option to define explicit deny rules. All the rules that don’t match the allowed-rules condition are implicitly denied access to resources.</p>
+            </li>
+          </ul>
+          <p>For each rule added as part of the inbound or outbound rules, you’ll need to specify the following parameters, as shown in <a data-type="xref" href="#ch09_table_4_1734552289937387">#ch09_table_4_1734552289937387</a>: </p>
+          <dl>
+            <dt>Type </dt>
+            <dd>
+              <p>This represents the type of traffic. AWS determines the protocol and port range automatically on the basis of the chosen type value. There is also a custom type to add custom values, such as for port range.</p>
+            </dd>
+            <dt>Source or destination </dt>
+            <dd>
+              <p>The source attribute is added for inbound rules, and the destination attribute is added for outbound rules. Here, you can add specific IP addresses, complete CIDR blocks, or other security groups.</p>
+            </dd>
+            <dt>Description </dt>
+            <dd>
+              <p>It is helpful to identify why a certain rule is added or what purpose it solves. This is an optional field, but we recommend using <a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="internet connectivity" data-tertiary="security groups" data-startref="network-aws-internet-securitygroup">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="internet connectivity" data-secondary="security groups" data-startref="internet-securitygroup">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="security groups" data-startref="security-group">&nbsp;</a>it for easy future reference.</p>
+            </dd>
+          </dl>
+          <table id="ch09_table_4_1734552289937387">
+            <caption>Example SG outbound rule</caption>
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Protocol</th>
+                <th>Port range</th>
+                <th>Destination</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>SSH</p>
+                </td>
+                <td>
+                  <p>TCP</p>
+                </td>
+                <td>
+                  <p>22</p>
+                </td>
+                <td>
+                  <p>117.212.92.68</p>
+                </td>
+                <td>
+                  <p>Test SSH rule</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+        <section data-type="sect2" id="ch09_network_access_control_lists_1734552289954699">
+          <h2>Network Access Control Lists</h2>
+          <p><em>NACLs</em> are <a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="internet connectivity" data-tertiary="NACLs" id="network-aws-internet-nacl">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="internet connectivity" data-secondary="NACLs" id="internet-nacl">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="NACLs (network access control lists)" id="nacl">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="network access control lists (NACLs)" id="network-access-control-list">&nbsp;</a>stateless packet filters that are attached at the subnet level. Unlike SGs, NACLs provide the ability to add, allow, or deny rules for outbound or inbound traffic at the subnet level. You can think of them as an additional layer of security on top of SGs, which block the traffic if SGs are too flexible. </p>
+          <p>Thinking back to our example of the Cafe Delhi Heights kitchen, imagine there are individual chefs in the kitchen—you may be allowed to enter the kitchen, but a chef may still refuse to talk to you.</p>
+          <p>There are a few key things you need to remember about NACLs:</p>
+          <ul>
+            <li>
+              <p>NACLs are stateless. Customers need to add explicit rules for both inbound and outbound traffic to allow or deny actions.</p>
+            </li>
+            <li>
+              <p>Amazon VPC comes with a default NACL. The default will be attached to all the subnets inside the VPC, and it allows all inbound/outbound traffic. For fine-grained traffic control, you can create a custom NACL or modify rules in an existing one—our recommendation is to create custom NACLs as needed.</p>
+            </li>
+            <li>
+              <p>NACLs define inbound or outbound rules to allow or deny actions. The rules will be evaluated in sequence, and once a particular rule succeeds, all the rules in sequence following it will be skipped. If none of the rules succeed, then a final rule marked as * will evaluate it as a deny action.</p>
+            </li>
+          </ul>
+          <p>For each inbound or outbound rule, you’ll need to specify the following parameters, as shown in <a data-type="xref" href="#ch09_table_5_1734552289937413">#ch09_table_5_1734552289937413</a>: </p>
+          <dl>
+            <dt>Rule number </dt>
+            <dd>
+              <p>The rule number is the sequence of numbers in which rules are evaluated. It can be numbered from 1 to 32766. </p>
+            </dd>
+            <dt>Type</dt>
+            <dd>
+              <p>Type represents the type of traffic. Based on the chosen type, AWS prepopulates the protocol and port range. A custom protocol and port range can also be added per the selected type.</p>
+            </dd>
+            <dt>Source </dt>
+            <dd>
+              <p>Source represents inbound rules added as a CIDR block.</p>
+            </dd>
+            <dt>Destination </dt>
+            <dd>
+              <p>Destination represents outbound rules added as a CIDR block.</p>
+            </dd>
+            <dt>Allow or deny </dt>
+            <dd>
+              <p>For every rule, an explicit action should be added to “allow” or “deny.” This action determines if traffic is allowed or denied.</p>
+            </dd>
+          </dl>
+          <table id="ch09_table_5_1734552289937413">
+            <caption>Example NACL inbound rule </caption>
+            <thead>
+              <tr>
+                <th>Rule number</th>
+                <th>Type</th>
+                <th>Protocol</th>
+                <th>Port range</th>
+                <th>Source</th>
+                <th>Allow/deny</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>100</p>
+                </td>
+                <td>
+                  <p>All traffic</p>
+                </td>
+                <td>
+                  <p>All</p>
+                </td>
+                <td>
+                  <p>All</p>
+                </td>
+                <td>
+                  <p>0.0.0.0/0</p>
+                </td>
+                <td>
+                  <p>Allow</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>*</p>
+                </td>
+                <td>
+                  <p>All traffic</p>
+                </td>
+                <td>
+                  <p>All</p>
+                </td>
+                <td>
+                  <p>All</p>
+                </td>
+                <td>
+                  <p>0.0.0.0/0</p>
+                </td>
+                <td>
+                  <p>Deny</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>Route tables, SGs, and NACLs help you configure routes and network security. To enable the connectivity per the configured routes, AWS offers Internet Gateway or<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="internet connectivity" data-tertiary="NACLs" data-startref="network-aws-internet-nacl">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="internet connectivity" data-secondary="NACLs" data-startref="internet-nacl">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="NACLs (network access control lists)" data-startref="nacl">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="network access control lists (NACLs)" data-startref="network-access-control-list">&nbsp;</a> NAT gateway.</p>
+        </section>
+        <section data-type="sect2" id="ch09_amazon_vpc_to_internet_connectivity_1734552289954762">
+          <h2>Amazon VPC-to-Internet Connectivity</h2>
+          <p>We described<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="internet connectivity" data-tertiary="to VPC service" data-tertiary-sortas="VPC service" id="network-aws-internet-vpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="internet connectivity" data-secondary="to VPC service" data-secondary-sortas="VPC service" id="internet-vpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="internet connectivity to" id="vpc-service-internet">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="internet connectivity to" id="network-service-vpc-internet">&nbsp;</a> VPC as a personal data center in the AWS cloud. How will users establish connectivity with this personal data center, and how will this personal data center connect to the internet? In this section, we’ll dig into different AWS components that resolve these connectivity hurdles.</p>
+          <section data-type="sect3" id="ch09_internet_gateway_1734552289954820">
+            <h3>Internet Gateway</h3>
+            <p>In <a data-type="xref" href="#ch09_table_3_1734552289937365">#ch09_table_3_1734552289937365</a>, we showed you<a contenteditable="false" data-type="indexterm" data-primary="Internet Gateway (IGW)" id="internet-gateway">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IGW (Internet Gateway)" id="igw">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="public subnets" id="public-subnet-internet-gateway">&nbsp;</a> a route as destination 0.0.0.0/0 and target as igw-id for allowing internet access to resources. The destination for this route refers to the entire internet, and the target is an IGW identifier. </p>
+            <p>IGW is an AWS-managed VPC software component that provides a connection between your VPC and the internet. IGW is a highly available, redundant, and horizontally scalable application that is attached to the VPC and can span the subnets in different AZs.</p>
+            <p>In the context of our Cafe Delhi Heights example, IGW represents the front door to get in or out of the restaurant. Just as you can only go to the public sitting area in the restaurant and can’t go inside the kitchen, IGW only connects to resources in public subnets.</p>
+            <p>Here are a few key points about IGW:</p>
+            <ul>
+              <li>
+                <p>IGW establishes connectivity in both directions, from internet to VPC and vice versa, using public IP addresses.</p>
+              </li>
+              <li>
+                <p>IGW provides NAT support for instances with public IPv4 addresses in the subnet. For traffic leaving for the internet from an instance, IGW makes sure the reply to the request is sent back to a public IPv4 address. For traffic destined for a resource with a public IPv4 address, IGW ensures translation to the instance’s private IP address before the traffic is delivered to the VPC.</p>
+              </li>
+              <li>
+                <p>IGWs are used in conjunction with route tables to determine the path of network traffic. A route table associated with the VPC directs traffic destined for the internet to IGW. It acts as the default gateway for outbound traffic and routes it to the appropriate destination.</p>
+              </li>
+              <li>
+                <p>IGWs enable VPC resources to communicate with other AWS services, such as Amazon S3 or Amazon DynamoDB, over the internet.</p>
+              </li>
+              <li>
+                <p>IGWs are stateless, which means they don’t maintain any information about the state of network connections. Each packet is evaluated independently based on routing rules and security settings.</p>
+              </li>
+              <li>
+                <p>IGWs are designed to be highly available and scalable. They are automatically replicated across multiple AZs within a region, providing redundancy and fault tolerance.</p>
+              </li>
+            </ul>
+            <p>IGWs establish internet connectivity from public subnets, but how about private subnets? There can be scenarios where private subnet resources require internet access; one such example could be downloading the latest software update. The private subnet to public internet connectivity<a contenteditable="false" data-type="indexterm" data-primary="Internet Gateway (IGW)" data-startref="internet-gateway">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IGW (Internet Gateway)" data-startref="igw">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="public subnets" data-startref="public-subnet-internet-gateway">&nbsp;</a> is achieved via a NAT gateway.</p>
+          </section>
+          <section data-type="sect3" id="ch09_nat_gateway_1734552289954876">
+            <h3>NAT gateway</h3>
+            <p>In our <a contenteditable="false" data-type="indexterm" data-primary="NAT gateways" id="nat-gateway">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="private subnets" id="private-subnet-nat-gateway">&nbsp;</a>restaurant example, the cooks working in the kitchen asked the head chef if they could collect feedback from customers about the food being served; only the head chef is allowed to interact with customers directly in the main restaurant space, and cooks only work in the kitchen, just to avoid overwhelming the customers or increasing the crowd in the main area.</p>
+            <p>The role of head chef is served by the NAT gateway for a subnet—it connects instances in a private subnet with the internet via IGW. You can think of the NAT gateway as a bridge between IGW and private instances. IGW requires a public IP for interaction with the internet, and the NAT gateway facilitates that support. This support is available for TCP, UDP, and ICMP protocols.</p>
+            <p>NAT gateways are AWS-managed network devices that allow resources within private subnets in a VPC to initiate outbound internet connections while preventing direct inbound access from the internet by hiding their private IP addresses. To go a layer deeper, NAT converts a private IP address to a NAT device’s public IP address, which is mapped back to the private IP address when a response is returned from the internet. To establish a connection, you need to allocate an Elastic IP (EIP) address and associate it with the NAT gateway. The EIP serves as a static, public IP address that represents the NAT gateway and is used for communication with the internet.</p>
+            <p>Here are the key things to consider about NAT gateways:</p>
+            <ul>
+              <li>
+                <p>For high availability, the NAT gateway should be set up at the AZ level so that if an AZ goes down, it doesn’t affect traffic-serving capability from other AZs.</p>
+              </li>
+              <li>
+                <p>Another reason for NAT gateway division at the AZ level is to avoid packet drops for traffic greater than 10 million packets per second.</p>
+              </li>
+              <li>
+                <p>The NAT gateway can’t be used by the external internet to initiate connection with instances in a private subnet. </p>
+              </li>
+              <li>
+                <p>The NAT gateway provides public (default) and private connectivity. Public is useful for connectivity with the outside internet, whereas private is useful for connecting with other VPCs or on-premises networks.</p>
+              </li>
+              <li>
+                <p>The NAT gateway comes with an additional infrastructure cost, unlike IGW, whose pricing depends on traffic flow via IGW.</p>
+              </li>
+            </ul>
+            <p>We have discussed connectivity to personal data centers (meaning VPCs), but there could also be scenarios where we own multiple such data centers. The next section explores different mechanisms available from AWS<a contenteditable="false" data-type="indexterm" data-primary="private subnets" data-startref="private-subnet-nat-gateway">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="NAT gateways" data-startref="nat-gateway">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="internet connectivity" data-tertiary="to VPC service" data-tertiary-sortas="VPC service" data-startref="network-aws-internet-vpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="internet connectivity" data-secondary="to VPC service" data-secondary-sortas="VPC service" data-startref="internet-vpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="internet connectivity to" data-startref="vpc-service-internet">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="internet connectivity to" data-startref="network-service-vpc-internet">&nbsp;</a> to create cross-VPC connectivity.</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch09_connectivity_between_amazon_vpcs_1734552289954936">
+          <h2>Connectivity Between Amazon VPCs</h2>
+          <p>You may <a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="cross-VPC connectivity" id="network-service-vpc-cross">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="cross-VPC connectivity" id="vpc-service-cross">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cross-VPC connectivity" id="cross-vpc">&nbsp;</a>have use cases such as AWS resource integration across VPCs, security, or presence in multiple regions where different components residing in different VPCs need to connect with one another, which could be in the same or in different AWS accounts, while maintaining isolation. To return to our restaurant example, Cafe Delhi Heights is becoming more popular day by day, so the restaurant head opened a new location for the additional customers, but the food is still prepared in the old kitchen. Now there is a requirement to establish good connectivity for faster delivery of food to the newly opened location and in a secure way. Similarly, there can be a need to operate two microservices in different VPCs (or different AWS accounts altogether). For these microservices to communicate in a secure way, AWS provides different connectivity options.</p>
+          <p>These connectivity options fall mainly under two kinds of relationships: many-to-many and hub-and-spoke. Traffic is managed individually between each VPC in many-to-many VPC relationships, whereas a central resource manages traffic routing between the VPCs in the hub-and-spoke model. </p>
+          <section data-type="sect3" id="ch09_amazon_vpc_peering_1734552289954994">
+            <h3>Amazon VPC Peering</h3>
+            <p><a href="https://oreil.ly/5SQMv">VPC peering</a> is based on a many-to-many approach <a contenteditable="false" data-type="indexterm" data-primary="VPC peering" id="vpc-peering">&nbsp;</a>where one VPC peers with another VPC to enable full, bidirectional, private network connectivity. It enables resources in different VPCs to communicate with one another using private IP addresses as if they were in the same network. VPC peering doesn’t support transitive dependency and can be a cost-effective interconnectivity method if the number of VPCs is less than 10. As the number of VPCs increases, the mesh can become very complex to manage and operate. </p>
+            <p>You can manage the connections via route tables, SGs, and NACLs to allow specific resources or subnets to utilize the VPC peering connection. The network packets between the VPCs flow via AWS private network with no bandwidth constraints—no physical hardware is required for this setup; you only pay for the amount of data transfer.</p>
+            <p>Think of a scenario where all the Cafe Delhi Heights locations have their own bars, but food is prepared at a central location and supplied to the smaller setups. Now, let’s extend this example to a system architecture consisting of a web frontend and backend. The connectivity between the backend and frontend tier can be established via VPC peering, assuming both are hosted in separate VPCs. <a data-type="xref" href="#ch09_figure_7_1734552289929283">#ch09_figure_7_1734552289929283</a> shows connectivity between servers running in different VPCs via a VPC peering connection.</p>
+            <figure id="ch09_figure_7_1734552289929283">
+              <img src="images/sdoa_0907.png"/>
+              <figcaption>VPC peering</figcaption>
+            </figure>
+            <p>There are certain <a href="https://oreil.ly/mpf8e">limitations with VPC peering</a> with increasing scale, and it becomes hard to manage the routing configurations between VPCs. To overcome these bottlenecks, AWS offers a service called <a contenteditable="false" data-type="indexterm" data-primary="VPC peering" data-startref="vpc-peering">&nbsp;</a>Transit Gateway.</p>
+          </section>
+          <section data-type="sect3" id="ch09_aws_transit_gateway_1734552289955050">
+            <h3>AWS Transit Gateway</h3>
+            <p>AWS Transit Gateway<a contenteditable="false" data-type="indexterm" data-primary="Transit Gateway" id="transit-gateway">&nbsp;</a> is a scalable solution to establish connectivity among multiple VPCs, on-premises networks, and other AWS services. Based on the hub-and-spoke model, Transit Gateway is a regional resource that acts as an intermediary to set up all the network routing at a single place via routing tables, be it VPCs or a hybrid connectivity method such as <a href="https://aws.amazon.com/vpn">virtual private network (VPN)</a> or AWS Direct Connect.</p>
+            <p>For better control of networking routes, Transit Gateway can be set up in a separate networking AWS account that network engineers can manage at a centralized <span class='keep-together'>location</span>. <a data-type="xref" href="#ch09_figure_8_1734552289929302">#ch09_figure_8_1734552289929302</a> shows Transit Gateway acting as a central resource for providing connectivity among VPCs, Direct Connect, and a VPN connection.</p>
+            <figure id="ch09_figure_8_1734552289929302">
+              <img src="images/sdoa_0908.png"/>
+              <figcaption>AWS Transit Gateway</figcaption>
+            </figure>
+            <p>The key difference between Transit Gateway and VPC peering is scale: Transit Gateway is scalable for connectivity across thousands of VPCs. Other parameters are favorable to VPC peering, such as lower cost, no bandwidth constraints, and reduced latency.</p>
+            <p><a data-type="xref" href="#ch09_figure_7_1734552289929283">#ch09_figure_7_1734552289929283</a> shows the frontend and backend tier connectivity via VPC peering in different VPCs. Another solution for this kind of setup is to use <a contenteditable="false" data-type="indexterm" data-primary="Transit Gateway" data-startref="transit-gateway">&nbsp;</a>PrivateLink.</p>
+          </section>
+          <section data-type="sect3" id="ch09_aws_privatelink_1734552289955106">
+            <h3>AWS PrivateLink</h3>
+            <p>AWS PrivateLink privately exposes <a contenteditable="false" data-type="indexterm" data-primary="PrivateLink" id="privatelink">&nbsp;</a>an application to consumers in another VPC and ensures that traffic flows in an AWS backbone network without going over the internet. The key difference is traffic flow direction: VPC peering provides bidirectional connectivity, but if clients need to serve requests using only private IP addresses, AWS PrivateLink will facilitate this kind of connectivity. </p>
+            <p>PrivateLink is established between two parties: the one that allows access to its specific service is <a contenteditable="false" data-type="indexterm" data-primary="service providers">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="consumers">&nbsp;</a>the <em>service provider,</em> and others consuming this service are considered the <em>consumers</em>. </p>
+            <p>To make its service available in a region, the service provider creates an endpoint service, which is mapped with a network load balancer. An application LB can’t be directly attached with an endpoint service. The service consumers create VPC endpoints to connect their VPCs to endpoint services by specifying the service name. As shown in <a data-type="xref" href="#ch09_figure_9_1734552289929322">#ch09_figure_9_1734552289929322</a>, the endpoint could be an interface endpoint or a gateway endpoint. An interface endpoint establishes a connection to an endpoint service in another VPC whereas a gateway endpoint connects with Amazon S3 or Amazon DynamoDB using private IP addresses. Another type is a gateway LB, which can be used to manage third-party virtual appliances, such as for compliance (more on LBs shortly).</p>
+            <figure id="ch09_figure_9_1734552289929322">
+              <img src="images/sdoa_0909.png"/>
+              <figcaption>Connectivity via endpoint services</figcaption>
+            </figure>
+            <div data-type="note">
+              <p>Configuration management and understanding different networking features, such as VPC peering, Transit Gateways, and PrivateLinks, require expertise. AWS offers <a contenteditable="false" data-type="indexterm" data-primary="VPC Lattice">&nbsp;</a>VPC Lattice as a managed service to remove all this overhead and simplify application connectivity across VPCs and AWS accounts.</p>
+            </div>
+            <p>Certain businesses still operate with on-premises data centers. During the process of migrating to the cloud, there can be an intermediary state where some operations are served by on-premises data centers and the rest via AWS cloud computing services. Let’s explore different solutions offered by AWS to establish connectivity between these two separate<a contenteditable="false" data-type="indexterm" data-primary="PrivateLink" data-startref="privatelink">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="cross-VPC connectivity" data-startref="network-service-vpc-cross">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="cross-VPC connectivity" data-startref="vpc-service-cross">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cross-VPC connectivity" data-startref="cross-vpc">&nbsp;</a> data centers.</p>
+          </section>
+        </section>
+        <section class="pagebreak-before" data-type="sect2" id="ch09_hybrid_connectivity_1734552289955164">
+          <h2 class="less_space">Hybrid Connectivity</h2>
+          <p>The <a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="hybrid connectivity" id="network-service-vpc-hybrid">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="hybrid connectivity" id="vpc-service-hybrid">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hybrid connectivity" id="hybrid-vpc">&nbsp;</a>current infrastructure of Cafe Delhi Heights is a central location for preparing food and a bar at each separate location. To make our systems more efficient, we’re planning to move most of the food preparation to all the locations, but some key dishes will still be prepared at the central location. In this scenario, operations happen at two places—this is what we mean by <em>hybrid connectivity</em>.</p>
+          <p>It could be possible that you started with a personal data center, but over time you decided to move to the AWS cloud. Now, AWS maintains the service infrastructure, but the databases are still managed at an on-premises data center. To support this, there needs to be some mechanism to establish connectivity between on-premises data centers and AWS data centers—that’s a VPN.</p>
+          <section data-type="sect3" id="ch09_aws_virtual_private_network_1734552289955224">
+            <h3>AWS Virtual Private Network</h3>
+            <p>What<a contenteditable="false" data-type="indexterm" data-primary="VPNs (virtual private networks)" id="vpn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="virtual private networks (VPNs)" id="virtual-private-network">&nbsp;</a> mechanism can be used to securely connect on-premises data centers to Amazon VPCs? The service framework that ensures this data security is VPN. <a data-type="xref" href="#ch09_figure_10_1734552289929340">#ch09_figure_10_1734552289929340</a> shows an example connection setup using AWS VPN from a customer data center to a VPC located in an AWS region.</p>
+            <p>The components of a VPN setup are as follows:</p>
+            <dl>
+              <dt>Customer gateway </dt>
+              <dd>
+                <p>A software or hardware component that is set up at the customer’s end. These are the <a href="https://oreil.ly/SKSOs">device requirements</a>.</p>
+              </dd>
+              <dt>VPN connection </dt>
+              <dd>
+                <p>A secure, encrypted connection channel between the customer gateway and VPN gateway. Two tunnels are set up to avoid any availability issues due to failure or scheduled maintenance.</p>
+              </dd>
+              <dt>VPN gateway </dt>
+              <dd>
+                <p>Present at the AWS side to ensure communication between the VPC and the VPN connection.</p>
+              </dd>
+            </dl>
+            <p>The VPN transfers data packets over the internet anonymously. AWS provides another service, Direct Connect, to configure dedicated networks for connectivity.</p>
+            <figure id="ch09_figure_10_1734552289929340">
+              <img src="images/sdoa_0910.png"/>
+              <figcaption>VPN connection</figcaption>
+            </figure>
+          </section>
+          <section data-type="sect3" id="ch09_aws_direct_connect_1734552289955285">
+            <h3>AWS Direct Connect</h3>
+            <p>AWS Direct Connect <a contenteditable="false" data-type="indexterm" data-primary="Direct Connect" id="direct-connect">&nbsp;</a>provides the capability of configuring a dedicated network connection (Ethernet fiber-optic cable) for data transfer from the customer data center to a Direct Connect location without using the internet. The Direct Connect location is configured with a router to route the traffic and connect to the AWS backbone network. It provides consistent, high-bandwidth connectivity suitable for large-scale or latency-sensitive workloads. You can use the <a href="https://oreil.ly/0-HcF">Direct Connect Resiliency toolkit</a> to ensure maximum availability of connections set up from a personal data center to the Direct Connect location. <a data-type="xref" href="#ch09_figure_11_1734552289929353">#ch09_figure_11_1734552289929353</a> shows an example connection setup from a customer data center to VPC via a Direct Connect location. </p>
+            <figure id="ch09_figure_11_1734552289929353">
+              <img alt="A diagram of a blockchain&#10;&#10;Description automatically generated" src="images/sdoa_0911.png"/> 
+              <figcaption>Amazon VPC connectivity with an on-premises data center via Direct Connect</figcaption>           
+            </figure>
+            <p>The main components are as follows:</p>
+            <dl>
+              <dt>Customer router</dt>
+              <dd>
+                <p>Installed at an on-premises data center holding all networking rules, the customer router routes traffic from the data center to the Direct Connect location. The customer router connects with the router at the Direct Connect location via 802.1Q VLAN ethernet cable.</p>
+              </dd>
+              <dt>Direct Connect location</dt>
+              <dd>
+                <p>Direct Connect is available worldwide at <a href="https://oreil.ly/AME1w">multiple locations</a>. You can select a location closest to the on-premises data center to minimize cost and latency. You can check for all networking requirements in the <a href="https://oreil.ly/sjruP">AWS documentation</a>.</p>
+              </dd>
+              <dt>Direct Connect gateway</dt>
+              <dd>
+                <p>The Direct Connect gateway establishes the connection between the VPC and the Direct Connect location via a private virtual interface.</p>
+              </dd>
+              <dt>Virtual interface (VIF)</dt>
+              <dd>
+                <p>The VIF<a contenteditable="false" data-type="indexterm" data-primary="virtual interface (VIF)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VIF (virtual interface)">&nbsp;</a> is used to set up private, secure connections to required resources such as S3 without going over the internet. You can select public VIF, private VIF, or transit VIF depending on the use case:</p>
+             
+              <ul>
+                <li>
+                  <p>Public VIF connects to AWS resources such as Amazon S3 over public IP addresses.</p>
+                </li>
+                <li>
+                  <p>Private VIF connects to AWS resources using their private IP addresses hosted in the Amazon VPC.</p>
+                </li>
+                <li>
+                  <p>Transit VIF connects to AWS resources using their private IP addresses hosted in the Amazon VPC through the Transit Gateway.</p>
+                </li>
+              </ul>
+               </dd>
+            </dl>
+            <p>We have explored many ways that network packets flow inside the Amazon network as well as multiple connectivity options provided by AWS. The rest of the chapter focuses on the entry points for these network packets as applications scale, such as Amazon Route 53, LBs, and Amazon API Gateway. We’ll conclude the chapter by discussing Amazon CloudFront, the CDN provided by AWS for placing data content near users to enable<a contenteditable="false" data-type="indexterm" data-primary="Direct Connect" data-startref="direct-connect">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="hybrid connectivity" data-startref="network-service-vpc-hybrid">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="hybrid connectivity" data-startref="vpc-service-hybrid">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hybrid connectivity" data-startref="hybrid-vpc">&nbsp;</a> faster retrieval.</p>
+          </section>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch09_amazon_route_53_1734552289955345">
+        <h1>Amazon Route 53</h1>
+        <p>Amazon Route 53 is a scalable, <a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="Route 53 (DNS services)" id="network-service-route53">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Route 53" id="route53">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DNS (Domain Name System)" id="dns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Domain Name System (DNS)" id="domain-name-system">&nbsp;</a>highly available Domain Name System (DNS) in the AWS ecosystem used for domain registration, DNS routing, and health checking. We began <a data-type="xref" href="#ch09_ip_addresses_1734552289954021">#ch09_ip_addresses_1734552289954021</a> by stating that every device on the internet requires an IP address to establish a connection with other devices, but what if a human is operating one side of a connection? It can be very difficult to remember all the IP addresses—well, unless you have a photographic memory.</p>
+        <p>Humans are better at remembering names than numbers; it’s easier to remember <em>www.google.com</em> instead of 142.251.46.174 or to remember Cafe Delhi Heights at Ambience Mall instead of a latitude of 28.525446566084423 and a longitude of 77.09008858115097. DNS makes our lives easier by facilitating conversion from domain names to IP addresses. </p>
+        <p>We should have a general understanding of what happens when we type <em>www.google.com</em> in a web browser to understand data flow on the internet. <a data-type="xref" href="#ch09_figure_12_1734552289929377">#ch09_figure_12_1734552289929377</a> shows how a domain like <em>www.google.com</em> is resolved to an IP address and made accessible to end users using Route 53. After the DNS resolution in steps 1 through 5, the browser establishes a TCP connection with Google web servers and sends an HTTP request to the servers (step 6). The server handles the request and sends back an HTTP response as the final step (7). The browser renders this response in the browser tab for further user interactions. </p>
+        <figure id="ch09_figure_12_1734552289929377">
+          <img src="images/sdoa_0912.png"/>
+          <figcaption>DNS resolution via Amazon Route 53</figcaption>
+        </figure>
+        <p>Here are the key considerations for using Amazon Route 53:</p>
+        <ul>
+          <li>
+            <p>Route 53 can be used to register new domain names, and you can transfer existing DNS to be managed by it.</p>
+          </li>
+          <li>
+            <p>You can create, update, and manage your public DNS records via Route 53, along with health checks to monitor the health of applications, web servers, and related resources. </p>
+          </li>
+          <li>
+            <p>You can configure <a href="https://oreil.ly/FfkRt">routing policies</a> for traffic management on DNS records, specifying how Route 53 responds to queries.</p>
+          </li>
+          <li>
+            <p>Route 53 supports various DNS record types, such as A, AAAA, CNAME, mail exchange (MX), TXT, and more, enabling flexible DNS configuration. <a href="https://oreil.ly/mhDPH">Alias records</a>, a feature specific to Route 53, allows routing of traffic to AWS resources with zero additional cost for the DNS query. </p>
+          </li>
+          <li>
+            <p>DNS records of your domain are collectively stored in hosted zones to answer the domain queries.</p>
+          </li>
+          <li>
+            <p>Route 53 uses Anycast as its networking and routing technology, which reduces latency by routing requests through the nearest data center and increases availability with multiple servers to respond to traffic <a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="Route 53 (DNS services)" data-startref="network-service-route53">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Route 53" data-startref="route53">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DNS (Domain Name System)" data-startref="dns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Domain Name System (DNS)" data-startref="domain-name-system">&nbsp;</a>instead of just one origin server.</p>
+          </li>
+        </ul>
+      </section>
+      <section data-type="sect1" id="ch09_aws_elastic_load_balancer_1734552289955408">
+        <h1>AWS Elastic Load Balancer</h1>
+        <p>As discussed in <a data-type="xref" href="#ch05_load_balancing_approaches_and_techniques_1734552287463010">#ch05_load_balancing_approaches_and_techniques_1734552287463010</a>, LBs improve <a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="ELB (Elastic Load Balancer)" id="network-service-elb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ELBs (Elastic Load Balancers)" id="elb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic Load Balancers (ELBs)" id="elastic-load-balancer">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)" data-secondary="ELB (Elastic Load Balancer)" id="lb-elb">&nbsp;</a>the availability, scalability, and fault tolerance of applications by distributing traffic across healthy targets. LBs can automatically scale based on traffic patterns and health checks, ensuring optimal performance.</p>
+        <p>ELB is a managed service that scales for the customer’s traffic on the go and provides the following capabilities:</p>
+        <ul>
+          <li>
+            <p>Distributes the incoming traffic among a pool of resources</p>
+          </li>
+          <li>
+            <p>Serves requests without disruption as new resources are added or old ones are removed</p>
+          </li>
+          <li>
+            <p>Monitors resource health via ELB-provided health checks</p>
+          </li>
+        </ul>
+        <p>AWS ELB is available as the following types: </p>
+        <dl>
+          <dt>Application load balancer (ALB)</dt>
+          <dd>
+            <p>Operates <a contenteditable="false" data-type="indexterm" data-primary="application load balancer (ALB)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ALB (application load balancer)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)" data-secondary="ALB (application load balancer)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="load balancers (LBs)" data-secondary="ALB (application load balancer)">&nbsp;</a>at the application layer (L7) for HTTP, HTTPS, and gRPC protocols</p>
+          </dd>
+          <dt>Network load balancer (NLB)</dt>
+          <dd>
+            <p>Operates<a contenteditable="false" data-type="indexterm" data-primary="network load balancers (NLBs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="NLBs (network load balancers)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)" data-secondary="NLB (network load balancer)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="load balancers (LBs)" data-secondary="NLB (network load balancer)">&nbsp;</a> at the network layer (L4) for TCP, UDP, and TLS protocols </p>
+          </dd>
+          <dt>Classic load balancer (CLB)</dt>
+          <dd>
+            <p>Legacy <a contenteditable="false" data-type="indexterm" data-primary="classic load balancer (CLB)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CLB (classic load balancer)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)" data-secondary="CLB (classic load balancer)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="load balancers (LBs)" data-secondary="CLB (classic load balancer)">&nbsp;</a>version of an LB that supports both L4 and L7 traffic</p>
+          </dd>
+          <dt>Gateway load balancer (GWLB)</dt>
+          <dd>
+            <p>Used as <a contenteditable="false" data-type="indexterm" data-primary="gateway load balancer (GWLB)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="GWLB (gateway load balancer)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)" data-secondary="GWLB (gateway load balancer)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="load balancers (LBs)" data-secondary="GWLB (gateway load balancer)">&nbsp;</a>an L3 gateway and L4 LB for the IP protocol</p>
+          </dd>
+        </dl>
+        <p>There's a <a href="https://oreil.ly/aMRtW">detailed product comparison on AWS</a>.</p>
+        <p>Our recommendation is to take a bottom-up approach by thinking about the base feature requirements for a given workload. These requirements, along with pricing, will help you decide which LB type is best suited to your workload—there are additional features that ELB offers, which will be the cherry on the top. <a data-type="xref" href="#ch09_figure_13_1734552289929398">#ch09_figure_13_1734552289929398</a> shows traffic distribution by ELB to different types of targets. </p>
+        <p>The following are main components of ELB: </p>
+        <dl>
+          <dt>Load balancer</dt>
+          <dd>
+            <p>The LB is a single point of contact from the client’s perspective; it can then forward the request to configured listeners.</p>
+          </dd>
+          <dt>Listeners</dt>
+          <dd>
+            <p>The <a contenteditable="false" data-type="indexterm" data-primary="listeners">&nbsp;</a>listener is a process that checks for the client’s request using the configured protocol and port number. The request is forwarded to target groups based on the rules associated with a listener.</p>
+          </dd>
+          <dt>Target groups</dt>
+          <dd>
+            <p>Target groups <a contenteditable="false" data-type="indexterm" data-primary="target groups">&nbsp;</a>direct traffic to configured targets using the configured port and protocol, such as EC2 instances, IP addresses, and so on.</p>
+          </dd>
+        </dl>
+        <figure id="ch09_figure_13_1734552289929398">
+          <img alt="A diagram of a diagram&#10;&#10;Description automatically generated" src="images/sdoa_0913.png"/>
+          <figcaption>AWS ELB configuration</figcaption>
+        </figure>
+        <p>Here are a few key considerations for ELBs:</p>
+        <ul>
+          <li>
+            <p>An NLB can have targets like an ALB, containers, instances, and IPs. An ALB can have containers, instances, IPs, and Lambdas as targets. A GWLB can have IPs and instances as targets.</p>
+          </li>
+          <li>
+            <p>GWLBs are useful in systems like firewalls, intrusion detection and prevention systems, and deep packet inspection systems. They enable customers to deploy, scale, and manage virtual appliances. One example scenario for inspection systems is placing the GWLB between the source and destination for packet analysis and monitoring.</p>
+          </li>
+          <li>
+            <p>ALBs don’t provide support for private link and static IP addresses for inbound traffic; an NLB is a suitable choice for this use case. In scenarios where additional features of an ALB are a value-add to an NLB or vice versa, an ALB can be used as a target for an NLB to gain benefits from both.</p>
+          </li>
+          <li>
+            <p>Since an ALB has request header data, it can support request routing in multiple ways, such as path based, host based, query string parameter based, and source IP address based. In contrast, an NLB can’t inspect the HTTP request, which makes it a little lighter in processing compared to an ALB, resulting in reduced latency.</p>
+          </li>
+          <li>
+            <p>NLBs are optimized to handle sudden spiky traffic patterns; for ALBs, it’s a best practice to inform AWS Support in advance if a traffic spike is expected to preallocate the capacity.</p>
+          </li>
+          <li>
+            <p>NLBs support long-lived TCP connections, unlike ALBs. This is helpful in scenarios with requirements like a huge number of persistent connections, such as WebSocket connections for an online gaming application.</p>
+          </li>
+          <li>
+            <p>ALBs provide support for AWS Web Application Firewall (WAF) and authentication mechanisms such as Amazon Cognito and OpenID Connect. This offloads the responsibility from the application, making it lighter.</p>
+          </li>
+          <li>
+            <p>The LB will reside in a public subnet, and you can host the backend resources in a private subnet, which are not directly accessible to outside traffic.</p>
+          </li>
+          <li>
+            <p>Idle timeout configuration for ALB can be set between 1 and 4,000 seconds (the default is 60 seconds), whereas for NLB this configuration<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="ELB (Elastic Load Balancer)" data-startref="network-service-elb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ELBs (Elastic Load Balancers)" data-startref="elb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic Load Balancers (ELBs)" data-startref="elastic-load-balancer">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)" data-secondary="ELB (Elastic Load Balancer)" data-startref="lb-elb">&nbsp;</a> is 350 seconds.</p>
+          </li>
+        </ul>
+      </section>
+      <section data-type="sect1" id="ch09_amazon_api_gateway_1734552289955479">
+        <h1>Amazon API Gateway</h1>
+        <p>Amazon API Gateway is a fully managed <a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="API Gateway" id="network-aws-api-gateway">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="API Gateway (AWS)" id="api-gateway-aws">&nbsp;</a>AWS service for creating, publishing, maintaining, monitoring, and securing REST, HTTP, and WebSocket APIs. Consider a scenario where, instead of humans serving your food at Cafe Delhi Heights, robots are deployed to do so. You order by selecting the food items from the kiosk installed at the table, and once the food is prepared, it is served by robots—well, in this scenario, you don’t know the food is prepared by robots or humans in the kitchen. That’s the beauty of resource abstraction: customers use the API Gateway’s published API to perform specific functions at scale, and API Gateway can internally connect with any AWS service, as shown in <a data-type="xref" href="#ch09_figure_14_1734552289929419">#ch09_figure_14_1734552289929419</a>.</p>
+        <figure id="ch09_figure_14_1734552289929419">
+          <img src="images/sdoa_0914.png"/>
+          <figcaption>Amazon API Gateway connectivity with AWS services</figcaption>
+        </figure>
+        <p>Here are a few key considerations for using API Gateway:</p>
+        <ul>
+          <li>
+            <p>API Gateway supports both stateless and stateful APIs:</p>
+            <ul>
+              <li>
+                <p>REST and HTTP APIs are stateless. They both have the same basic functionality and are HTTP based to support standard methods like <code>GET</code>, <code>PUT</code>, <code>POST</code>, and so on. REST APIs support some additional features, such as API keys, per-client rate and usage throttling, and request validation.</p>
+              </li>
+              <li>
+                <p>WebSocket APIs are stateful. They operate on the basis of the WebSocket protocol with full-duplex client-server communication.</p>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <p>API Gateway can support authentication via AWS IAM policies, AWS Lambda authorizer functions, and Amazon Cognito user pools.</p>
+          </li>
+          <li>
+            <p>API Gateway provides monitoring via CloudWatch and CloudTrail services.</p>
+          </li>
+          <li>
+            <p>API Gateway can avoid web exploits like SQL injection via AWS WAF <span class='keep-together'>integration</span>.</p>
+          </li>
+          <li>
+            <p>API Gateway can directly connect with AWS services like Amazon DynamoDB via service APIs, reducing intermediary infrastructure costs. For example, in a scenario where you retrieve a DynamoDB record using a partition key, the general implementation would be to invoke a Lambda, which then connects with DynamoDB to get the data. API Gateway removes the need for AWS Lambda in between by directly connecting with DynamoDB and serving responses. </p>
+          </li>
+          <li>
+            <p>API Gateway doesn’t provide health checks for backend resources as ELB does. </p>
+          </li>
+          <li>
+            <p>The timeout configuration for REST APIs on API Gateway is between 50 ms and 29 seconds; it is 30 seconds for HTTP APIs. There is a two-hour connection duration for WebSocket APIs, with an idle timeout of 10 minutes.</p>
+          </li>
+          <li>
+            <p>API Gateway can be used for cross-account or -region integration; for example, AWS Lambdas are owned by different teams in different AWS accounts per business requirements but are served by an API Gateway in a central AWS account.</p>
+          </li>
+          <li>
+            <p>API Gateway supports caching of the endpoint’s responses, which reduces traffic to the endpoint and improves latency. TTL for caching can vary from 0 (caching is disabled) to 3,600 seconds, with a default of 300 seconds.</p>
+          </li>
+        </ul>
+        <p>API Gateway and LBs help abstract out backend infrastructure from customers. Now, consider a scenario where a customer’s requests hit API Gateway and one of the microservices fetches data from Amazon S3; this operation is definitely latency intensive if the file size is large. The latency can be reduced by placing the content near the customer’s location<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="API Gateway" data-startref="network-aws-api-gateway">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="API Gateway (AWS)" data-startref="api-gateway-aws">&nbsp;</a> via the AWS CDN service, Amazon CloudFront.</p>
+      </section>
+      <section data-type="sect1" id="ch09_amazon_cloudfront_1734552289955538">
+        <h1>Amazon CloudFront</h1>
+        <p>We briefly <a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="CloudFront" id="network-aws-cloudfront">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CloudFront" id="cloudfront">&nbsp;</a>touched on two ways Cafe Delhi Heights can manage food preparation and delivery operations: (1) food is prepared at a central location and delivered to smaller storefronts on demand, and (2) kitchens are set up at all the locations. There is definitely an extra cost to setting up kitchens at every location. Another option is to analyze the demands for different food items, prepare the food in advance at a central location, and store it at the smaller outlets ahead of time. This way, the food is prepared at only a single location, and the customers are served at all the outlets in the minimum time possible.</p>
+        <p>In software systems, a key factor to improving the customer’s experience is to serve the request with minimum latency. One potential solution is to replicate infrastructure in multiple AWS regions and use AWS local zones. This solution should be accessed only as a last resort for your business architecture, and latency should not be the key factor in deciding on it. Another cost-effective solution is to cache the content near the customer’s location via a CDN, as discussed in <a data-type="xref" href="#ch04_caching_policies_and_strategies_1734552287178593">#ch04_caching_policies_and_strategies_1734552287178593</a>. Amazon CloudFront is a worldwide network of data centers <a contenteditable="false" data-type="indexterm" data-primary="edge locations (AWS)">&nbsp;</a>called <em>edge locations</em> that helps you achieve low latency for serving both static and dynamic content in a secure way via AWS Shield, AWS IAM, AWS WAF, and TLS certificates.</p>
+        <p>There are a few things to keep in mind:</p>
+        <ul>
+          <li>
+            <p>CloudFront can be used to serve both static and dynamic content over HTTP or WebSocket protocols. For example, static content placed in S3 buckets or dynamic content generated via any web service, such as running on EC2 servers, can be directly served via CloudFront, as shown in <a data-type="xref" href="#ch09_figure_15_1734552289929441">#ch09_figure_15_1734552289929441</a>.</p>
+            <figure id="ch09_figure_15_1734552289929441">
+              <img src="images/sdoa_0915.png"/>
+              <figcaption>Content distribution via Amazon CloudFront</figcaption>
+            </figure>
+          </li>
+          <li>
+            <p>CloudFront by default integrates with AWS Shield to help avoid distributed denial-of-service (DDos) attacks and can be integrated with AWS WAF for application layer security.</p>
+          </li>
+          <li>
+            <p>CloudFront provides encryption both at rest and in transit. Data at edge locations is always stored in encrypted format, and Amazon Certificate Manager or custom certificates can be used for in-transit traffic.</p>
+          </li>
+          <li>
+            <p>For ensuring user-level access to content, CloudFront provides options for signed cookies, signed URLs, and georestriction. </p>
+          </li>
+        </ul>
+        <p>In short, CloudFront enables you to cache content near your application users and serve user queries<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="CloudFront" data-startref="network-aws-cloudfront">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CloudFront" data-startref="cloudfront">&nbsp;</a> faster. </p>
+      </section>
+      <section data-type="sect1" id="ch09_conclusion_1734552289955592">
+        <h1>Conclusion</h1>
+        <p>We began this chapter by getting started with AWS cloud computing services, and then we explored different networking concepts and services that AWS offers to set up a networking infrastructure on the AWS cloud. Since the AWS cloud comes with a plethora of services, it’s important to understand how a specific service will solve a problem statement. </p>
+        <p>It’s neither easy nor feasible for everyone to set up their own personal data center, and AWS solves this problem by offering Amazon VPC as a solution. There may be requirements for multiple data centers to connect, and AWS provides different connectivity mechanisms to enable this support. It is also important that only the intended users access the resources hosted in the AWS cloud, which can be ensured by using security mechanisms like security groups, NACLs, and appropriate rules added to the route tables. </p>
+        <p>Finally, we discussed how the internal resources can be abstracted out from external users by using solutions such as AWS ELB and Amazon API Gateway. AWS also offers a highly scalable DNS service, Amazon Route 53, for managing domain names. Here’s a simple example to illustrate using Route 53—we started by using an NLB, and the users hit this endpoint. Later, we realized that an ALB was a more appropriate choice than the NLB. In this situation, there are three options: share the new ALB endpoint with customers, keep the NLB as front-facing to the ALB with the ALB redirecting traffic to the application, or use Amazon Route 53 domain so that the same domain name is accessible to customers with no impact from changes to internal resources.</p>
+        <p>Data storage solutions are an important consideration when storing and maintaining data in the cloud. In the next chapter, we’ll explore different types of AWS storage services, such as DynamoDB, Amazon S3, and relational databases, and we’ll discuss each of these services with respect to the use cases they best serve.</p>
+      </section>
+    </section>

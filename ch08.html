@@ -1,0 +1,1048 @@
+<section data-type="chapter" id="ch08_architectural_designs_and_patterns_1734552289324317" xmlns="http://www.w3.org/1999/xhtml">
+<h1>Architectural Designs and Patterns</h1>
+
+<p>In this chapter, we <a contenteditable="false" data-primary="patterns" data-see="architectural designs and patterns" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="designs" data-see="architectural designs and patterns" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="system design" data-seealso="architectural designs and patterns" data-type="indexterm">&nbsp;</a>dive into the world of architectural design and patterns. These models and patterns form the backbone of modern software systems. We will explore how these designs support scalability, maintainability, and efficient data handling in diverse applications. This chapter will not only equip you with theoretical foundations but also inspire practical applications and innovations in your system design endeavors.</p>
+
+<p>We begin our journey with<em> change data capture (CDC)</em>, a pivotal technique in data architecture used for capturing changes made to data in a database. Then, advancing into the realm of asynchronous communication patterns, we discuss the pub/sub architecture, in which publishers emit events without knowledge of the subscribers’ identities. We’ll look at how message brokers and message queues manage data flow across systems. Our focus will be on Apache Kafka, a high-throughput distributed messaging system, and we’ll illustrate its architecture and use cases for handling large-scale data streams.</p>
+
+<p>In distributed systems, managing service interactions is critical. In this chapter, we will explore key architecture patterns for building scalable, resilient, and maintainable systems in modern cloud environments. We’ll compare the choreography (decentralized) and orchestration (centralized) management approaches, examining scenarios where each is most effective. We’ll then move on to big data architectures, covering foundational models like lambda, kappa, and data lake architectures, along with the Hadoop Distributed File System (HDFS), a distributed filesystem for handling massive datasets. We’ll also look at application architectures, comparing monolithic, N-tier, and microservice structures. Then, we’ll delve into event-driven systems, highlighting how they enable communication across decoupled services in response to real-time events.</p>
+
+<p>The chapter concludes with a tour of essential cloud architecture patterns, from resilience techniques like the circuit breaker to transactional strategies like saga orchestration, offering a practical toolkit for robust system design. The architecture patterns in this chapter serve as the blueprints for designing systems for the various use cases covered in <a data-type="xref" href="#part3">#part3</a>.</p>
+
+<section data-type="sect1" id="ch08_change_data_capture_1734552289324609">
+<h1>Change Data Capture</h1>
+
+<p>CDC is<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="CDC (change data capture)" data-type="indexterm" id="arch-design-cdc">&nbsp;</a><a contenteditable="false" data-primary="CDC (change data capture)" data-type="indexterm" id="cdc">&nbsp;</a><a contenteditable="false" data-primary="change data capture (CDC)" data-type="indexterm" id="change-data-capture">&nbsp;</a> a sophisticated approach to data integration that tracks and captures changes in data at the source database in real time. This method pushes changes to various destinations, including other databases, data warehouses, or even real-time processing engines. The essence of CDC is its ability to provide fresh data to different parts of an organization, thereby ensuring that all systems reflect the latest information.</p>
+
+<p>The need for real-time data processing drives organizations to adopt CDC. In an era where data is as valuable as oil, having the most updated data can significantly enhance operational efficiency and decision-making capabilities. Traditional batch-processing methods, while reliable, fail to meet the demands for immediacy in today’s fast-paced business environments. They often require scheduled downtime and can affect system performance during data extraction, which is not conducive to real-time responsiveness.</p>
+
+<p>In cases where organizations need real-time analytics, CDC can synchronize transactional databases (like an RDBMS) with data warehouses (e.g., Snowflake, Redshift). This allows data pipelines to continuously push fresh data from the transactional system to the warehouse, ensuring up-to-date insights without heavy ETL (extract, transform, and load) batch jobs. We’ll explore CDC further in <a data-type="xref" href="#ch16_designing_a_social_network_and_newsfeed_system_1734552293547861">#ch16_designing_a_social_network_and_newsfeed_system_1734552293547861</a>, when we discuss handling the design of new post creation.</p>
+
+<p>CDC offers numerous advantages over batch loading, especially in terms of real-time performance:</p>
+
+<dl>
+	<dt>Reduced latency</dt>
+	<dd>
+	<p>CDC enables almost instantaneous data updates, allowing businesses to react to changes swiftly, which is crucial for dynamic pricing, stock updates, or personalized customer interactions.</p>
+	</dd>
+	<dt>Lower costs and bandwidth usage</dt>
+	<dd>
+	<p>By transmitting only the changes made since the last transfer, CDC minimizes the bandwidth required and reduces the costs associated with data transfer.</p>
+	</dd>
+	<dt>Increased system efficiency</dt>
+	<dd>
+	<p>Since CDC captures changes as they occur, it imposes minimal impact on the source systems, avoiding the intensive resource use associated with batch <span class="keep-together">processes</span>.</p>
+	</dd>
+</dl>
+
+<p>Software architects can implement CDC using various techniques, each suited to different system architectures and performance requirements:</p>
+
+<dl>
+	<dt>Audit-column-based CDC</dt>
+	<dd>
+	<p>Time-based audit columns<a contenteditable="false" data-primary="audit-column-based CDC" data-type="indexterm">&nbsp;</a> are a simple yet powerful method of implementing CDC. Adding timestamp columns such as <code>created_at</code> and <code>updated_at</code> to database tables makes it possible to track when each record was inserted or last modified. This method is particularly effective for applications that require a historical audit trail of changes. Its primary advantage lies in its simplicity and low overhead since it leverages the inherent capabilities of most RDBMSs.</p>
+	</dd>
+	<dt>Log-based CDC</dt>
+	<dd>
+	<p>Log-based CDC <a contenteditable="false" data-primary="log-based CDC" data-type="indexterm">&nbsp;</a>operates by reading transaction logs maintained by the database. Since these logs are designed to keep a record of all changes for data recovery and integrity, they serve as a reliable source for capturing data changes without additional overhead on the database itself. This method supports near real-time data integration, making it suitable for high-availability systems and those requiring immediate consistency across platforms. Tools like Debezium interface with these logs transparently, providing a seamless flow of data changes into various types of data sinks, such as Kafka and databases.</p>
+
+	<div data-type="note">
+	<p>An extension of log-based CDC, the <a contenteditable="false" data-primary="stream-based CDC" data-type="indexterm">&nbsp;</a>stream-based CDC method formats log data into more consumable streams, making it easier for applications to process changes in real time. One such example is Amazon DynamoDB streams for publishing data updates in DynamoDB tables to different sources.</p>
+	</div>
+	</dd>
+	<dt>Table deltas</dt>
+	<dd>
+	<p>Table deltas<a contenteditable="false" data-primary="table deltas" data-type="indexterm">&nbsp;</a> involve capturing changes based on the comparison of table snapshots at different times. This approach is straightforward: by periodically taking full snapshots of a table and comparing these snapshots, we can derive the changes. This method might introduce delays and is more resource intensive, however; thus, it is generally suited for systems with lower transaction volumes or where real-time sync is not critical. Despite these drawbacks, it remains a viable option for batch-processing scenarios where system resources and processing windows are appropriately planned.</p>
+	</dd>
+	<dt>Trigger-based CDC</dt>
+	<dd>
+	<p>Trigger-based CDC <a contenteditable="false" data-primary="trigger-based CDC" data-type="indexterm">&nbsp;</a>uses database triggers to capture changes by automatically executing predefined procedures or SQL commands in response to events (<code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>) occurring in a table. This method allows for immediate capture and custom handling of data changes, facilitating complex transformations or immediate checks during the data-capture phase. While this method is highly flexible and occurs in real time, managing database triggers can increase the load and complexity, especially in large-scale systems.</p>
+	</dd>
+</dl>
+
+<p>In real-world applications, CDC is not just a data integration tool: it is part of a broader strategy to enhance data agility and accessibility across enterprises. With cloud platforms increasingly offering built-in support for CDC, its adoption is becoming more straightforward and accessible. Organizations can leverage CDC to maintain up-to-date data across distributed environments and thus improve analytical capabilities without <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="CDC (change data capture)" data-startref="arch-design-cdc" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="CDC (change data capture)" data-startref="cdc" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="change data capture (CDC)" data-startref="change-data-capture" data-type="indexterm">&nbsp;</a>significant overhead or complexities.</p>
+</section>
+
+<section data-type="sect1" id="ch08_publisher_subscriber_architecture_1734552289324689">
+<h1>Publisher-Subscriber Architecture</h1>
+
+<p>Pub/sub architecture <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="pub/sub model" data-type="indexterm" id="arch-design-pubsub">&nbsp;</a><a contenteditable="false" data-primary="pub/sub (publisher-subscriber) architecture" data-type="indexterm" id="pubsub">&nbsp;</a><a contenteditable="false" data-primary="communication" data-secondary="pub/sub model" data-type="indexterm" id="comms-pubsub">&nbsp;</a>is a foundational model in event-driven programming that facilitates asynchronous communication among different parts of the system. This pattern is vital for applications where components need to interact efficiently without directly being linked to one another, thereby promoting loose coupling and scalable design.</p>
+
+<p>Although it is often conflated with the observer pattern, the pub/sub architecture stands out for its inherent design philosophy and operational dynamics. The core difference between the two lies in the routing mechanism. In the observer design pattern, observers are aware of the subject and can directly register with it to receive updates. Communication is generally synchronous, and all observers are notified simultaneously through direct method calls.</p>
+
+<p>The pub/sub model, on the other hand, abstracts the publisher from the subscribers through a broker or event bus, which handles the transmission of messages or events. The publishers send messages to an event channel without knowing the subscribers’ details, which in turn listen to the channel without knowing who the publisher is. This setup enables asynchronous communication and can support complex many-to-many interactions more seamlessly than the observer pattern can.</p>
+
+<p>Pub/sub architectures involve a broker and queue; let’s look at those components in more detail.</p>
+
+<section data-type="sect2" id="ch08_message_brokers_1734552289324756">
+<h2>Message Brokers</h2>
+
+<p><em>Message brokers </em>are key components<a contenteditable="false" data-primary="message brokers" data-type="indexterm" id="message-broker">&nbsp;</a> in pub/sub architectures that manage the transmission of messages between producers (publishers) and consumers (subscribers). They ensure that messages are appropriately routed, maintained, and delivered, even in complex distributed systems.</p>
+
+<p>A typical message broker architecture, as shown in <a data-type="xref" href="#ch08_figure_1_1734552289299606">#ch08_figure_1_1734552289299606</a>, involves queues that temporarily store messages and topics that categorize these messages. Publishers send messages to specific topics, while subscribers register their interest in one or more topics. The broker then ensures that messages from the relevant topics are delivered to the appropriate subscribers.</p>
+
+<figure id="ch08_figure_1_1734552289299606"><img src="images/sdoa_0801.png" />
+<figcaption>Message broker and queues</figcaption>
+</figure>
+
+<p>Advanced Message Queuing Protocol (AMQP) is<a contenteditable="false" data-primary="Advanced Message Queuing Protocol (AMQP)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="AMQP (Advanced Message Queuing Protocol)" data-type="indexterm">&nbsp;</a> an open standard for passing messages between applications or organizations with a focus on high interoperability and reliability. AMQP mandates the behavior of the message provider and broker to ensure consistent message delivery, thus making it a favored choice for systems requiring robustness and functional <a contenteditable="false" data-primary="message brokers" data-startref="message-broker" data-type="indexterm">&nbsp;</a>predictability.</p>
+</section>
+
+<section data-type="sect2" id="ch08_message_queues_1734552289324820">
+<h2>Message Queues</h2>
+
+<p><em>Message queues </em>are a fundamental part of the messaging infrastructure<a contenteditable="false" data-primary="message queues" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-type="indexterm">&nbsp;</a> that act as a temporary holding pen for messages waiting to be routed from publishers to subscribers, as shown in <a data-type="xref" href="#ch08_figure_1_1734552289299606">#ch08_figure_1_1734552289299606</a>.</p>
+
+<p>Apache Kafka, which we’ll look at in detail in the last section of this chapter, is a prominent example of a message queue system. It is designed to handle high volumes of data while supporting high-throughput applications. Kafka and similar technologies illustrate the evolving capabilities of message queues in modern system architectures, particularly in handling large-scale, real-time data feeds efficiently.</p>
+
+<p>The pub/sub architecture, facilitated by advanced message brokers and queue systems like Kafka, represents a powerful paradigm for building decoupled, scalable, efficient applications. This architecture not only supports a separation of concerns but also enhances the ability to handle asynchronous communications across different components of a software system. This approach is increasingly relevant in today’s distributed systems, where managing data flow efficiently and reliably is more critical <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="pub/sub model" data-startref="arch-design-pubsub" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="pub/sub (publisher-subscriber) architecture" data-startref="pubsub" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="communication" data-secondary="pub/sub model" data-startref="comms-pubsub" data-type="indexterm">&nbsp;</a>than ever.</p>
+</section>
+</section>
+
+<section data-type="sect1" id="ch08_choreography_and_orchestration_1734552289324885">
+<h1>Choreography and Orchestration</h1>
+
+<p>In the design of distributed systems, particularly those employing microservices, methods of managing service interactions—namely, choreography and orchestration—play pivotal roles in defining system behavior and capabilities.</p>
+
+<section data-type="sect2" id="ch08_choreography_1734552289324947">
+<h2>Choreography</h2>
+
+<p><em>Choreography</em> employs a <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="choreography" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="choreography" data-type="indexterm">&nbsp;</a>decentralized approach to workflow management. In this model, each service knows what to do and when to do it based on the events it consumes. There is no central coordinator; instead, services perform their duties independently following the event notifications they receive. This method promotes loose coupling as services are designed to react to events rather than direct commands from a central authority. It enhances system scalability and resilience because services operate independently.</p>
+
+<p>The lack of a central controller can make it difficult to enforce certain business rules and to monitor the overall flow of processes. Error handling and debugging can also become more complex because the distributed nature of the architecture scatters log entries and error reports across various services.</p>
+
+<p>A subpattern in<a contenteditable="false" data-primary="choreographed asynchronous events" data-type="indexterm">&nbsp;</a> choreography is <em>choreographed asynchronous events</em>. In this pattern, services emit and consume events through a central message bus, allowing for a loosely coupled system where services operate independently without needing to know the details of one another’s operations. This pattern is particularly useful in systems with a high volume of write operations, such as IoT data processing or real-time notification systems.</p>
+
+<p>Advantages include scalability due to the decoupled nature and resilience against service failures as each service can operate autonomously. However, challenges arise in managing the overall system state, making it harder to trace and debug workflows since they are distributed across multiple services. These challenges can be solved by the orchestration paradigm.</p>
+
+<div data-type="note">
+<p>Design problems like ecommerce platforms’ order-processing systems and hotel reservation systems can be addressed using choreography between services. We will discuss a similar pattern for managing booking confirmation and payment flow in <a data-type="xref" href="#ch18_designing_a_hotel_reservation_system_1734552294615548">#ch18_designing_a_hotel_reservation_system_1734552294615548</a>. The booking system waits for customer payment and reacts to events such as <code>PaymentProcessed</code> to confirm the booking with a <code>BookingConfirmed</code> event. This event is further used by other services, such as the billing system, to generate an invoice.</p>
+</div>
+</section>
+
+<section data-type="sect2" id="ch08_orchestration_1734552289325025">
+<h2>Orchestration</h2>
+
+<p><em>Orchestration</em>, in contrast<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="orchestration" data-type="indexterm" id="arch-design-orchestration">&nbsp;</a><a contenteditable="false" data-primary="orchestration" data-type="indexterm" id="orchestration-ch8">&nbsp;</a> to choreography, relies on a central coordinator, or an <em>orchestrator</em>, which <a contenteditable="false" data-primary="orchestrators" data-type="indexterm">&nbsp;</a>controls the interaction between services by making decisions about the process flow, directing different services when to act. This approach simplifies monitoring and managing business logic, which can be advantageous for complex business processes that require precise coordination and strict compliance to workflows. It also simplifies error handling and recovery since the orchestrator can keep track of process states and make decisions accordingly.</p>
+
+<div data-type="note">
+<p>Multiple orchestration solutions are available as open source software and managed services by cloud providers, including <a href="https://oreil.ly/50w9A">Conductor</a> and <a href="https://oreil.ly/KW-dX">Maestro</a> designed by Netflix, <a href="https://oreil.ly/2eulB">Temporal workflow orchestrator</a>, AWS Step Functions, and Apache Airflow. We’ll discuss Step Functions and Airflow in <a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a>.</p>
+</div>
+
+<p>Orchestration can lead to increased coupling between services as they rely on a central point for directions. This can also become a single point of failure, potentially affecting the system’s resilience and scalability. Orchestration can be implemented in various patterns, each suited to different workflow requirements and system <span class="keep-together">architectures</span>.</p>
+
+<div data-type="note">
+<p>Design problems like managing a video-upload feature on YouTube and Netflix can be easily managed via orchestration platforms. Each step in the workflow invokes a specific service to perform a task, such as validating, encoding, and distributing video. We’ll discuss this in much more detail in <a data-type="xref" href="#ch20_designing_a_video_processing_pipeline_for_a_stream_1734552295245731">#ch20_designing_a_video_processing_pipeline_for_a_stream_1734552295245731</a>.</p>
+</div>
+
+<section data-type="sect3" id="ch08_orchestrated_synchronous_and_sequential_pattern_1734552289325087">
+<h3>Orchestrated, synchronous, and sequential pattern</h3>
+
+<p>In this <a contenteditable="false" data-primary="synchronous orchestration patterns" data-type="indexterm" id="sync-orchestration">&nbsp;</a>pattern, the orchestrator sends synchronous requests to services in a sequential manner, waiting for each response before proceeding to the next step. This approach is suitable for workflows that are complex and involve multiple steps that need to be completed in a specific order, such as ecommerce checkout processes.</p>
+
+<p>Advantages of this pattern include centralized control, which makes managing complex workflows easier, and easier debugging because of the explicit workflow definition in the orchestrator. However, the system can face challenges, such as a single point of failure in the orchestrator and potential performance bottlenecks due to the sequential execution of tasks.</p>
+</section>
+
+<section data-type="sect3" id="ch08_orchestrated_synchronous_and_parallel_pattern_1734552289325147">
+<h3>Orchestrated, synchronous, and parallel pattern</h3>
+
+<p>Similar to the sequential approach but with parallel execution of independent tasks, this pattern improves performance and reduces latency. It is effective in scenarios where multiple services can be called simultaneously, such as in data-aggregation services.</p>
+
+<p>Advantages of this pattern include improved performance by reducing the overall time to complete workflows and flexibility in managing workflows that involve both parallel and sequential steps. However, challenges can be the increased complexity of managing parallel operations and the risk of resource contention if services are not optimized for parallel <a contenteditable="false" data-primary="synchronous orchestration patterns" data-startref="sync-orchestration" data-type="indexterm">&nbsp;</a>execution.</p>
+</section>
+
+<section data-type="sect3" id="ch08_orchestrated_asynchronous_and_sequential_pattern_1734552289325207">
+<h3>Orchestrated, asynchronous, and sequential pattern</h3>
+
+<p>In this <a contenteditable="false" data-primary="asynchronous orchestration patterns" data-type="indexterm">&nbsp;</a>pattern, the orchestrator sends asynchronous requests, allowing services to process tasks independently and return results via callbacks or message queues. This approach is ideal for systems with long-running tasks where services need to continue processing without waiting for responses, such as in batch-processing systems.</p>
+
+<p>Advantages of this pattern include better handling of long-running processes without blocking resources and increased system resilience since services can retry operations on failure. However, challenges arise from the increased complexity of managing asynchronous responses and the need for additional mechanisms to handle eventual consistency and failure recovery.</p>
+</section>
+
+<section data-type="sect3" id="ch08_hybrid_orchestration_and_choreography_pattern_1734552289325271">
+<h3>Hybrid orchestration and choreography pattern</h3>
+
+<p>This pattern<a contenteditable="false" data-primary="hybrid orchestration and choreography pattern" data-type="indexterm">&nbsp;</a> combines the strengths of both choreography and orchestration by using orchestration for explicit workflows and choreography for implicit, event-driven operations. It is useful in complex systems where some workflows require strict control, while others benefit from decentralized execution, such as in large-scale distributed applications.</p>
+
+<p>In a large ecommerce platform, the order-processing service acts as the orchestrator, controlling the main steps of the workflow: verifying payment, reserving inventory, confirming the order, and initiating shipment. This explicit orchestration ensures that the core order workflow remains tightly controlled, with each step executed in a specific order, which is essential for transaction integrity and reliability. Alongside the orchestrated core, various supporting services use a decentralized, event-driven approach. For example, when an order is shipped, an event is emitted. Independent services, like the notification service and the analytics service, listen to this event and perform their respective tasks (sending notifications to the customer and updating delivery statistics) without direct coordination, allowing for flexibility and scalability.</p>
+
+<p>Advantages of this pattern include the flexibility to handle diverse workflow requirements and improved system resilience by leveraging both centralized and decentralized approaches. However, challenges are the complexity of ensuring clear boundaries between orchestrated and choreographed operations and the risk of overlapping responsibilities leading to inefficiencies.</p>
+</section>
+</section>
+
+<section data-type="sect2" id="ch08_deciding_between_choreography_and_orchestration_1734552289325331">
+<h2>Deciding Between Choreography and Orchestration</h2>
+
+<p>The decision to use <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="choreography" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="choreography" data-type="indexterm">&nbsp;</a>choreography or orchestration largely depends on specific project requirements. Choreography is better suited to systems where high scalability and resilience are necessary and where business processes can be adequately handled with a decentralized approach. Orchestration is preferable for complex processes requiring tight control and coordination across multiple services, where the business logic is too intricate to be effectively managed through a decentralized approach. Both approaches have their place in system design, and understanding their strengths and limitations is crucial for architects to design solutions that not only meet current needs but also are adaptable to future demands and changes in <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="orchestration" data-startref="arch-design-orchestration" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="orchestration" data-startref="orchestration-ch8" data-type="indexterm">&nbsp;</a>business processes.</p>
+
+<p>As enterprises continue to generate exponentially growing volumes of data, the big data architectural strategies to store, process, and analyze such vast datasets become increasingly important, so we will look at those in the next section.</p>
+</section>
+</section>
+
+<section data-type="sect1" id="ch08_big_data_architecture_1734552289325392">
+<h1>Big Data Architecture</h1>
+
+<p>Big data architectures are<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="big data" data-type="indexterm" id="arch-design-bigdata">&nbsp;</a><a contenteditable="false" data-primary="big data architectures" data-type="indexterm" id="bigdata">&nbsp;</a> designed to effectively handle the challenge of the 5 <em>V</em>s of data—volume, velocity, variety, veracity, and value—ensuring that organizations can derive actionable insights and maintain performance scalability. Big data architectures have evolved from traditional databases to large data warehouses and data lakes. We’ll discuss three models for modern big data architecture based on how they have evolved.</p>
+
+<section data-type="sect2" id="ch08_lambda_architecture_1734552289325452">
+<h2>Lambda Architecture</h2>
+
+<p><em>Lambda architecture</em>, illustrated<a contenteditable="false" data-primary="lambda architecture" data-type="indexterm" id="lambda">&nbsp;</a> in <a data-type="xref" href="#ch08_figure_2_1734552289299641">#ch08_figure_2_1734552289299641</a>, is a hybrid data-processing model that combines both batch and real-time processing methods.</p>
+
+<p>This architecture is designed to balance latency, throughput, and fault tolerance by processing and presenting data in these three layers:</p>
+
+<dl>
+	<dt>Batch layer</dt>
+	<dd>
+	<p>This layer handles large volumes of data in batches, processing historical data stored over extended periods. It provides comprehensive and accurate views but with higher latency. The batch layer is responsible for creating precomputed views that store the results of the batch processing.</p>
+	</dd>
+	<dt>Speed layer</dt>
+	<dd>
+	<p>For real-time data processing needs, the speed layer processes data as it arrives, ensuring low latency. This layer compensates for the high latency of the batch layer by providing timely—albeit potentially approximate—views.</p>
+	</dd>
+	<dt>Serving layer</dt>
+	<dd>
+	<p>The final component, the serving layer, merges output from both the batch and the speed layers to present a coherent view of results to the end users.</p>
+	</dd>
+</dl>
+
+<figure id="ch08_figure_2_1734552289299641"><img src="images/sdoa_0802.png" />
+<figcaption>Lambda architecture</figcaption>
+</figure>
+
+<p>Lambda architecture is beneficial for scenarios where it is crucial to have a near real-time view of data but also to handle massive datasets that are not feasible to process quickly. The two components—batch and speed layers— introduce an additional complexity of operational management. This limitation can be solved by kappa architecture, which combines <a contenteditable="false" data-primary="lambda architecture" data-startref="lambda" data-type="indexterm">&nbsp;</a>both into a single system.</p>
+</section>
+
+<section data-type="sect2" id="ch08_kappa_architecture_1734552289325509">
+<h2>Kappa Architecture</h2>
+
+<p>An evolution <a contenteditable="false" data-primary="kappa architecture" data-type="indexterm" id="kappa">&nbsp;</a>of lambda architecture,<em> kappa architecture</em> simplifies operational complexity by treating all incoming data as a stream. This model, shown in <a data-type="xref" href="#ch08_figure_3_1734552289299664">#ch08_figure_3_1734552289299664</a>, proposes using a single processing layer (the stream-processing layer) for both real-time and historical data. By treating all data as a stream, kappa architecture removes the need to maintain two separate codebases and systems for batch and real-time processing, simplifying development and maintenance.</p>
+
+<p>This architecture leverages advanced stream-processing tools that can handle time windowing, event ordering, and state management across potentially unbounded datasets. Kappa architecture is particularly suitable for applications where the input data is naturally streaming or where fast data recency is more critical than computing-intensive, complex batch analytics.</p>
+
+<figure id="ch08_figure_3_1734552289299664"><img src="images/sdoa_0803.png" />
+<figcaption>Kappa architecture</figcaption>
+</figure>
+
+<div data-type="note">
+<p>The idea here is to simplify the batch and streaming workloads into a single pipeline, but implementation and productionization can vary depending on the organization’s use case. <a href="https://oreil.ly/5sKlo">Uber leverages kappa architecture</a> to solve multiple problems, such as dynamic ride pricing, fraud detection, and user experience analytics. A single pipeline is designed to address these different use cases with easy switching between batch and streaming workloads.</p>
+</div>
+</section>
+
+<section data-type="sect2" id="ch08_data_lake_architecture_1734552289325635">
+<h2>Data Lake Architecture</h2>
+
+<p><em>Data lakes</em> are centralized repositories designed<a contenteditable="false" data-primary="data lakes" data-type="indexterm" id="data-lake">&nbsp;</a> to store, process, and secure large volumes of structured and unstructured data. Unlike traditional data warehouses, which generally store data in a structured, processed format, data lakes retain vast amounts of raw data in its native format. This approach, illustrated in <a data-type="xref" href="#ch08_figure_4_1734552289299685">#ch08_figure_4_1734552289299685</a>, offers a few distinct advantages, including scaling out using low-cost hardware, flexible configuration of the data lake’s organization, indexing and processing logic, and storage support for and analysis of a wide variety of data types, including logs, XML, JSON, and binary formats. Data lake architecture not only supports big data storage but also integrates with various big data processing frameworks to enable comprehensive analytics and machine learning directly on the stored data.</p>
+
+<div data-type="note">
+<p>You can also use object storage solutions like Amazon S3 to build data lake architectures. S3 offers easy integration with big data services like Amazon EMR, AWS Glue, and Amazon Athena to run big data workloads. We’ll discuss these services in much more detail in <a data-type="xref" href="#ch13_big_data_analytics_and_machine_learning_services_1734552292002899">#ch13_big_data_analytics_and_machine_learning_services_1734552292002899</a>.</p>
+</div>
+
+<figure id="ch08_figure_4_1734552289299685"><img src="images/sdoa_0804.png" />
+<figcaption>Data lake architecture</figcaption>
+</figure>
+
+<p>By implementing big data architectures such as lambda, kappa, and data lake, organizations can effectively manage their data ecosystems to support both current analytical needs and future data-driven initiatives. This ensures that the infrastructure not only meets the technical requirements of big data processing but also aligns with strategic business objectives.</p>
+
+<p>While big data architecture is primarily concerned with processing and managing large volumes of data efficiently, application solution system design focuses on creating systems that meet specific business requirements and integrate various components. The next section will contrast solution architecture designs with the data-centric approaches of<a contenteditable="false" data-primary="data lakes" data-startref="data-lake" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="big data" data-startref="arch-design-bigdata" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="big data architectures" data-startref="bigdata" data-type="indexterm">&nbsp;</a> big data architecture.</p>
+</section>
+</section>
+
+<section data-type="sect1" id="ch08_solution_architecture_1734552289325703">
+<h1>Solution Architecture</h1>
+
+<p>Solution architecture<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="solution" data-type="indexterm" id="arch-design-solution">&nbsp;</a><a contenteditable="false" data-primary="solution architecture" data-type="indexterm" id="solution-arch">&nbsp;</a> has evolved from monolithic architectures to microservices, reflecting shifts in technology and business requirements. This section provides an overview of this evolution and these architectures, exploring their configurations and the principles behind their designs.</p>
+
+<section data-type="sect2" id="ch08_monoliths_1734552289325765">
+<h2>Monoliths</h2>
+
+<p>In<a contenteditable="false" data-primary="monoliths" data-type="indexterm" id="monolith">&nbsp;</a> a <em>monolithic architecture</em>, shown in <a data-type="xref" href="#ch08_figure_5_1734552289299705">#ch08_figure_5_1734552289299705</a>, all components of the software application are tightly integrated and run as a single service. This means that any changes made anywhere in the application can affect the entire system, which simplifies development and deployment processes in the early stages of a product’s lifecycle.</p>
+
+<figure id="ch08_figure_5_1734552289299705"><img src="images/sdoa_0805.png" />
+<figcaption>Monolithic architecture</figcaption>
+</figure>
+
+<p>Monoliths are straightforward to develop, test, deploy, and scale horizontally since they are a single executable or deployment unit. This is a very big advantage over microservices because the network interactions between different microservices are skipped, which helps reduce latency and provides easier handling of unreliable <span class='keep-together'>networks</span>.</p>
+
+<p>However, as applications grow, monoliths can become unwieldy and difficult to understand and modify. Scaling specific functions of the application rather than the entire application can also become challenging. From a scalability standpoint, we recommend keeping the code decoupled and modular so that it can be deployed separately if necessary. Even if the code is deployed in a single repository, modular code architecture allows you to reuse the components or add new features easily, and it maintains the code readability to proper standards. The next section describes this pattern in more <a contenteditable="false" data-primary="monoliths" data-startref="monolith" data-type="indexterm">&nbsp;</a>detail.</p>
+</section>
+
+<section data-type="sect2" id="ch08_n_tier_architectures_1734552289325846">
+<h2>N-tier Architectures</h2>
+
+<p><em>N-tier architectures</em> break an<a contenteditable="false" data-primary="N-tier architectures" data-type="indexterm">&nbsp;</a> application down into logical layers, each with a specific responsibility. Typically, these include at least three layers: presentation (frontend), business logic (middle-tier), and data management (backend). This is referred to as <em>three-tier architecture</em>, illustrated in <a data-type="xref" href="#ch08_figure_6_1734552289299723">#ch08_figure_6_1734552289299723</a>.</p>
+
+<p>This architecture enhances maintainability by separating concerns among components, making it easier to manage, update, and scale individual parts of the system without affecting others. This architecture choice provides scalability and flexibility since each layer can be scaled independently according to demand. For instance, the data layer can be scaled up to handle larger data loads without necessarily scaling the presentation layer.</p>
+
+<p>While N-tier architectures provide a significant improvement over monolithic designs by separating concerns, modern applications often require even greater flexibility, scalability, and fault tolerance. This is where microservices come into play.</p>
+
+<figure id="ch08_figure_6_1734552289299723"><img src="images/sdoa_0806.png" />
+<figcaption>N-tier architecture</figcaption>
+</figure>
+</section>
+
+<section data-type="sect2" id="ch08_microservices_1734552289325907">
+<h2>Microservices</h2>
+
+<p>A <em>microservice architecture</em>, <a contenteditable="false" data-primary="microservices" data-type="indexterm" id="microservice">&nbsp;</a>illustrated in <a data-type="xref" href="#ch08_figure_7_1734552289299743">#ch08_figure_7_1734552289299743</a>, takes the principles of N-tier systems further by decomposing them into smaller, loosely coupled services. Each microservice focuses on a single functionality and can be developed, deployed, and scaled independently.</p>
+
+<figure id="ch08_figure_7_1734552289299743"><img src="images/sdoa_0807.png" />
+<figcaption>Microservice architecture</figcaption>
+</figure>
+
+<p>The microservice architecture offers several benefits and challenges. It gives teams autonomy to develop, test, deploy, and scale services independently, speeding up development cycles and improving fault isolation. It also allows for technology diversity, enabling different services to use the best-suited technology stack for their specific tasks.</p>
+
+<p>However, the decentralized nature of microservices increases the complexity of management and operations, particularly with regard to interservice communications, data consistency, and transaction management. Additionally, service overhead can grow since each service may require its own database, libraries, and dependencies, increasing the resource footprint and management effort.</p>
+
+<p class="pagebreak-before less_space">Transitioning from a monolithic to a microservice architecture may not suit every project or organization and should be approached with a clear understanding of the associated trade-offs. Issues like network latency, message formats, data integrity, and transaction management require robust strategies, such as API gateways, service meshes, and comprehensive logging and monitoring systems, to ensure system reliability and performance. By carefully evaluating the needs of the business and the capabilities of the team, organizations can choose the most appropriate architecture to support their goals, ensuring that their software infrastructure is both effective today and adaptable for<a contenteditable="false" data-primary="microservices" data-startref="microservice" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="solution" data-startref="arch-design-solution" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="solution architecture" data-startref="solution-arch" data-type="indexterm">&nbsp;</a> future needs.</p>
+
+<p>Another interesting paradigm for implementing application or big data architecture is event-driven architecture (EDA).</p>
+</section>
+</section>
+
+<section data-type="sect1" id="ch08_event_driven_architecture_1734552289325973">
+<h1>Event-Driven Architecture</h1>
+
+<p><em>EDA </em>is a paradigm<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="EDA (event-driven architecture)" data-type="indexterm" id="arch-design-eda">&nbsp;</a><a contenteditable="false" data-primary="EDA (event-driven architecture)" data-type="indexterm" id="eda">&nbsp;</a><a contenteditable="false" data-primary="event-driven architecture (EDA)" data-type="indexterm" id="event-driven-arch">&nbsp;</a> that orchestrates behavior around the production, detection, and consumption of events. This model offers a dynamic framework for applications to react to various state changes across distributed systems without the tight coupling of components, promoting scalability and responsiveness. We will start with EDA concepts and implementation paradigms and then go into the details of event sourcing specifically.</p>
+
+<section data-type="sect2" id="ch08_eda_concepts_and_implementations_1734552289326056">
+<h2>EDA Concepts and Implementations</h2>
+
+<p>An event-driven system enables the components of an application to communicate based on events rather than direct calls or shared-state manipulation. This is often realized by using events as messages that might be persisted until processed. Such systems leverage a state-machine approach. Here are the main concepts in this approach:</p>
+
+<dl>
+	<dt>State machine</dt>
+	<dd>
+	<p>A<a contenteditable="false" data-primary="state machines" data-type="indexterm">&nbsp;</a> mathematical abstraction used to design algorithms based on a behavior model. A state machine reads a set of inputs and changes to a different state based on those inputs.</p>
+	</dd>
+	<dt>State</dt>
+	<dd>
+	<p>A <a contenteditable="false" data-primary="state" data-type="indexterm">&nbsp;</a>description of the status of a system waiting to execute a transition.</p>
+	</dd>
+	<dt>Transition</dt>
+	<dd>
+	<p>A change <a contenteditable="false" data-primary="transitions" data-type="indexterm">&nbsp;</a>from one state to another. A transition is a set of actions to execute when a condition is fulfilled or an event is received.</p>
+	</dd>
+	<dt>Event</dt>
+	<dd>
+	<p>The <a contenteditable="false" data-primary="events" data-type="indexterm">&nbsp;</a>entity that drives the state changes.</p>
+	</dd>
+	<dt>Event-driven state machine</dt>
+	<dd>
+	<p>A <a contenteditable="false" data-primary="event-driven state machines" data-type="indexterm">&nbsp;</a>state machine is event-driven if the transition from one state to another is triggered by an event or a message (not based on consuming or parsing characters or based on conditions).</p>
+	</dd>
+</dl>
+</section>
+
+<section data-type="sect2" id="ch08_paradigms_of_event_driven_implementations_1734552289326123">
+<h2>Paradigms of Event-Driven Implementations</h2>
+
+<p>EDA is about implementing components that communicate via publishing events rather than making, for example, RPC/CRUD calls against one another or manipulating shared state. It’s a communication strategy (albeit one that often relies on messages being persisted for fairly long periods until they are consumed). The two major implementation styles for EDA are state-oriented implementation and event sourcing.</p>
+
+<section data-type="sect3" id="ch08_state_oriented_implementation_1734552289326186">
+<h3>State-oriented implementation</h3>
+
+<p>This method <a contenteditable="false" data-primary="state-oriented EDA implementations" data-type="indexterm">&nbsp;</a>involves capturing the current state only, focusing on persisting state changes over time. State data is treated as mutable within controlled limits, modified only through defined operations, which makes the system responsive but tightly bound to current state conditions without historical tracking.</p>
+</section>
+
+<section data-type="sect3" id="ch08_event_sourcing_1734552289326245">
+<h3>Event sourcing</h3>
+
+<p>Unlike <a contenteditable="false" data-primary="event sourcing" data-type="indexterm" id="event-sourcing">&nbsp;</a>state-oriented implementations, event sourcing persists each state change as an immutable event. These events are the system’s source of truth, from which the current state can be reconstructed. This approach supports historical state reconstruction, auditing, and complex system behaviors like rollback and replay of events to handle errors or system failures.</p>
+
+<p>Event sourcing allows for the following:</p>
+
+<dl>
+	<dt>Complete rebuilds</dt>
+	<dd>
+	<p>Enables systems to discard and rebuild state from scratch by replaying events</p>
+	</dd>
+	<dt>Temporal queries</dt>
+	<dd>
+	<p>Inspects a state at any point in time by reprocessing events up to that moment</p>
+	</dd>
+	<dt>Event replays</dt>
+	<dd>
+	<p>Corrects errors by reprocessing events after correcting them or adding new ones</p>
+	</dd>
+</dl>
+
+<p>Event-driven systems often <a contenteditable="false" data-primary="event stores" data-type="indexterm">&nbsp;</a>use an <em>event store</em>, an append-only persistence optimized for storing events in sequence, as a single source of truth about the operations on both the application state and the data. This store ensures that all events are captured immutably, providing a reliable foundation for triggering actions, building projections, or reconstructing past states. These systems decouple data changes from application logic, allowing systems to scale and adapt more flexibly to changing business requirements.</p>
+
+<p>An event-sourced persistence <a contenteditable="false" data-primary="persistence" data-secondary="in event sourcing" data-secondary-sortas="event sourcing" data-type="indexterm">&nbsp;</a>will model the entities as event streams and keep an immutable journal of these event streams. When the entity state or attribute mutates, it produces and saves a new event. When the entity state needs to be restored, all the events for that entity are read, and each event is applied to change the state, reaching the correct final state of the entity. Note that state here is the pure function application of the event stream on the entity.</p>
+
+<p>When implementing event sourcing in event-driven systems, there are several important factors to consider:</p>
+
+<dl>
+	<dt>Eventual consistency</dt>
+	<dd>
+	<p>Reads may not reflect the most recent writes immediately because of delays in creating materialized views or projections. During the time between event publication and view creation, new events may be added to the event journal.</p>
+	</dd>
+	<dt>Event log immutability</dt>
+	<dd>
+	<p>The event log should be immutable, meaning events cannot be updated once written. To correct a previous event, a new event must be added. Any changes to the event schema must be applied consistently across all stored events.</p>
+	</dd>
+	<dt>Event ordering and linearity</dt>
+	<dd>
+	<p>Maintaining the correct order of events is crucial for data consistency, especially when multiple publishers are involved. Adding timestamps or incremental identifiers to events can help resolve ordering conflicts.</p>
+	</dd>
+	<dt>Consumer idempotency</dt>
+	<dd>
+	<p>Since events might be delivered more than once, consumers must be idempotent, meaning they should be able to handle duplicate events without applying the same update multiple times, which could lead to incorrect state changes.</p>
+	</dd>
+	<dt>Snapshotting and materializing</dt>
+	<dd>
+	<p>Regular snapshotting and materializing of events are necessary, especially when dealing with large event streams. This helps manage on-demand queries and ensures efficient access to the current state of the model.</p>
+	</dd>
+</dl>
+
+<p>Because of the decentralized control over the application’s flow and the distributed nature of event handling, you’ll need to keep these practical considerations for eventual consistency in mind and manage the complexity when architecting event-driven systems.</p>
+
+<p>Event-driven architecture represents a paradigm shift from traditional request-driven models, providing a flexible, scalable way to handle asynchronous system behaviors and data flows. This architectural style is particularly well suited to applications where scalability, responsiveness, and robustness are crucial, such as in microservice environments or systems requiring complex business processes <a contenteditable="false" data-primary="event sourcing" data-startref="event-sourcing" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="EDA (event-driven architecture)" data-startref="arch-design-eda" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EDA (event-driven architecture)" data-startref="eda" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="event-driven architecture (EDA)" data-startref="event-driven-arch" data-type="indexterm">&nbsp;</a>and workflows.</p>
+
+<div data-type="note">
+<p>Event sourcing and<a contenteditable="false" data-primary="CDC (change data capture)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="change data capture (CDC)" data-type="indexterm">&nbsp;</a> CDC both track changes in data, but they serve different purposes. Event sourcing captures all changes as events that can re-create or revert the system’s state over time, essentially using events as the source of truth. In contrast, CDC primarily focuses on capturing changes made to a database to replicate or integrate data, using the database’s transaction logs to record state changes without inherently storing the intent or context of the changes.</p>
+</div>
+</section>
+</section>
+</section>
+
+<section data-type="sect1" id="ch08_common_cloud_architecture_patterns_1734552289326313">
+<h1>Common Cloud Architecture Patterns</h1>
+
+<p>In this <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="cloud" data-type="indexterm" id="arch-design-cloud">&nbsp;</a><a contenteditable="false" data-primary="cloud architecture patterns" data-type="indexterm" id="cloud-pattern">&nbsp;</a>section, we explore essential cloud architecture patterns that form the backbone of scalable, resilient, maintainable systems in cloud environments. These patterns—ranging from resilience-focused techniques like the circuit breaker to transaction-handling strategies like saga orchestration—will provide you with foundational tools that are especially valuable in the system design use cases presented in <a data-type="xref" href="#part3">#part3</a>. Understanding these patterns will better equip you to apply robust, tested solutions to common challenges in distributed architectures, setting the stage for effective design decisions.</p>
+
+<section data-type="sect2" id="ch08_event_based_patterns_cqrs_and_saga_1734552289326383">
+<h2>Event-Based Patterns: CQRS and Saga</h2>
+
+<p>Event-based architectures leverage the following patterns to manage distributed transactions and operations:</p>
+
+<dl>
+	<dt>Command query responsibility segregation (CQRS)</dt>
+	<dd>
+	<p>CQRS is<a contenteditable="false" data-primary="command query responsibility segregation (CQRS)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="CQRS (command query responsibility segregation)" data-type="indexterm">&nbsp;</a> an architectural pattern that separates the operations that read data (queries) from the operations that update data (commands) into different interfaces. This separation allows read and write operations to be handled differently, optimizing performance, scalability, and security. For example, read models can be scaled independently from write models, which is particularly beneficial in systems where the number of read operations vastly exceeds the number of write operations.</p>
+	</dd>
+	<dt>Saga</dt>
+	<dd>
+	<p>Sagas manage<a contenteditable="false" data-primary="sagas" data-type="indexterm">&nbsp;</a> transactions that span multiple services, where each transaction step is paired with a compensating action for rollback if needed. They are based on either choreography or orchestration. In choreography, each service involved in the saga performs its transaction and publishes events that trigger the next steps in other services. In orchestration, a central coordinator (the orchestrator) directs each step of the saga, managing the sequence and triggering compensating transactions if necessary.</p>
+	</dd>
+</dl>
+
+<p>These patterns are crucial in environments where distributed transactions need to be managed across microservices, providing a structure for handling complex operations reliably and efficiently.</p>
+</section>
+
+<section data-type="sect2" id="ch08_failure_tolerant_patterns_circuit_breaker_retry_1734552289326446">
+<h2>Failure-Tolerant Patterns: Circuit Breaker, <span class="keep-together">Retry with Backoff, and Rate Limiter</span></h2>
+
+<p>To enhance <a contenteditable="false" data-primary="failure-tolerant patterns" data-type="indexterm" id="failure-tolerant">&nbsp;</a>system resilience in the face of failures, employ the following patterns:</p>
+
+<dl>
+	<dt>Circuit breaker</dt>
+	<dd>
+	<p>The <a contenteditable="false" data-primary="circuit breaker pattern" data-type="indexterm">&nbsp;</a>circuit breaker pattern prevents a cascade of failures in distributed systems. When a particular service or operation fails to a threshold level, the circuit breaker “trips,” and further attempts to invoke the failing service are halted temporarily, thus allowing it to recover and maintain system stability.</p>
+	</dd>
+	<dt>Retry with backoff</dt>
+	<dd>
+	<p>Retry with backoff <a contenteditable="false" data-primary="retry with backoff pattern" data-type="indexterm">&nbsp;</a>involves reattempting failed operations with increasing delays between attempts, increasing the interval (backoff) progressively with each retry until a maximum number of retries is reached. This pattern is particularly useful when handling transient faults by providing time for the issue to resolve before retrying.</p>
+	</dd>
+	<dt>Rate limiter</dt>
+	<dd>
+	<p>The rate limiter pattern<a contenteditable="false" data-primary="rate limiter pattern" data-type="indexterm">&nbsp;</a> controls the number of requests to a service within a specified time frame, preventing the system from being overwhelmed by a high volume of traffic or sudden spikes in demand. Rate limiting can be applied at various levels: per user, per service, or globally across a system. This pattern ensures that services continue to operate smoothly even under heavy load, reducing the likelihood of degraded performance or system crashes due to resource exhaustion.</p>
+	</dd>
+</dl>
+
+<p>These patterns work together to prevent cascading failures in distributed systems, ensuring that failures in one part of the system do not lead to widespread outages.</p>
+</section>
+
+<section data-type="sect2" id="ch08_domain_based_patterns_domain_driven_design_and_de_1734552289326510">
+<h2>Domain-Based Patterns: Domain-Driven Design <span class="keep-together">and Decompose by Subdomains</span></h2>
+
+<p>The<a contenteditable="false" data-primary="domain-based patterns" data-type="indexterm">&nbsp;</a> following patterns focus on aligning software design with business objectives:</p>
+
+<dl>
+	<dt>Domain-driven design (DDD)</dt>
+	<dd>
+	<p>DDD focuses <a contenteditable="false" data-primary="domain-driven design (DDD)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="DDD (domain-driven design)" data-type="indexterm">&nbsp;</a>on the core domain logic and its complexity, basing the design on the domain’s behavior and logic. This pattern encourages the creation of a domain model that incorporates business rules and behaviors, leading to a more intuitive correlation between the software and the business requirements it aims to fulfill.</p>
+	</dd>
+	<dt>Decompose by subdomains</dt>
+	<dd>
+	<p>Decompose by subdomains<em> </em>builds on DDD in a microservice architecture<a contenteditable="false" data-primary="decompose by subdomains pattern" data-type="indexterm">&nbsp;</a> to divide a system into subdomains, each handling a specific business capability. Each microservice manages a subdomain, which improves maintainability and scalability by allowing the microservice to evolve independently based on its unique business requirements.</p>
+	</dd>
+</dl>
+
+<p>These patterns are essential for building modular, scalable systems that can evolve as business needs change.</p>
+</section>
+
+<section data-type="sect2" id="ch08_api_routing_strategies_and_patterns_1734552289326571">
+<h2>API Routing Strategies and Patterns</h2>
+
+<p>API routing patterns<a contenteditable="false" data-primary="API routing patterns" data-type="indexterm" id="api-route-pattern">&nbsp;</a> determine how requests are directed within cloud environments to the appropriate services. These patterns are essential to ensuring that requests reach the correct backend systems efficiently and securely. Common routing strategies include:</p>
+
+<dl>
+	<dt>Hostname routing</dt>
+	<dd>
+	<p>This <a contenteditable="false" data-primary="hostname routing" data-type="indexterm">&nbsp;</a>strategy routes requests to different backend systems based on the hostname in the URL. It is commonly used in scenarios where multiple services are hosted under different subdomains or domains.</p>
+	</dd>
+	<dt>Path routing</dt>
+	<dd>
+	<p>This <a contenteditable="false" data-primary="path routing" data-type="indexterm">&nbsp;</a>routing pattern uses URL paths to direct requests to specific services or handlers. It allows for clear, organized routing based on the structure of the URL, making it easier to manage and scale services.</p>
+	</dd>
+	<dt>HTTP header routing</dt>
+	<dd>
+	<p>In <a contenteditable="false" data-primary="HTTP header routing" data-type="indexterm">&nbsp;</a>this approach, HTTP headers within the request are leveraged to make routing decisions. This is particularly useful for scenarios like A/B testing, where different user groups are directed to different backend services, or for gradual rollouts of new features.</p>
+	</dd>
+</dl>
+
+<p>API routing architecture involves either an API gateway or service mesh in microservice-based systems:</p>
+
+<dl>
+	<dt>API gateway</dt>
+	<dd>
+	<p>An API gateway <a contenteditable="false" data-primary="API gateways" data-type="indexterm">&nbsp;</a>acts as a centralized entry point for all client requests, providing a unified interface to a set of backend services. It handles tasks such as request routing, composition, and protocol translation. The API gateway can invoke multiple microservices to fulfill a single client request and aggregate the responses into a cohesive result. This pattern is particularly useful in microservice <span class="keep-together">architectures</span> as it simplifies client interactions and enhances security by centralizing access control and monitoring.</p>
+	</dd>
+	<dt>Service mesh</dt>
+	<dd>
+	<p>Service mesh architecture <a contenteditable="false" data-primary="service mesh architecture" data-type="indexterm">&nbsp;</a>is an infrastructure layer that manages service-to-service communication within a microservice architecture. It provides advanced routing, load balancing, service discovery, and security features like mutual Transport Layer Security (TLS) authentication and traffic encryption. Unlike API gateways, which handle external client-to-service communication, service mesh focuses on internal service-to-service interactions, ensuring reliable, secure communication within the cloud environment. It is implemented using sidecar proxies that intercept and manage network traffic between services, providing observability and resilience without requiring changes to the application code.</p>
+	</dd>
+</dl>
+
+<p>These API routing strategies and patterns, along with the API gateway and service mesh architectures, are foundational to building scalable, secure, and maintainable cloud native <a contenteditable="false" data-primary="API routing patterns" data-startref="api-route-pattern" data-type="indexterm">&nbsp;</a>applications.</p>
+</section>
+
+<section data-type="sect2" id="ch08_other_cloud_architecture_patterns_1734552289326631">
+<h2>Other Cloud Architecture Patterns</h2>
+
+<p>In addition to the essential patterns, several other cloud architecture patterns address specific challenges and enhance system design:</p>
+
+<dl>
+	<dt>Anticorruption layer</dt>
+	<dd>
+	<p>The<a contenteditable="false" data-primary="anticorruption layer" data-type="indexterm">&nbsp;</a> ACL serves as a protective barrier that prevents potentially disruptive data or requests from entering a system segment, thereby preserving the integrity of an application’s core business model. It acts as a translator between different subsystems or external applications, ensuring that data exchanges do not corrupt the domain model.</p>
+	</dd>
+	<dt>Strangler fig pattern</dt>
+	<dd>
+	<p>This pattern<a contenteditable="false" data-primary="strangler fig pattern" data-type="indexterm">&nbsp;</a> is used for gradually transforming legacy systems by replacing specific pieces of functionality with new applications and services. Over time, these new components “strangle” the old system, eventually replacing it entirely.</p>
+	</dd>
+	<dt>Transactional outbox</dt>
+	<dd>
+	<p>The <a contenteditable="false" data-primary="transactional outbox pattern" data-type="indexterm">&nbsp;</a>transactional outbox pattern is used to ensure reliable messaging between services. When changes are made to the database, records are also added to an “outbox” table within the same transaction. A separate process then sends these messages to the message queue or other destinations, ensuring data consistency across service boundaries.</p>
+	</dd>
+	<dt>Sidecar pattern</dt>
+	<dd>
+	<p>The sidecar pattern <a contenteditable="false" data-primary="sidecar pattern" data-type="indexterm">&nbsp;</a>is commonly used in microservice architectures. It involves deploying an additional container or process alongside a service container, <span class="keep-together">providing</span> platform-connected services such as monitoring, logging, configuration, and networking capabilities. The sidecar can be written in any language without strong dependency on the main container and thus provides decoupling. This pattern allows for isolating infrastructure concerns from the application, making it cleaner and more modular.</p>
+	</dd>
+	<dt>Backend for frontend (BFF)</dt>
+	<dd>
+	<p>This pattern <a contenteditable="false" data-primary="backend for frontend (BFF)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="BFF (backend for frontend)" data-type="indexterm">&nbsp;</a>involves creating separate backend services tailored for different types of clients, such as desktop browsers and mobile devices. It allows developers to optimize these backend services for specific user interfaces, enhancing the user experience by reducing overfetching or underfetching of data.</p>
+	</dd>
+	<dt>Cellular architecture</dt>
+	<dd>
+	<p>Cellular architecture<a contenteditable="false" data-primary="cellular architecture" data-type="indexterm">&nbsp;</a> involves designing systems as collections of cells, where each cell operates independently but can communicate with other cells. Each cell is self-contained with its own data store and logic, capable of scaling autonomously. This approach is highly resilient since failure in one cell does not affect the others, and it supports evolutionary architecture by allowing each cell to evolve independently.</p>
+	</dd>
+</dl>
+
+<p>Each of these patterns provides targeted solutions to common problems in developing and managing cloud native applications, offering pathways to more resilient, flexible, and scalable architectures. Remember, this is not an exhaustive list of architecture patterns, and the list keeps evolving with the latest developments in system design. However, these patterns together offer robust solutions to various architectural challenges that you might face when designing <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="cloud" data-startref="arch-design-cloud" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="cloud architecture patterns" data-startref="cloud-pattern" data-type="indexterm">&nbsp;</a>complex systems.</p>
+</section>
+</section>
+
+<section data-type="sect1" id="ch08_open_source_distributed_systems_architecture_1734552289326718">
+<h1>Open Source Distributed Systems Architecture</h1>
+
+<p><em>Distributed systems architecture</em> involves dividing responsibilities<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-type="indexterm" id="arch-design-distributed">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-type="indexterm" id="distributed-system-arch">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-type="indexterm" id="open-source-distributed-system-arch">&nbsp;</a> across multiple computing nodes to ensure that a system is scalable, fault tolerant, and efficient. In this context, we will explore two core components: distributed filesystems and distributed message queues, with a focus on open source implementations like HDFS for filesystems and Kafka for message queues.</p>
+
+<section data-type="sect2" id="ch08_hdfs_1734552289326806">
+<h2>HDFS</h2>
+
+<p>HDFS is <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="HDFS" data-type="indexterm" id="arch-design-distributed-hdfs">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-type="indexterm" id="distributed-system-arch-hdfs">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-type="indexterm" id="open-source-distributed-system-arch-hdfs">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-type="indexterm" id="hdfs">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-type="indexterm" id="hadoop-dist-filesystem">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-type="indexterm" id="filesystem-hdfs">&nbsp;</a>an open source filesystem designed to run on commodity hardware. It is highly fault tolerant and is designed to be deployed on low-cost hardware. HDFS provides high-throughput access to application data and is suitable for applications that require processing of large datasets. Here are some key features of HDFS:</p>
+
+<dl class="pagebreak-before less_space">
+	<dt>Distributed storage</dt>
+	<dd>
+	<p>HDFS is engineered for scalability, distributing data across multiple nodes in a cluster. It breaks large files into blocks and replicates them across different machines, ensuring data redundancy and availability even in the event of hardware failures.</p>
+	</dd>
+	<dt>Fault tolerance</dt>
+	<dd>
+	<p>One of the key features of HDFS is its built-in fault tolerance. Data is automatically replicated, typically across three different nodes, ensuring that if one node fails, the data remains accessible from the other nodes. This replication mechanism provides reliability and high availability, making HDFS well suited for large-scale data storage.</p>
+	</dd>
+	<dt>Scalability and flexibility</dt>
+	<dd>
+	<p>HDFS can scale horizontally by adding more nodes to the cluster, allowing it to manage increasing data volumes without significant changes to the infrastructure. This scalability, combined with its ability to store data in various formats, makes HDFS a flexible solution for a wide range of data-processing needs.</p>
+	</dd>
+	<dt>High throughput</dt>
+	<dd>
+	<p>HDFS is optimized for high throughput, prioritizing data access speed over low latency. It is designed to handle large datasets with a focus on batch processing, making it ideal for big data applications that involve reading and writing large volumes of data.</p>
+	</dd>
+	<dt>Cost-effectiveness</dt>
+	<dd>
+	<p>By using commodity hardware, HDFS provides a cost-effective solution for storing and processing large volumes of data.</p>
+	</dd>
+	<dt>Integration with Hadoop ecosystem</dt>
+	<dd>
+	<p>HDFS is <a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="HDFS integration" data-type="indexterm">&nbsp;</a>deeply integrated with the broader Hadoop ecosystem, supporting various processing frameworks like MapReduce, Hive, and Spark. This integration allows for seamless data processing and analysis, leveraging HDFS’s distributed architecture to perform computations close to the data, which can reduce network bottlenecks and improve efficiency.</p>
+	</dd>
+</dl>
+
+<div data-type="note">
+<p>AWS offers<a contenteditable="false" data-primary="Elastic MapReduce (EMR)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EMR (Elastic MapReduce)" data-type="indexterm">&nbsp;</a> Amazon Elastic MapReduce (EMR), a managed service that simplifies running big data frameworks like Hadoop, including HDFS, on the AWS cloud. We will explore it further in <a data-type="xref" href="#ch13_big_data_analytics_and_machine_learning_services_1734552292002899">#ch13_big_data_analytics_and_machine_learning_services_1734552292002899</a>. Amazon EMR supports processing vast amounts of data using HDFS (or EMRFS), leveraging its scalability, fault tolerance, and integration with the broader Hadoop ecosystem.</p>
+</div>
+
+<section data-type="sect3" id="ch08_hdfs_architecture_1734552289326874">
+<h3>HDFS architecture</h3>
+
+<p>The HDFS architecture, shown in <a data-type="xref" href="#ch08_figure_8_1734552289299761">#ch08_figure_8_1734552289299761</a>, is built around several key components that work together to provide a distributed, fault-tolerant, scalable filesystem.</p>
+
+<figure id="ch08_figure_8_1734552289299761"><img src="images/sdoa_0808.png" />
+<figcaption>HDFS architecture</figcaption>
+</figure>
+
+<p>The components of the HDFS architecture are:</p>
+
+<dl>
+	<dt>NameNode</dt>
+	<dd>
+	<p>The <a contenteditable="false" data-primary="NameNodes" data-type="indexterm">&nbsp;</a>NameNode is the central component of HDFS, responsible for managing the metadata and namespace of the filesystem. It keeps track of file locations and manages access to files by coordinating the storage across DataNodes. The NameNode is critical for the operation of HDFS; if it fails, the filesystem becomes inaccessible.</p>
+	</dd>
+	<dt>DataNodes</dt>
+	<dd>
+	<p>DataNodes <a contenteditable="false" data-primary="DataNodes" data-type="indexterm">&nbsp;</a>are the workers in the HDFS architecture. They store the actual data blocks that make up the files in HDFS. Each DataNode periodically sends heartbeats and block reports to the NameNode, ensuring that the system has an updated view of storage health and availability.</p>
+	</dd>
+	<dt>Secondary NameNode</dt>
+	<dd>
+	<p>Despite its name, <a contenteditable="false" data-primary="secondary NameNodes" data-type="indexterm">&nbsp;</a>the secondary NameNode is not a backup for the NameNode. Instead, it works alongside the NameNode to manage the filesystem’s metadata. It periodically snapshots the metadata and applies the edit log, which helps reduce the recovery time in case of a NameNode failure.</p>
+	</dd>
+	<dt>Blocks</dt>
+	<dd>
+	<p>HDFS <a contenteditable="false" data-primary="blocks (HDFS)" data-type="indexterm">&nbsp;</a>stores data in blocks, typically 128 MB in size, which are replicated across multiple DataNodes (usually three) for redundancy. This block-based storage system enables HDFS to handle large files efficiently, ensuring that even if a DataNode fails, the data remains available from another replica.</p>
+	</dd>
+</dl>
+
+<p>When a client wants to read or write a file, it communicates with the NameNode to locate the DataNodes that hold the data blocks. For writing, the NameNode provides a list of DataNodes where the client should write the data blocks. Once written, the DataNodes replicate the blocks to other nodes as directed by the NameNode.</p>
+
+<p>HDFS is rack aware, meaning it understands the physical layout of the nodes across different racks in a data center. The NameNode uses this information to make intelligent decisions about block placement, ensuring that replicas are distributed across different racks. This improves fault tolerance by ensuring that a rack failure doesn’t lead to data loss.</p>
+
+<p>HDFS’s fault tolerance is achieved through data replication and periodic checks by the NameNode. If a DataNode fails, the NameNode initiates a replication of the affected blocks to other nodes to ensure data availability.</p>
+
+<p>Together, these components and features form a highly reliable, scalable distributed filesystem that is central to the Hadoop ecosystem. HDFS’s architecture is designed to handle large-scale data storage and retrieval across thousands of nodes, making it ideal for big data applications.</p>
+
+<p>HDFS plays a critical role within the broader Hadoop ecosystem, offering essential storage capabilities for big data processing. However, when evaluating big data solutions, it’s important to consider other platforms as well. While the Hadoop ecosystem provides a comprehensive set of open source tools for managing and processing large datasets, cloud platforms like AWS offer managed services that can simplify deployment and <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed-hdfs" data-tertiary="HDFS" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-startref="distributed-system-arch-hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-startref="open-source-distributed-system-arch-hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-startref="hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-startref="hadoop-dist-filesystem" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-startref="filesystem-hdfs" data-type="indexterm">&nbsp;</a>scalability. Let’s now compare the Hadoop ecosystem with AWS, highlighting their differences, strengths, and use cases.</p>
+</section>
+
+<section data-type="sect3" id="ch08_hadoop_ecosystem_versus_aws_1734552289326940">
+<h3>Hadoop ecosystem versus AWS</h3>
+
+<p>The<a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="AWS versus" data-type="indexterm" id="hadoop-aws-compare">&nbsp;</a><a contenteditable="false" data-primary="AWS (Amazon Web Services)" data-secondary="Hadoop ecosystem versus" data-type="indexterm" id="aws-hadoop-compare">&nbsp;</a> Hadoop ecosystem is a comprehensive suite of tools designed for distributed data storage and processing across large clusters of computers. The core of Hadoop includes HDFS for scalable storage and MapReduce for parallel processing of large datasets. However, the ecosystem extends far beyond these two components to include tools such as Hive (for SQL-like querying of large datasets), Pig (a high-level scripting language for data analysis), HBase (a NoSQL database for real-time data), and YARN (for resource management). It also includes Apache Spark for in-memory data processing, Oozie for workflow scheduling, and ZooKeeper for distributed coordination.</p>
+
+<p>AWS provides fully managed equivalents for most Hadoop services, eliminating much of the operational overhead. AWS services like Amazon S3 for scalable object storage, Amazon EMR for running Hadoop and Spark clusters, Amazon Athena for interactive query service, and AWS Glue for ETL operations all offer more integrated solutions with scaling, cost management, and security features. <a data-type="xref" href="#ch08_table_1_1734552289307598">#ch08_table_1_1734552289307598</a> presents a comparison of Hadoop services and their AWS counterparts.</p>
+
+<table id="ch08_table_1_1734552289307598">
+	<caption>Hadoop ecosystem versus AWS services</caption>
+	<thead>
+		<tr>
+			<th>Hadoop ecosystem service</th>
+			<th>Description</th>
+			<th>Corresponding AWS service</th>
+			<th>Comparison</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>
+			<p>HDFS</p>
+			</td>
+			<td>
+			<p>Distributed filesystem for large-scale data</p>
+			</td>
+			<td>
+			<p>Amazon S3/EMRFS (built on top of S3)</p>
+			</td>
+			<td>
+			<p>S3 is a scalable object store that is easier to manage than HDFS, with pay-as-you-go pricing.</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>MapReduce</p>
+			</td>
+			<td>
+			<p>Parallel processing of data</p>
+			</td>
+			<td>
+			<p>Amazon EMR</p>
+			</td>
+			<td>
+			<p>EMR supports MapReduce and automates cluster management, offering flexibility in instance types.</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Hive</p>
+			</td>
+			<td>
+			<p>Distributed data warehouse for online analytical processing (OLAP)</p>
+			</td>
+			<td>
+			<p>Amazon Redshift</p>
+			</td>
+			<td>
+			<p>Redshift offers a fully managed, petabyte-scale data warehouse that is optimized for OLAP and easier to scale.</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Pig</p>
+			</td>
+			<td>
+			<p>High-level data analysis language</p>
+			</td>
+			<td>
+			<p>AWS Glue</p>
+			</td>
+			<td>
+			<p>Glue offers serverless ETL with integrated workflow capabilities, replacing the manual setup of Pig.</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Presto</p>
+			</td>
+			<td>
+			<p>SQL-like querying of large datasets</p>
+			</td>
+			<td>
+			<p>Amazon Athena</p>
+			</td>
+			<td>
+			<p>Athena is a serverless query service, allowing SQL queries on S3 without provisioning infrastructure.</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>HBase</p>
+			</td>
+			<td>
+			<p>NoSQL database for real-time analytics</p>
+			</td>
+			<td>
+			<p>HBase on EMR</p>
+			</td>
+			<td>
+			<p>HBase on EMR provides a managed Hadoop framework similar to the self-managed HBase, which requires manual scaling.</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>YARN</p>
+			</td>
+			<td>
+			<p>Resource manager for cluster computing</p>
+			</td>
+			<td>
+			<p>Amazon EMR/ECS</p>
+			</td>
+			<td>
+			<p>EMR simplifies YARN management; ECS provides container orchestration, abstracting away cluster management.</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>ZooKeeper</p>
+			</td>
+			<td>
+			<p>Coordination for distributed applications</p>
+			</td>
+			<td>
+			<p>AWS AppConfig</p>
+			</td>
+			<td>
+			<p>ZooKeeper is used for metadata management in Hadoop and Kafka; AppConfig is used for configuration management on AWS.</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Oozie</p>
+			</td>
+			<td>
+			<p>Workflow scheduling</p>
+			</td>
+			<td>
+			<p>AWS Step Functions</p>
+			</td>
+			<td>
+			<p>Step Functions offer serverless orchestration with better integration into AWS services for ETL and workflows, compared to workflow management by Oozie.</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Sqoop</p>
+			</td>
+			<td>
+			<p>Structured data transfer between Hadoop and relational databases</p>
+			</td>
+			<td>
+			<p>AWS Database Migration Service (DMS)</p>
+			</td>
+			<td>
+			<p>DMS provides a fully managed service to transfer data from various databases (relational and nonrelational) to the cloud, supporting migrations in real time or as a batch like Sqoop but with additional features for cloud integration.</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Flume</p>
+			</td>
+			<td>
+			<p>Continuous, real-time streaming of unstructured data from various sources into Hadoop</p>
+			</td>
+			<td>
+			<p>Amazon Kinesis</p>
+			</td>
+			<td>
+			<p>Kinesis enables real-time data ingestion and processing for analytics and streaming applications, offering a fully managed service compared to Flume’s manual setup for streaming.</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Spark</p>
+			</td>
+			<td>
+			<p>In-memory data processing</p>
+			</td>
+			<td>
+			<p>Spark on Amazon EMR</p>
+			</td>
+			<td>
+			<p>EMR supports running Spark jobs, offering more flexibility and management options than Hadoop’s native Spark setup.</p>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>This comparison highlights how AWS provides more integrated, scalable alternatives to traditional Hadoop services, often with reduced operational overhead. We’ll be discussing these related<a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="AWS versus" data-startref="hadoop-aws-compare" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="AWS (Amazon Web Services)" data-secondary="Hadoop ecosystem versus" data-startref="aws-hadoop-compare" data-type="indexterm">&nbsp;</a> AWS services more in <a data-type="xref" href="#part2">#part2</a>.</p>
+</section>
+</section>
+
+<section data-type="sect2" id="ch08_apache_kafka_s_distributed_message_queue_1734552289327017">
+<h2>Apache Kafka: Distributed Message Queue</h2>
+
+<p>Apache Kafka <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="Kafka" data-type="indexterm" id="arch-design-distributed-kafka">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="Kafka" data-type="indexterm" id="distributed-system-arch-kafka">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="Kafka" data-type="indexterm" id="open-source-distributed-system-arch-kafka">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-type="indexterm" id="kafka">&nbsp;</a><a contenteditable="false" data-primary="message queues" data-secondary="Kafka" data-type="indexterm" id="message-queue-kafka">&nbsp;</a><a contenteditable="false" data-primary="Apache Kafka" data-see="Kafka" data-type="indexterm">&nbsp;</a>is an open source distributed event-streaming platform capable of handling trillions of events a day in real time. As a highly reliable, scalable messaging system, Kafka can process millions of records per second, making it ideal for event-driven architectures, real-time analytics, and complex data pipelines. Here are some key features of Kafka:</p>
+
+<dl>
+	<dt>Scalability</dt>
+	<dd>
+	<p>Kafka’s partitioning mechanism allows it to scale horizontally by distributing data across multiple nodes. This architecture supports high throughput and can handle large volumes of data.</p>
+	</dd>
+	<dt>Durability and reliability</dt>
+	<dd>
+	<p>Kafka ensures data durability by persisting messages on disk and replicating them across multiple brokers. This replication guarantees that even in the event of a broker failure, data is not lost.</p>
+	</dd>
+	<dt>Fault tolerance</dt>
+	<dd>
+	<p>Kafka is designed to handle failures gracefully. In the event of a broker failure, Kafka’s replication mechanism ensures that another broker can take over the failed broker’s responsibilities without data loss.</p>
+	</dd>
+	<dt>High throughput</dt>
+	<dd>
+	<p>Kafka’s design is optimized for high throughput, making it capable of processing millions of records per second. This makes Kafka ideal for real-time data pipelines and event-driven architectures.</p>
+	</dd>
+</dl>
+
+<section data-type="sect3" id="ch08_kafka_architecture_1734552289327085">
+<h3>Kafka architecture</h3>
+
+<p><a data-type="xref" href="#ch08_figure_9_1734552289299781">#ch08_figure_9_1734552289299781</a> presents Kafka’s components and architecture.</p>
+
+<figure id="ch08_figure_9_1734552289299781"><img src="images/sdoa_0809.png" />
+<figcaption>Kafka architecture</figcaption>
+</figure>
+
+<p>Let’s look at these components in more detail:</p>
+
+<dl>
+	<dt>Producers</dt>
+	<dd>
+	<p>Producers<a contenteditable="false" data-primary="producers" data-type="indexterm">&nbsp;</a> are responsible for pushing data (records) into Kafka topics. They send data to the Kafka brokers, which manage partitioning and replicating the data across the cluster.</p>
+	</dd>
+	<dt>Consumers</dt>
+	<dd>
+	<p>Consumers <a contenteditable="false" data-primary="consumers" data-type="indexterm">&nbsp;</a>read data from Kafka topics. They subscribe to one or more topics and consume records in the order they are stored in the partitions.</p>
+	</dd>
+	<dt>Schema Registry</dt>
+	<dd>
+	<p>Schema Registry <a contenteditable="false" data-primary="Schema Registry" data-type="indexterm">&nbsp;</a>is a service that manages and enforces the schemas used by Kafka producers and consumers. It ensures that data is written in a consistent format, preventing compatibility issues between different versions of data structures as they evolve over time.</p>
+	</dd>
+	<dt>Brokers</dt>
+	<dd>
+	<p>Kafka brokers <a contenteditable="false" data-primary="brokers" data-type="indexterm">&nbsp;</a>are the servers that manage the persistence and replication of data. Each broker stores data in <em>partitions</em>, which are the basic units of scalability in Kafka. Partitions allow Kafka to scale horizontally by distributing data across multiple nodes.</p>
+	</dd>
+	<dt>Coordinator</dt>
+	<dd>
+	<p>ZooKeeper used to<a contenteditable="false" data-primary="ZooKeeper" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="KRaft (Apache Kafka Raft)" data-type="indexterm">&nbsp;</a> manage the coordination of Kafka brokers in the cluster. It handled tasks such as leader election for partitions, cluster configuration, and metadata management. Recent versions of Kafka have replaced ZooKeeper with <a href="https://oreil.ly/BBg6D">Apache Kafka Raft (KRaft)</a> for consensus protocol and metadata management.</p>
+	</dd>
+	<dt>Topics</dt>
+	<dd>
+	<p>A Kafka topic <a contenteditable="false" data-primary="topics (Kafka)" data-type="indexterm">&nbsp;</a>is a category or feed name to which records are stored and published. Topics in Kafka are partitioned to allow data to be distributed across multiple brokers. Each partition is an ordered, immutable sequence of records that is continually appended to a log.</p>
+	</dd>
+	<dt>Partitions</dt>
+	<dd>
+	<p>Kafka partitions enable <a contenteditable="false" data-primary="partitions (Kafka)" data-type="indexterm">&nbsp;</a>parallel processing of records within a topic. Each partition can be hosted on different brokers, allowing Kafka to scale horizontally and handle massive amounts of data. Partitions are also the units of replication in Kafka, ensuring data durability and fault tolerance.</p>
+	</dd>
+	<dt>Keys</dt>
+	<dd>
+	<p>In Kafka, <a contenteditable="false" data-primary="keys" data-secondary="Kafka" data-type="indexterm">&nbsp;</a>the key plays a crucial role in determining which partition a record is sent to within a topic. When a producer sends a record, it can specify a key. Kafka uses this key, along with a hashing function, to map the record to a specific partition. This ensures that records with the same key always go to the same partition, preserving the order of records for that key.</p>
+	</dd>
+</dl>
+
+<div data-type="note">
+<p>Kafka appends messages to a partition in the exact order they are sent by a producer. If a producer sends message M1 before message M2 to the same partition, M1 will receive a lower offset than M2, ensuring that it appears earlier in the log. It’s important to note that this ordering guarantee applies only within individual partitions. Users can manage partitioning strategies to make use of this ordered delivery across different data segments.</p>
+</div>
+</section>
+
+<section data-type="sect3" id="ch08_kafka_s_configuration_levels_1734552289327148">
+<h3>Kafka’s configuration levels</h3>
+
+<p>Kafka <a contenteditable="false" data-primary="configuration levels (Kafka)" data-type="indexterm">&nbsp;</a>offers several configuration levels for fine-tuning the system to meet specific needs:</p>
+
+<dl>
+	<dt>Replication factor</dt>
+	<dd>
+	<p>This level determines the number of copies of a partition that Kafka will maintain across different brokers. Higher replication increases fault tolerance but also requires more storage and network resources.</p>
+	</dd>
+	<dt>Acknowledgments</dt>
+	<dd>
+	<p>Producers can configure the level of acknowledgment they require from the brokers. For example, a setting of <code>acks=all</code> ensures that a message is considered successfully written only when all in-sync replicas acknowledge it, enhancing reliability at the cost of higher latency.</p>
+	</dd>
+	<dt>Retention policies</dt>
+	<dd>
+	<p>Kafka allows configuration of how long records are retained in the topics. Retention can be based on time (e.g., seven days) or size (e.g., 100 GB), ensuring that only relevant data is kept for more effective storage management.</p>
+	</dd>
+	<dt>Compression</dt>
+	<dd>
+	<p>Message compression in Kafka reduces the amount of data that is transmitted over the network and stored on disk. Different compression algorithms like gzip, snappy, and lz4 can be configured based on the use case.</p>
+	</dd>
+</dl>
+
+<p>Kafka provides strong <a contenteditable="false" data-primary="messaging guarantees (Kafka)" data-type="indexterm" id="message-guarantee">&nbsp;</a>messaging guarantees that ensure the reliable delivery of messages in distributed systems. These guarantees are crucial for maintaining data consistency and integrity across complex data pipelines:</p>
+
+<dl>
+	<dt>At-most-once delivery</dt>
+	<dd>
+	<p>Messages <a contenteditable="false" data-primary="at-most-once delivery" data-type="indexterm">&nbsp;</a>are delivered to consumers at most once, meaning they may be lost but are never delivered more than once. This is the default setting when no retries or acknowledgments are configured.</p>
+	</dd>
+	<dt>At-least-once delivery</dt>
+	<dd>
+	<p>Every message<a contenteditable="false" data-primary="at-least-once delivery" data-type="indexterm">&nbsp;</a> is delivered at least once. This means that even in the event of a failure, the message will eventually reach the consumer, though duplicates may occur. This guarantee is often used when data loss is unacceptable, and duplicate messages can be handled by the application logic. To manage the potential duplicates, applications consuming messages in an at-least-once delivery setup should implement idempotency in their processing logic.</p>
+
+	<div data-type="note">
+	<p>An operation <a contenteditable="false" data-primary="idempotence" data-type="indexterm">&nbsp;</a>is <em>idempotent</em> if applying it multiple times has the same effect as applying it once. For example, a consumer might keep track of processed message IDs to prevent processing duplicates. This approach ensures that repeated messages do not result in unintended side effects, maintaining data integrity in applications that require precise processing.</p>
+	</div>
+	</dd>
+	<dt>Exactly-once delivery</dt>
+	<dd>
+	<p>Exactly-once semantics (EOS) in Kafka ensure that each message<a contenteditable="false" data-primary="exactly-once semantics (EOS)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EOS (exactly-once semantics)" data-type="indexterm">&nbsp;</a> is delivered to the consumer exactly once, without any duplicates, even in the face of failures. This is achieved through Kafka’s idempotent producers and transactional APIs, which maintain atomicity across multiple partitions and topics. EOS is particularly valuable in systems where data integrity is critical, such as financial transactions.</p>
+	</dd>
+</dl>
+
+<p>These messaging guarantees, along with Kafka’s robust fault tolerance and scalability, make it a reliable choice for building distributed data streaming and processing systems. Kafka’s ability to handle large-scale data streams with low latency has made it a cornerstone in modern distributed systems.</p>
+
+<div data-type="note">
+<p>AWS offers <a contenteditable="false" data-primary="Managed Streaming for Apache Kafka (MSK)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="MSK (Managed Streaming for Apache Kafka)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kinesis" data-type="indexterm">&nbsp;</a>Amazon Managed Streaming for Apache Kafka (MSK) and Amazon Kinesis, which are managed services designed for real-time data streaming. MSK simplifies running Apache Kafka on AWS, while Kinesis provides tools for collecting, processing, and analyzing streaming data. Both services enable scalable, reliable data processing. We will explore them further in <a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a>.</p>
+</div>
+</section>
+</section>
+
+<section data-type="sect2" id="ch08_comparing_hdfs_and_kafka_1734552289327212">
+<h2>Comparing HDFS and Kafka</h2>
+
+<p>Both <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="HDFS" data-type="indexterm" id="arch-design-distributed-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-type="indexterm" id="distributed-system-arch-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-type="indexterm" id="open-source-distributed-system-arch-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-type="indexterm" id="hdfs2">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-type="indexterm" id="hadoop-dist-filesystem2">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-type="indexterm" id="filesystem-hdfs2">&nbsp;</a>HDFS and Kafka are designed to handle large volumes of data efficiently. We compare their features in <a data-type="xref" href="#ch08_table_2_1734552289307636">#ch08_table_2_1734552289307636</a>.</p>
+
+<table id="ch08_table_2_1734552289307636">
+	<caption>HDFS versus Kafka</caption>
+	<thead>
+		<tr>
+			<th>Feature</th>
+			<th>HDFS</th>
+			<th>Kafka</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>
+			<p>Core function</p>
+			</td>
+			<td>
+			<p>Distributed file storage</p>
+			</td>
+			<td>
+			<p>Message queue/event-streaming platform</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Use case</p>
+			</td>
+			<td>
+			<p>Big data storage, large-scale processing</p>
+			</td>
+			<td>
+			<p>Real-time messaging, event sourcing</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Data model</p>
+			</td>
+			<td>
+			<p>Files</p>
+			</td>
+			<td>
+			<p>Streams of records</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Performance</p>
+			</td>
+			<td>
+			<p>High throughput, optimized for large files</p>
+			</td>
+			<td>
+			<p>High throughput, optimized for message passing</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Scalability</p>
+			</td>
+			<td>
+			<p>Linear scalability with more nodes</p>
+			</td>
+			<td>
+			<p>Scales horizontally with topics and partitions</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Fault tolerance</p>
+			</td>
+			<td>
+			<p>Replication across nodes</p>
+			</td>
+			<td>
+			<p>Replication within and across clusters</p>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>Both HDFS and Kafka are powerful open source technologies that cater to specific needs within distributed systems. HDFS is ideal for applications requiring large-scale data storage and processing, while Kafka is suited to applications that need robust, real-time data processing and messaging capabilities. Choosing between HDFS and Kafka depends on your organization’s specific data management and <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed-kafka" data-tertiary="Kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="Kafka" data-startref="distributed-system-arch-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="Kafka" data-startref="open-source-distributed-system-arch-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-startref="kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="message queues" data-secondary="Kafka" data-startref="message-queue-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-startref="distributed-system-arch" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-startref="open-source-distributed-system-arch" data-type="indexterm">&nbsp;</a>processing needs.</p>
+</section>
+</section>
+
+<section data-type="sect1" id="ch08_conclusion_1734552289327271">
+<h1>Conclusion</h1>
+
+<p>The architectural designs and patterns discussed in this chapter provide a comprehensive toolkit for building scalable, maintainable, efficient systems. CDC offers a mechanism for ensuring that data is always up to date across distributed environments, while the pub/sub architecture facilitates decoupled communication between system components. Big data architectures like lambda, kappa, and data lake offer robust solutions for processing and analyzing vast amounts of data. Meanwhile, Kafka and HDFS serve as foundational technologies in distributed systems, each excelling in their domains: real-time event streaming and large-scale data storage, respectively.</p>
+
+<p>By understanding and leveraging the architectural patterns and technologies discussed in the last sections of this chapter, organizations can build systems that not only meet current needs but also are adaptable to future challenges. The flexibility, scalability, and fault tolerance offered by these design patterns ensure that your system architecture can evolve in tandem with growing business demands and technological advancements. Keep in mind that design patterns are constantly changing, and there is no comprehensive list—we’ve covered only the tip of the iceberg. These architecture patterns are like guidelines that you can follow, but you do not need to completely adhere to them. Use whatever makes sense for your business requirements and do not force a design pattern to your requirements. As technology advances, new patterns and strategies will continue to emerge, shaping the future of system architecture and design.</p>
+
+<p>At this point, we conclude <a data-type="xref" href="#part1">#part1</a>. <a data-type="xref" href="#part2">#part2</a> will dive into the many AWS services, and you’ll begin to understand how the concepts that we covered in this part connect to AWS service design and choices.</p>
+</section>
+</section>

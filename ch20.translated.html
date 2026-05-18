@@ -1,0 +1,269 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch20_designing_a_video_processing_pipeline_for_a_stream_1734552295245731">
+      <h1>设计流媒体服务的视频处理管道</h1>
+      <p>我们在 <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" id="use-case-video-process">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-seealso="media content storage" id="video-process">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="streaming services" data-see="video processing use case">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="live streaming services" data-see="video processing use case">&nbsp;</a><a data-type="xref" href="#ch19_designing_a_chat_application_1734552294951889">#ch19_designing_a_chat_application_1734552294951889</a> 中讨论了即时通讯应用程序中用户之间的视频上传与下载。为了确保最佳的客户体验，我们需要在视频上传过程中执行若干步骤，例如通过压缩来减小文件大小，以及通过转码（transcoding）来支持不同的媒体格式和各类设备。在本章中，我们将重点介绍如何为 Netflix、Amazon Prime Video 和 YouTube 等流媒体服务构建视频处理管道（video-processing pipeline）。与以往一样，我们将从系统需求入手，然后深入探讨各个步骤的细节。本章设计决策的核心目标是：以最佳画质在最短时间内将视频内容呈现给观众。最后，我们将使用 AWS 媒体服务在 AWS 云上部署该系统，并介绍大型直播活动（例如美国的周四夜橄榄球赛和印度的板球比赛）在直播方面的若干注意事项。</p>
+      <section data-type="sect1" id="ch20_system_requirements_1734552295245890">
+        <h1>系统需求</h1>
+        <p>该系统<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" data-tertiary="system requirements" id="use-case-video-process-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-secondary="system requirements" id="video-process-require">&nbsp;</a>最重要的需求是：由制片公司（Netflix 或 Amazon Prime Video 的情况）或用户（YouTube 的情况）上传的视频，需经过处理后便于观众日后访问。本系统设计适用于任何涉及视频处理的场景，但我们将以 Netflix 系统为例进行说明。</p>
+        <p>在定义系统的功能需求之前，我们需要先明确以下几点：</p>
+        <dl>
+          <dt>系统是否限制上传文件的大小？</dt>
+          <dd>
+            <p>系统对文件大小没有硬性限制，因为以 4K 分辨率拍摄的视频文件可能非常大，因此系统不会强制执行任何大小约束。</p>
+          </dd>
+          <dt>系统设计时应考虑直播、视频点播（VoD）还是两者兼顾？</dt>
+          <dd>
+            <p>我们将把讨论重点放在视频点播（VoD）上，将其作为视频处理管道的主要功能，并在 AWS Day 0 架构讨论中花一些时间介绍直播。</p>
+          </dd>
+          <dt>系统是否能够支持用户拥有的各类设备，例如智能电视、Android 手机、iPhone 和平板电脑？</dt>
+          <dd>
+            <p>系统应能够以尽可能最佳的画质向所有类型的设备传输视频内容。</p>
+          </dd>
+          <dt>系统是否可以集成不同的机器学习和分析组件来实现推荐功能？</dt>
+          <dd>
+            <p>本章范围不包括在系统架构中集成机器学习组件。</p>
+          </dd>
+        </dl>
+        <p>接下来，我们来讨论系统的功能需求和非功能需求。</p>
+        <section data-type="sect2" id="ch20_functional_and_nonfunctional_requirements_1734552295245967">
+          <h2>功能需求与非功能需求</h2>
+          <p>根据<a contenteditable="false" data-type="indexterm" data-primary="functional requirements" data-secondary="video processing">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonfunctional requirements" data-secondary="video processing">&nbsp;</a>上述考量，我们可以预期系统提供以下功能需求：</p>
+          <ul>
+            <li>
+              <p>系统允许制片公司上传媒体内容。</p>
+            </li>
+            <li>
+              <p>视频应根据用户设备以不同格式提供，并根据网络连接质量以不同画质提供。</p>
+            </li>
+            <li>
+              <p>视频应在尽可能短的时间内提供给观众，且不出现过多缓冲。</p>
+            </li>
+          </ul>
+          <p>以下是系统支持的非功能需求（NFR）：</p>
+          <ul>
+            <li>
+              <p>数据应具备持久性——系统在执行视频处理管道期间不应丢失任何数据。</p>
+            </li>
+            <li>
+              <p>系统应具备可扩展性，以便在未来支持任何类型的编码。</p>
+            </li>
+            <li>
+              <p>可用性对应用程序很重要，但并非 100% 关键。客户是负责上传视频的制片公司，因此可以要求其稍后再重新上传。</p>
+            </li>
+          </ul>
+          <p>接下来，我们来讨论系统规模。</p>
+        </section>
+        <section data-type="sect2" id="ch20_system_scale_1734552295246035">
+          <h2>系统规模</h2>
+          <p><a contenteditable="false" data-type="indexterm" data-primary="scale (of system)" data-secondary="video processing">&nbsp;</a>系统规模的关键参数是存储视频制片公司上传内容所需的存储空间。除原始视频文件外，系统还会以压缩形式创建内容副本，以支持不同的设备类型和互联网带宽可用性（我们将在后续章节中介绍架构的更多细节）。内容会进一步处理，将其拆分为更小的数据块，因此我们应该能够得出最优的服务器配置，以部署端到端基础设施。</p>
+          <p>根据 <a href="https://oreil.ly/k6CJx">Netflix 统计数据</a>，该平台拥有超过 18,000 个视频标题。对于 YouTube 等平台而言，这一数字要大得多，因为用户可以自行上传视频。截至本书撰写时，YouTube 拥有近 140 亿个视频，且数量还在逐年增加。Netflix 与 YouTube 有一个显著区别：视频上传质量。Netflix 要求内容制片公司上传超高质量的视频，而 YouTube 则没有此类要求。当然，两个平台面向不同的受众群体，应用场景也各不相同。</p>
+          <p>让我们基于以下假设来估算自己系统的存储数据：系统拥有 30,000 个标题，每年新增 5,000 个。这些标题可以是电影与电视剧（或网络剧集）的组合，电视剧包含多集。我们假设电影与电视剧的比例为 90:10，每部剧集平均有 10 集（也可能有多季）。存储空间在很大程度上取决于拍摄所用摄像设备的类型，因此我们取一个平均值：</p>
+          <div data-type="equation">
+            <p>视频总数 = 27,000 部电影 + 3,000 部剧集 × 10 集</p>
+            <p>视频平均时长 = 90 分钟</p>
+            <p>原始视频平均大小 = 50 GB</p>
+          </div>
+          <p>视频被编码为不同格式以进行压缩，使其<a href="https://oreil.ly/5aRko">缩小约千倍</a>，从而使每个视频的平均大小约为 50 MB。除主要视频存储外，我们还需要数据库存储来维护元数据，例如视频在对象存储中的位置以及与内容相关的其他属性。当然，实际视频内容占据了绝大部分存储空间。</p>
+          <p>我们还需要了解从数据存储位置访问内容的频率。这对于像 Amazon S3 这样的云存储解决方案非常重要，因为其定价同时取决于<a class="orm:hideurl" href="https://oreil.ly/dy3Cl">数据传输速率</a>和存储空间。例如，Netflix 在 S3 之上构建了一个名为 <a href="https://oreil.ly/hbHO1">MezzFS</a> 的存储封装层，以降低频繁<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" data-tertiary="system requirements" data-startref="use-case-video-process-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-secondary="system requirements" data-startref="video-process-require">&nbsp;</a>数据访问的下载速度和成本。</p>
+          <p>让我们开始设计视频处理管道。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch20_starting_with_the_design_1734552295246107">
+        <h1>开始设计</h1>
+        <p><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" data-tertiary="architecture design" id="use-case-video-process-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-secondary="architecture design" id="video-process-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ingestion system" data-see="video processing use case">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="in video processing" data-secondary-sortas="video processing" id="schema-video-process">&nbsp;</a>设计视频处理管道（以下简称<em>摄取系统</em>）的第一步是上传制片公司创建的视频。视频上传器是制片公司上传内容并跟踪进度的平台，供其了解内容何时真正可供观看。视频通常使用高质量摄像机拍摄，这意味着文件大小相对较大。上传应支持从客户端断点续传，以确保视频上传在发生网络问题时能够从中断处继续。此功能与 Google Drive 等系统的上传工作原理非常相似。</p>
+        <div data-type="note">
+          <p>Netflix 定期发布<a href="https://netflixtechblog.com">技术博客</a>，分享其架构和经验。本章内容受到 Netflix 视频处理博客的影响；建议阅读这些博客，以全面了解 Netflix 系统的端到端架构。</p>
+        </div>
+        <p>客户端可以随源视频一并上传附加元数据，例如视频缩略图、视频标签、音频标签等。摄取系统收到视频后，系统会运行视频检查，确保视频符合系统定义的约束条件。如果不满足画质约束，制片公司将被要求重新上传视频源文件。检查通过将文件拆分为多个数据块并对其独立检查来完成，以加快处理速度，如图 <a data-type="xref" href="#ch20_figure_1_1734552295233846">#ch20_figure_1_1734552295233846</a> 所示。</p>
+        <figure id="ch20_figure_1_1734552295233846">
+          <img src="images/sdoa_2001.png"/>
+          <figcaption>视频源文件检查</figcaption>
+        </figure>
+        <p>你可能已经意识到，整个系统以异步方式按一系列步骤运行（步骤可根据使用场景顺序或并行执行）。让我们先确定管道中的关键步骤，然后逐一探讨：</p>
+        <dl>
+          <dt>视频编码</dt>
+          <dd>
+            <p>为支持各种设备和互联网带宽可用性，视频被编码为不同格式和画质。所有这些编码后的视频都存储在服务器上，可根据客户需求提供服务。</p>
+          </dd>
+          <dt>视频画质验证</dt>
+          <dd>
+            <p>在管道的每个步骤完成后都会进行画质验证，以确保不影响观众体验。</p>
+          </dd>
+          <dt>内容索引</dt>
+          <dd>
+            <p>在内容处理的同时，多项任务并行执行，例如提取图像用作缩略图、提取各类内容参数，以及创建索引以向用户提供搜索能力。</p>
+          </dd>
+          <dt>视频分发</dt>
+          <dd>
+            <p>最后一步是向用户分发视频。视频内容通过 CDN 缓存到距用户较近的位置，并在<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" data-tertiary="architecture design" data-startref="use-case-video-process-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-secondary="architecture design" data-startref="video-process-design">&nbsp;</a>用户请求时提供服务。</p>
+          </dd>
+        </dl>
+        <p>让我们从视频编码开始，详细讨论每个步骤。</p>
+        <section data-type="sect2" id="ch20_video_encoding_1734552295246179">
+          <h2>视频编码</h2>
+          <p>在<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" data-tertiary="video encoding process" id="use-case-video-process-encode">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-secondary="video encoding process" id="video-process-encode">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video encoding" id="video-encode">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="encoding" id="encode">&nbsp;</a>深入了解视频编码之前，首先需要理解<a contenteditable="false" data-type="indexterm" data-primary="codecs">&nbsp;</a><em>编解码器（codec）</em>这一概念。Codec 是 compressor/decompressor（压缩器/解压器）的缩写，是一种用于压缩视频（减小其大小）并在实际观看时对其进行解压的特定算法或技术。我们将在视频文件的上下文中讨论编解码器，但它是一种通用技术，可应用于任何类型的文件。编解码器的例子包括 H.264/高级视频编码（AVC）、高效视频编码（HEVC）和 VP9。这些编解码器需要视频容器格式（例如 <em>.mp4</em>、<em>.avi</em>、<em>.mov</em> 等）来承载编码后的视频。视频容器格式因设备而异。为确保视频能在所有类型的设备上播放，系统应创建所有这些格式的视频副本。</p>
+          <p>除格式之外，还有两个因素需要考虑：视频分辨率和码率（bitrate）。<em>码率</em>是指<a contenteditable="false" data-type="indexterm" data-primary="bitrate">&nbsp;</a>每秒使用的比特数，它有助于确定从系统服务器（或 CDN，如果内容已缓存到附近位置）向用户设备提供数据块的速度。以 MP4 格式为例，系统为向客户提供服务而维护以下视频副本：</p>
+          <ul>
+            <li>
+              <p>高画质（高码率）：4K、1080p、720p</p>
+            </li>
+            <li>
+              <p>中等画质（中码率）：1080p、720p、480p</p>
+            </li>
+            <li>
+              <p>低画质（低码率）：720p、480p、360p、144p</p>
+            </li>
+          </ul>
+          <p>你可能已经意识到，系统需要完成大量工作，为了更快处理，确实需要在处理过程中实现一定程度的并行化。为了实现并行处理并提高系统效率，源视频在初始检查后会被拆分为小数据块。将视频分块还便于在编码过程中处理故障，因为系统可以轻松针对较小的数据块进行重试，而针对整个视频进行重试则既耗资源又耗时间。</p>
+          <p>让我们思考一下将视频拆分为数据块的逻辑。逻辑是否应该像将视频划分为 30 秒数据块一样简单，还是需要某种特殊算法来决定数据块大小？让我们深入探讨一下。暂时忘掉编码管道，思考一下内容如何向最终用户提供。目标是以最低可能的带宽提供最高画质的视频。Netflix 系统采用了多种机制，例如<a href="https://oreil.ly/GNpH5">片级编码（title-based encoding）</a>和<a href="https://oreil.ly/wYgb5">镜头级编码（shot-based encoding）</a>，以确保以较低的带宽使用量向用户提供最高画质的视频。镜头级编码提高了整体压缩效率，是片级编码的后继者。</p>
+          <p>一旦所有视频数据块的编码过程完成，它们会被独立验证画质，若验证失败则重新发送进行编码，最终重新组合以与源视频进行画质对比，如图 <a data-type="xref" href="#ch20_figure_2_1734552295233879">#ch20_figure_2_1734552295233879</a> 所示。最终编码后的视频比源视频小约一千倍。</p>
+          <figure id="ch20_figure_2_1734552295233879">
+            <img src="images/sdoa_2002.png"/>
+            <figcaption>视频编码</figcaption>
+          </figure>
+          <p>每当新视频上传到系统时，视频编码系统就会被调用。在引入更多编解码器以支持更新设备，或视频<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" data-tertiary="video encoding process" data-startref="use-case-video-process-encode">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-secondary="video encoding process" data-startref="video-process-encode">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video encoding" data-startref="video-encode">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="encoding" data-startref="encode">&nbsp;</a>技术有所革新时，也可以用它对视频进行重新编码。</p>
+          <p>管道的每个步骤都会进行画质验证，接下来让我们讨论验证技术。</p>
+        </section>
+        <section data-type="sect2" id="ch20_video_quality_validation_1734552295246244">
+          <h2>视频画质验证</h2>
+          <p>视频画质验证<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" data-tertiary="video-quality validation" id="use-case-video-process-quality">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-secondary="video-quality validation" id="video-process-quality">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video-quality validation" id="video-quality">&nbsp;</a>在每个步骤都会执行，并在必要时采取相应措施以恢复视频画质，但最重要的视频验证指标是观众给出的评分。该评分是通过视频验证测试的最具可操作性的指标。</p>
+          <p>验证逻辑对于编码后的视频尤为重要，因为这些是用于流媒体传输的最终视频。系统会验证每个生成的编码都达到了画质预期。在并行数据块编码过程中，可能会引入帧问题，例如错误的帧边界，或重复帧、丢帧等情况。</p>
+          <p>在对编码视频与源视频进行基础验证后，系统还会尝试评估观众在观看视频流时的感知体验。<a href="https://oreil.ly/0ZCNO"><em>视频多方法评估融合（Video Multimethod Assessment Fusion，VMAF）</em></a>就是<a contenteditable="false" data-type="indexterm" data-primary="Video Multimethod Assessment Fusion (VMAF)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VMAF (Video Multimethod Assessment Fusion)">&nbsp;</a>Netflix 部署的一种验证技术。VMAF 是一种感知画质评估算法，能从观众的角度生成画质得分，例如用户在观看时如何评价该视频。Netflix 或任何流媒体平台都希望在给定网络带宽和设备约束的条件下确保最佳观看体验。VMAF 有助于根据所有这些约束生成画质得分。据此，我们可以寻找进一步改进的优化空间。在管道的每个步骤进行验证的全部意义在于快速失败（fail-fast），即在尽可能早的时刻发现问题。这确保了最佳的观众体验，并降低了工程师的运维负担。</p>
+          <p>画质验证的另一个重要因素是收集内容播放时设备上真实的客户行为指标。运行在客户设备上的媒体播放器会捕获各类指标，例如相邻视频数据块传输之间的时间间隔、错误率、缓冲率、播放开始、暂停、关闭以及任何自定义用户操作。这些指标从用户设备实时上报至后端分析系统，用于全面分析用户行为，并有助于微调质量控制软件。实时指标还能帮助我们发现用户流式播放特定视频时的内容分发问题。例如，如果某个边缘位置的缓冲率较高，则会从另一个边缘位置请求下一批视频数据块，我们将在 <a data-type="xref" href="#ch20_content_distribution_1734552295246367">#ch20_content_distribution_1734552295246367</a> 中进一步讨论。首先，让我们来讨论内容索引。</p>
+        </section>
+        <section data-type="sect2" id="ch20_content_indexing_1734552295246306">
+          <h2>内容索引</h2>
+          <p><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" data-tertiary="content indexing" id="use-case-video-process-index">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-secondary="content indexing" id="video-process-index">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="content indexing" id="content-index">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="indexes" data-secondary="video processing" id="index-video">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search service" data-secondary="in video processing use case" data-secondary-sortas="video processing" id="search-video">&nbsp;</a>视频应支持用户搜索。以电影《黑暗骑士》为例：无论客户通过标题本身、导演克里斯托弗·诺兰（Christopher Nolan）还是演员克里斯蒂安·贝尔（Christian Bale）或希斯·莱杰（Heath Ledger）等任何关键词搜索，该电影都应出现在搜索结果中。内容索引基于制片公司提供的数据与系统生成的数据相结合来完成。</p>
+          <p>提到数据索引，我们首先想到的服务是 Elasticsearch，它是提供搜索能力的出色解决方案。数据应以某种方式建立 Elasticsearch 索引，使用户能够通过与视频相关的任何参数进行搜索。我们在<a data-type="xref" href="#ch15_designing_a_web_crawler_and_search_engine_1734552293105400" data-xrefstyle="select:labelnumber">#ch15_designing_a_web_crawler_and_search_engine_1734552293105400"</a>和<a data-type="xref" href="#ch18_designing_a_hotel_reservation_system_1734552294615548" data-xrefstyle="select:labelnumber">#ch18_designing_a_hotel_reservation_system_1734552294615548</a>两章中讨论了 Elasticsearch 解决方案；请回顾这些章节以温习相关内容。在 <a href="https://oreil.ly/ojJsB">Netflix 系统</a>的背景下，搜索能力基于 Elasticsearch 和 GraphQL 联邦构建，各独立团队可以为<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" data-tertiary="content indexing" data-startref="use-case-video-process-index">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-secondary="content indexing" data-startref="video-process-index">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="content indexing" data-startref="content-index">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="indexes" data-secondary="video processing" data-startref="index-video">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search service" data-secondary="in video processing use case" data-secondary-sortas="video processing" data-startref="search-video">&nbsp;</a>搜索功能维护各自的标准。</p>
+          <p>接下来，让我们讨论内容分发。</p>
+        </section>
+        <section data-type="sect2" id="ch20_content_distribution_1734552295246367">
+          <h2>内容分发</h2>
+          <p><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" data-tertiary="content distribution">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-secondary="content distribution">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="content distribution">&nbsp;</a>视频编码完成后，视频数据块存储在 Amazon S3 等对象存储中，并应可供用户使用。为确保内容以最低延迟到达受众，内容通过 CDN 分发到距用户较近的位置。让我们先退一步讨论系统服务器上的存储；然后，我们再来介绍<a contenteditable="false" data-type="indexterm" data-primary="CDNs (content delivery networks)">&nbsp;</a>Netflix 的专有 CDN 解决方案——Open Connect。</p>
+          <p>让我们从用户的角度思考：用户点击特定视频的播放按钮后，将如何接收视频流。编码后的视频数据块存储在 S3 中，但我们需要某种元数据层来存储这种映射关系，以便后续用于定位视频位置。视频数据块会被添加数字版权管理（DRM）保护，然后从视频数据块生成打包流用于存储。</p>
+          <div data-type="note">
+            <p>DRM 保护<a contenteditable="false" data-type="indexterm" data-primary="DRM (digital rights management)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="digital rights management (DRM)">&nbsp;</a>有助于防止任何类型内容的盗版和版权侵犯。内容基本上使用特定密钥加密，只有经过身份验证的用户才能访问内容。</p>
+          </div>
+          <p>视频还会根据地区以及对用户可能观看内容的历史分析，被推送到 CDN。缓存视频内容的 CDN 位置维护在元数据存储中，这对后续处理用户查询十分有用。Netflix 大量使用 Cassandra 数据库来满足此类需求。我们的系统不需要任何关系数据库功能，因此可以选择 Cassandra 或 DynamoDB 等 NoSQL 解决方案以简化运维。AWS 提供 Amazon CloudFront 作为 CDN 产品，其他云提供商也提供类似功能。Netflix 更进一步，通过将内容放置在 ISP（互联网服务提供商）位置的设备上，将数据带到距观众更近的地方，这些设备被称为<a href="https://oreil.ly/A55XK">开放连接设备（Open Connect Appliances，OCA）</a>。将内容放置在 ISP 位置对 ISP 和 Netflix 都有利，因为这减少了在互联网上反复获取相同内容所消耗的带宽。</p>
+          <p>总有一些用户会尝试观看很少被访问的电影或电视剧，在这些情况下，内容可能未被缓存在 OCA 上。对于这些场景，内容会在那时被移动到距用户最近的位置，最初几帧在用户设备上显示可能需要额外的时间。</p>
+          <p><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" data-tertiary="architecture design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-secondary="architecture design">&nbsp;</a>总结整体架构：视频编码服务将数据块推送到 S3，并将元数据推送到 Cassandra。缓存管理服务负责将内容分发到不同位置的 OCA。从用户角度来看，用户点击任何视频的播放按钮后，用户设备会连接播放服务以获取视频数据块。播放服务会确定客户端详情（例如设备类型和网络状况），以确定应向设备推流的视频数据块类型。转向服务（steering service）根据播放服务的信息确定 OCA，并构建用户连接所需的 URL。用户设备收到这些 URL 作为响应，并连接 OCA 开始视频流媒体播放。客户端设备运行自适应流媒体算法，根据可用网络带宽选择最佳视频数据块。图 <a data-type="xref" href="#ch20_figure_3_1734552295233903">#ch20_figure_3_1734552295233903</a> 展示了系统内容分发和观众检索的高层视图。</p>
+          <figure id="ch20_figure_3_1734552295233903">
+            <img src="images/sdoa_2003.png"/>
+            <figcaption>Open Connect 数据存储与检索</figcaption>
+          </figure>
+          <p>我们已分部分讨论了管道；现在让我们将所有步骤整合，得出最终系统架构及其在 AWS 云上的<a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="in video processing" data-secondary-sortas="video processing" data-startref="schema-video-process">&nbsp;</a>部署方案。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch20_launching_the_system_on_aws_1734552295246438">
+        <h1>在 AWS 上启动系统</h1>
+        <p>从高层来看，该系统是按顺序执行的一系列步骤的组合，每个步骤都依赖于上一步的输出。我们在 <a data-type="xref" href="#ch15_designing_a_web_crawler_and_search_engine_1734552293105400">#ch15_designing_a_web_crawler_and_search_engine_1734552293105400</a> 中针对网络爬虫系统讨论了类似的架构；视频处理系统也符合编排系统（orchestration system）的标准。我们可以利用任何编排框架来管理系统的端到端运行。编排周期中的每个步骤都是无状态（stateless）且幂等（idempotent）的，这意味着系统不维护先前执行的任何状态，且对相同输入始终返回完全相同的输出。让我们从 Day 0 架构开始讨论。</p>
+        <section data-type="sect2" id="ch20_day_0_architecture_1734552295246509">
+          <h2>Day 0 架构</h2>
+          <p>在<a data-type="xref" href="#part2">#part2</a>中，我们<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" data-tertiary="Day 0 architecture" id="use-case-video-process-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-secondary="Day 0 architecture" id="video-process-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for video processing" data-secondary-sortas="video processing" id="dayzero-video">&nbsp;</a>探索了多种 AWS 服务，这些服务可以满足客户在不同业务场景下的需求。与往常一样，我们将尝试使用全托管 AWS 服务来快速启动系统，因此让我们确定哪些服务在流媒体服务管道的不同步骤中会有所帮助。为管理端到端编排，我们可以利用 <a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a> 中讨论的 AWS Step Functions，存储需求可由 S3 和 DynamoDB 满足。</p>
+          <div data-type="note">
+            <p>我们在<a data-type="xref" href="#part3">#part3</a>中广泛使用 DynamoDB 来满足存储需求，因为它适合大多数使用场景。在大多数情况下，多种数据库都能满足使用需求，我们建议根据您的专业知识也考虑其他产品（例如 Amazon Keyspaces）。</p>
+          </div>
+          <p>AWS 提供<a href="https://oreil.ly/CNnt_">多项服务以支持直播视频流</a>，对于构建视频处理管道而言最重要的服务是 <a contenteditable="false" data-type="indexterm" data-primary="Elemental MediaConvert">&nbsp;</a><a class="orm:hideurl" href="https://oreil.ly/pdg-J">AWS Elemental MediaConvert</a>。该服务将源视频转换为多种格式，使其可在不同类型的设备上进行流媒体播放——这是核心视频编码任务。Elemental MediaConvert 以源视频作为输入，将视频编码为不同格式，并将编码后的视频存储到 S3。为了实现更快的流媒体播放，我们可以利用 Amazon CloudFront 作为 CDN 解决方案，将视频存储在距用户较近的位置。</p>
+          <p>进一步阐述整体架构（如图 <a data-type="xref" href="#ch20_figure_4_1734552295233924">#ch20_figure_4_1734552295233924</a> 所示）：视频上传系统支持用户上传视频并将视频存储在 S3 中。Elemental MediaConvert 从 S3 获取视频，将其转换为不同格式，并再次将编码后的视频存储到 S3。为确保内容根据用户位置和兴趣提供，缓存管理服务将内容推送到 CloudFront。整个编码管道由 Step Functions 管理，我们将使用 DynamoDB 进行元数据存储。</p>
+          <figure id="ch20_figure_4_1734552295233924">
+            <img src="images/sdoa_2004.png"/>
+            <figcaption>Day 0 架构</figcaption>
+          </figure>
+          <p>我们在 <a data-type="xref" href="#ch20_content_distribution_1734552295246367">#ch20_content_distribution_1734552295246367</a> 中讨论了 DRM 保护及其对视频流媒体服务的重要性。<a href="https://aws.amazon.com/mediapackage">AWS Elemental MediaPackage 服务</a>可以帮助保护内容并将其分发到 CloudFront。</p>
+          <p>现在，让我们看看使用 AWS 托管服务管理直播活动的架构。视频直接从视频生产<a contenteditable="false" data-type="indexterm" data-primary="Elemental MediaLive">&nbsp;</a>端使用 AWS Elemental MediaLive 上传。如前所述，由高质量摄像机拍摄的视频内容会占用大量存储空间，上传此类视频进行分发可能耗时较长。在直播场景下，延迟至关重要，上传时间应尽可能短（Amazon Prime Video 的目标是将周四夜橄榄球赛的流媒体延迟控制在 10 秒以内）。Elemental MediaLive 在实现低延迟方面发挥着关键作用，它在视频源端提供视频编码和压缩功能。高质量视频内容在视频源端实时编码，然后上传到云端进行进一步处理和分发。</p>
+          <p>用于加速上传的下一项技术<a contenteditable="false" data-type="indexterm" data-primary="Direct Connect">&nbsp;</a>是 AWS Direct Connect，它确保视频流通过 AWS 全球网络上传，不会面临公共互联网的拥塞挑战。请参阅 <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a> 以温习对 Direct Connect 及类似网络服务的理解。</p>
+          <p>视频流到达 AWS 云后，由<a contenteditable="false" data-type="indexterm" data-primary="Elemental MediaPackage">&nbsp;</a>Elemental MediaPackage 负责内容保护和分发。MediaPackage 帮助完成视频清单文件（manifest）创建、通过 <a class="orm:hideurl" href="https://oreil.ly/x3YPZ">Google Widevine</a> 和 <a class="orm:hideurl" href="https://oreil.ly/_xGbn">Microsoft PlayReady</a> 等 DRM 实现内容保护，以及针对不同设备类型的内容分发，例如适用于苹果设备的 <a class="orm:hideurl" href="https://oreil.ly/ydV1e">HTTP 实时流协议（HTTP Live Streaming，HLS）</a>和适用于 Android 设备的 <a class="orm:hideurl" href="https://oreil.ly/-jRBJ">MPEG-DASH</a>。内容存储到 S3 作为原始内容（origin），然后通过 CloudFront 服务分发给最终观众。使用 AWS 服务进行直播的视频处理管道架构如图 <a data-type="xref" href="#ch20_figure_5_1734552295233946">#ch20_figure_5_1734552295233946</a> 所示。</p>
+          <figure id="ch20_figure_5_1734552295233946">
+            <img src="images/sdoa_2005.png"/>
+            <figcaption>直播视频处理管道架构</figcaption>
+          </figure>
+          <p>在图 <a data-type="xref" href="#ch20_figure_5_1734552295233946">#ch20_figure_5_1734552295233946</a> 中，我们使用了 S3 作为视频存储解决方案。AWS<a contenteditable="false" data-type="indexterm" data-primary="Elemental MediaStore">&nbsp;</a>还提供 Elemental MediaStore 服务，该服务专门针对媒体内容的存储进行了设计和优化，能够以低延迟提供直播内容服务。</p>
+          <p>现在，让我们对视频处理管道的 Day 0 架构进行扩展。</p>
+        </section>
+        <section data-type="sect2" id="ch20_scaling_to_millions_and_beyond_1734552295246576">
+          <h2>扩展到百万级及以上</h2>
+          <p>扩展视频处理管道最重要的参数是执行时间。系统应能够在尽可能短的时间内对视频进行编码和验证，并使视频可供不同设备类型进行流媒体播放。</p>
+          <p>让我们从图 <a data-type="xref" href="#ch20_figure_4_1734552295233924">#ch20_figure_4_1734552295233924</a> 所示架构的最顶层开始。我们已经在 <a data-type="xref" href="#ch15_designing_a_web_crawler_and_search_engine_1734552293105400">#ch15_designing_a_web_crawler_and_search_engine_1734552293105400</a> 中讨论了<a contenteditable="false" data-type="indexterm" data-primary="Step Functions">&nbsp;</a>AWS Step Functions 的可扩展性；它在扩展方面没有特定瓶颈。这里唯一需要考虑的点是成本。Step Functions 的定价基于状态转换次数和 Step Functions 的类型（更多详细信息见 <a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a>），随着系统加载的内容量随时间增加，成本可能显著增长。初期使用 Step Functions 可以开箱即用地获得重试和更好的调试能力；之后，可以评估是否需要自定义编排工作流引擎。</p>
+          <p>我们在架构中使用的另一个托管服务是 Elemental MediaConvert，用于视频编码。它被设计为在大规模场景下运行，AWS 没有设置任何限制，但这里需要考虑的是运维所需的控制权。它是一个很好的起点，但你依赖 AWS 做出编码决策。我们在前面几节中讨论过，视频数据块大小不是固定的，而是根据视频类型优化的，运行验证的情况也类似。将这些逻辑保留在内部有助于完全控制实现逻辑，并消除对 AWS 服务的依赖。</p>
+          <p>我们在 <a data-type="xref" href="#ch20_starting_with_the_design_1734552295246107">#ch20_starting_with_the_design_1734552295246107</a> 中将视频处理管道分解为一系列步骤。所有这些步骤都由<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" data-tertiary="scaling architecture" id="use-case-video-process-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-secondary="scaling architecture" id="video-process-scale">&nbsp;</a>独立的微服务执行。这确保了各服务可以独立扩展并进行创新，而不会影响或阻塞其他组件。我们可以参考 <a href="https://oreil.ly/dDOwG">Netflix 架构</a>，根据操作划分组件。以下是每个服务及其负责的特定任务集列表：</p>
+          <dl>
+            <dt>视频上传服务</dt>
+            <dd>
+              <p>该服务处理来自内容制片公司的视频上传，并将其持久化到 S3。</p>
+            </dd>
+            <dt>视频检查服务</dt>
+            <dd>
+              <p>该服务将从制片公司接收的视频拆分为数据块，对数据块进行检查，并标记任何问题。该服务还从视频数据块中提取元数据，供管道后续阶段使用。</p>
+            </dd>
+            <dt>复杂度分析服务</dt>
+            <dd>
+              <p>该服务对源视频进行分析，以确定最优的编码方案（encoding recipe）。它还分别与视频编码服务和画质服务进行通信，执行<a href="https://oreil.ly/dRsBV">预编码（preencoding）</a>和质量操作。编码和质量服务的结果会被持久化，以便在管道的后续阶段使用。</p>
+            </dd>
+            <dt>阶梯生成服务</dt>
+            <dd>
+              <p>该服务从复杂度分析服务接收复杂度数据，并为给定的编码族（H.264、AV1 等）创建码率阶梯（bitrate ladder）。复杂度分析服务和阶梯生成服务协同工作，生成最终的编码方案，这些方案随后被视频编码服务使用。</p>
+            </dd>
+            <dt>视频编码服务</dt>
+            <dd>
+              <p>该服务以源视频和编码方案作为输入，在输出中生成编码后的视频。</p>
+            </dd>
+            <dt>视频验证服务</dt>
+            <dd>
+              <p>该服务对编码后的视频运行验证。验证基于针对视频设定的预期进行，例如编码方案中的属性以及编解码器规范的符合性要求。在编解码器语境下，<em>符合性（conformance）</em>是指编解码器是否满足定义的标准。</p>
+            </dd>
+            <dt>视频质量服务</dt>
+            <dd>
+              <p>该服务通过比较源视频和编码后的视频来计算质量分数（VMAF）。</p>
+            </dd>
+          </dl>
+          <p>所有服务如图 <a data-type="xref" href="#ch20_figure_6_1734552295233967">#ch20_figure_6_1734552295233967</a> 所示。它们由工作流编排器（workflow orchestrator）管理其运行。工作流编排器（例如 <a href="https://github.com/Netflix/conductor">Netflix Conductor</a> 和 <a href="https://github.com/Netflix/maestro">Maestro</a>）向特定服务发送所需输入，并收集输出，以所需格式传递给其他服务。输出可能是简单的小型元数据，也可能是大型文件，工作流编排器可以相应地决定如何将数据共享给其他服务。例如，大型文件可以转储到 S3，URL 可以被共享给相应服务。</p>
+          <figure id="ch20_figure_6_1734552295233967">
+            <img src="images/sdoa_2006.png"/>
+            <figcaption>大规模视频编码与分发</figcaption>
+          </figure>
+          <p>视频分发服务获取编码后的视频，应用打包处理，并将其存储到 S3。只有将视频组合在一起才有意义，这些数据通过存储在 Cassandra 或 DynamoDB 等元数据数据库中的清单文件（manifest）进行维护。缓存管理服务负责将数据分发到距用户较近的位置，并持续监控 CDN 实例（Netflix 的情况下为 OCA）的正确性和健康状况。开发和部署类似 Netflix 托管 OCA 的架构会带来大量运维开销，我们建议考虑 Amazon CloudFront 等云产品进行内容缓存。CloudFront 部署在所有主要城市的 AWS 托管边缘站点上，并被媒体行业的许多<a href="https://oreil.ly/HvP8w">客户</a>所使用。</p>
+          <p>源护盾（Origin Shield）是作为 CloudFront<a contenteditable="false" data-type="indexterm" data-primary="CloudFront" id="cloudfront-ch20">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Origin Shield" id="origin-shield">&nbsp;</a>一部分提供的另一项功能，用于增强其缓存能力。顾名思义，<em>源护盾</em>是位于原始存储前面的一个附加层（或"盾"），有助于提高缓存命中率并降低原始服务器的负载。用户通过 CloudFront 的第一接触点是边缘站点（edge locations）或接入点（PoPs）。如果数据未缓存在边缘站点，请求会尝试从<a contenteditable="false" data-type="indexterm" data-primary="regional edge caches (RECs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RECs (regional edge caches)">&nbsp;</a>区域边缘缓存（regional edge caches，REC）检索数据，如果 REC 也没有数据，则最终从原始存储检索。一旦引入源护盾，它将充当原始存储与其他 REC 之间的缓存层，因此如果数据未缓存在某个 REC，则会从源护盾检索，如图 <a data-type="xref" href="#ch20_figure_7_1734552295233988">#ch20_figure_7_1734552295233988</a> 所示。简而言之，用户频繁访问的数据（即视频数据块）缓存在边缘站点，用户请求时即可提供服务。</p>
+          <figure id="ch20_figure_7_1734552295233988">
+            <img src="images/sdoa_2007.png"/>
+            <figcaption>配备源护盾的 Amazon CloudFront</figcaption>
+          </figure>
+          <p>让我们进一步思考内容消费的高流量场景。从边缘站点向用户位置传输视频内容会消耗大量互联网带宽，如果用户数量过多，高流量可能导致网络拥塞（network congestion）。网络拥塞<a contenteditable="false" data-type="indexterm" data-primary="congestion avoidance">&nbsp;</a>可能导致视频质量下降。像 OCA 这样的架构有助于将内容进一步靠近用户位置。我们可以采取另外两个步骤来避免网络拥塞场景：</p>
+          <ul>
+            <li>
+              <p>与 ISP 合作，确保其内部网络具备足够的扩展能力，高流量需求不会在其网络内部造成网络拥塞。</p>
+            </li>
+            <li>
+              <p>在 ISP 网络内部署缓存设备。视频内容缓存在缓存设备上，并根据请求向用户设备流式传输。这种架构在大型直播活动中确实很有帮助：后端系统基本上向 ISP 发送单条视频流，然后 ISP 将其扇出（fan out）到所有已连接的设备。</p>
+            </li>
+          </ul>
+          <p>视频流通过专用 AWS 骨干网络传输到 CloudFront 边缘站点，与普通互联网流量隔离——使其速度更快——然后可以与 ISP 建立专用对等连接，以避免任何网络拥塞。CloudFront 还推出了<a href="https://oreil.ly/AXqrt">嵌入式接入点（embedded PoPs）</a>，直接在 ISP 设施内缓存内容，类似于 Netflix 托管的 OCA。嵌入式接入点设计为低功耗、每台设备 128 TB 存储，并提供最高<a contenteditable="false" data-type="indexterm" data-primary="CloudFront" data-startref="cloudfront-ch20">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Origin Shield" data-startref="origin-shield">&nbsp;</a>70 Gbps 的高吞吐量。</p>
+          <p>应用程序部署和管理的一个重要方面是监控——这从 Day 0 开始就是确保系统健康所必需的。我们已经介绍了使用 Amazon CloudWatch 及其功能来管理应用程序日志、指标和告警。图 <a data-type="xref" href="#ch20_figure_6_1734552295233967">#ch20_figure_6_1734552295233967</a> 中呈现的架构由多个微服务组成，任何一个都可能发生问题。像 AWS Step Functions 这样的编排系统有助于通过错误消息找出状态机（state machine）失败的确切步骤。</p>
+          <p>就系统的通用架构而言，对前端应用程序的请求可能跨越分布式环境中的多个系统来收集响应。在分布式环境中进行适当的请求追踪使调试问题变得更加容易和快速。当我们后续想要排查任何流媒体问题时，这一点变得尤为重要——工程师需要调试多个服务，跨团队协调非常困难。我们可以使用 <a href="https://oreil.ly/1MZ0c">AWS X-Ray</a>、<a href="https://zipkin.io">Zipkin</a> 和 <a href="https://opentracing.io">OpenTracing</a> 等工具在分布式系统架构中对应用请求进行分布式追踪（distributed tracing）。实现分布式追踪的关键设计原则是在应用程序之间使用相同的<em>请求 ID</em>（服务接收到请求时用于处理该请求的唯一标识符）。应用程序应将请求 ID 作为请求头的一部分传递，接收服务应将其用于处理<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" data-tertiary="scaling architecture" data-startref="use-case-video-process-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-secondary="scaling architecture" data-startref="video-process-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" data-tertiary="Day 0 architecture" data-startref="use-case-video-process-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-secondary="Day 0 architecture" data-startref="video-process-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for video processing" data-secondary-sortas="video processing" data-startref="dayzero-video">&nbsp;</a>该请求。</p>
+        </section>
+        <section data-type="sect2" id="ch20_day_n_architecture_1734552295246644">
+          <h2>Day N 架构</h2>
+          <p>我们将扩展<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" data-tertiary="Day N architecture" id="use-case-video-process-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-secondary="Day N architecture" id="video-process-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for video processing" data-secondary-sortas="video processing" id="dayn-video">&nbsp;</a>上一节的思路，以了解微服务在 AWS 云上的部署视图。视频处理管道的架构将与 <a data-type="xref" href="#ch15_designing_a_web_crawler_and_search_engine_1734552293105400">#ch15_designing_a_web_crawler_and_search_engine_1734552293105400</a> 中讨论的架构类似，使用 AWS Step Functions 编排工作流，并增加一个视频上传组件来触发工作流。让我们以图 <a data-type="xref" href="#ch20_figure_6_1734552295233967">#ch20_figure_6_1734552295233967</a> 中的架构为基础，通过以下步骤扩展为 AWS 上的端到端编排：</p>
+          <ol>
+            <li>
+              <p>内容制片公司通过视频上传服务上传视频，该服务将视频文件保存到 S3。</p>
+            </li>
+            <li>
+              <p>S3 上的上传完成会触发 Step Functions 工作流，调用一系列微服务执行特定操作。可以使用 <a href="https://oreil.ly/ovFRd">Amazon EventBridge</a> 在 S3 的"对象创建（object created）"操作上配置事件触发器。</p>
+            </li>
+            <li>
+              <p>第一个被调用的服务是视频检查服务，然后如前所述依次调用其他服务，例如复杂度分析服务和视频编码服务。这些服务的输出被用作触发下一个服务的触发点。</p>
+            </li>
+          </ol>
+          <p>图 <a data-type="xref" href="#ch20_figure_8_1734552295234008">#ch20_figure_8_1734552295234008</a> 展示了视频处理管道的所有微服务运行在单个 EKS 集群中的情形。对于选择独立 EKS 集群还是单一集群，没有硬性建议；这在很大程度上取决于规模、隔离需求和合规约束等因素，如 <a data-type="xref" href="#ch14_designing_a_url_shortener_service_1734552292687677">#ch14_designing_a_url_shortener_service_1734552292687677</a> 中所讨论的。图示展示了简化的部署表示以便于理解，但服务 EKS Pod 实际上部署在不同的可用区（AZ），并启用了自动扩缩容，以确保系统的可靠性和可用性。考虑到 Netflix 或 YouTube 的内容制作规模，我们建议托管独立的 EKS 集群，因为这些集群将由独立团队拥有，可确保最大程度的资源隔离。</p>
+          <figure id="ch20_figure_8_1734552295234008">
+            <img alt="A diagram of a computer&#10;&#10;Description automatically generated" src="images/sdoa_2008.png"/>
+            <figcaption>Day N 架构</figcaption>
+          </figure>
+          <p>EKS 部署中遵循的另一种范式是创建独立的命名空间（namespace）来部署服务。创建不同的命名空间为服务使用的资源提供了清晰的隔离边界，尽管整体控制平面仍然使用公共资源池。请回顾 <a data-type="xref" href="#ch07_containerization_orchestration_and_deployments_1734552288630240">#ch07_containerization_orchestration_and_deployments_1734552288630240</a>，以深入了解<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" data-tertiary="Day N architecture" data-startref="use-case-video-process-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-secondary="Day N architecture" data-startref="video-process-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for video processing" data-secondary-sortas="video processing" data-startref="dayn-video">&nbsp;</a>Kubernetes 架构。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch20_conclusion_1734552295246716">
+        <h1>结语</h1>
+        <p>本章讨论了 Netflix、Amazon Prime Video 和 YouTube 等在线内容制作平台的视频处理（摄取）系统架构。回顾整体架构的最重要收获——也是设计任何新系统时应遵循的通用原则——是快速失败（fail-fast）行为。如果系统能够在最早阶段发现问题，就能减少整个系统中的接触点并加快调试速度。我们在视频处理管道的所有阶段都实现了质量检查，以确保最佳的视频质量。</p>
+        <p>在 <a data-type="xref" href="#ch01_system_design_trade_offs_and_guidelines_1734552285979675">#ch01_system_design_trade_offs_and_guidelines_1734552285979675</a> 中，我们讨论了在分布式系统中做出假设的谬误，例如假设网络带宽无限可用。视频处理管道和大规模内容分发的架构促使我们更深入地思考这些谬误。例如，网络拥塞问题通过将内容移至距用户最近的位置并将其<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="video processing" data-startref="use-case-video-process">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="video processing use case" data-seealso="media content storage" data-startref="video-process">&nbsp;</a>存储在那里进行分发来解决。</p>
+        <p>本章向你介绍了一个异步、事件驱动的系统，其中毫秒级别的执行延迟很重要，但并非关键。在下一章中，我们将探索在线股票交易应用程序的架构，它是一个实时的、对延迟敏感的系统。</p>
+      </section>

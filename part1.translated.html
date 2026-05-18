@@ -1,0 +1,55 @@
+<div xmlns="http://www.w3.org/1999/xhtml" data-type="part" id="part1" class="pagenumrestart">
+<h1>系统设计基础</h1>
+
+<blockquote data-type="epigraph">
+<p>完美并非无物可加，而是无物可删。</p>
+
+<p data-type="attribution">安托万·德·圣-埃克苏佩里</p>
+</blockquote>
+
+<p>本书第一部分将为你奠定系统设计的坚实基础，深入剖析支撑各类软件系统的基本原理——从权衡取舍，到选择合适工具与技术的标准，进而确定正确的架构模式。</p>
+
+<p>学完第一部分，你将能够：</p>
+
+<ul>
+	<li>
+	<p>掌握大规模分布式系统中固有的系统权衡，并学会如何在可扩展性、可靠性与<span class='keep-together'>可维护性</span>等相互冲突的需求之间取得平衡</p>
+	</li>
+	<li>
+	<p>清晰理解数据存储的各类选择，包括文件存储、块存储和对象存储，以及关系数据库与非关系数据库及其扩展方法</p>
+	</li>
+	<li>
+	<p>掌握通过缓存和内容分发网络（CDN）在存储和计算层面实现低延迟、高吞吐量的技术</p>
+	</li>
+	<li>
+	<p>学会利用负载均衡器、API 网关和反向代理对系统进行水平扩展</p>
+	</li>
+	<li>
+	<p>厘清开放系统互连（OSI）模型和 TCP/IP 模型各层中通信与网络协议的选择，并掌握在不同场景下的选用时机</p>
+	</li>
+	<li>
+	<p>熟悉行业中常用的系统设计架构模式，并学会如何将其灵活适配到各种系统需求中</p>
+	</li>
+	<li>
+	<p>深入了解与不同系统设计范式相对应的 AWS 服务，这些服务将在后续章节中进一步探讨</p>
+	</li>
+</ul>
+
+<p><a data-type="xref" href="#ch01_system_design_trade_offs_and_guidelines_1734552285979675">#ch01_system_design_trade_offs_and_guidelines_1734552285979675</a> 将带你走入大规模分布式系统权衡取舍的世界。我们将探讨可靠性、可扩展性和可维护性等核心概念，并阐明这些权衡产生的根源。我们将通过分布式计算谬误破除常见误区，并深入探讨空间与时间、延迟与吞吐量、性能与可扩展性、一致性与可用性等关键选择。我们还将提供来自多年系统设计实践的实用指导和策略，给出切实可行的方法来提升系统性能与效率。</p>
+
+<p><a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a> 将向你介绍不同类型的数据存储，包括文件存储、块存储和对象存储。本章还将涵盖关系数据库的概念及其架构，并深入讲解关系数据库的扩展与优化技术，包括分区、索引、复制、联合、分片和反范式化等。</p>
+
+<p><a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a> 将揭示非关系数据库的架构，涵盖键值数据库、宽列数据库、文档数据库和图数据库，并探讨无主架构如何通过基于法定人数的复制、一致性哈希和最终一致性等机制实现可扩展性。</p>
+
+<p><a data-type="xref" href="#ch04_caching_policies_and_strategies_1734552287178593">#ch04_caching_policies_and_strategies_1734552287178593</a> 将带你走进缓存的世界，探讨横跨不同层级的多种缓存策略，从客户端和服务器层到应用层和数据库层。我们将深入剖析核心缓存方法，包括直写、读穿、提前刷新、写回和旁路缓存。此外，我们还将揭示推送型和拉取型 CDN 在降低延迟、提升内容分发效率方面的潜力。</p>
+
+<p><a data-type="xref" href="#ch05_load_balancing_approaches_and_techniques_1734552287463010">#ch05_load_balancing_approaches_and_techniques_1734552287463010</a> 将探讨负载均衡器、API 网关和反向代理，并深入讨论第 4 层（L4）网络扩展和第 7 层（L7）应用层扩展。粘性会话、正向代理和反向代理等概念将在本章中逐一呈现，带你领略构建可扩展、高弹性架构的精妙之处。</p>
+
+<p><a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a> 将为网络协议揭开神秘面纱，深入剖析 TCP/IP 与用户数据报协议（UDP），以及 HTTP、SMTP、可扩展消息与存在协议（XMPP）及其适用场景。你将全面理解同步与异步服务设计，并深入了解 REST、WebRTC 和 GraphQL 等标准。掌握这些通信概念，将使你在面对不同使用场景时做出更明智的选择。</p>
+
+<p><a data-type="xref" href="#ch07_containerization_orchestration_and_deployments_1734552288630240">#ch07_containerization_orchestration_and_deployments_1734552288630240</a> 聚焦容器化主题：Docker 容器的创建、管理与编排。你还将接触现代容器部署策略，从而应对现代云原生<span class='keep-together'>应用程序</span>的复杂性。</p>
+
+<p><a data-type="xref" href="#ch08_architectural_designs_and_patterns_1734552289324317">#ch08_architectural_designs_and_patterns_1734552289324317</a> 将涵盖各种架构设计与模式，从编排与协同的详细讲解开始，探讨异步架构、消息代理、消息队列和发布-订阅模式。随着你深入大规模软件工程设计，还将比较微服务与单体设计、无服务器架构、Saga 模式、事件溯源模式、大数据架构和领域驱动设计。</p>
+
+<p>在第一部分这段全面深入的系统设计旅程之后，你将具备充分的准备，能够运用这些原则和技术构建高效的大规模系统。<a href="#part2" data-type="xref">#part2</a> 将详细介绍各项 AWS 服务，在云架构的实际使用与权衡取舍中，将这些概念化为生动的实践。</p>
+</div>

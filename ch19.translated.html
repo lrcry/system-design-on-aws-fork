@@ -1,0 +1,459 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch19_designing_a_chat_application_1734552294951889">
+      <h1>设计聊天应用</h1>
+      <p>在 <a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a> 中，我们探讨了 <a contenteditable="false" data-type="indexterm" data-primary="real-time communications" data-seealso="chat applications">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" id="use-case-chat">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" id="chat-use-case">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="messaging system" data-seealso="chat applications">&nbsp;</a>多种网络协议和通信机制，用于构建近实时消息平台。即时通讯应用在全球范围内被广泛使用，既可以是 WhatsApp 或 Telegram 这样的独立应用，也可以作为 LinkedIn 或 Instagram 等社交网络应用中的一项内嵌功能。本章将学习如何设计大规模即时通讯应用，以实现近实时的快速通信，同时探讨 WhatsApp Messenger 的底层架构——该应用需要服务海量并发用户。让我们从聊天应用的系统需求开始。</p>
+      <section data-type="sect1" id="ch19_system_requirements_1734552294952085">
+        <h1>系统需求</h1>
+        <p>即时通讯 <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-tertiary="system requirements" id="use-case-chat-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-tertiary="system requirements" id="chat-use-case-require">&nbsp;</a>应用可支持各种各样的功能，但为保持简洁，我们选择构建有限的功能集，跳过语音和视频通话等功能。以下问题有助于我们确定最终需求：</p>
+        <dl>
+          <dt>应用支持哪些通信类型？</dt>
+          <dd>
+            <p>应用提供一对一消息、群组消息和广播消息。广播消息与群组消息的区别在于：广播频道中只有部分用户可以发送消息。</p>
+          </dd>
+          <dt>应用支持哪些内容类型？</dt>
+          <dd>
+            <p>应用允许用户分享文本、图片、视频和文档。随之而来的问题是视频文件是否有大小限制。为避免上传过大的媒体文件，系统将文件大小限制为 100 MB。</p>
+          </dd>
+          <dt>应用是否在服务器端存储所有消息，还是消息一旦送达用户就立即删除？</dt>
+          <dd>
+            <p>我们将构建一个类似 WhatsApp 的系统：消息成功送达用户后，即从服务器端删除。</p>
+          </dd>
+          <dt>系统是否包含已读回执功能？</dt>
+          <dd>
+            <p>展示用户的最后在线时间，以及所发消息的已读回执，是一个很实用的功能。已读回执可包括消息已送达应用服务器、已送达用户设备、已被用户阅读等状态。</p>
+          </dd>
+          <dt>系统是否支持端到端加密？</dt>
+          <dd>
+            <p>加密可确保消息只能被发送者和接收者读取，从而保障通信安全。我们将跳过加密支持的实现细节，但系统未来可以无障碍地支持该功能。</p>
+          </dd>
+          <dt>群组或广播消息的成员人数是否有上限？</dt>
+          <dd>
+            <p>我们将群组和广播消息的人数上限设为 1,024 人。在广播频道中，只有拥有管理员权限的人才能发送消息，其余成员只能查看。我们不限制管理员人数——若所有人都是管理员，广播频道实际上就等同于一个普通群组。</p>
+          </dd>
+          <dt>应用除即时通讯外，是否支持语音通话、视频通话或状态更新（类似 Instagram 故事）等功能？</dt>
+          <dd>
+            <p>应用仅专注于聊天功能，不支持任何额外功能。</p>
+          </dd>
+        </dl>
+        <p>接下来，我们来明确系统的功能性需求与非功能性需求。</p>
+        <section data-type="sect2" id="ch19_functional_and_nonfunctional_requirements_1734552294952165">
+          <h2>功能性需求与非功能性需求</h2>
+          <p>聊天应用 <a contenteditable="false" data-type="indexterm" data-primary="functional requirements" data-secondary="chat application">&nbsp;</a>支持的功能性需求如下：</p>
+          <ul>
+            <li>
+              <p>应用支持一对一消息、群组消息和广播消息。</p>
+            </li>
+            <li>
+              <p>支持文本、图片、视频和文档作为用户间通信的媒体类型。</p>
+            </li>
+            <li>
+              <p>用户可查看联系人列表中任意人员的在线状态（在线/离线）及最后在线时间。</p>
+            </li>
+            <li>
+              <p>已发送、已送达和已读消息应显示相应的已读回执。</p>
+            </li>
+            <li>
+              <p>用户移动设备收到新消息时，应有推送通知。</p>
+            </li>
+          </ul>
+          <p>接下来讨论<a contenteditable="false" data-type="indexterm" data-primary="nonfunctional requirements" data-secondary="chat application">&nbsp;</a>非功能性需求（NFR）：</p>
+          <ul>
+            <li>
+              <p>通信应近实时，延迟尽可能低。</p>
+            </li>
+            <li>
+              <p>系统应具备高可用性，并能应对持续增长的规模。</p>
+            </li>
+            <li>
+              <p>系统应能存储聊天消息，直至消息成功送达接收方。</p>
+            </li>
+          </ul>
+          <p>下一节将做一些假设，并推算系统预期需支撑的规模。</p>
+        </section>
+        <section data-type="sect2" id="ch19_system_scale_1734552294952243">
+          <h2>系统规模</h2>
+          <p>关于 <a contenteditable="false" data-type="indexterm" data-primary="scale (of system)" data-secondary="chat application">&nbsp;</a>系统需要支撑的规模，我们可以参考 WhatsApp 聊天应用的实际数据进行估算：</p>
+          <div data-type="equation">
+            <p>月活跃用户数 = 30 亿</p>
+            <p>每日消息发送量 = 1000 亿条 = 120 万条/秒</p>
+            <p>每日发送的文本、图片、视频数量 = 900 亿条文本、80 亿张图片、20 亿条视频</p>
+          </div>
+          <p>聊天应用同时支持一对一消息和群组消息。对于两个用户之间的直接消息，读写比约为 1:1；而群组消息的读写比则会偏高。由于目前没有 WhatsApp 平台群组数量的统计数据，我们粗略估计为 10 亿个群组。通常情况下，群组中活跃发言的用户很少，其余用户仅为只读浏览者，因此读写比合理估计为 90:10。</p>
+          <p>上述数据表明系统需要处理大量并发用户，系统应具备水平扩展能力，以便在峰值负载下依然平稳运行。单台服务器能够处理的连接数量，很大程度上取决于具体的实现方案，应通过充分的压力测试来确定。接下来，我们将深入探讨<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-tertiary="system requirements" data-startref="use-case-chat-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-tertiary="system requirements" data-startref="chat-use-case-require">&nbsp;</a>具体实现细节。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch19_starting_with_the_design_1734552294952372">
+        <h1>从设计开始</h1>
+        <p>从 <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-tertiary="architecture design" id="use-case-chat-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-tertiary="architecture design" id="chat-use-case-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="in chat application" data-secondary-sortas="chat application" id="schema-chat">&nbsp;</a>最简化的视角来看，用户向聊天服务器发送一条带有目标接收方信息的消息，聊天服务器再将消息送达接收方，如图 <a data-type="xref" href="#ch19_figure_1_1734552294935626">#ch19_figure_1_1734552294935626</a> 所示。若用户此时未连接互联网，消息可能会暂存于数据库中。</p>
+        <p>在用户之间开始通信之前，首先需要完成用户注册，并确定可向哪些用户发送消息。这一过程因应用场景而异：例如，在 WhatsApp 上通信需要对方的注册手机号，而在 Instagram 上则需要对方的用户名。本章将参照 WhatsApp 的方案，使用手机号作为用户注册的唯一标识。用户通过手机号完成验证，若手机号变更则需重新注册。用户服务负责用户注册，以及后续收发消息时的身份验证。</p>
+        <figure id="ch19_figure_1_1734552294935626">
+          <img src="images/sdoa_1901.png"/>
+          <figcaption>聊天应用高层架构概览</figcaption>
+        </figure>
+        <p>接下来，让我们深入探讨消息传递架构，明确最优网络协议的选择以及消息存储方案。</p>
+        <section data-type="sect2" id="ch19_messaging_architecture_1734552294952476">
+          <h2>消息传递架构</h2>
+          <p>即时通讯系统的一项核心需求是近实时行为：通信应像面对面交谈一样即时。为此，明确选用哪种网络协议（或技术）至关重要。常见的协议包括 XMPP 和 MQTT，其架构细节可参考 <a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a>。下面我们来分析这两种协议各自的优势。</p>
+          <section data-type="sect3" id="ch19_protocol_selection_1734552294952551">
+            <h3>协议选型</h3>
+            <p>基于 <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-tertiary="protocol selection" id="use-case-chat-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-tertiary="protocol selection" id="chat-use-case-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Extensible Messaging and Presence Protocol (XMPP)" id="extensible-message-protocol-ch19">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="XMPP (Extensible Messaging and Presence Protocol)" id="xmpp-ch19">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="real-time communications" data-secondary="XMPP" id="real-time-comms-xmpp-ch19">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="XMPP" id="chat-xmpp-ch19">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Message Queuing Telemetry Transport (MQTT)" id="messaging-queue-telemetry-ch19">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MQTT (Message Queuing Telemetry Transport)" id="mqtt-ch19">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="real-time communications" data-secondary="MQTT" id="real-time-comms-mqtt-ch19">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="choosing for chat application" id="protocol-choose-chat">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="choosing" data-secondary="protocols for chat application" id="choose-protocol-chat">&nbsp;</a>第 6 章的讨论，聊天系统需要通过 WebSocket 在用户和聊天服务器之间维持持久连接。其他从聊天服务器获取新消息的机制（如轮询）存在较高的延迟和资源消耗（参见第 16 章）。由于需要维持持久连接，所选协议必须轻量，以确保设备资源消耗最小（节省流量和电量）。</p>
+            <div data-type="note">
+              <p>影响网络消息传输速度的另一个重要因素是消息负载的大小，而负载大小在很大程度上取决于数据格式。JSON 格式的负载体积较大，一种解决方案是数据压缩，另一种是改用 Thrift 或 Protocol Buffers（Protobuf）等数据格式。</p>
+            </div>
+            <p>假设用户连接到互联网后，聊天应用通过 HTTPS 与聊天服务器建立连接。此时有两种可能的实现方案：</p>
+            <ul>
+              <li>
+                <p>第一次调用拉取用户自上次在线以来的所有消息，随后建立持久双向连接以接收增量更新。</p>
+              </li>
+              <li>
+                <p>第一次调用将用户注册到聊天服务器，之后所有消息（包括离线期间的消息和新消息）均通过持久双向<span class='keep-together'>连接</span>发送。</p>
+              </li>
+            </ul>
+            <p>MQTT 和 XMPP 这两种协议被不同的即时通讯应用广泛用于支撑大规模用户：Facebook Messenger 使用 MQTT，WhatsApp 使用 XMPP。XMPP 天生为消息通信而设计，MQTT 则专为资源受限环境下的机器间通信而生。两种协议都很轻量，但 MQTT 相对更轻，运行在传输层。XMPP 在消息架构功能方面比 MQTT 更丰富，但也需要更多资源。</p>
+            <p>此外，还可以完全不使用 XMPP 或 MQTT，而是依赖客户端设备与服务器之间基于 HTTPS 的纯 WebSocket 连接。这种方案会在系统侧引入额外的工作量——而这些工作本可以由特定协议原生支持，例如 XMPP 内置的用户在线状态功能。这些协议同样支持持久连接，利用它们的内建特性并在其基础上构建，是一个很好的选择。接下来，我们将探讨构建<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-tertiary="protocol selection" data-startref="use-case-chat-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-tertiary="protocol selection" data-startref="chat-use-case-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Extensible Messaging and Presence Protocol (XMPP)" data-startref="extensible-message-protocol-ch19">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="XMPP (Extensible Messaging and Presence Protocol)" data-startref="xmpp-ch19">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="real-time communications" data-secondary="XMPP" data-startref="real-time-comms-xmpp-ch19">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="XMPP" data-startref="chat-xmpp-ch19">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Message Queuing Telemetry Transport (MQTT)" data-startref="messaging-queue-telemetry-ch19">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MQTT (Message Queuing Telemetry Transport)" data-startref="mqtt-ch19">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="real-time communications" data-secondary="MQTT" data-startref="real-time-comms-mqtt-ch19">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="choosing for chat application" data-startref="protocol-choose-chat">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="choosing" data-secondary="protocols for chat application" data-startref="choose-protocol-chat">&nbsp;</a>一对一聊天功能的系统架构细节。</p>
+          </section>
+          <section data-type="sect3" id="ch19_direct_messaging_1734552294952633">
+            <h3>直接消息</h3>
+            <p>上一节 <a contenteditable="false" data-type="indexterm" data-primary="direct messaging" id="direct-messaging">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="user connections" id="user-connect">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-tertiary="direct messaging" id="use-case-chat-dms">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-tertiary="direct messaging" id="chat-use-case-dms">&nbsp;</a>提到，用户与聊天应用服务器之间需要维持双向持久连接。为了让用户 A 向用户 B 发送消息，系统需要能够确定连接池中的哪台具体服务器持有该用户的连接。消息从用户 A 送达用户 B 的流程如图 <a data-type="xref" href="#ch19_figure_2_1734552294935661">#ch19_figure_2_1734552294935661</a> 所示，分为以下几个步骤：</p>
+            <ol>
+              <li>
+                <p>用户 A 设备联网后，向聊天前端服务发起连接请求。</p>
+              </li>
+              <li>
+                <p>聊天前端服务将请求转发给用户服务，完成用户身份验证。</p>
+              </li>
+              <li>
+                <p>系统与用户设备建立持久连接，并在数据库中记录分配给该设备的服务器 ID。</p>
+              </li>
+              <li>
+                <p>用户 B 重复步骤 1 和步骤 2。</p>
+              </li>
+              <li>
+                <p>用户 A 向聊天前端服务发送一条消息，并指定用户 B 为目标接收方。</p>
+              </li>
+              <li>
+                <p>系统从数据库中查询用户 B 所在的服务器 ID（如果用户 B 在线），并将消息发送到用户 B 的设备。</p>
+              </li>
+              <li>
+                <p>消息成功送达用户 B 设备后，系统通过同一条持久双向连接发送确认回执，并将其转发给用户 A 的设备。消息已读确认的工作机制与此相同。</p>
+              </li>
+            </ol>
+            <figure id="ch19_figure_2_1734552294935661">
+              <img src="images/sdoa_1902.png"/>
+              <figcaption>两个用户之间的直接消息传递</figcaption>
+            </figure>
+            <p>当通信双方均在线时，无需存储消息，可以直接送达目标接收方。若接收方处于离线状态，系统会通过独立的离线组件暂存消息。用户 ID 与服务器 ID 的映射数据库还记录了用户是否在线以及最后活跃时间。这部分数据可通过简单的键值型数据库提供服务，例如 Amazon DynamoDB 或搭载 Redis 的 Amazon ElastiCache，用于存储用户元数据，如图 <a data-type="xref" href="#ch19_figure_3_1734552294935685">#ch19_figure_3_1734552294935685</a> 所示。简而言之，我们需要一套连接管理机制，来高效地服务海量并发用户，并将用户合理分配到不同服务器。</p>
+            <figure id="ch19_figure_3_1734552294935685">
+              <img src="images/sdoa_1903.png"/>
+              <figcaption>连接用户池管理服务</figcaption>
+            </figure>
+            <div data-type="note">
+              <p>系统需要能够处理网络中断。假设网络出现抖动，导致与服务器的连接间歇性断开，这可能会引起用户在线状态在"在线"和"离线"之间频繁切换。系统可以通过与用户设备定期发送心跳包来解决这个问题，从而确认设备仍与聊天服务器保持连接。</p>
+            </div>
+            <p>用户连接应由运行中的服务器上的线程或进程来管理。为确保单台服务器能够支撑大量连接，该进程/线程应尽可能轻量。操作系统进程的开销并不算轻量，因此我们需要在其上层探索一些替代方案，以辅助系统架构中的连接管理实现。</p>
+            <p><em>Actor 模型</em>是一种 <a contenteditable="false" data-type="indexterm" data-primary="actor model" id="actor-model">&nbsp;</a>概念模型，旨在以最少的资源支持大量并发连接。Actor 模型可以由编程语言原生支持，也可以借助为该语言构建的框架或库来实现。我们将在<a href="#ch19_whatsapp_architecture_with_erlang_1734552294952825">「WhatsApp 架构」一节</a>中介绍支持 Actor 模型的 Erlang 编程语言及其 Erlang 进程机制。其他语言中也有类似实现，例如 <a href="https://oreil.ly/-LAGk">Go 中的 goroutine</a>、<a href="https://oreil.ly/qMyvF">Kotlin 中的协程</a>以及 <a href="https://oreil.ly/trZ4o">Java 中的虚拟线程</a>。</p>
+            <p>Actor 模型有助于管理大量用户连接。<a href="https://oreil.ly/toJyG">Akka</a> 是面向 Java 和 Scala 的 Actor 模型实现之一，<a href="https://oreil.ly/ya6Rg">Play 框架</a>则是一个可用于管理 Akka Actor 模型与 WebSocket 集成的工具，从而提供消息传递功能。借助这些框架构建应用，可以在 Actor 模型之上快速开发，无需从零开始实现所有功能。</p>
+            <p class="pagebreak-before less_space">Actor 模型的主要特性如下：</p>
+            <ul>
+              <li>
+                <p><em>Actor</em> 是一个极小的对象，是系统中计算的基本单元。</p>
+              </li>
+              <li>
+                <p>每个 Actor 相互隔离，不与其他 Actor 共享内存。这一特性使得并发连接管理非常便捷，无需对资源进行显式加锁。</p>
+              </li>
+              <li>
+                <p>每个 Actor 有一个专属的邮箱（FIFO 队列），用于接收来自其他 Actor 的消息，作为 Actor 间的通信信道。</p>
+              </li>
+              <li>
+                <p>Actor 具有关联的状态和行为，行为定义了收到新消息后修改状态的逻辑。</p>
+              </li>
+              <li>
+                <p>Actor 完全解耦，以异步方式工作，每次只处理一条消息。为执行所需工作，Actor 被分配一个轻量线程，根据消息的行为定义来修改状态。这种架构模式的优势在于：线程不会被阻塞在整个请求的执行过程中（不同于同步系统）。Actor 完成工作后，线程立即释放，可被分配给其他 Actor。这使得系统能够以相同的硬件配置创建更多 Actor，并以更少的线程执行它们，从而优化整体资源利用率。</p>
+              </li>
+              <li>
+                <p>Actor 可以创建子 Actor 并对其进行监督（充当监督 Actor）。监督机制在最顶层处理工作执行失败的情况。</p>
+              </li>
+            </ul>
+            <p>在单台机器上，Actor 数量与线程数量的比例可能相差悬殊。对应到聊天应用架构，每个 Actor 负责维护与一个用户设备的持久连接，但只有在向设备发送消息时，才会为该 Actor 分配线程。用户间的首次连接以简单的 HTTPS 调用发起，随后升级为持久连接。聊天前端服务记录连接池中哪个具体实例被分配给了该用户。</p>
+            <p>管理用户连接的机器可能发生宕机。此时需要一套高效机制，在不影响聊天应用和用户体验的前提下重建与用户设备的连接。这需要启动新机器、重建用户连接，并在用户映射数据库中更新新实例信息。可以在客户端应用中内置新连接的建立逻辑：检查持久连接状态（前提是设备已联网），一旦检测到连接断开，客户端即主动发起新连接，服务器相应地在某台机器上重新分配一个 Actor，并更新用户映射数据库。</p>
+            <p>一对一消息功能可以扩展到群组消息和广播消息，区别仅在于：聊天前端服务将用户的消息请求转发给群组服务，再由群组服务将消息扇出给群组成员。若部分群组成员不在线，消息应暂存于临时存储中，待其上线后再送达。</p>
+            <div data-type="note">
+              <p>系统不会持续检查用户的在线状态，而是依赖用户的初始 ping 来建立连接。建立首次连接时，系统检查用户离线期间是否有新消息，如果临时存储中有待发消息，则立即<a contenteditable="false" data-type="indexterm" data-primary="actor model" data-startref="actor-model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="direct messaging" data-startref="direct-messaging">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="user connections" data-startref="user-connect">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-tertiary="direct messaging" data-startref="use-case-chat-dms">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-tertiary="direct messaging" data-startref="chat-use-case-dms">&nbsp;</a>送达。</p>
+            </div>
+            <p>接下来，我们讨论离线用户的消息和多媒体存储需求。</p>
+          </section>
+          <section data-type="sect3" id="ch19_message_storage_1734552294952699">
+            <h3>消息存储</h3>
+            <p>系统 <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-tertiary="message storage" id="use-case-chat-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-tertiary="message storage" id="chat-use-case-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="choosing" data-tertiary="for chat application" data-tertiary-sortas="chat application" id="database-choose-chat">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="choosing" data-secondary="databases" data-tertiary="for chat application" data-tertiary-sortas="chat application" id="choose-database-chat">&nbsp;</a>支持文本、图片和视频格式。对于图片、视频或其他类型文档等大型媒体文件，Amazon S3 等对象存储是理想选择。对于文本消息和媒体文件引用，可以采用更结构化的数据库，例如关系型数据库管理系统（RDBMS）或 NoSQL 解决方案。数据库的需求很简单：</p>
+            <ul>
+              <li>
+                <p>以便于检索的方式存储消息，以便用户连接到聊天服务器后能快速获取。这应涵盖所有消息类型：一对一消息、群组消息和广播消息。</p>
+              </li>
+              <li>
+                <p>消息应连同已读回执一起存储，直至接收方查看为止。</p>
+              </li>
+            </ul>
+            <p>数据库中的数据存储方式应确保读取速度极快，即系统能够在最短时间内检索到用户的所有直接消息、群组消息和广播消息。存储需求可由关系型数据库和 NoSQL 解决方案（如 Amazon DynamoDB）共同满足。数据之间存在一定的关系，例如：消息关联用户或群组，用户可以属于一个或多个群组，用户注册了某个设备，用户拥有联系人列表等。关系型数据库和 NoSQL 数据库均能满足存储需求，因为系统无需依赖任何特定类型数据库所独有的约束特性。</p>
+            <p>系统的一项需求是在消息成功送达用户后将其从数据库中删除。所选数据库应能高效执行删除操作。正如第 18 章所指出的，执行删除操作时，数据实际上并未从磁盘中立即移除，而是通过定期执行 vacuum（清理）进程来清除。为了更高效地管理删除过程，可以考虑将数据按时间范围分区，这样删除整个旧数据分区只需直接删除该分区即可。对于聊天应用场景，更合理的做法是按周期（如按周或按月）批量删除数据，而不是每条消息送达后立即触发删除查询。删除流程还应同步清理对象存储中的相关媒体文件。WhatsApp 采用了一种相对简单的临时消息存储架构——通过文件系统来管理，我们将在本章后续部分详细介绍。</p>
+            <p>群组消息的存储方式颇为有趣。我们提到系统会为每个用户存储一份消息副本，用户上线后即可获取，但对于群组消息，这真的有必要吗？为每个用户保存同一条消息的副本既冗余又耗费大量存储空间。更好的做法是在群组上下文中只保留一份消息副本，并以消息 ID（消息的唯一标识符）作为消息共享的引用，类似于媒体文件共享的方式。这一考量在消息需要永久存储于服务器的场景下至关重要，但本章所设计的系统仍可接受这种冗余，因为消息只在用户未连接到<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-tertiary="message storage" data-startref="use-case-chat-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-tertiary="message storage" data-startref="chat-use-case-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="choosing" data-tertiary="for chat application" data-tertiary-sortas="chat application" data-startref="database-choose-chat">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="choosing" data-secondary="databases" data-tertiary="for chat application" data-tertiary-sortas="chat application" data-startref="choose-database-chat">&nbsp;</a>聊天应用期间才会被存储。</p>
+            <p>接下来，我们讨论聊天应用中的多媒体管理。</p>
+          </section>
+          <section data-type="sect3" id="ch19_multimedia_system_1734552294952760">
+            <h3>多媒体系统</h3>
+            <p>聊天应用 <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-tertiary="media content storage" id="use-case-chat-media">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-tertiary="media content storage" id="chat-use-case-media">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="media content storage" id="media-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data storage systems" data-secondary="for media content" data-secondary-sortas="media content" id="data-storage-media">&nbsp;</a>支持图片和视频分享，以及文本消息。这部分功能可由一个完全独立的组件（媒体服务）来管理，负责媒体内容的上传与下载，媒体的引用 URL 将作为消息的一部分使用。对于任何媒体内容分享请求，请求会发送给媒体服务，服务返回图片上传位置的引用 URL（该引用 URL 同样供接收方下载媒体内容）。引用 URL 通过文本消息传递，遵循我们在「直接消息」一节中所讨论的相同原则。</p>
+            <p>此外，媒体内容会推送到 CDN，以实现更快的下载速度。在体育赛事或节假日等重大事件中，同一媒体内容极有可能被大量用户转发，若重复存储将耗费大量存储空间。媒体压缩是节省设备存储空间的首选技术，同时也能提升上传和下载速度。压缩不应过度损失媒体质量，需在节省存储空间和保持内容质量之间找到平衡。</p>
+            <p>为进一步优化整体系统，可以在将图片存储到 Amazon S3 等对象存储之前，先计算媒体内容的哈希值。系统检查媒体数据库中是否已存在该哈希值：若存在，则直接返回已有的引用 URL；若不存在，则计算媒体哈希，将媒体内容上传至对象存储，并将媒体哈希及引用 URL 存入数据库后返回引用 URL。系统对分享内容的大小设有上限，但有可能出现这样的情况：用户将较大的视频裁剪为多个短片并分别分享。此时，计算出的哈希值会各不相同，系统将分别存储原始视频和每个短片。更优的做法是将视频切分为若干块（如每块 500 KB），然后将各块的哈希值与数据存储中已有的块哈希值进行比对，从而实现去<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-tertiary="media content storage" data-startref="use-case-chat-media">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-tertiary="media content storage" data-startref="chat-use-case-media">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="media content storage" data-startref="media-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data storage systems" data-secondary="for media content" data-secondary-sortas="media content" data-startref="data-storage-media">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-tertiary="architecture design" data-startref="use-case-chat-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-tertiary="architecture design" data-startref="chat-use-case-design">&nbsp;</a>重。关于将大视频分割为小块的更多内容，我们将在第 20 章中详细讨论。</p>
+            <p>WhatsApp 聊天应用基于 Erlang 编程语言，在开源软件 Ejabberd 之上构建。Erlang 是一种函数式编程语言，内置 Actor 支持，专为处理大量并发连接而设计。下面我们简要介绍基于 Erlang 的 WhatsApp 架构。</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch19_whatsapp_architecture_with_erlang_1734552294952825">
+          <h2>基于 Erlang 的 WhatsApp 架构</h2>
+          <p>Ejabberd 是 <a contenteditable="false" data-type="indexterm" data-primary="Ejabberd">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-tertiary="WhatsApp architecture" id="use-case-chat-whatsapp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-tertiary="WhatsApp architecture" id="chat-use-case-whatsapp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="WhatsApp" id="whatsapp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Erlang" id="erlang">&nbsp;</a>专为构建近实时聊天应用而设计的开源软件，基于 Erlang 构建，可部署为 XMPP 服务器。以下是 Ejabberd 开箱即用的功能列表，这些功能也覆盖了我们为系统定义的功能性需求：</p>
+          <ul>
+            <li>
+              <p>支持一对一消息和群组消息</p>
+            </li>
+            <li>
+              <p>支持用户最后活跃时间、用户在线状态和正在输入提示</p>
+            </li>
+            <li>
+              <p>支持附带在线状态的用户联系人列表</p>
+            </li>
+            <li>
+              <p>支持消息送达回执</p>
+            </li>
+            <li>
+              <p>支持图片、视频等媒体内容分享</p>
+            </li>
+          </ul>
+          <p>Ejabberd 提供<a class="orm:hideurl" href="https://oreil.ly/6GUsM">模块化架构</a>，可轻松扩展以满足特定业务需求。由于 Ejabberd 基于 Erlang 构建，可充分利用该语言内置的消息传递和并发支持。Ejabberd 可在单台机器上支持超过<a href="https://oreil.ly/n1xBl">两百万并发用户</a>，这是一项重大里程碑，使其非常适合管理大规模连接池，从而降低基础设施成本。您还可以阅读更多<a href="https://oreil.ly/uu7JQ">基于 Ejabberd 构建的应用案例</a>。</p>
+          <p>与其他编程语言相比，Erlang 提供了资源消耗极低的轻量级进程。大多数语言使用操作系统进程和线程来执行程序，而 Erlang 在用户空间中创建其专有的独立进程，这些进程完全不绑定内核线程（或操作系统进程）。Erlang 使用 BEAM（最初称为 Bogdan 的 Erlang 抽象机）作为虚拟机，在 Erlang 运行时环境中负责程序的调度和运行。相较于 JVM，JVM 将其线程与操作系统线程一一映射，线程调度由操作系统负责；而在 Erlang 中，调度完全由 BEAM 管理，以优化整体系统的运行效率。</p>
+          <p>除上述优势外，Erlang 还原生支持<a contenteditable="false" data-type="indexterm" data-primary="hot-swap deployment">&nbsp;</a>热更新部署，允许用户在不中断服务的情况下升级代码。<em>热更新部署</em>意味着您可以在生产运行中的服务器上部署新代码，无需任何停机时间，也不会影响已有连接。</p>
+          <p>接下来，我们来看 WhatsApp 的整体系统架构。</p>
+          <section data-type="sect3" id="ch19_system_architecture_1734552294952891">
+            <h3>系统架构</h3>
+            <p>WhatsApp 的架构与我们前几节所描述的非常相似。用户设备与聊天守护进程（类似于「直接消息」一节中的前端服务）以及 Web 守护进程建立会话，由两套独立的前端系统分别管理。聊天守护进程负责处理来自移动设备的连接，Web 守护进程负责处理来自 WhatsApp Web 客户端的连接。除这两套前端系统外，还有一套独立系统处理用户的媒体上传和下载，媒体 URL 在聊天通信中作为引用使用。聊天守护进程和 Web 守护进程进一步连接到不同的后端 Erlang 集群，各集群之间完全解耦，分别执行以下任务：</p>
+            <ul>
+              <li>
+                <p>连接用户服务，完成用户身份验证</p>
+              </li>
+              <li>
+                <p>连接离线服务，获取待送达用户的待发消息</p>
+              </li>
+            </ul>
+            <p>所有聊天前端节点之间完全互联（全网状拓扑），若用户均在线，消息可在用户间直接传输，无需后端服务介入。用户与聊天前端服务器之间的映射关系由会话服务维护，无论是用户端还是服务器端发生连接断开，用户均可重新发起连接。群组关系管理由群组服务负责，推送通知由通知推送服务处理。媒体服务器基于另一款 Erlang 开源软件 <a href="https://oreil.ly/MLwFE">YAWS（Yet Another Web Server）</a>实现。整体架构如图 <a data-type="xref" href="#ch19_figure_4_1734552294935706">#ch19_figure_4_1734552294935706</a> 所示。</p>
+            <figure id="ch19_figure_4_1734552294935706">
+              <img src="images/sdoa_1904.png"/>
+              <figcaption>WhatsApp 架构</figcaption>
+            </figure>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="media content storage">&nbsp;</a>多媒体系统的工作方式与「多媒体系统」一节中的描述基本相同。我们提到媒体内容会在收到所有接收方的确认回执后删除，但 WhatsApp 系统还会配置一段延迟时间——因为用户收到图片或视频后，很可能会将其转发给朋友，如此循环往复。为媒体删除配置延迟，可以避免用户重新上传，从而优化整体系统性能，同时也为用户节省了流量。</p>
+            <div data-type="note">
+              <p>客户端可能在媒体上传过程中中途断开，导致只有部分媒体文件被上传到系统。多媒体系统应设有独立的清理机制，定期从数据存储中清除此类不完整文件。</p>
+            </div>
+            <p>市面上存在各种各样的手机，每款手机支持不同格式的多媒体内容。为确保良好的用户体验，多媒体系统会将媒体文件转码为不同格式（详见第 20 章），并根据用户设备类型进行分发。</p>
+            <p>还有一些数据库产品是专为 Erlang 编写的。下面我们来讨论 Mnesia 及其他存储方案在 WhatsApp 架构中的应用场景。</p>
+          </section>
+          <section data-type="sect3" id="ch19_databases_1734552294952952">
+            <h3>数据库</h3>
+            <p><a href="https://oreil.ly/Ooa-g">Mnesia</a> 是一款关系型数据库，<a href="https://oreil.ly/nsJ-o">Erlang 词项存储（ETS）</a>是一款<a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="for WhatsApp" data-secondary-sortas="WhatsApp" id="database-whatsapp">&nbsp;</a>内存数据存储，用于快速查找；两者均专为 Erlang 而生。WhatsApp <a contenteditable="false" data-type="indexterm" data-primary="Mnesia">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Erlang term storage (ETS)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ETS (Erlang term storage)">&nbsp;</a>大量使用这两种数据存储来满足其存储需求。下面我们来了解 Mnesia 相较于传统关系型数据库（如 MySQL）的优势：</p>
+            <ul>
+              <li>
+                <p>如果应用使用 Erlang 编写，Mnesia 支持将数据与应用存储在同一内存空间中，从而实现实时数据查找。</p>
+              </li>
+              <li>
+                <p>数据库中存储的数据对象与 Erlang 应用代码完全一致，无需进行任何数据转换。</p>
+              </li>
+              <li>
+                <p>Mnesia 支持在运行时动态重新配置对象。</p>
+              </li>
+              <li>
+                <p>Mnesia 数据库的分布式特性提供了较高的容错能力。</p>
+              </li>
+            </ul>
+            <p>WhatsApp 使用 Mnesia 存储各类数据，包括账号和用户资料信息、群组成员关系，以及媒体引用和转码记录。WhatsApp 将数据库部署在与应用代码相同的集群上（注意，他们正在向远程数据库迁移，以适配 Facebook 基础设施）。将数据库与应用部署在同一实例上会使系统变得有状态，通常不建议这样做，因为这会增加故障恢复的难度。但让我们来看看数据库与应用运行在同一集群实例上的一些优势。</p>
+            <p>对于独立的远程数据库，需要处理应用代码与数据库层之间的连接管理，以及路由、故障转移、一致性和基础设施管理减负等问题。借助云厂商提供的众多服务，这些并不构成太大瓶颈，管理工作也变得轻而易举。在 Erlang 集群中，数据以较小的单元存储在 Mnesia 中，<a contenteditable="false" data-type="indexterm" data-primary="islands (in Erlang clusters)">&nbsp;</a>这些单元称为<em>数据岛（island）</em>。一个数据岛是一组共享同一 schema 的主机集合，每个数据岛由两台主机组成，以主副分区的形式提供数据冗余。数据分区基于键到节点的映射关系创建，与 Amazon DynamoDB 基于分区键的处理方式类似，如图 <a data-type="xref" href="#ch19_figure_5_1734552294935725">#ch19_figure_5_1734552294935725</a> 所示。</p>
+            <p>分区由 Erlang <a href="https://oreil.ly/pNmBg">gen_server 部署</a>管理。Erlang gen_server 模块提供客户端-服务器架构的基础功能：客户端通过 API 调用服务器，服务器响应客户端请求并返回结果。</p>
+            <figure id="ch19_figure_5_1734552294935725">
+              <img src="images/sdoa_1905.png"/>
+              <figcaption>数据岛架构</figcaption>
+            </figure>
+            <p>在前面的章节中，我们提到使用临时存储来保存用户离线期间的消息和媒体内容。临时存储中数据的生命周期由离线服务管理。我们可以利用云厂商提供的对象存储（如 Amazon S3）来存储此类数据，但 WhatsApp 的整个数据存储是自建的，在 SSD 和机械硬盘上管理。存储驱动器通过 JBOD（Just a Bunch of Disks，磁盘组合）系统管理，JBOD 允许将多块磁盘合并为一个统一表示，软件层面可将其作为单块磁盘访问。以下是临时消息存储的实现细节：</p>
+            <ul>
+              <li>
+                <p>用户对应的消息存储在仅追加文件（AOF）中，消息成功送达用户后，该文件即被删除。AOF 文件就像一个邮箱，存放着待取走的信件。AOF 文件保存在专属于特定用户集合的存储分区中。</p>
+              </li>
+              <li>
+                <p>媒体文件存储在目录中，相关引用维护在 Mnesia 数据库中。</p>
+              </li>
+              <li>
+                <p>为确保数据冗余，数据存储在两个并行存储分区上，消息以并行方式写入文件系统中的两个文件。用户重新上线后，离线系统从两个存储分区各取一份文件，合并消息，去除重复项，然后将消息发送到用户设备。</p>
+              </li>
+            </ul>
+            <p>图片存储在 SSD 上以实现快速存取，视频则存储在速度较慢的机械硬盘上。若图片在特定时间阈值内未能送达接收方，将被迁移至较慢的存储介质，以降低整体存储成本。文件在不同位置之间迁移时，应及时更新数据库中的引用记录。由于消息不在服务器端永久存储，它们会被<a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="for WhatsApp" data-secondary-sortas="WhatsApp" data-startref="database-whatsapp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-tertiary="WhatsApp architecture" data-startref="use-case-chat-whatsapp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-tertiary="WhatsApp architecture" data-startref="chat-use-case-whatsapp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="WhatsApp" data-startref="whatsapp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Erlang" data-startref="erlang">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="in chat application" data-secondary-sortas="chat application" data-startref="schema-chat">&nbsp;</a>保存在客户端设备上的本地 SQLite 数据库中。</p>
+            <p>下一节，我们将在 AWS 云上设计和部署聊天应用架构。</p>
+          </section>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch19_launching_the_system_on_aws_1734552294953042">
+        <h1>在 AWS 上部署系统</h1>
+        <p>本章介绍了维护用户设备持久连接和实现近实时行为的若干新概念。前面几节探讨了设计聊天应用的可扩展架构，但我们将从 Day 0 架构出发，以一个更简单的架构开始，然后逐步完善和优化。我们将尽量利用全托管服务，以缩短聊天应用的上市周期。之后，我们将识别潜在瓶颈，并对设计进行改进，突破这些限制。</p>
+        <section data-type="sect2" id="ch19_day_0_architecture_1734552294953113">
+          <h2>Day 0 架构</h2>
+          <p>我们在 <a contenteditable="false" data-type="indexterm" data-primary="AppSync">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-tertiary="Day 0 architecture" id="use-case-chat-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-tertiary="Day 0 architecture" id="chat-use-case-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for chat application" data-secondary-sortas="chat application" id="dayzero-chat">&nbsp;</a>第 12 章中探讨了 AWS AppSync 以及全托管无服务器 WebSocket 连接的概念。聊天应用需要持久双向连接，AppSync 是满足该需求的理想候选方案。这一特性让我们无需自行管理负责连接管理的前端服务。在系统设计部分，我们跳过了用户注册和身份验证——这部分功能可以借助 Amazon Cognito 来实现。特别是注册环节，验证方式基于手机上的一次性密码（OTP）。Cognito 并不原生支持该功能，因此需要自定义实现。</p>
+          <p>要构建聊天应用的 Day 0 架构，可以参考 AWS 官方博客中关于使用 <a href="https://oreil.ly/4AVQR">AppSync</a> 和 <a href="https://oreil.ly/w8oB1">Amazon ElastiCache for Redis</a> 的文章，其中均包含在 AWS 云上部署应用栈的代码示例。使用 AppSync 的架构如图 <a data-type="xref" href="#ch19_figure_6_1734552294935744">#ch19_figure_6_1734552294935744</a> 所示。用户通过 Cognito 完成身份验证，随后在 DynamoDB 表中创建用户条目。AppSync 通过持久 WebSocket 连接直接与数据库交互，用于存储消息和媒体内容。我们可以为群组信息管理、通知、用户联系人等功能分别创建独立的 AWS Lambda 处理程序。</p>
+          <figure id="ch19_figure_6_1734552294935744">
+            <img src="images/sdoa_1906.png"/>
+            <figcaption>Day 0 聊天应用架构</figcaption>
+          </figure>
+          <p>图 <a data-type="xref" href="#ch19_figure_6_1734552294935744">#ch19_figure_6_1734552294935744</a> 是部署架构的简化视图。架构中的 DynamoDB <a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-secondary="for chat application" data-secondary-sortas="chat application">&nbsp;</a>采用多表设计（为用户、消息、群组分别建立独立的表），而非通常推荐的<a href="https://oreil.ly/1HxLa">单表设计</a>来统一存储所有实体。DynamoDB <a href="https://oreil.ly/Zi8qJ">多表设计</a>（GraphQL schema 中每个核心实体对应一张独立的表）通常在 GraphQL 实现中被推荐，原因在于客户端可以发起任意数据查询请求，查询访问模式并不完全固定。单表设计会使 GraphQL 解析器的逻辑变得相当复杂，当然也可以根据实际需求选择两种设计的组合方案。</p>
+          <p>我们在此选择的 Day 0 架构，聚焦于使用 AWS 托管无服务器服务，以降低上市时间和运维负担。在评估 Day 0 架构时，也可以考虑 Ejabberd 等开源软件，并将其部署在 Amazon EC2 或容器化服务上。</p>
+          <p>若要将系统扩展以支持大量并发用户，则需要投入时间找出挑战并加以解决。下一节将探讨这些挑战，以及如何通过设计改进将系统扩展到百万乃至更大规模。</p>
+        </section>
+        <section data-type="sect2" id="ch19_scaling_to_millions_and_beyond_1734552294953180">
+          <h2>扩展至百万级及以上</h2>
+          <p>聊天应用是用户量极大的场景，必须能够在不影响可用性和性能的前提下，支撑持续增长的用户规模。网络连接数量庞大，因此架构中一个重要考量是系统拥塞控制。<em>系统拥塞</em><a contenteditable="false" data-type="indexterm" data-primary="congestion">&nbsp;</a>是指系统所承受的请求量超过其实际处理能力，导致系统将所有资源耗尽在无效处理上，而无法真正响应请求。这种情况类似于道路交通：道路上的车辆越多，每辆车实际行驶的距离反而越短。</p>
+          <section data-type="sect3" id="ch19_congestion_handling_1734552294953242">
+            <h3>拥塞处理</h3>
+            <p>以下是 <a contenteditable="false" data-type="indexterm" data-primary="congestion avoidance" id="congestion-avoid">&nbsp;</a>一些用于检测和控制拥塞问题的有效机制：</p>
+            <dl>
+              <dt>优雅降级</dt>
+              <dd>
+                <p>一旦系统判断无法成功处理所有请求，应能主动丢弃部分请求以清除积压。丢弃请求的策略因场景而异：系统可以丢弃所有新请求，也可以根据设定的过期时间丢弃较旧的请求。始终处理部分请求，好过什么都不处理。您可能见过 <em>amazon.com</em> 在无法响应请求时展示一只狗的照片——这正是系统在过载时返回自定义错误页面的一种方式。在 AWS 服务的语境下，可以借助 AWS WAF 实现特定阈值的限流。系统还应能屏蔽恶意流量，AWS WAF 和 AWS Shield 等工具均可用于此目的。</p>
+              </dd>
+              <dt>重试，但适可而止</dt>
+              <dd>
+                <p>无论是客户端应用还是终端用户，在一定时间内没有响应或收到服务端错误时，都会以重试作为常用解决方案——用户通常的做法是刷新浏览器页面。为避免重试风暴，应在错误消息中向客户端提供足够的信息，以便其判断是否值得重试。此外，重试频率应与成功请求数量挂钩——例如，每 100 次成功请求才允许一次重试（仅依靠指数退避的重试策略在这类场景下效果有限）。另一种实现请求独立处理的机制是通过引入 SQS 等队列进行系统解耦，让生产者发布请求，消费者按自身速率处理请求，避免系统过载。</p>
+              </dd>
+              <dt>系统测试</dt>
+              <dd>
+                <p>系统应在超出预期负载的条件下进行功能测试，并应配套完善的运维机制（指标、告警、仪表盘和运行手册），以便及时发现和解决问题。还应使用 <a href="https://aws.amazon.com/fis">Amazon FIS</a> 等工具对系统进行混沌工程测试，识别最坏情况下的漏洞，例如整个可用区宕机或 CPU 利用率飙升至 100% 等场景。</p>
+              </dd>
+            </dl>
+            <p>在 Day 0 架构中，我们使用 AWS AppSync 管理 WebSocket 连接。根据 AWS 文档，WebSocket 连接数量没有硬性上限，应能随规模增长自动扩展。AWS 还有其他支持 WebSocket 的服务，让我们<a contenteditable="false" data-type="indexterm" data-primary="congestion avoidance" data-startref="congestion-avoid">&nbsp;</a>在下一节中详细介绍。</p>
+          </section>
+          <section data-type="sect3" id="ch19_websocket_management_services_1734552294953302">
+            <h3>WebSocket 管理服务</h3>
+            <p>AWS 在多项服务中启用了 <a contenteditable="false" data-type="indexterm" data-primary="WebSockets">&nbsp;</a>WebSocket 功能。除 AppSync 外，支持 WebSocket 的其他选项还包括 Amazon API Gateway、<a href="https://oreil.ly/ZAqwS">AWS IoT Core</a> 以及<a href="https://oreil.ly/0HoSh">负载均衡器</a>服务。表 <a data-type="xref" href="#ch19_table_1_1734552294941183">#ch19_table_1_1734552294941183</a> 列出了在构建聊天应用时需要关注的几个关键考量点。</p>
+            <table id="ch19_table_1_1734552294941183">
+              <caption>API Gateway、IoT Core 与 ELB 对比</caption>
+              <thead>
+                <tr>
+                  <th>关键因素</th>
+                  <th>Amazon API Gateway</th>
+                  <th>AWS IoT Core</th>
+                  <th>ELB</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <p>定义</p>
+                  </td>
+                  <td>
+                    <p>以任意规模创建和管理 REST、HTTP 和 WebSocket API</p>
+                  </td>
+                  <td>
+                    <p>使 IoT 设备能够安全地连接云应用和其他设备</p>
+                  </td>
+                  <td>
+                    <p>将传入流量分配到多个目标（可参考第 9 章了解 ELB 和 API Gateway 的更多内容）</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>持久连接支持</p>
+                  </td>
+                  <td>
+                    <p>
+                      <a href="https://oreil.ly/tQMEP">支持 WebSocket API</a>
+                    </p>
+                  </td>
+                  <td>
+                    <p>支持基于 WebSocket 的 MQTT</p>
+                  </td>
+                  <td>
+                    <p>ALB 和 NLB 均支持将连接升级为 <a href="https://oreil.ly/uKpq1">WebSocket 类型</a></p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>聊天应用参考文档</p>
+                  </td>
+                  <td>
+                    <p>使用 WebSocket API、DynamoDB 和 Lambda 构建聊天应用</p>
+                  </td>
+                  <td>
+                    <p>通过 WebSocket 上的 MQTT 使用 AWS IoT Core 构建聊天应用</p>
+                  </td>
+                  <td>
+                    <p>AWS 未提供专门的文档，但概念与使用 WebSocket 实现持久连接相同</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p>这些服务之间还存在许多其他差异，各具优势。请查阅各服务产品页面上的最新指引，以判断它们是否满足您的业务需求。对于 WhatsApp 这一量级的规模，应考虑自行管理系统，以获得比托管服务更精细的配置控制能力。</p>
+            <p>AppSync 无需进行任何服务器管理，因此无需担心扩容和缩容问题。如果决定自行部署前端服务来管理 WebSocket 连接，则需要确定理想的实例配置以及单个实例最多能够支持的连接数。估算该数值的最佳方式是对系统进行压力测试，再据此调优配置。</p>
+            <p>我们在第 16 章中讨论了多区域部署的概念，对于聊天应用的规模同样至关重要。下一节我们将在多区域部署的背景下探讨消息传递架构。</p>
+          </section>
+          <section data-type="sect3" id="ch19_multiregion_deployment_of_messaging_systems_1734552294953363">
+            <h3>消息系统的多区域部署</h3>
+            <p>在 <a contenteditable="false" data-type="indexterm" data-primary="multiregion deployments" data-secondary="in chat application" data-secondary-sortas="chat application" id="multiregion-deploy-chat">&nbsp;</a>多区域部署场景中，相互通信的用户可能位于不同区域，分别连接到不同的区域服务器。对于此类场景，需要以低延迟的方式实现跨区域通信。AWS 各区域之间通过专用网络互联，因此无需自行处理区域间的连接基础设施问题。第 16 章重点介绍了将所有用户数据复制到所有区域的方案，但我们也可以选择只在两个区域（用于冗余和应对区域故障）存储用户数据，而非全部区域。这意味着当数据不在本地持久化时，需要将请求路由到其他区域来响应用户查询。</p>
+            <p>以两个位于不同地理位置的用户进行一对一消息通信为例：聊天服务器会将他们分别连接到不同的区域服务器。以下是两种可用于实现跨区域连接的机制：</p>
+            <ul>
+              <li>
+                <p>将发送消息通知（用户 A 发给用户 B 的消息）发布到每个区域；每个区域的消费者判断目标接收方是否属于本区域，若是，则在用户在线时直接送达，或将消息持久化到离线系统等待后续投递。</p>
+              </li>
+              <li>
+                <p>使用 ElastiCache Redis 全局数据存储作为会话服务的数据源。全局数据存储有助于确定用户当前连接的具体区域，从而将消息仅发送到该特定区域。</p>
+              </li>
+            </ul>
+            <p>无论采用上述哪种方式，都需要一个用户注册表来确定用户的主区域；这对于离线用户的消息送达同样重要。DynamoDB 全局表非常适合这一场景。</p>
+            <p>总结来说，建议使用 ElastiCache 全局数据存储来确定在线用户所在的区域并直接送达消息；如果找不到该用户，则使用 DynamoDB 确定用户所在区域，并由<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-tertiary="Day 0 architecture" data-startref="use-case-chat-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-tertiary="Day 0 architecture" data-startref="chat-use-case-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for chat application" data-secondary-sortas="chat application" data-startref="dayzero-chat">&nbsp;</a>离线系统处理消息投递。</p>
+            <p>在此基础上，让我们进入 Day N 架构。</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch19_day_n_architecture_1734552294953440">
+          <h2>Day N 架构</h2>
+          <p>图 <a data-type="xref" href="#ch19_figure_4_1734552294935706">#ch19_figure_4_1734552294935706</a> 展示了 WhatsApp 架构——一个 <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-tertiary="Day N architecture" id="use-case-chat-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-tertiary="Day N architecture" id="chat-use-case-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for chat application" data-secondary-sortas="chat application" id="dayn-chat">&nbsp;</a>极简架构，却能每天处理数十亿条消息。整套基础设施自建并部署在裸金属服务器上。</p>
+          <p>我们将尝试借助 AWS 组件来部署系统并满足数据存储需求。架构使用 Amazon ECS 部署服务，大多数应用采用 DynamoDB 作为数据库。如「消息存储」一节所述，关系型和非关系型数据库均能满足系统需求，可根据既有经验选择合适的方案。第 18 章中介绍的 Aurora Serverless Limitless Database 是托管关系型数据库的一个选项，但在 WhatsApp 量级下，仍应考虑自行管理数据库以进行精细化配置调优。图 <a data-type="xref" href="#ch19_figure_7_1734552294935764">#ch19_figure_7_1734552294935764</a> 展示了部署在 AWS 云上的聊天应用架构示例。</p>
+          <figure id="ch19_figure_7_1734552294935764">
+            <img src="images/sdoa_1907.png"/>
+            <figcaption>聊天应用 Day N 架构</figcaption>
+          </figure>
+          <p>以下是系统架构中各组件的简介：</p>
+          <dl>
+            <dt>前端系统</dt>
+            <dd>
+              <p>用户连接的网关层。与会话管理系统协同工作，将用户设备连接信息与可用服务器进行关联存储。</p>
+            </dd>
+            <dt>多媒体系统</dt>
+            <dd>
+              <p>结合使用 Amazon S3 和 Amazon CloudFront，提供媒体存储和缓存能力。多媒体系统还使用 DynamoDB 存储媒体内容的元数据。多媒体系统的工作原理类似于我们将在第 20 章中介绍的视频接入管道——负责将内容接入系统，再以高效的方式分发给用户。</p>
+            </dd>
+            <dt>用户服务</dt>
+            <dd>
+              <p>负责用户身份验证和账号信息维护。</p>
+            </dd>
+            <dt>通知系统</dt>
+            <dd>
+              <p>通过 Amazon SNS 向用户设备推送新消息通知。<a href="https://oreil.ly/YIShz">Amazon SNS</a> 将通知发送到 Android 设备的 Firebase 云消息服务（FCM）服务器，以及 Apple 设备的 Apple 推送通知服务（APNs）服务器。为控制本章的讨论范围，通知服务仅做简要介绍；如需了解大规模推送通知的实现方式，可参阅各公司的工程博客（例如 <a href="https://oreil.ly/mhkeW">Uber 关于推送通知优化的博文</a>）。</p>
+            </dd>
+            <dt>离线系统</dt>
+            <dd>
+              <p>在用户设备未连接到前端系统时，负责存储和管理待发消息。</p>
+            </dd>
+            <dt>群组管理系统</dt>
+            <dd>
+              <p>维护所有群组相关信息，并向群组成员投递消息。</p>
+            </dd>
+          </dl>
+          <p>日志和监控组件未在架构图中展示，但它们同样不可或缺。我们可以利用 Amazon CloudWatch 等 AWS 服务存储日志，并配置指标和告警，用于可视化和<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-tertiary="Day N architecture" data-startref="use-case-chat-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-tertiary="Day N architecture" data-startref="chat-use-case-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for chat application" data-secondary-sortas="chat application" data-startref="dayn-chat">&nbsp;</a>健康监控。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch19_conclusion_1734552294953511">
+        <h1>总结</h1>
+        <p>WhatsApp 架构遵循一个简单原则："够用就好（just enough engineering）"。简洁的架构往往具备良好的可扩展性，且所需的运维人员和基础设施管理成本更低。正如前几章所倡导的，我们建议首先充分利用云服务商提供的服务来构建和管理解决方案，这有助于缩短上市周期。若有需要，再迁移至其他方案。</p>
+        <p>编程语言、网络协议和实现范式的选择，对大型应用至关重要，应在应用上线前审慎评估。一旦系统已服务大量用户，从一种编程语言迁移到另一种将是一项极大的挑战——虽然可以做到，但如果从一开始就充分考虑（基于当时掌握的信息），代价会小得多。</p>
+        <p>压力测试和混沌工程是发现系统瓶颈、确定系统承载上限的重要手段。从第一天起就应建立指标和告警，以监控系统性能。系统 CPU 利用率达到 100%，并不一定意味着系统在满负荷有效工作；也可能是发生了系统拥塞，因此压力测试有助于准确<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="chat application" data-startref="use-case-chat">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="use case" data-startref="chat-use-case">&nbsp;</a>区分这两种情况。</p>
+        <p>本章开始涉及视频上传和转码为不同格式的内容，下一章将更加深入地探讨这一主题。</p>
+      </section>
+    </section>

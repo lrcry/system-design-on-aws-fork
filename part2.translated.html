@@ -1,0 +1,36 @@
+<div xmlns="http://www.w3.org/1999/xhtml" data-type="part" id="part2">
+      <h1>深入 AWS 服务</h1>
+      <blockquote data-type="epigraph">
+        <p>大而简，胜于小而繁。</p>
+        <p data-type="attribution">马克·希尔</p>
+      </blockquote>
+      <p>本书第二部分介绍常用的 AWS 网络、存储、计算、编排、大数据与分析，以及机器学习（ML）服务。我们将深入探讨这些托管服务的内在设计与优势，并为如何在架构完善的框架下合理组织这些服务提供指导，以便为各类应用程序和工作负载构建安全、高性能、高弹性且高效的基础设施。</p>
+      <p>学完第二部分，你将能够：</p>
+      <ul>
+        <li>
+          <p>理解 AWS 提供的网络服务，以及如何利用它们构建高弹性的云基础设施</p>
+        </li>
+        <li>
+          <p>能够针对不同的数据管理需求和使用场景，识别并选用合适的 AWS 存储服务</p>
+        </li>
+        <li>
+          <p>了解 AWS 提供的计算服务，学会如何为不同类型的工作负载选择合适规格和类型的计算资源，同时借助容器和其他无服务器产品控制可变成本</p>
+        </li>
+        <li>
+          <p>使用 AWS 提供的编排服务，对 AWS 上的应用程序进行合理解耦和扩展，提升灵活性与性能</p>
+        </li>
+        <li>
+          <p class="pagebreak-before less_space">了解 AWS 提供的大数据与分析服务，以便对大型数据集运行大规模作业和执行查询，从大数据中挖掘价值</p>
+        </li>
+        <li>
+          <p>探索 AWS 提供的机器学习服务，学习如何利用托管产品解决 ML 业务场景，并为你的业务搭建 ML 流水线和 ML 运营体系</p>
+        </li>
+      </ul>
+      <p><a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a> 将深入介绍 AWS 提供的全托管网络服务，帮助你了解如何使用它们构建强健、高弹性的云基础设施。我们将从如何入门 AWS 云讲起，然后涵盖基础网络概念，包括互联网的工作原理、虚拟私有云（VPC）、子网、AWS 云内外的互联网连接方式、NAT 网关（让云系统安全与外界通信的机制）、Amazon Route 53（域名管理）、Amazon CloudFront（加速 Web 服务加载）、AWS 弹性负载均衡（ELB）以及 Amazon API 网关。</p>
+      <p><a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a> 将探讨 AWS 提供的托管存储服务，帮助你理解如何为不同需求选择合适的存储服务。本章将从亚马逊弹性块存储（EBS）、亚马逊弹性文件系统（EFS）和亚马逊简单存储服务（S3）对象存储及其不同存储类讲起，随后涵盖数据库服务，包括 Amazon 关系数据库服务（RDS）、Amazon Aurora、Amazon DynamoDB、Amazon DocumentDB、Amazon Keyspaces、Amazon Timestream 和 Amazon Neptune，以及 Amazon ElastiCache（包括 ElastiCache for Redis 和 ElastiCache for Memcached）。</p>
+      <p><a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a> 将向你介绍 AWS 提供的计算服务，帮助你为不同任务选择合适类型和规格的计算资源。我们将介绍 Amazon 弹性计算云（EC2）——相当于在云端租用虚拟计算机；AWS Lambda——一种按需响应事件的特殊计算方式；Amazon 弹性容器注册表（ECR）；用于管理和部署容器的 AWS Fargate for 弹性容器服务（ECS）；以及用于运行容器化应用程序的 ECS 弹性 Kubernetes 服务（EKS）集群。</p>
+      <p><a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a> 将介绍 AWS 的消息传递、编排、监控和访问管理服务。这些服务可帮助你管理和协调软件系统中的各类任务。我们将讨论 Amazon 简单队列服务（SQS）——让系统各组件间接通信的机制；Amazon 简单通知服务（SNS）——用于发送消息；以及 Amazon Managed Streaming for Apache Kafka（MSK）和 Amazon Kinesis——使系统各组件相互通信。我们还将探讨用于串联工作流的 AWS Step Functions，以及用于管理和监控工作流的 AWS 托管工作流服务。最后，我们将介绍用于监控和调试云应用程序的 Amazon CloudWatch、用于 AWS 资源认证与授权的 AWS 身份与访问管理（IAM）、用于管理身份池的 Amazon Cognito，以及将所有 AWS 服务统一在单一 GraphQL 端点下的 AWS AppSync。</p>
+      <p><a data-type="xref" href="#ch13_big_data_analytics_and_machine_learning_services_1734552292002899">#ch13_big_data_analytics_and_machine_learning_services_1734552292002899</a> 将探索 AWS 的大数据、分析和机器学习服务，帮助你处理海量数据并挖掘有价值的洞察。我们将介绍强大的数据分析工具 Amazon Redshift、用于大数据处理的 Amazon Elastic MapReduce（EMR）、用于数据查询的 Amazon Athena、用于数据准备与转换的 AWS Glue，以及用于创建可视化报表的 Amazon QuickSight。本章还将介绍 AWS 提供的机器学习服务，展示如何利用托管产品解决 ML 业务场景，并为你的业务搭建 ML 数据流水线和运营体系。</p>
+      <p>学完第二部分，你将全面了解这些 AWS 服务及其有效使用方法，能够构建强健、安全的云基础设施，从容应对各类任务和工作负载。</p>
+      <p>随后，<a data-type="xref" href="#part3">#part3</a> 将通过若干真实世界的示例，展示如何使用 AWS 云计算服务设计系统。我们将以循序渐进、浅显易懂的方式逐一拆解各类使用场景，综合运用<a data-type="xref" href="#part1">#part1</a> 的系统设计概念和第二部分的 AWS 服务加以实践落地。</p>
+    </div>

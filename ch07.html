@@ -1,0 +1,510 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch07_containerization_orchestration_and_deployments_1734552288630240">
+      <h1>Containerization, Orchestration, <span class='keep-together'>and Deployments</span></h1>
+      <p>In recent years, containerization has become a game changer in the world of software development and deployment. Traditional methods of building and deploying applications often faced challenges like inconsistency, lack of portability, and inefficient use of resources. Containerization offers a solution to these problems in a new and effective way.</p>
+      <p>So what is <em>containerization</em>? Simply put, it’s a way to package<a contenteditable="false" data-type="indexterm" data-primary="containerization">&nbsp;</a> an application along with everything it needs to run—like libraries and dependencies—into a lightweight, portable unit called a <em>container</em>. These <a contenteditable="false" data-type="indexterm" data-primary="containers">&nbsp;</a>containers ensure that the application runs the same way no matter where it’s deployed, whether that’s on a developer’s laptop, on a testing server, or in a production environment. This consistency helps developers focus on writing code without worrying about compatibility issues or the complexities of deployment. <a href="https://docker.com">Docker</a>, one of the most popular tools for containerization, <a contenteditable="false" data-type="indexterm" data-primary="Docker">&nbsp;</a>makes it easy to create, share, and run these containers. It streamlines the development process, helping teams work faster and get their applications to market more quickly.</p>
+      <p>In this chapter, we’ll start by explaining the basic concepts of containerization, with a focus on Docker. You’ll learn how containers work, how to create them, and how to manage them on a large scale. We’ll also touch on more advanced topics, such as managing container images, orchestrating containers with tools like <a href="https://kubernetes.io">Kubernetes</a>, and deploying applications using modern strategies. By the end of this chapter, you’ll have a solid understanding of containerization and how it can improve your approach to system design and software development. Let’s dive in and discover how containerization can make your developer operations easier and more efficient!</p>
+      <section data-type="sect1" id="ch07_evolution_of_application_deployment_1734552288630437">
+        <h1>Evolution of Application Deployment</h1>
+        <p>In the <a contenteditable="false" data-type="indexterm" data-primary="application deployment" data-secondary="evolution of" id="app-deploy-evolution">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment" data-secondary="evolution of" id="deploy-evolution">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="VMs versus" id="container-vms-compare">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VMs (virtual machines), containers versus" id="vm-container-compare">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="virtual machines (VMs), containers versus" id="virtual-machine-container-compare">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="software deployment" data-see="application deployment">&nbsp;</a>early stages of software deployment, organizations relied on physical servers to run their applications. Each application typically was hosted on a separate physical server, leading to issues with resource allocation and underutilization. For instance, if multiple applications share the same server, one application could monopolize resources, causing performance degradation for others. This approach proved inefficient and expensive as organizations struggled to maintain numerous physical servers. To address the limitations of traditional deployment, virtualization emerged as a game-changing technology.</p>
+        <p><em>Virtualization</em>, <a contenteditable="false" data-type="indexterm" data-primary="virtualization">&nbsp;</a>illustrated in <a data-type="xref" href="#ch07_figure_1_1734552288616281">#ch07_figure_1_1734552288616281</a>, enables organizations to run multiple <em>virtual machines (VMs)</em> on a single physical server’s CPU, thereby maximizing resource utilization and scalability. A VM emulates a physical computer using software. Each VM operates as an isolated instance with its own OS and application stack, ensuring security and isolation between applications. <a contenteditable="false" data-type="indexterm" data-primary="hypervisors">&nbsp;</a>The <em>hypervisor</em> acts as a middleman between the host machine and VMs to create virtualized hardware components, including virtual disks, network interfaces, and CPUs. VMs provide strong isolation between applications, but they also require significant overhead in terms of memory, storage, and processing power while introducing complexity associated with managing multiple OS instances.</p>
+        <figure id="ch07_figure_1_1734552288616281">
+          <img src="images/sdoa_0701.png"/>
+          <figcaption>Machine virtualization versus containerization</figcaption>
+        </figure>
+        <p>Containers represent the next evolution in deployment technology, offering a lightweight, portable alternative to VMs. Containers, as shown in <a data-type="xref" href="#ch07_figure_1_1734552288616281">#ch07_figure_1_1734552288616281</a>, share the host OS kernel and runtime environment, enabling them to be more efficient and agile than VMs. Unlike VMs, which require separate OS instances, containers leverage OS-level virtualization to share the underlying OS kernel, resulting in faster startup times and lower resource overhead.</p>
+        <p>Both containers and VMs play crucial roles in deploying and executing applications. While they share some similarities in their ability to isolate and encapsulate workloads, containers and VMs differ significantly in their architecture, resource utilization, and deployment characteristics, as described in <a data-type="xref" href="#ch07_table_1_1734552288620901">#ch07_table_1_1734552288620901</a>.</p>
+        <table id="ch07_table_1_1734552288620901">
+          <caption>VMs versus containers</caption>
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>VMs</th>
+              <th>Containers</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <p>Virtualization</p>
+              </td>
+              <td>
+                <p>Hardware level: VMs emulate physical hardware and provide complete virtualized environments, including a guest OS, on top of a hypervisor layer. Each VM runs its own OS instance independent of the host system and consumes dedicated system resources, such as CPU, memory, and disk space.</p>
+              </td>
+              <td>
+                <p>OS level: containers leverage OS-level virtualization to provide lightweight, isolated environments for running applications. Each container shares the host OS kernel but maintains separate user space, allowing multiple containers to run concurrently on the same host.</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Resource utilization</p>
+              </td>
+              <td>
+                <p>Less efficient: VMs are less efficient in resource utilization compared to containers because each VM requires its own OS instance, which consumes additional memory, CPU, and disk space. </p>
+              </td>
+              <td>
+                <p>Highly efficient: containers are highly efficient in terms of resource utilization because they share the host OS kernel and require minimal overhead. </p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Deployment flexibility</p>
+              </td>
+              <td>
+                <p>Hypervisor-tied: although VMs provide isolation and encapsulation, they are less flexible in terms of deployment compared to containers. VMs are tied to specific hypervisor platforms and may require additional configuration or conversion steps when migrating between different virtualization platforms.</p>
+              </td>
+              <td>
+                <p>Portable: containers offer greater deployment flexibility compared to VMs, thanks to their lightweight, portable nature. Containers can be easily moved between different environments, such as development, testing, and production, without modifications. </p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Overhead</p>
+              </td>
+              <td>
+                <p>Heavyweight: VMs have larger footprint sizes and may suffer from resource contention when multiple VMs are run on the same host.</p>
+              </td>
+              <td>
+                <p>Lightweight: containers impose minimal overhead on system resources.</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Speed</p>
+              </td>
+              <td>
+                <p>Slow startup: VMs are typically larger and slower to start compared to containers because of the overhead of running multiple OS instances.</p>
+              </td>
+              <td>
+                <p>Fast startup: since containers do not need to boot a separate OS instance, they have faster startup times and consume fewer system resources, making them ideal for deploying lightweight, scalable applications.</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Performance</p>
+              </td>
+              <td>
+                <p>Limited: VMs often have limited performance due to overhead from emulating hardware.</p>
+              </td>
+              <td>
+                <p>Native: containers offer native performance by leveraging the host OS kernel directly.</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Security</p>
+              </td>
+              <td>
+                <p>Fully isolated: VMs offer full isolation at the OS level, which enhances security by minimizing the risk of cross-VM attacks.</p>
+              </td>
+              <td>
+                <p>Process-level isolation: containers provide process-level isolation within shared OS resources, which requires additional security measures to prevent container escapes and unauthorized access between processes.</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p>Containers and VMs represent distinct approaches to application isolation and deployment in system design. Containers offer lightweight, efficient, portable environments for running applications, whereas VMs provide stronger isolation and compatibility with existing infrastructure. By understanding the differences between containers and VMs, system designers can make informed decisions about which technology to leverage based on their specific requirements and use cases. Whether you are deploying microservice architectures in the cloud or running legacy applications on premises, containers and VMs offer complementary solutions for modern system design <a contenteditable="false" data-type="indexterm" data-primary="application deployment" data-secondary="evolution of" data-startref="app-deploy-evolution">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment" data-secondary="evolution of" data-startref="deploy-evolution">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="VMs versus" data-startref="container-vms-compare">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VMs (virtual machines), containers versus" data-startref="vm-container-compare">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="virtual machines (VMs), containers versus" data-startref="virtual-machine-container-compare">&nbsp;</a>and infrastructure management.</p>
+      </section>
+      <section data-type="sect1" id="ch07_containerization_1734552288630531">
+        <h1>Containerization</h1>
+        <p>Now, let’s look at some basic concepts around containerization, including Docker, images, the registry, and containers, which form the foundation of containerization.</p>
+        <section data-type="sect2" id="ch07_docker_1734552288630633">
+          <h2>Docker</h2>
+          <p>Docker <a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" id="containerization-docker">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" id="docker">&nbsp;</a>is the de facto standard for containerization. It offers a comprehensive platform for building, shipping, and running containers. With Docker, developers can define application environments using <a href="https://oreil.ly/w_NP0">Dockerfiles</a>, build container images, and deploy applications to any environment seamlessly. Docker provides a rich set of tools and APIs for managing containers, orchestrating distributed applications, and integrating with existing DevOps workflows.</p>
+          <p>Here is an example of a simple <a contenteditable="false" data-type="indexterm" data-primary="Dockerfiles">&nbsp;</a>Dockerfile for creating a basic Python web application using Flask framework, which is converted to a Docker image consisting of layers as shown in <a data-type="xref" href="#ch07_figure_2_1734552288616314">#ch07_figure_2_1734552288616314</a>:</p>
+          <pre data-type="programlisting"># Use the official Python image from Docker Hub
+FROM python:3.9-slim
+ 
+# Set the working directory in the container
+WORKDIR /app
+ 
+# Copy the current directory contents into the container at /app
+COPY . /app
+ 
+# Install Flask and other dependencies via pip
+RUN pip install --no-cache-dir -r requirements.txt
+ 
+# Expose port 5000 to the outside world
+EXPOSE 5000
+ 
+# Define environment variable
+ENV NAME World
+ 
+# Run app.py when the container launches
+CMD [“python”, “app.py”]</pre>
+<p>Now, let’s understand the Docker images, which are created from the Dockerfiles.</p>
+          <figure id="ch07_figure_2_1734552288616314">
+            <img src="images/sdoa_0702.png"/>
+            <figcaption>From Dockerfile to Docker image</figcaption>
+          </figure>
+          <section data-type="sect3" id="ch07_images_1734552288630701">
+            <h3>Images</h3>
+            <p>Container images <a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-tertiary="images" id="containerization-docker-image">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" data-secondary="images" id="docker-image">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="images (Docker)" id="image-docker">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="container images" id="container-image">&nbsp;</a>are the building blocks of containerized applications. An <em>image</em> is a lightweight, standalone executable package that contains everything needed to run an application, including the application code, runtime, libraries, and dependencies. Images are created from Dockerfiles, which specify the instructions for building the image layer by layer. Docker Hub and other container registries host public and private repositories of prebuilt images, allowing developers to share and distribute containerized applications easily. </p>
+            <p>At its core, a container image consists of the following elements:</p>
+            <dl>
+              <dt>Base image</dt>
+              <dd>
+                <p>The base image <a contenteditable="false" data-type="indexterm" data-primary="base image">&nbsp;</a>serves as the foundation of the container image and provides the runtime environment for the application. It typically includes a minimal OS (such as Alpine Linux or Ubuntu) and essential system libraries and utilities. Base images are optimized for size and security, enabling developers to build lightweight, secure containerized applications.</p>
+              </dd>
+              <dt>Application code</dt>
+              <dd>
+                <p>The <a contenteditable="false" data-type="indexterm" data-primary="application code">&nbsp;</a>application code represents the core functionality of the containerized application. It includes the source code, binaries, and dependencies required to execute the application. Application code is bundled into the container image, ensuring that the application behaves consistently across different environments.</p>
+              </dd>
+              <dt>Runtime dependencies</dt>
+              <dd>
+                <p>In <a contenteditable="false" data-type="indexterm" data-primary="runtime dependencies">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="dependencies">&nbsp;</a>addition to the application code, container images may include runtime dependencies, such as libraries, frameworks, and runtime environments (e.g., Node.js, Python, Java). These dependencies are essential for executing the application and are packaged into the container image to ensure compatibility and portability.</p>
+              </dd>
+              <dt>Configuration files </dt>
+              <dd>
+                <p>Container images <a contenteditable="false" data-type="indexterm" data-primary="configuration files">&nbsp;</a>may contain configuration files and settings needed to configure and customize the application runtime environment. Configuration files are typically stored in well-defined locations within the container image, allowing the application to be easily configured at runtime.</p>
+              </dd>
+            </dl>
+            <p>Container images are composed of multiple layers, each representing a discrete component or modification to the base image. These layers are stacked on top of one another to form the complete container image. The key components of container images are:</p>
+            <dl>
+              <dt>Base layer</dt>
+              <dd>
+                <p>The base layer serves as the foundation of the container image and contains the minimal OS and system libraries needed to run the application. The base layer is immutable and provides a clean slate for building and customizing container images.</p>
+              </dd>
+              <dt>Intermediate layers</dt>
+              <dd>
+                <p>Intermediate layers represent modifications or additions to the base image, such as installing packages, copying files, or configuring settings. Each intermediate layer is created by a <a href="https://oreil.ly/krHtG">Dockerfile instruction</a> (e.g., <code>RUN</code>, <code>COPY</code>, <code>ADD</code>) and contributes to the final state of the container image.</p>
+              </dd>
+              <dt>Top layer </dt>
+              <dd>
+                <p>The top layer is the final layer of the container image and contains the application code, runtime dependencies, and configuration files. This layer is read-write and allows changes to be made to the container image at runtime, such as creating or modifying files within the container filesystem.</p>
+              </dd>
+            </dl>
+            <p>Building and managing container images is a fundamental aspect of container deployment. Container images can be created and customized using Dockerfiles, declarative files that specify the instructions for building the image layer by layer. Docker provides a set of commands and tools for building and tagging container images and pushing them to container registries, such as <a href="https://hub.docker.com">Docker Hub</a> or <a href="https://aws.amazon.com/ecr">Amazon Elastic Container Registry (ECR)</a>.</p>
+            <p class="pagebreak-before less_space">Container images <a contenteditable="false" data-type="indexterm" data-primary="versioning">&nbsp;</a>should be versioned and tagged appropriately to track changes and ensure consistency across environments. Versioning schemes such as <a href="https://semver.org">semantic versioning (SemVer)</a> or date-based versioning can be used to manage container image versions effectively. Additionally, container images should be scanned for vulnerabilities and regularly updated to mitigate security risks and ensure compliance with industry standards.</p>
+            <div data-type="note">
+              <p>We’ll cover using Amazon ECR to maintain container images on AWS for deployment on AWS Lambda, Amazon Elastic Container Service (ECS), and Amazon Elastic Kubernetes Service (EKS) in <a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a>.</p>
+            </div>
+            <p>The next question that arises is where the <a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-tertiary="images" data-startref="containerization-docker-image">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" data-secondary="images" data-startref="docker-image">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="images (Docker)" data-startref="image-docker">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="container images" data-startref="container-image">&nbsp;</a>container images are stored: in the container registry, which we will look at next.</p>
+          </section>
+          <section data-type="sect3" id="ch07_registry_1734552288630759">
+            <h3>Registry</h3>
+            <p>The <em>container</em> <em>registry</em> serves as the central repository <a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-tertiary="registries" id="containerization-docker-registry">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" data-secondary="registries" id="docker-registry">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="registries (Docker)" id="registry-docker">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="container registries" id="container-registry">&nbsp;</a>for storing, managing, and distributing container images in a scalable, efficient manner. Container registries serve several key functions. They provide secure, reliable storage for container images, ensuring availability when needed. They enable effective image management through versioning, tagging, and organizing images into repositories. They also facilitate distribution of images across various environments, such as development, testing, and production, ensuring consistency throughout the deployment pipeline. Finally, they enforce access controls and permissions to regulate who can push, pull, and modify images, ensuring security and compliance with organizational policies.</p>
+            <p>To support the storage, management, and distribution of container images, container registries offer the following capabilities:</p>
+            <dl>
+              <dt>Private repositories</dt>
+              <dd>
+                <p>Container registries enable creation of private repositories, which allow organizations to securely store and manage proprietary or sensitive container images behind authentication and access controls.</p>
+              </dd>
+              <dt>Tagging and versioning </dt>
+              <dd>
+                <p>Container registries allow developers to tag and version container images, making it easy to track changes, manage dependencies, and ensure consistency across environments.</p>
+              </dd>
+              <dt>Scalability and high availability</dt>
+              <dd>
+                <p>Container registries are designed to be highly scalable and available, capable of handling large volumes of container images and supporting continuous integration and continuous deployment (CI/CD) workflows.</p>
+              </dd>
+              <dt>Content trust and signing</dt>
+              <dd>
+                <p>Container registries support content-trust mechanisms such as <a href="https://oreil.ly/yKoOc">Docker Content Trust (DCT)</a> or Notary, which allow users to verify the integrity and authenticity of container images through digital signatures.</p>
+              </dd>
+              <dt>Integration with CI/CD pipelines</dt>
+              <dd>
+                <p>Container registries integrate seamlessly with CI/CD pipelines, enabling automated image builds, testing, and deployment workflows.</p>
+              </dd>
+            </dl>
+            <p>To maximize the benefits of container registries, organizations should follow best practices for managing and using container images effectively. This includes using private registries whenever possible, especially for proprietary or sensitive applications, to store and manage container images securely. Implementing access controls based on role-based access control (RBAC) policies is essential to restrict access to these images, ensuring that only authorized users can push, pull, and modify them. Automating the process of building, tagging, and pushing container images to the registry through CI/CD pipelines ensures consistency and reliability in the image build process. Regularly scanning container images for vulnerabilities using security scanning tools and addressing any identified issues before deploying images to production are crucial for maintaining security. Additionally, adopting a consistent versioning and tagging strategy for container images helps track changes and manage dependencies, and it allows for easy rollback to previous versions if needed.</p>
+            <p>Container registries serve as the backbone of the container ecosystem. They provide a <a contenteditable="false" data-type="indexterm" data-primary="Docker Client">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker Host">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker Registry">&nbsp;</a>centralized, secure repository for storing, managing, and distributing container images. <a data-type="xref" href="#ch07_figure_3_1734552288616335">#ch07_figure_3_1734552288616335</a> illustrates the interaction between the Docker Client, Docker Host, and Docker Registry.</p> 
+            <figure id="ch07_figure_3_1734552288616335">
+              <img src="images/sdoa_0703.png"/>
+              <figcaption>Docker ecosystem</figcaption>
+            </figure>
+            <p>The Docker Client is where users build (<code>docker build</code>), retrieve (<code>docker pull</code>), and run (<code>docker run</code>) images. The Docker Host, with its Docker daemon, manages these images and runs containers. The Docker Registry acts as a centralized storage and distribution hub for Docker images, enabling users to push and pull images across different environments. The Docker Registry serves as the backbone of the Docker ecosystem, ensuring consistent, reliable access to container images. </p>
+            <p>In the next section, we’ll explore the lifecycle of <a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-tertiary="registries" data-startref="containerization-docker-registry">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" data-secondary="registries" data-startref="docker-registry">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="registries (Docker)" data-startref="registry-docker">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="container registries" data-startref="container-registry">&nbsp;</a>containers and the processes that govern their operation.</p>
+          </section>
+          <section data-type="sect3" id="ch07_containers_1734552288630817">
+            <h3>Containers</h3>
+            <p>In the <a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-tertiary="container lifecycle" id="containerization-docker-lifecycle">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" data-secondary="container lifecycle" id="docker-lifecycle">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="lifecycle" id="container-lifecycle">&nbsp;</a>realm of containerization, understanding the lifecycle of containers, the underlying processes, and the role of container engines like Docker is crucial for efficiently deploying and managing containerized applications. The lifecycle of a container, as shown in <a data-type="xref" href="#ch07_figure_4_1734552288616355">#ch07_figure_4_1734552288616355</a>, encompasses several stages from creation to termination, each of which plays a vital role in deploying and executing containerized applications.</p>
+            <figure id="ch07_figure_4_1734552288616355">
+              <img src="images/sdoa_0704.png"/>
+              <figcaption>Docker container lifecycle</figcaption>
+            </figure>
+            <p>Let’s discuss each part of the process:</p>
+            <dl>
+              <dt>Image creation</dt>
+              <dd>
+                <p>The container lifecycle begins with the creation of a container image, which serves as the blueprint for the container. Images are typically created using Dockerfiles, which define the instructions for building the image layer by layer.</p>
+              </dd>
+              <dt>Container creation </dt>
+              <dd>
+                <p>Once an image is built, containers can be instantiated from the image using the <a href="https://oreil.ly/fnL5v"><code>docker run</code> command</a>. During container creation, the Docker engine allocates resources, such as CPU, memory, and storage, and sets up the container environment based on the image specifications.</p>
+              </dd>
+              <dt>Container execution </dt>
+              <dd>
+                <p>Once created, containers execute the command specified in the image, which typically corresponds to the primary application or service being run. Containers run in isolation from one another and the host system, ensuring that applications behave predictably and securely.</p>
+              </dd>
+              <dt>Container management</dt>
+              <dd>
+                <p>During runtime, containers can be managed using various Docker commands, such as <code>docker start</code>, <code>docker stop</code>, <code>docker pause</code>, and <code>docker restart</code>. Administrators use these commands to control the lifecycle of containers, including starting, stopping, pausing, and restarting containers as needed.</p>
+              </dd>
+              <dt>Container termination</dt>
+              <dd>
+                <p>Containers are terminated using the <code>docker rm</code> command once they are no longer needed. Container termination releases the allocated resources and removes the container from the host system, ensuring efficient resource utilization.</p>
+              </dd>
+            </dl>
+            <p>Within a containerized environment, containers run as isolated processes, each with its own namespace, filesystem, and network stack. Key processes involved in container execution include:</p>
+            <dl>
+              <dt>Init process </dt>
+              <dd>
+                <p>Each <a contenteditable="false" data-type="indexterm" data-primary="init process">&nbsp;</a>container starts with an init process, which serves as the entry point for the containerized application. The init process typically runs as Process ID (PID) 1 within the container and is responsible for managing other processes and handling signals.</p>
+              </dd>
+              <dt>Application processes</dt>
+              <dd>
+                <p>Application processes<a contenteditable="false" data-type="indexterm" data-primary="application processes">&nbsp;</a> represent the primary functionality of the containerized application and are spawned by the init process. These processes execute within the container environment and interact with the host system and other containers as needed.</p>
+              </dd>
+              <dt>Supporting processes </dt>
+              <dd>
+                <p>In addition<a contenteditable="false" data-type="indexterm" data-primary="supporting processes">&nbsp;</a> to the application processes, containers may run supporting processes, such as logging daemons, monitoring agents, or service discovery tools. These processes enhance the functionality and reliability of the containerized application and may run alongside or within the same container as the <a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-tertiary="container lifecycle" data-startref="containerization-docker-lifecycle">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" data-secondary="container lifecycle" data-startref="docker-lifecycle">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="lifecycle" data-startref="container-lifecycle">&nbsp;</a>application processes.</p>
+              </dd>
+            </dl>
+          </section>
+          <section data-type="sect3" id="ch07_docker_engine_and_runtime_1734552288630877">
+            <h3>Docker engine and runtime</h3>
+            <p>The <a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-tertiary="Docker engine" id="containerization-docker-engine">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker engine" id="docker-engine">&nbsp;</a>Docker engine serves as the core component of the Docker platform, providing the functionality for building, running, and managing containers. The Docker engine consists of several key components, as shown in <a data-type="xref" href="#ch07_figure_5_1734552288616374">#ch07_figure_5_1734552288616374</a>.</p>
+            <figure id="ch07_figure_5_1734552288616374">
+              <img src="images/sdoa_0705.png"/>
+              <figcaption>Docker engine architecture</figcaption>
+            </figure>
+            <p>The components of the Docker engine are:</p>
+            <dl>
+              <dt>Docker daemon</dt>
+              <dd>
+                <p>The<a contenteditable="false" data-type="indexterm" data-primary="Docker daemon">&nbsp;</a> Docker daemon (<code>dockerd</code>) is the background service that manages container operations, including image and container management, resource allocation, and network configuration. The Docker daemon listens for Docker API requests and executes commands on behalf of clients.</p>
+              </dd>
+              <dt>Docker CLI </dt>
+              <dd>
+                <p>The <a contenteditable="false" data-type="indexterm" data-primary="Docker CLI">&nbsp;</a>Docker CLI (<code>docker</code>) provides a user-friendly interface for interacting with the Docker daemon and performing common container operations, such as building images, creating containers, and managing the container lifecycle.</p>
+              </dd>
+              <dt>Containerd </dt>
+              <dd>
+                <p>Containerd is <a contenteditable="false" data-type="indexterm" data-primary="containerd">&nbsp;</a>an industry-standard container runtime that serves as the core runtime component of the Docker engine. Containerd manages the execution and lifecycle of containers, including container creation, runtime management, and resource isolation.</p>
+              </dd>
+              <dt>Runc </dt>
+              <dd>
+                <p>Runc is<a contenteditable="false" data-type="indexterm" data-primary="runc">&nbsp;</a> a lightweight container runtime that implements the Open Container Initiative (OCI) runtime specification. Runc creates and executes container processes, manages container namespaces and filesystems, and enforces container security policies.</p>
+              </dd>
+            </dl>
+            <p>The container lifecycle, processes, and Docker engine play integral roles in the deployment and management of containerized applications. Containerization empowers organizations to embrace cloud native architectures, streamline development workflows, and accelerate digital transformation initiatives, driving innovation and agility in today’s dynamic IT landscape.</p>
+            <p>As organizations increasingly adopt containerization, the need for efficient management and scaling of these containerized applications becomes critical. This is where container orchestration <a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-tertiary="Docker engine" data-startref="containerization-docker-engine">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker engine" data-startref="docker-engine">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-startref="containerization-docker">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" data-startref="docker">&nbsp;</a>comes into play.</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch07_container_orchestration_1734552288630938">
+          <h2>Container Orchestration</h2>
+          <p>Container orchestration<a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Kubernetes" id="containerization-kubernetes">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="orchestration" id="container-orchestration">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="orchestration" id="orchestration">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Kubernetes" id="kubernetes">&nbsp;</a> platforms, such as Kubernetes, play a pivotal role in managing the deployment and operation of containerized applications at scale. <em>Kubernetes</em>, often abbreviated as K8s, is an open source container orchestration platform designed to automate deploying, scaling, and managing containerized applications. </p>
+          <section data-type="sect3" id="ch07_kubernetes_architecture_1734552288631001">
+            <h3>Kubernetes architecture</h3>
+            <p>The <a href="https://oreil.ly/WoSWJ">Kubernetes architecture</a>, illustrated in <a data-type="xref" href="#ch07_figure_6_1734552288616391">#ch07_figure_6_1734552288616391</a>, comprises several key components distributed across a cluster of machines.</p>
+            <figure id="ch07_figure_6_1734552288616391">
+              <img src="images/sdoa_0706.png"/>
+              <figcaption>Kubernetes architecture</figcaption>
+            </figure>
+            <p><em>Nodes</em> are<a contenteditable="false" data-type="indexterm" data-primary="nodes">&nbsp;</a> the individual machines, physical or virtual, that form the Kubernetes cluster. There are two types of nodes:</p>
+            <dl>
+              <dt>Manager or control plane nodes</dt>
+              <dd>
+                <p>These nodes <a contenteditable="false" data-type="indexterm" data-primary="control plane nodes">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="manager nodes">&nbsp;</a>host the control plane components and orchestrate the worker nodes. They manage the cluster’s overall state, respond to requests from users or external systems, and make decisions about when and where to deploy <span class='keep-together'>applications</span>.</p>
+              </dd>
+              <dt>Worker nodes</dt>
+              <dd>
+                <p>Also known<a contenteditable="false" data-type="indexterm" data-primary="worker nodes">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="minions">&nbsp;</a> as <em>minions</em>, these nodes run the actual containerized applications. Each worker node typically runs multiple containers managed by the Kubernetes system.</p>
+              </dd>
+            </dl>
+            <p>Control plane nodes consist of several components:</p>
+            <dl>
+              <dt>API server</dt>
+              <dd>
+                <p>The API server <a contenteditable="false" data-type="indexterm" data-primary="API servers">&nbsp;</a>is the central management entity in Kubernetes. It exposes the Kubernetes API, which allows users, management tools, and other parts of the cluster to interact with Kubernetes. It processes REST operations, validates and configures data, and updates the corresponding objects in the cluster’s etcd data store.</p>
+              </dd>
+              <dt>Scheduler</dt>
+              <dd>
+                <p>The scheduler <a contenteditable="false" data-type="indexterm" data-primary="schedulers">&nbsp;</a>places newly created Pods onto available nodes in the cluster. It considers factors like resource requirements, hardware and software constraints, affinity, anti-affinity, and other policies defined by the user.</p>
+              </dd>
+              <dt>Controller manager</dt>
+              <dd>
+                <p>The controller manager<a contenteditable="false" data-type="indexterm" data-primary="controller managers">&nbsp;</a> is a daemon that embeds the core control loops shipped with Kubernetes. These control loops watch the state of the cluster through the API server and work toward the desired state. Examples of controllers include the Node Controller, ReplicaSet Controller, and Deployment Controller.</p>
+              </dd>
+              <dt>Etcd</dt>
+              <dd>
+                <p>Although not <a contenteditable="false" data-type="indexterm" data-primary="etcd">&nbsp;</a>strictly part of the control plane nodes, etcd is a consistent and highly available key-value store used as Kubernetes’s backing store for all cluster data. It stores configuration data, state data, and metadata about the cluster.</p>
+              </dd>
+            </dl>
+            <p>The worker node components include:</p>
+            <dl>
+              <dt>Kubelet</dt>
+              <dd>
+                <p>The kubelet <a contenteditable="false" data-type="indexterm" data-primary="kubelets">&nbsp;</a>is an agent running on each worker node that manages the lifecycle of containers on that node. It receives Pod definitions via various means (such as the API server or local files), ensures that the containers described in those Pod definitions are running and healthy, and reports back to the control plane about the node’s health.</p>
+              </dd>
+              <dt>Kube-proxy</dt>
+              <dd>
+                <p>Kube-proxy is <a contenteditable="false" data-type="indexterm" data-primary="kube-proxy">&nbsp;</a>a network proxy that runs on each worker node. It maintains network rules on the host and performs connection forwarding to the <span class='keep-together'>appropriate</span> backend services. It enables the Kubernetes service abstraction by managing network routing for TCP and UDP packets.</p>
+              </dd>
+            </dl>
+            <p>The Kubernetes architecture is structured around a control plane that manages the cluster’s state and a set of worker nodes that execute the workloads. The interaction between these components ensures efficient deployment and management of containerized applications at scale.</p>
+          </section>
+          <section data-type="sect3" id="ch07_kubernetes_concepts_1734552288631059">
+            <h3>Kubernetes concepts</h3>
+            <p>Let’s understand the basic concepts of Kubernetes, which form the foundation of container orchestration:</p>
+            <dl>
+              <dt>Pods</dt>
+              <dd>
+                <p>A Pod is<a contenteditable="false" data-type="indexterm" data-primary="Pods">&nbsp;</a> the smallest deployable unit in Kubernetes, representing one or more containers that share networking and storage resources. Pods encapsulate application components and ensure that they are colocated and coscheduled. Pods are ephemeral and can be scaled up or down or replaced dynamically to meet demand.</p>
+              </dd>
+              <dt>Cluster</dt>
+              <dd>
+                <p>A Kubernetes <a contenteditable="false" data-type="indexterm" data-primary="clusters">&nbsp;</a>cluster consists of one or more control plane nodes and multiple worker nodes (data plane nodes), forming a distributed computing environment for running containerized applications. Clusters provide high availability, fault tolerance, and scalability for containerized workloads, ensuring consistent performance and reliability.</p>
+              </dd>
+              <dt>ReplicaSets</dt>
+              <dd>
+                <p>ReplicaSets ensur<a contenteditable="false" data-type="indexterm" data-primary="ReplicaSets">&nbsp;</a>e that a specified number of Pod replicas are running at any given time. They maintain the desired state of Pod replicas, scale Pods up or down in response to changes in demand, and ensure fault tolerance and <span class='keep-together'>availability</span>.</p>
+              </dd>
+              <dt>Services</dt>
+              <dd>
+                <p>Services provide network abstraction for accessing Pods within<a contenteditable="false" data-type="indexterm" data-primary="services (Kubernetes)">&nbsp;</a> the Kubernetes cluster. They enable load balancing, service discovery, and automatic routing of traffic to Pods based on labels and selectors. Services can be exposed internally within the cluster or externally to the internet.</p>
+              </dd>
+              <dt>Deployments</dt>
+              <dd>
+                <p>Deployments <a contenteditable="false" data-type="indexterm" data-primary="deployment" data-secondary="Kubernetes">&nbsp;</a>provide a declarative way to manage application deployments and updates in Kubernetes. Deployments define the desired state of the application, including the number of replicas, the container images, and the rollout strategy. Deployments ensure that the desired state is achieved and maintained, enabling seamless updates and rollbacks.</p>
+              </dd>
+              <dt>Volumes</dt>
+              <dd>
+                <p>Volumes provide<a contenteditable="false" data-type="indexterm" data-primary="volumes (Kubernetes)">&nbsp;</a> persistent storage for containers in Kubernetes, allowing data to persist beyond the lifecycle of individual Pods. Volumes enable data sharing between containers, stateful applications, and external storage systems, ensuring data integrity and availability for containerized workloads.</p>
+              </dd>
+              <dt>ConfigMaps and secrets</dt>
+              <dd>
+                <p>ConfigMaps and secrets<a contenteditable="false" data-type="indexterm" data-primary="ConfigMaps">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="secrets">&nbsp;</a> are Kubernetes resources used to store configuration data and sensitive information, such as passwords or API keys, respectively. They provide a centralized, secure way to manage application configuration and secrets, decoupling configuration from container images and enabling dynamic configuration updates.</p>
+              </dd>
+              <dt>Jobs</dt>
+              <dd>
+                <p>Jobs are <a contenteditable="false" data-type="indexterm" data-primary="jobs (Kubernetes)">&nbsp;</a>Kubernetes resources used to run batch or intermittent tasks to completion. Jobs ensure that a specified number of Pods complete their tasks successfully before terminating. They are ideal for running tasks such as data processing, backups, or periodic maintenance in Kubernetes clusters.</p>
+              </dd>
+              <dt>Resources</dt>
+              <dd>
+                <p>Resources, <a contenteditable="false" data-type="indexterm" data-primary="resources (Kubernetes)">&nbsp;</a>such as CPU and memory, are allocated to containers based on resource requests and limits specified in Kubernetes manifests. Resource management ensures efficient resource utilization, prevents resource contention, and maintains performance and reliability in Kubernetes clusters.</p>
+              </dd>
+            </dl>
+            <div data-type="note">
+              <p>We’ll cover Amazon EKS, a fully managed Kubernetes service for simplifying the deployment, management, and scaling of containerized applications using Kubernetes on the AWS cloud, in <a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a>. EKS manages the Kubernetes control plane,<a contenteditable="false" data-type="indexterm" data-primary="EKS (Elastic Kubernetes Service)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic Kubernetes Service (EKS)">&nbsp;</a> including updates, scaling, and availability, which allows you to focus on deploying and managing your applications.</p>
+            </div>
+            <p>Kubernetes provides a robust, flexible platform for container orchestration, enabling organizations to deploy, scale, and manage containerized applications with ease. By leveraging the Kubernetes architecture and its core components, organizations can build resilient, scalable, and highly available cloud native applications. </p>
+            <p>Now that you have a solid understanding of <a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Kubernetes" data-startref="containerization-kubernetes">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="orchestration" data-startref="container-orchestration">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="orchestration" data-startref="orchestration">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Kubernetes" data-startref="kubernetes">&nbsp;</a>Kubernetes and its components, the next step is to explore how these elements are applied in real-world scenarios, particularly in managing application deployments. This leads us to the concept of container deployment strategies.</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch07_container_deployment_strategies_1734552288631117">
+          <h2>Container Deployment Strategies</h2>
+          <p><em>Deployments </em>are the standard way to manage application deployments <a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="deployment strategies" id="container-deploy-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment strategies" data-secondary="Kubernetes" id="deploy-kubernetes-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Kubernetes" data-secondary="deployment strategies" id="kubernetes-deploy-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="deployment strategies" id="containerization-deploy-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="application deployment" data-secondary="container deployment strategies" id="app-deploy-container-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment" data-secondary="container deployment strategies" id="deploy-container-strategy">&nbsp;</a>in Kubernetes. They ensure declarative updates to application deployments, maintain desired replica counts, and handle rollouts and rollbacks efficiently. Deployments automate creating and scaling Pods based on a desired state, making it easy to manage application lifecycles.</p>
+          <p>Deploying applications in Kubernetes involves more than just rolling out new versions; it requires thoughtful strategies to ensure seamless updates, minimize downtime, and mitigate risks. The following are some common deployment strategies:</p>
+          <dl>
+            <dt>Re-creating deployment</dt>
+            <dd>
+              <p>Updating<a contenteditable="false" data-type="indexterm" data-primary="re-creating deployments">&nbsp;</a> a deployment in Kubernetes involves the re-creation of pods, when existing instances are terminated and replaced with the new versions. This approach proves beneficial when the coexistence of old and new application versions is not feasible. The downtime experienced is contingent on the duration required for the application to halt and restart. </p>
+            </dd>
+            <dt>Rolling deployment</dt>
+            <dd>
+              <p>Rolling deployments, the <a contenteditable="false" data-type="indexterm" data-primary="rolling deployments">&nbsp;</a>default offering in Kubernetes, aim to minimize cluster downtime by gradually and seamlessly replacing Pods running the old application version with the new one, facilitated by readiness probes. Once the readiness probe confirms the availability of the new application version, the old one is phased out. If issues arise, the deployment can be halted and rolled back to the previous version, averting cluster-wide downtime. However, because Pods are replaced individually, deployments may take time, especially in larger clusters. Suppose a new deployment is initiated before the ongoing one completes. In that case, Kubernetes updates the version to the new deployment’s specification, disregarding the previous version wherever it hasn’t yet been applied.</p>
+              <div data-type="note">
+                <p><em>Readiness probes</em> monitor <a contenteditable="false" data-type="indexterm" data-primary="readiness probes">&nbsp;</a>the application’s readiness state. If a probe fails, traffic is diverted away from the Pod, ensuring it doesn’t receive requests until it is ready. These probes are especially useful for applications that require initialization steps before serving traffic or during traffic surges that might overload the app temporarily.</p>
+              </div>
+            </dd>
+            <dt>StatefulSet deployments</dt>
+            <dd>
+              <p>StatefulSet deployments<a contenteditable="false" data-type="indexterm" data-primary="StatefulSet deployments">&nbsp;</a> are used to deploy stateful applications, such as databases or distributed systems, in Kubernetes. StatefulSets ensure that Pods are consistently named, networked, and persisted across restarts, maintaining data integrity and availability for stateful workloads.</p>
+            </dd>
+            <dt>Blue-green deployment</dt>
+            <dd>
+              <p>This strategy<a contenteditable="false" data-type="indexterm" data-primary="blue-green deployments">&nbsp;</a> involves running two identical production environments, labeled “blue” and “green.” At any given time, only one environment serves live traffic, while the other remains idle. When a new version is ready, traffic is routed to the idle environment, allowing for zero-downtime deployments and easy rollback if issues arise.</p>
+            </dd>
+            <dt>Serverless deployments</dt>
+            <dd>
+              <p>Also known <a contenteditable="false" data-type="indexterm" data-primary="serverless deployments">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="function as a service (FaaS)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="FaaS (function as a service)">&nbsp;</a>as <em>function as a service (FaaS)</em>, serverless deployments abstract away the infrastructure layer so that developers can focus solely on writing code. Kubernetes provides serverless capabilities through platforms like Knative or AWS Lambda on Kubernetes, enabling developers to deploy event-driven, autoscaling applications without managing the underlying infrastructure.</p>
+            </dd>
+            <dt>Canary deployments</dt>
+            <dd>
+              <p>Canary deployments<a contenteditable="false" data-type="indexterm" data-primary="canary deployments">&nbsp;</a> involve gradually rolling out a new version of an application to a subset of users or traffic segments while monitoring for errors or performance issues. These deployments allow for early detection of issues and provide a controlled rollback mechanism if necessary. Kubernetes supports canary deployments through features like traffic splitting and automated rollbacks.</p>
+            </dd>
+          </dl>
+          <p>Advanced deployment strategies are essential for managing the complexity of modern cloud native applications in Kubernetes. By leveraging these innovative approaches, organizations can achieve seamless updates, minimize downtime, and deliver exceptional user experiences. Kubernetes integrates seamlessly with infrastructure-as-code (IaC) practices, allowing teams to automate deploying and scaling containerized applications while leveraging a variety of IaC tools to define and manage their infrastructure.</p>
+          <div data-type="note">
+            <p><em>IaC</em> is a <a contenteditable="false" data-type="indexterm" data-primary="infrastructure-as-code (IaC)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IaC (infrastructure-as-code)">&nbsp;</a>modern approach to managing IT infrastructure through code, enabling automation and consistency in provisioning and configuration. IaC allows teams to define their infrastructure using declarative configuration files, which can be version-controlled and replicated easily, facilitating collaboration and traceability. Some common tools supporting IaC are <a href="https://terraform.io">Terraform</a>, <a href="https://aws.amazon.com/cloudformation">AWS CloudFormation</a>, <a href="https://ansible.com">Ansible</a>, <a href="https://pulumi.com">Pulumi</a>, <a href="https://chef.io">Chef</a>, <a href="https://puppet.com">Puppet</a>, and <a href="https://oreil.ly/NCJvE">AWS CDK</a>.</p>
+          </div>
+          <p>Kubernetes fits into the IaC paradigm by enabling the orchestration of containerized applications at scale. With Kubernetes, you can define your entire application environment—containers, networking, storage, and configurations—using declarative YAML files. This allows teams to version-control their infrastructure configurations, replicate environments easily, and automate deployment processes. Kubernetes provides a robust platform for implementing these strategies, empowering teams to deploy, scale, and manage applications with confidence and efficiency.</p>
+          <p>Changes should be deployed to a test (or staging) environment. Once changes are confirmed in the test environment via manual testing (or automated integrated tests), they can be propagated to the production environment serving real user traffic. Let’s discuss <a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="deployment strategies" data-startref="container-deploy-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment strategies" data-secondary="Kubernetes" data-startref="deploy-kubernetes-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Kubernetes" data-secondary="deployment strategies" data-startref="kubernetes-deploy-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="deployment strategies" data-startref="containerization-deploy-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="application deployment" data-secondary="container deployment strategies" data-startref="app-deploy-container-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment" data-secondary="container deployment strategies" data-startref="deploy-container-strategy">&nbsp;</a>this process more in the next section.</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch07_ci_cd_pipeline_with_gitflow_and_automated_deployme_1734552288631183">
+        <h1>CI/CD Pipeline with Gitflow and Automated <span class='keep-together'>Deployment Strategies</span></h1>
+        <p>As the number<a contenteditable="false" data-type="indexterm" data-primary="application deployment" data-secondary="CI/CD pipeline" id="app-deploy-cicd">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment" data-secondary="CI/CD pipeline" id="deploy-cicd">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CI/CD pipeline" id="cicd">&nbsp;</a> of software projects within an organization increases, so does the complexity of managing deployments. Manual deployments become prone to errors and require considerable engineering resources to manage, ultimately slowing the development lifecycle. To address this, CI/CD provides an automated flow that reduces operational costs and accelerates deployment from code review to production. Let’s dive into the key concepts of CI/CD, starting with code development using Gitflow, and explore the steps for implementing them effectively.</p>
+        <section data-type="sect2" id="ch07_gitflow_workflow_for_branch_management_1734552288631246">
+          <h2>Gitflow Workflow for Branch Management</h2>
+          <p>Gitflow is a <a href="https://oreil.ly/hQ8Pl">branching strategy</a> that <a contenteditable="false" data-type="indexterm" data-primary="Gitflow">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="branch management">&nbsp;</a>organizes development, testing, and releases with clear, structured branches. This ensures smooth integrations, well-planned releases, and quick rollouts for bug fixes.</p>
+          <p>The main branches are:</p>
+          <dl>
+            <dt>
+              <code>main</code>
+            </dt>
+            <dd>
+              <p>The stable production branch with the latest approved code</p>
+            </dd>
+            <dt>
+              <code>develop</code>
+            </dt>
+            <dd>
+            <p>The integration branch where features are merged before release</p>
+          </dd>
+          </dl>
+          <p>The feature branches are:</p>
+          <dl>
+            <dt>
+              <code>feature/*</code>
+            </dt>
+            <dd>
+              <p>Created for each new feature or task; merged into <code>develop</code> upon completion</p>
+            </dd>
+            <dt>
+              <code>release/*</code>
+            </dt>
+            <dd>
+            <p>Used for final testing and last-minute adjustments; merged into both <code>main</code> and <code>develop</code></p>
+          </dd>
+            <dt>
+             
+              <code>hotfix/*</code>
+           
+            </dt>
+            <dd>
+            <p>Created from <code>main</code> for urgent production fixes; merged into both <code>main</code> and <code>develop</code></p>
+          </dd>  
+          </dl>
+          <p>Developers create a feature branch off <code>develop</code>, complete their work, and create a <a href="https://oreil.ly/vuqYx">pull request (PR)</a> for merging back to <code>develop</code>. Once the code is ready for release, a <code>release</code> branch is created from <code>develop</code>, tested, and merged into both <code>main</code> and <code>develop</code>. <code>Hotfix</code> branches enable urgent fixes and are created from <code>main</code> and merged back to both <code>main</code> and <code>develop</code> for consistency. The end-to-end flow is shown in <a data-type="xref" href="#ch07_figure_7_1734552288616409">#ch07_figure_7_1734552288616409</a>.</p>
+          <figure id="ch07_figure_7_1734552288616409">
+            <img src="images/sdoa_0707.png"/>
+            <figcaption>Gitflow branching strategy</figcaption>
+          </figure>
+        </section>
+        <section data-type="sect2" id="ch07_continuous_integration_1734552288631306">
+          <h2>Continuous Integration</h2>
+          <p>CI aims <a contenteditable="false" data-type="indexterm" data-primary="continuous integration (CI)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CI (continuous integration)">&nbsp;</a>to integrate code changes from multiple developers into a shared repository multiple times a day. This process ensures that code changes are regularly tested, built, and validated to catch integration issues early. </p>
+          <p>After developing code in their local or cloud environments, developers create a feature branch for each new feature or fix. Once development is complete, they raise a PR, which includes details about the change, its purpose, and any test cases.</p>
+          <p>CI then initiates an automated build process to confirm that the code compiles without errors. Automated unit tests run to verify that individual components function correctly. Code quality and lint checks ensure adherence to style and best practices. Automated security tools, such as SonarQube or Amazon CodeGuru, scan for vulnerabilities. Automated code reviews identify potential inefficiencies, and manual reviews offer feedback on logic and potential improvements. If any step fails, feedback is given to the developer, who can then update the code as needed. </p>
+          <p>Once all CI checks are green, the PR undergoes peer and automated reviews for additional feedback. After any issues are addressed, the PR is approved and merged into the <code>develop</code> branch, initiating a postmerge pipeline. In the postmerge pipeline, CI builds and tests the new code to verify seamless integration. For containerized applications, a Docker image is built and prepared for deployment to testing and production environments.</p>
+        </section>
+        <section data-type="sect2" id="ch07_continuous_deployment_1734552288631360">
+          <h2>Continuous Deployment</h2>
+          <p>CD is the <a contenteditable="false" data-type="indexterm" data-primary="continuous deployment (CD)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CD (continuous deployment)">&nbsp;</a>process that deploys changes to a test environment, staging environment, and finally production after successful CI checks, without requiring manual intervention. CD provides a streamlined, responsive approach to getting code into production quickly, making it easier to roll out features and updates.</p>
+          <p>After CI is successfully completed, code is deployed to a test environment for further verification, checking that different parts of the application communicate and function correctly with integration tests. Load testing then simulates high traffic to understand performance impact. An approval process may be required for significant changes before proceeding to further environments. Once the testing environment is validated, the changes are promoted to a staging environment. Basic functionality smoke tests ensure readiness for production.</p>
+          <p>In a canary deployment, updates are rolled out to a small group of users or servers first. Metrics (e.g., error rates, latency) are monitored to ensure stability. If issues are detected, automated rollbacks restore the previous stable version. Once the canary deployment is successful, the update is gradually deployed to the rest of the production environment.</p>
+        </section>
+        <section data-type="sect2" id="ch07_monitoring_and_incident_management_1734552288631424">
+          <h2>Monitoring and Incident Management</h2>
+          <p>Proactive monitoring <a contenteditable="false" data-type="indexterm" data-primary="monitoring">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="incident management">&nbsp;</a>and incident response are essential for identifying and addressing issues quickly. For continuous monitoring, tools like CloudWatch, ELK Stack, or Prometheus are used to monitor key metrics (e.g., CPU, memory, request latency) in real time. Dashboards and alerts are set up to track stability and performance. Alerts are integrated with incident management tools (e.g., PagerDuty, Opsgenie) to notify engineers of issues. Automated playbooks provide quick responses to common incidents, <a contenteditable="false" data-type="indexterm" data-primary="application deployment" data-secondary="CI/CD pipeline" data-startref="app-deploy-cicd">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment" data-secondary="CI/CD pipeline" data-startref="deploy-cicd">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CI/CD pipeline" data-startref="cicd">&nbsp;</a>ensuring fast recovery.</p>
+        </section>
+      </section>
+      <section class="pagebreak-before" data-type="sect1" id="ch07_conclusion_1734552288631479">
+        <h1 class="less_space">Conclusion</h1>
+        <p>Containerization has had a significant impact on software development and deployment. In this chapter, we’ve covered the basics of containerization, explored how Docker works, looked at container images, discussed container registries and runtimes, and learned about using Kubernetes for orchestration and deployment. We also talked about the differences between containers and VMs, highlighting how containers offer more flexibility and scalability. We emphasized the importance of having smaller image sizes, optimizing builds, and managing images efficiently for easier retrieval and deployment. We revealed Kubernetes’s powerful architecture, including its key components, such as Pods, clusters, and services. We also explored various deployment strategies, such as blue-green and serverless deployments, to help manage application rollouts and updates smoothly.</p>
+        <p>As you continue your journey with containerization and orchestration, remember that learning is an ongoing process. Keep experimenting with different deployment strategies, stay up to date with the latest tools and best practices, and always seek ways to improve your deployment workflows.</p>
+        <p>In the next chapter, we’ll shift our focus to architecture design and patterns. We’ll explore various architecture patterns for big data, pub/sub models, solution architecture, and more, with use cases ranging from distributed filesystems to distributed message queues. This will equip you with the knowledge to architect large-scale systems for Day N, scaling to millions and beyond.</p>
+      </section>
+    </section>

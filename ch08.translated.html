@@ -1,0 +1,1048 @@
+<section data-type="chapter" id="ch08_architectural_designs_and_patterns_1734552289324317" xmlns="http://www.w3.org/1999/xhtml">
+<h1>架构设计与模式</h1>
+
+<p>在本章中，我们 <a contenteditable="false" data-primary="patterns" data-see="architectural designs and patterns" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="designs" data-see="architectural designs and patterns" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="system design" data-seealso="architectural designs and patterns" data-type="indexterm">&nbsp;</a>将深入探讨架构设计与模式的世界。这些模型和模式构成了现代软件系统的基础。我们将研究这些设计如何在各类应用中支持可扩展性、可维护性和高效的数据处理。本章不仅将为您奠定扎实的理论基础，还将激发您在系统设计实践中的创新与应用。</p>
+
+<p>我们的旅程从<em>变更数据捕获（CDC）</em>开始——这是一种在数据架构中捕获数据库数据变更的关键技术。随后，我们将进入异步通信模式领域，探讨发布-订阅架构：在该架构中，发布者在不了解订阅者身份的情况下发布事件。我们还将了解消息代理和消息队列如何管理跨系统的数据流，并重点介绍 Apache Kafka——一种高吞吐量的分布式消息系统，阐述其架构及处理大规模数据流的应用场景。</p>
+
+<p>在分布式系统中，管理服务间的交互至关重要。本章将探讨构建现代云环境中可扩展、高弹性、可维护系统的关键架构模式。我们将比较编配（去中心化）与编排（集中化）两种管理方式，分析各自最适用的场景。之后，我们将转向大数据架构，涵盖 Lambda、Kappa 和数据湖架构等基础模型，以及 Hadoop 分布式文件系统（HDFS）——一种用于处理海量数据集的分布式文件系统。我们还将对比单体、N 层和微服务等应用架构，随后深入研究事件驱动系统——重点介绍它如何通过响应实时事件，实现解耦服务间的通信。</p>
+
+<p>本章最后将介绍一系列核心云架构模式，从断路器等弹性技术到 Saga 编排等事务策略，为构建健壮的系统设计提供实用工具箱。本章中的架构模式将作为蓝图，为 <a data-type="xref" href="#part3">#part3</a> 中涵盖的各类使用场景提供系统设计参考。</p>
+
+<section data-type="sect1" id="ch08_change_data_capture_1734552289324609">
+<h1>变更数据捕获</h1>
+
+<p>CDC 是<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="CDC (change data capture)" data-type="indexterm" id="arch-design-cdc">&nbsp;</a><a contenteditable="false" data-primary="CDC (change data capture)" data-type="indexterm" id="cdc">&nbsp;</a><a contenteditable="false" data-primary="change data capture (CDC)" data-type="indexterm" id="change-data-capture">&nbsp;</a>一种先进的数据集成方法，能够实时追踪并捕获源数据库中的数据变更，并将这些变更推送至各类目标系统，包括其他数据库、数据仓库或实时处理引擎。CDC 的核心价值在于它能够向组织各部门提供最新数据，从而确保所有系统始终反映最新信息。</p>
+
+<p>对实时数据处理的需求促使组织纷纷采用 CDC。在数据如同石油一样宝贵的时代，拥有最新数据能够显著提升运营效率和决策能力。传统的批处理方法虽然可靠，但无法满足当今快节奏业务环境对即时性的需求。批处理往往需要安排停机时段，且在数据提取过程中会影响系统性能，不利于实现实时响应。</p>
+
+<p>在需要实时分析的场景中，CDC 可将事务数据库（如 RDBMS）与数据仓库（如 Snowflake、Redshift）同步。这使得数据管道能够持续将事务系统中的最新数据推送至数仓，无需繁重的 ETL（提取、转换和加载）批处理作业即可获得最新洞察。我们将在 <a data-type="xref" href="#ch16_designing_a_social_network_and_newsfeed_system_1734552293547861">#ch16_designing_a_social_network_and_newsfeed_system_1734552293547861</a> 讨论新帖创建的设计处理时，进一步深入探讨 CDC。</p>
+
+<p>与批量加载相比，CDC 具有诸多优势，尤其体现在实时性能方面：</p>
+
+<dl>
+	<dt>降低延迟</dt>
+	<dd>
+	<p>CDC 能够实现近乎即时的数据更新，使企业能够迅速响应变化，这对于动态定价、库存更新或个性化客户交互至关重要。</p>
+	</dd>
+	<dt>降低成本与带宽占用</dt>
+	<dd>
+	<p>CDC 仅传输上次传输后发生的变更，从而最大限度地减少所需带宽，降低数据传输相关成本。</p>
+	</dd>
+	<dt>提高系统效率</dt>
+	<dd>
+	<p>由于 CDC 在变更发生时即刻捕获，对源系统的影响极小，避免了批处理<span class="keep-together">过程</span>中密集的资源占用。</p>
+	</dd>
+</dl>
+
+<p>软件架构师可以使用多种技术实现 CDC，每种技术适用于不同的系统架构和性能需求：</p>
+
+<dl>
+	<dt>基于审计列的 CDC</dt>
+	<dd>
+	<p>基于时间戳的审计列<a contenteditable="false" data-primary="audit-column-based CDC" data-type="indexterm">&nbsp;</a>是一种简单而有效的 CDC 实现方式。通过在数据库表中添加 <code>created_at</code> 和 <code>updated_at</code> 等时间戳列，可以追踪每条记录的插入或最后修改时间。这种方法特别适用于需要历史审计跟踪的应用场景，其主要优势在于简单且开销低，充分利用了大多数 RDBMS 的内置能力。</p>
+	</dd>
+	<dt>基于日志的 CDC</dt>
+	<dd>
+	<p>基于日志的 CDC <a contenteditable="false" data-primary="log-based CDC" data-type="indexterm">&nbsp;</a>通过读取数据库维护的事务日志来运作。由于这些日志本就是为数据恢复和完整性而记录所有变更的，因此无需对数据库本身增加额外开销，是捕获数据变更的可靠来源。这种方式支持近实时的数据集成，适用于高可用系统以及需要跨平台即时一致性的场景。Debezium 等工具可以透明地与这些日志对接，将数据变更无缝传输至 Kafka 和数据库等各类数据接收端。</p>
+
+	<div data-type="note">
+	<p>基于流的 CDC <a contenteditable="false" data-primary="stream-based CDC" data-type="indexterm">&nbsp;</a>是基于日志的 CDC 的扩展，它将日志数据格式化为更易于消费的流，使应用程序更容易实时处理变更。其中一个典型示例是 Amazon DynamoDB Streams，它可将 DynamoDB 表中的数据更新发布至不同的目标系统。</p>
+	</div>
+	</dd>
+	<dt>表快照比对法</dt>
+	<dd>
+	<p>表快照比对法<a contenteditable="false" data-primary="table deltas" data-type="indexterm">&nbsp;</a>通过比较不同时间点的表快照来捕获变更。这种方式思路直接：通过定期对表进行全量快照并加以比较，即可推导出发生的变更。然而，这种方法可能引入延迟且资源消耗较大；因此，通常适用于事务量较低或不需要实时同步的系统。尽管存在上述缺点，对于资源和处理窗口规划合理的批处理场景，它仍是一种可行的选择。</p>
+	</dd>
+	<dt>基于触发器的 CDC</dt>
+	<dd>
+	<p>基于触发器的 CDC <a contenteditable="false" data-primary="trigger-based CDC" data-type="indexterm">&nbsp;</a>利用数据库触发器来捕获变更，即在表中发生事件（<code>INSERT</code>、<code>UPDATE</code>、<code>DELETE</code>）时自动执行预定义的存储过程或 SQL 命令。这种方式可以即时捕获数据变更并进行自定义处理，便于在数据捕获阶段实现复杂的转换或即时校验。虽然这种方式灵活且能实时运行，但在大规模系统中管理数据库触发器会增加负载和复杂性。</p>
+	</dd>
+</dl>
+
+<p>在实际应用中，CDC 不仅是一种数据集成工具，更是企业提升数据敏捷性和可及性的整体战略的重要组成部分。随着云平台对 CDC 内置支持的日益完善，CDC 的应用也愈发便捷。组织可以借助 CDC 在分布式环境中保持数据同步更新，从而在不<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="CDC (change data capture)" data-startref="arch-design-cdc" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="CDC (change data capture)" data-startref="cdc" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="change data capture (CDC)" data-startref="change-data-capture" data-type="indexterm">&nbsp;</a>引入大量开销或复杂性的前提下提升分析能力。</p>
+</section>
+
+<section data-type="sect1" id="ch08_publisher_subscriber_architecture_1734552289324689">
+<h1>发布-订阅架构</h1>
+
+<p>发布-订阅架构 <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="pub/sub model" data-type="indexterm" id="arch-design-pubsub">&nbsp;</a><a contenteditable="false" data-primary="pub/sub (publisher-subscriber) architecture" data-type="indexterm" id="pubsub">&nbsp;</a><a contenteditable="false" data-primary="communication" data-secondary="pub/sub model" data-type="indexterm" id="comms-pubsub">&nbsp;</a>是事件驱动编程中的一种基础模型，它促进了系统各部分之间的异步通信。这种模式对于需要组件之间高效交互而无需直接关联的应用场景至关重要，从而实现了松耦合和可扩展的设计。</p>
+
+<p>尽管发布-订阅架构常与观察者模式混淆，但它在设计理念和运作方式上有其独特之处。两者的核心区别在于路由机制。在观察者设计模式中，观察者了解主题对象，可以直接向其注册以接收更新。通信通常是同步的，所有观察者通过直接方法调用同时收到通知。</p>
+
+<p>而发布-订阅模型则通过消息代理或事件总线将发布者与订阅者解耦，由其负责消息或事件的传递。发布者向事件通道发送消息，无需了解订阅者的详情；订阅者则监听该通道，无需知晓发布者是谁。这种设计支持异步通信，并能比观察者模式更顺畅地支持复杂的多对多交互。</p>
+
+<p>发布-订阅架构涉及消息代理和消息队列，下面我们来详细了解这两个组件。</p>
+
+<section data-type="sect2" id="ch08_message_brokers_1734552289324756">
+<h2>消息代理</h2>
+
+<p><em>消息代理</em>是发布-订阅架构中的关键组件，<a contenteditable="false" data-primary="message brokers" data-type="indexterm" id="message-broker">&nbsp;</a>负责管理生产者（发布者）与消费者（订阅者）之间的消息传递。即便在复杂的分布式系统中，消息代理也能确保消息被正确路由、维护和投递。</p>
+
+<p>如图 <a data-type="xref" href="#ch08_figure_1_1734552289299606">#ch08_figure_1_1734552289299606</a> 所示，典型的消息代理架构包含用于临时存储消息的队列，以及对消息进行分类的主题。发布者将消息发送至特定主题，订阅者则注册自己感兴趣的一个或多个主题。随后，消息代理确保将相关主题的消息投递给对应的订阅者。</p>
+
+<figure id="ch08_figure_1_1734552289299606"><img src="images/sdoa_0801.png" />
+<figcaption>消息代理与消息队列</figcaption>
+</figure>
+
+<p>高级消息队列协议（AMQP）<a contenteditable="false" data-primary="Advanced Message Queuing Protocol (AMQP)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="AMQP (Advanced Message Queuing Protocol)" data-type="indexterm">&nbsp;</a>是一种用于应用程序或组织间传递消息的开放标准，注重高互操作性和可靠性。AMQP 规定了消息提供方和消息代理的行为，以确保消息的一致性投递，因此成为需要健壮性和功能可预测性的系统的首选协议。<a contenteditable="false" data-primary="message brokers" data-startref="message-broker" data-type="indexterm">&nbsp;</a></p>
+</section>
+
+<section data-type="sect2" id="ch08_message_queues_1734552289324820">
+<h2>消息队列</h2>
+
+<p><em>消息队列</em>是消息基础设施的基本组成部分，<a contenteditable="false" data-primary="message queues" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-type="indexterm">&nbsp;</a>如图 <a data-type="xref" href="#ch08_figure_1_1734552289299606">#ch08_figure_1_1734552289299606</a> 所示，它充当消息从发布者路由至订阅者过程中的临时缓冲区。</p>
+
+<p>Apache Kafka 是消息队列系统的典型代表（我们将在本章最后一节详细介绍），它专为处理高数据量和支持高吞吐量应用而设计。Kafka 及类似技术充分展示了消息队列在现代系统架构中日益增强的能力，尤其在高效处理大规模实时数据流方面表现突出。</p>
+
+<p>发布-订阅架构借助 Kafka 等先进消息代理和队列系统，代表了构建解耦、可扩展、高效应用的强大范式。这种架构不仅支持关注点分离，还增强了软件系统各组件之间处理异步通信的能力。这种方式在当今的分布式系统中越来越具有现实意义，因为高效可靠地管理数据流比以往任何时候都更加<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="pub/sub model" data-startref="arch-design-pubsub" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="pub/sub (publisher-subscriber) architecture" data-startref="pubsub" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="communication" data-secondary="pub/sub model" data-startref="comms-pubsub" data-type="indexterm">&nbsp;</a>关键。</p>
+</section>
+</section>
+
+<section data-type="sect1" id="ch08_choreography_and_orchestration_1734552289324885">
+<h1>编配与编排</h1>
+
+<p>在分布式系统（尤其是采用微服务的系统）设计中，管理服务交互的方式——即编配与编排——在定义系统行为和能力方面发挥着举足轻重的作用。</p>
+
+<section data-type="sect2" id="ch08_choreography_1734552289324947">
+<h2>编配</h2>
+
+<p><em>编配</em>采用<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="choreography" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="choreography" data-type="indexterm">&nbsp;</a>去中心化的工作流管理方式。在这种模型中，每个服务根据其消费的事件知晓自己该做什么以及何时去做，无需中央协调器；服务根据接收到的事件通知独立履行各自的职责。这种方式将服务设计为响应事件而非中央机构的直接命令，从而实现松耦合，并因服务独立运行而提升了系统的可扩展性和弹性。</p>
+
+<p>缺乏中央控制器可能使得执行某些业务规则和监控整体流程变得困难。由于架构的分布式特性将日志条目和错误报告分散在各个服务中，错误处理和调试也可能变得更加复杂。</p>
+
+<p>编配的一种子模式是<a contenteditable="false" data-primary="choreographed asynchronous events" data-type="indexterm">&nbsp;</a><em>编配异步事件</em>。在这种模式中，服务通过中央消息总线发布和消费事件，构建出一个松耦合的系统，使服务无需了解彼此的操作细节即可独立运行。这种模式在写操作量大的系统中尤为适用，例如 IoT 数据处理或实时通知系统。</p>
+
+<p>其优势包括：因解耦特性带来的可扩展性，以及各服务可自主运行所带来的针对服务故障的弹性。然而，挑战也随之而来：由于工作流分散在多个服务中，管理整体系统状态、追踪和调试工作流变得更加困难。编排范式可以解决这些挑战。</p>
+
+<div data-type="note">
+<p>电商平台的订单处理系统和酒店预订系统等设计问题，可以通过服务间的编配来解决。我们将在 <a data-type="xref" href="#ch18_designing_a_hotel_reservation_system_1734552294615548">#ch18_designing_a_hotel_reservation_system_1734552294615548</a> 中讨论类似的预订确认和支付流程管理模式。预订系统等待客户支付，并响应 <code>PaymentProcessed</code> 等事件，以 <code>BookingConfirmed</code> 事件确认预订。此事件进一步被账单系统等其他服务用于生成发票。</p>
+</div>
+</section>
+
+<section data-type="sect2" id="ch08_orchestration_1734552289325025">
+<h2>编排</h2>
+
+<p>与编配相对，<em>编排</em><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="orchestration" data-type="indexterm" id="arch-design-orchestration">&nbsp;</a><a contenteditable="false" data-primary="orchestration" data-type="indexterm" id="orchestration-ch8">&nbsp;</a>依赖中央协调器（即<em>编排器</em>）<a contenteditable="false" data-primary="orchestrators" data-type="indexterm">&nbsp;</a>来控制服务间的交互，由其决定流程走向，并指示各服务何时行动。这种方式简化了业务逻辑的监控和管理，对于需要精确协调和严格遵守工作流的复杂业务流程尤为有利。由于编排器可以跟踪流程状态并据此做出决策，错误处理和恢复也得以简化。</p>
+
+<div data-type="note">
+<p>目前有多种编排解决方案，既有开源软件，也有云服务商提供的托管服务，包括 Netflix 设计的 <a href="https://oreil.ly/50w9A">Conductor</a> 和 <a href="https://oreil.ly/KW-dX">Maestro</a>、<a href="https://oreil.ly/2eulB">Temporal 工作流编排器</a>、AWS Step Functions 以及 Apache Airflow。我们将在 <a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a> 中讨论 Step Functions 和 Airflow。</p>
+</div>
+
+<p>编排可能导致服务间耦合度增加，因为服务依赖中央节点进行指令调度。这也可能成为单点故障，影响系统的弹性和可扩展性。编排可以通过多种模式实现，每种模式适用于不同的工作流需求和系统<span class="keep-together">架构</span>。</p>
+
+<div data-type="note">
+<p>视频上传功能（如 YouTube 和 Netflix）的设计问题可以通过编排平台轻松管理。工作流中的每个步骤都会调用特定服务来执行任务，例如验证、编码和分发视频。我们将在 <a data-type="xref" href="#ch20_designing_a_video_processing_pipeline_for_a_stream_1734552295245731">#ch20_designing_a_video_processing_pipeline_for_a_stream_1734552295245731</a> 中对此进行更详细的讨论。</p>
+</div>
+
+<section data-type="sect3" id="ch08_orchestrated_synchronous_and_sequential_pattern_1734552289325087">
+<h3>编排式同步顺序模式</h3>
+
+<p>在这种<a contenteditable="false" data-primary="synchronous orchestration patterns" data-type="indexterm" id="sync-orchestration">&nbsp;</a>模式中，编排器以顺序方式向服务发送同步请求，在进入下一步之前等待每个响应。这种方式适用于涉及多个步骤且需要按特定顺序完成的复杂工作流，例如电商结账流程。</p>
+
+<p>该模式的优势包括：集中控制便于管理复杂工作流，以及因工作流在编排器中有明确定义而便于调试。然而，系统也可能面临挑战，如编排器成为单点故障，以及任务顺序执行导致的潜在性能瓶颈。</p>
+</section>
+
+<section data-type="sect3" id="ch08_orchestrated_synchronous_and_parallel_pattern_1734552289325147">
+<h3>编排式同步并行模式</h3>
+
+<p>与顺序方式类似，但对独立任务进行并行执行，从而提升性能、降低延迟。在可以同时调用多个服务的场景中效果显著，例如数据聚合服务。</p>
+
+<p>该模式的优势包括：通过缩短工作流完成的总时长来提升性能，以及在同时涉及并行和顺序步骤的工作流管理中具有灵活性。然而，其挑战在于并行操作管理的复杂性增加，以及服务未针对并行<a contenteditable="false" data-primary="synchronous orchestration patterns" data-startref="sync-orchestration" data-type="indexterm">&nbsp;</a>执行优化时可能出现的资源竞争风险。</p>
+</section>
+
+<section data-type="sect3" id="ch08_orchestrated_asynchronous_and_sequential_pattern_1734552289325207">
+<h3>编排式异步顺序模式</h3>
+
+<p>在这种<a contenteditable="false" data-primary="asynchronous orchestration patterns" data-type="indexterm">&nbsp;</a>模式中，编排器发送异步请求，允许服务独立处理任务，并通过回调或消息队列返回结果。这种方式非常适合长时间运行任务的系统，其中服务无需等待响应即可继续处理，例如批处理系统。</p>
+
+<p>该模式的优势包括：更好地处理长时间运行的流程而不阻塞资源，以及因服务可在失败时重试操作而提升系统弹性。然而，其挑战在于管理异步响应的复杂性增加，以及需要额外机制来处理最终一致性和故障恢复。</p>
+</section>
+
+<section data-type="sect3" id="ch08_hybrid_orchestration_and_choreography_pattern_1734552289325271">
+<h3>混合编排与编配模式</h3>
+
+<p>该模式<a contenteditable="false" data-primary="hybrid orchestration and choreography pattern" data-type="indexterm">&nbsp;</a>结合了编配和编排的优势：对显式工作流使用编排，对隐式的事件驱动操作使用编配。它适用于某些工作流需要严格控制、而另一些工作流受益于去中心化执行的复杂系统，例如大规模分布式应用。</p>
+
+<p>在一个大型电商平台中，订单处理服务充当编排器，控制工作流的主要步骤：验证支付、预留库存、确认订单和发起配送。这种显式编排确保核心订单工作流受到严格控制，每个步骤按特定顺序执行，这对于事务完整性和可靠性至关重要。与编排核心并行的是，各类辅助服务采用去中心化的事件驱动方式。例如，当订单发货时，系统发布一个事件。通知服务和分析服务等独立服务监听此事件并各自执行任务（向客户发送通知和更新配送统计数据），无需直接协调，从而实现了灵活性和可扩展性。</p>
+
+<p>该模式的优势包括：灵活处理多样化的工作流需求，以及通过同时利用集中式和去中心化方式提升系统弹性。然而，其挑战在于确保编排和编配操作之间边界清晰的复杂性，以及职责重叠导致效率低下的风险。</p>
+</section>
+</section>
+
+<section data-type="sect2" id="ch08_deciding_between_choreography_and_orchestration_1734552289325331">
+<h2>在编配与编排之间做出选择</h2>
+
+<p>选择使用<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="choreography" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="choreography" data-type="indexterm">&nbsp;</a>编配还是编排，很大程度上取决于具体的项目需求。编配更适合需要高可扩展性和弹性、且业务流程可通过去中心化方式有效处理的系统。编排则更适合需要跨多个服务进行严格控制和协调的复杂流程，即业务逻辑过于复杂而无法通过去中心化方式有效管理的场景。两种方式在系统设计中都有其用武之地，深入理解它们各自的优势和局限性，对于架构师设计出不仅满足当前需求、还能适应未来业务需求变化的解决方案<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="orchestration" data-startref="arch-design-orchestration" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="orchestration" data-startref="orchestration-ch8" data-type="indexterm">&nbsp;</a>至关重要。</p>
+
+<p>随着企业持续产生指数级增长的数据量，用于存储、处理和分析海量数据集的大数据架构策略变得愈发重要，下一节我们将对此进行深入探讨。</p>
+</section>
+</section>
+
+<section data-type="sect1" id="ch08_big_data_architecture_1734552289325392">
+<h1>大数据架构</h1>
+
+<p>大数据架构<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="big data" data-type="indexterm" id="arch-design-bigdata">&nbsp;</a><a contenteditable="false" data-primary="big data architectures" data-type="indexterm" id="bigdata">&nbsp;</a>旨在有效应对数据的五大挑战——数据量（Volume）、速度（Velocity）、多样性（Variety）、真实性（Veracity）和价值（Value）——确保组织能够获取可操作的洞察并保持性能可扩展性。大数据架构已从传统数据库演进至大型数据仓库和数据湖。我们将根据其演进历程，介绍三种现代大数据架构模型。</p>
+
+<section data-type="sect2" id="ch08_lambda_architecture_1734552289325452">
+<h2>Lambda 架构</h2>
+
+<p><em>Lambda 架构</em>如图 <a data-type="xref" href="#ch08_figure_2_1734552289299641">#ch08_figure_2_1734552289299641</a> 所示，<a contenteditable="false" data-primary="lambda architecture" data-type="indexterm" id="lambda">&nbsp;</a>是一种混合数据处理模型，结合了批处理和实时处理两种方式。</p>
+
+<p>该架构通过以下三个层次来处理和呈现数据，从而在延迟、吞吐量和容错性之间取得平衡：</p>
+
+<dl>
+	<dt>批处理层</dt>
+	<dd>
+	<p>该层以批量方式处理大量数据，对长期存储的历史数据进行处理。它提供全面且精确的数据视图，但延迟较高。批处理层负责创建预计算视图，存储批处理的结果。</p>
+	</dd>
+	<dt>加速层</dt>
+	<dd>
+	<p>针对实时数据处理需求，加速层在数据到达时即刻处理，确保低延迟。该层通过提供及时（尽管可能是近似）的数据视图来弥补批处理层的高延迟。</p>
+	</dd>
+	<dt>服务层</dt>
+	<dd>
+	<p>最后一个组件——服务层——将批处理层和加速层的输出合并，向终端用户呈现连贯一致的结果视图。</p>
+	</dd>
+</dl>
+
+<figure id="ch08_figure_2_1734552289299641"><img src="images/sdoa_0802.png" />
+<figcaption>Lambda 架构</figcaption>
+</figure>
+
+<p>Lambda 架构适用于既需要近实时数据视图、又需要处理无法快速处理的海量数据集的场景。批处理层和加速层这两个组件引入了额外的运营管理复杂性。这一局限性可通过 Kappa 架构来解决——Kappa 架构将两者<a contenteditable="false" data-primary="lambda architecture" data-startref="lambda" data-type="indexterm">&nbsp;</a>合并为一个统一系统。</p>
+</section>
+
+<section data-type="sect2" id="ch08_kappa_architecture_1734552289325509">
+<h2>Kappa 架构</h2>
+
+<p>作为 Lambda 架构的演进，<a contenteditable="false" data-primary="kappa architecture" data-type="indexterm" id="kappa">&nbsp;</a><em>Kappa 架构</em>通过将所有传入数据视为流来简化运营复杂性。如图 <a data-type="xref" href="#ch08_figure_3_1734552289299664">#ch08_figure_3_1734552289299664</a> 所示，该模型提出使用单一的流处理层来同时处理实时数据和历史数据。通过将所有数据视为流，Kappa 架构消除了同时维护批处理和实时处理两套独立代码库和系统的需求，从而简化了开发和维护工作。</p>
+
+<p>该架构利用先进的流处理工具，能够处理时间窗口、事件排序和跨潜在无界数据集的状态管理。Kappa 架构尤其适用于输入数据天然为流式的应用，或数据时效性比复杂的计算密集型批量分析更为优先的场景。</p>
+
+<figure id="ch08_figure_3_1734552289299664"><img src="images/sdoa_0803.png" />
+<figcaption>Kappa 架构</figcaption>
+</figure>
+
+<div data-type="note">
+<p>这里的核心思想是将批处理和流处理工作负载简化为单一管道，但具体的实现和生产化方式因组织的使用场景而异。<a href="https://oreil.ly/5sKlo">Uber 借助 Kappa 架构</a>解决了多个问题，例如动态定价、欺诈检测和用户体验分析。通过设计单一管道并支持在批处理和流处理工作负载之间轻松切换，来应对这些不同的使用场景。</p>
+</div>
+</section>
+
+<section data-type="sect2" id="ch08_data_lake_architecture_1734552289325635">
+<h2>数据湖架构</h2>
+
+<p><em>数据湖</em>是集中式存储库，<a contenteditable="false" data-primary="data lakes" data-type="indexterm" id="data-lake">&nbsp;</a>旨在存储、处理和保护大量结构化和非结构化数据。与传统数据仓库通常以结构化、经处理的格式存储数据不同，数据湖以原生格式保留海量原始数据。如图 <a data-type="xref" href="#ch08_figure_4_1734552289299685">#ch08_figure_4_1734552289299685</a> 所示，这种方式具有若干独特优势，包括：使用低成本硬件横向扩展、灵活配置数据湖的组织结构、索引和处理逻辑，以及支持存储和分析包括日志、XML、JSON 和二进制格式在内的多种数据类型。数据湖架构不仅支持大数据存储，还与各类大数据处理框架集成，直接在存储数据上实现全面的分析和机器学习。</p>
+
+<div data-type="note">
+<p>您也可以使用 Amazon S3 等对象存储解决方案来构建数据湖架构。S3 可与 Amazon EMR、AWS Glue 和 Amazon Athena 等大数据服务轻松集成，以运行大数据工作负载。我们将在 <a data-type="xref" href="#ch13_big_data_analytics_and_machine_learning_services_1734552292002899">#ch13_big_data_analytics_and_machine_learning_services_1734552292002899</a> 中更详细地讨论这些服务。</p>
+</div>
+
+<figure id="ch08_figure_4_1734552289299685"><img src="images/sdoa_0804.png" />
+<figcaption>数据湖架构</figcaption>
+</figure>
+
+<p>通过实施 Lambda、Kappa 和数据湖等大数据架构，组织可以有效管理其数据生态系统，既满足当前的分析需求，又支持未来的数据驱动计划。这确保了基础设施不仅满足大数据处理的技术要求，还与战略业务目标保持一致。</p>
+
+<p>大数据架构主要关注高效处理和管理大量数据，而应用解决方案系统设计则聚焦于创建满足特定业务需求并集成各类组件的系统。下一节将对比解决方案架构设计与以数据为中心的<a contenteditable="false" data-primary="data lakes" data-startref="data-lake" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="big data" data-startref="arch-design-bigdata" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="big data architectures" data-startref="bigdata" data-type="indexterm">&nbsp;</a>大数据架构方法。</p>
+</section>
+</section>
+
+<section data-type="sect1" id="ch08_solution_architecture_1734552289325703">
+<h1>解决方案架构</h1>
+
+<p>解决方案架构<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="solution" data-type="indexterm" id="arch-design-solution">&nbsp;</a><a contenteditable="false" data-primary="solution architecture" data-type="indexterm" id="solution-arch">&nbsp;</a>已从单体架构演进至微服务架构，折射出技术与业务需求的变迁。本节将概述这一演进历程及相关架构，探讨其配置方式和设计背后的原则。</p>
+
+<section data-type="sect2" id="ch08_monoliths_1734552289325765">
+<h2>单体架构</h2>
+
+<p>在<a contenteditable="false" data-primary="monoliths" data-type="indexterm" id="monolith">&nbsp;</a><em>单体架构</em>中（如图 <a data-type="xref" href="#ch08_figure_5_1734552289299705">#ch08_figure_5_1734552289299705</a> 所示），应用的所有组件紧密集成并作为单一服务运行。这意味着在应用任何地方做出的变更都可能影响整个系统，从而简化了产品生命周期早期阶段的开发和部署流程。</p>
+
+<figure id="ch08_figure_5_1734552289299705"><img src="images/sdoa_0805.png" />
+<figcaption>单体架构</figcaption>
+</figure>
+
+<p>由于单体架构是单一的可执行或部署单元，因此开发、测试、部署和水平扩展都相对简单。与微服务相比，这具有显著优势，因为省去了不同微服务之间的网络交互，有助于降低延迟并更轻松地处理不稳定<span class='keep-together'>网络</span>的问题。</p>
+
+<p>然而，随着应用规模的增长，单体系统可能变得臃肿，难以理解和修改。对应用特定功能（而非整个应用）进行扩展也会变得具有挑战性。从可扩展性角度来看，我们建议保持代码的解耦和模块化，以便在必要时能够单独部署。即使代码部署在单一代码库中，模块化的代码架构也能让您轻松复用组件或添加新功能，并保持良好的代码可读性。下一节将更详细地描述这种<a contenteditable="false" data-primary="monoliths" data-startref="monolith" data-type="indexterm">&nbsp;</a>模式。</p>
+</section>
+
+<section data-type="sect2" id="ch08_n_tier_architectures_1734552289325846">
+<h2>N 层架构</h2>
+
+<p><em>N 层架构</em>将<a contenteditable="false" data-primary="N-tier architectures" data-type="indexterm">&nbsp;</a>应用分解为具有各自职责的逻辑层。通常包括至少三层：表示层（前端）、业务逻辑层（中间层）和数据管理层（后端），即<em>三层架构</em>，如图 <a data-type="xref" href="#ch08_figure_6_1734552289299723">#ch08_figure_6_1734552289299723</a> 所示。</p>
+
+<p>这种架构通过分离组件间的关注点来增强可维护性，使系统各部分的管理、更新和扩展更加便捷而不影响其他部分。这种架构选择提供了可扩展性和灵活性，因为每一层都可以根据需求独立扩展。例如，可以在不扩展表示层的情况下，单独扩展数据层以处理更大的数据负载。</p>
+
+<p>N 层架构通过分离关注点相比单体设计有了显著改进，但现代应用往往需要更大的灵活性、可扩展性和容错能力，这正是微服务发挥作用的地方。</p>
+
+<figure id="ch08_figure_6_1734552289299723"><img src="images/sdoa_0806.png" />
+<figcaption>N 层架构</figcaption>
+</figure>
+</section>
+
+<section data-type="sect2" id="ch08_microservices_1734552289325907">
+<h2>微服务</h2>
+
+<p><em>微服务架构</em><a contenteditable="false" data-primary="microservices" data-type="indexterm" id="microservice">&nbsp;</a>在 N 层系统原则的基础上，将其进一步分解为更小的松耦合服务，如图 <a data-type="xref" href="#ch08_figure_7_1734552289299743">#ch08_figure_7_1734552289299743</a> 所示。每个微服务专注于单一功能，可独立开发、部署和扩展。</p>
+
+<figure id="ch08_figure_7_1734552289299743"><img src="images/sdoa_0807.png" />
+<figcaption>微服务架构</figcaption>
+</figure>
+
+<p>微服务架构提供了多种优势，也带来了一定挑战。它赋予团队独立开发、测试、部署和扩展服务的自主权，加快了开发周期并改善了故障隔离。它还支持技术多样性，使不同服务能够使用最适合其特定任务的技术栈。</p>
+
+<p>然而，微服务的去中心化特性增加了管理和运营的复杂性，尤其体现在服务间通信、数据一致性和事务管理方面。此外，服务开销也可能增大，因为每个服务可能需要其自己的数据库、库和依赖项，从而增加了资源占用和管理工作量。</p>
+
+<p class="pagebreak-before less_space">从单体架构向微服务架构的过渡并不适合每个项目或组织，需要在清晰认识相关权衡的前提下进行。网络延迟、消息格式、数据完整性和事务管理等问题需要 API 网关、服务网格以及全面的日志和监控系统等健壮的策略，以确保系统的可靠性和性能。通过仔细评估业务需求和团队能力，组织可以选择最合适的架构来支持其目标，确保软件基础设施既能有效满足当前需求，又能适应<a contenteditable="false" data-primary="microservices" data-startref="microservice" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="solution" data-startref="arch-design-solution" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="solution architecture" data-startref="solution-arch" data-type="indexterm">&nbsp;</a>未来需求。</p>
+
+<p>另一种实现应用或大数据架构的有趣范式是事件驱动型架构（EDA）。</p>
+</section>
+</section>
+
+<section data-type="sect1" id="ch08_event_driven_architecture_1734552289325973">
+<h1>事件驱动型架构</h1>
+
+<p><em>EDA</em> 是一种<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="EDA (event-driven architecture)" data-type="indexterm" id="arch-design-eda">&nbsp;</a><a contenteditable="false" data-primary="EDA (event-driven architecture)" data-type="indexterm" id="eda">&nbsp;</a><a contenteditable="false" data-primary="event-driven architecture (EDA)" data-type="indexterm" id="event-driven-arch">&nbsp;</a>围绕事件的产生、检测和消费来编排行为的范式。这种模型为应用提供了一个动态框架，使其能够在不紧耦合组件的情况下响应分布式系统中的各种状态变化，从而实现可扩展性和响应性。我们将从 EDA 的概念和实现范式入手，然后深入探讨事件溯源的具体细节。</p>
+
+<section data-type="sect2" id="ch08_eda_concepts_and_implementations_1734552289326056">
+<h2>EDA 的概念与实现</h2>
+
+<p>事件驱动系统使应用的各组件能够基于事件而非直接调用或共享状态操作进行通信。这通常通过将事件作为消息来实现，这些消息在被处理前可能会持久化存储。此类系统采用状态机方法。以下是这种方法中的主要概念：</p>
+
+<dl>
+	<dt>状态机</dt>
+	<dd>
+	<p><a contenteditable="false" data-primary="state machines" data-type="indexterm">&nbsp;</a>一种基于行为模型设计算法的数学抽象。状态机读取一组输入，并根据这些输入切换到不同的状态。</p>
+	</dd>
+	<dt>状态</dt>
+	<dd>
+	<p><a contenteditable="false" data-primary="state" data-type="indexterm">&nbsp;</a>描述系统等待执行转换时的状态。</p>
+	</dd>
+	<dt>转换</dt>
+	<dd>
+	<p><a contenteditable="false" data-primary="transitions" data-type="indexterm">&nbsp;</a>从一种状态到另一种状态的变化。转换是在满足某个条件或接收到某个事件时执行的一组动作。</p>
+	</dd>
+	<dt>事件</dt>
+	<dd>
+	<p><a contenteditable="false" data-primary="events" data-type="indexterm">&nbsp;</a>驱动状态变化的实体。</p>
+	</dd>
+	<dt>事件驱动的状态机</dt>
+	<dd>
+	<p><a contenteditable="false" data-primary="event-driven state machines" data-type="indexterm">&nbsp;</a>如果状态机从一个状态到另一个状态的转换是由事件或消息触发的（而非基于字符的消费或解析，也非基于条件判断），则该状态机是事件驱动的。</p>
+	</dd>
+</dl>
+</section>
+
+<section data-type="sect2" id="ch08_paradigms_of_event_driven_implementations_1734552289326123">
+<h2>事件驱动实现的范式</h2>
+
+<p>EDA 的核心是实现通过发布事件而非（例如）相互进行 RPC/CRUD 调用或操作共享状态来通信的组件。这是一种通信策略（尽管往往依赖于将消息持久化存储相当长一段时间直至被消费）。EDA 的两种主要实现方式是面向状态的实现和事件溯源。</p>
+
+<section data-type="sect3" id="ch08_state_oriented_implementation_1734552289326186">
+<h3>面向状态的实现</h3>
+
+<p>这种方法<a contenteditable="false" data-primary="state-oriented EDA implementations" data-type="indexterm">&nbsp;</a>只捕获当前状态，专注于将随时间发生的状态变更持久化。状态数据在受控范围内被视为可变，只能通过定义的操作进行修改，这使得系统具有响应性，但没有历史追踪，与当前状态条件紧密绑定。</p>
+</section>
+
+<section data-type="sect3" id="ch08_event_sourcing_1734552289326245">
+<h3>事件溯源</h3>
+
+<p>与面向状态的实现不同，<a contenteditable="false" data-primary="event sourcing" data-type="indexterm" id="event-sourcing">&nbsp;</a>事件溯源将每次状态变更持久化为不可变事件。这些事件是系统的单一事实来源，当前状态可由此重建。这种方式支持历史状态重建、审计，以及回滚和重放事件等复杂系统行为，从而处理错误或系统故障。</p>
+
+<p>事件溯源支持以下能力：</p>
+
+<dl>
+	<dt>完整重建</dt>
+	<dd>
+	<p>通过重放事件，使系统能够从头开始丢弃并重建状态</p>
+	</dd>
+	<dt>时序查询</dt>
+	<dd>
+	<p>通过重新处理到某一时刻为止的所有事件，查询系统在任意时间点的状态</p>
+	</dd>
+	<dt>事件重放</dt>
+	<dd>
+	<p>通过在修正事件后或添加新事件后重新处理，纠正错误</p>
+	</dd>
+</dl>
+
+<p>事件驱动系统<a contenteditable="false" data-primary="event stores" data-type="indexterm">&nbsp;</a>通常使用<em>事件存储</em>——一种以追加方式将事件按序存储的持久化机制——作为关于应用状态和数据操作的单一事实来源。事件存储确保所有事件以不可变方式被捕获，为触发动作、构建投影或重建历史状态提供可靠的基础。这些系统将数据变更与应用逻辑解耦，使系统能够更灵活地扩展并适应不断变化的业务需求。</p>
+
+<p>基于事件溯源的持久化<a contenteditable="false" data-primary="persistence" data-secondary="in event sourcing" data-secondary-sortas="event sourcing" data-type="indexterm">&nbsp;</a>将实体建模为事件流，并维护这些事件流的不可变日志。当实体状态或属性发生变化时，它会产生并保存一个新事件。当需要恢复实体状态时，会读取该实体的所有事件，并依次应用每个事件来改变状态，最终达到实体的正确状态。注意，此处的状态是事件流在实体上的纯函数应用结果。</p>
+
+<p>在事件驱动系统中实现事件溯源时，有几个重要因素需要考虑：</p>
+
+<dl>
+	<dt>最终一致性</dt>
+	<dd>
+	<p>由于创建物化视图或投影存在延迟，读操作可能无法立即反映最新写入。在事件发布到视图创建之间的时间段内，事件日志中可能已添加了新事件。</p>
+	</dd>
+	<dt>事件日志不可变性</dt>
+	<dd>
+	<p>事件日志应保持不可变，即事件一旦写入就不能更新。要更正之前的事件，必须添加新事件。任何对事件 Schema 的修改都必须一致地应用于所有已存储的事件。</p>
+	</dd>
+	<dt>事件顺序与线性</dt>
+	<dd>
+	<p>维护事件的正确顺序对于数据一致性至关重要，尤其是涉及多个发布者时。为事件添加时间戳或递增标识符有助于解决排序冲突。</p>
+	</dd>
+	<dt>消费者幂等性</dt>
+	<dd>
+	<p>由于事件可能被多次投递，消费者必须是幂等的，即能够处理重复事件而不会多次应用同一更新，否则可能导致状态变更错误。</p>
+	</dd>
+	<dt>快照与物化</dt>
+	<dd>
+	<p>定期对事件进行快照和物化是必要的，尤其是处理大型事件流时。这有助于管理按需查询，并确保对模型当前状态的高效访问。</p>
+	</dd>
+</dl>
+
+<p>由于应用流程的去中心化控制和事件处理的分布式特性，在构建事件驱动系统时，需要牢记这些关于最终一致性的实践考量，并妥善管理相关复杂性。</p>
+
+<p>事件驱动型架构代表了从传统请求驱动模型的范式转变，提供了一种灵活、可扩展的方式来处理异步系统行为和数据流。这种架构风格尤其适合对可扩展性、响应性和健壮性要求较高的应用，例如微服务环境或需要复杂业务流程<a contenteditable="false" data-primary="event sourcing" data-startref="event-sourcing" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="EDA (event-driven architecture)" data-startref="arch-design-eda" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EDA (event-driven architecture)" data-startref="eda" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="event-driven architecture (EDA)" data-startref="event-driven-arch" data-type="indexterm">&nbsp;</a>和工作流的系统。</p>
+
+<div data-type="note">
+<p>事件溯源和<a contenteditable="false" data-primary="CDC (change data capture)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="change data capture (CDC)" data-type="indexterm">&nbsp;</a> CDC 都追踪数据变更，但服务于不同目的。事件溯源将所有变更捕获为可随时间重建或还原系统状态的事件，本质上将事件作为事实来源。相比之下，CDC 主要专注于捕获数据库中的变更以进行数据复制或集成，利用数据库的事务日志记录状态变更，但不会固有地存储变更的意图或上下文。</p>
+</div>
+</section>
+</section>
+</section>
+
+<section data-type="sect1" id="ch08_common_cloud_architecture_patterns_1734552289326313">
+<h1>常见云架构模式</h1>
+
+<p>在本节<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="cloud" data-type="indexterm" id="arch-design-cloud">&nbsp;</a><a contenteditable="false" data-primary="cloud architecture patterns" data-type="indexterm" id="cloud-pattern">&nbsp;</a>中，我们将探讨构成云环境中可扩展、高弹性、可维护系统基础的核心云架构模式。这些模式——从断路器等弹性技术到 Saga 编排等事务处理策略——将为您提供基础性工具，在 <a data-type="xref" href="#part3">#part3</a> 所呈现的系统设计用例中尤为重要。理解这些模式将使您更有能力将经过验证的健壮解决方案应用于分布式架构中的常见挑战，为做出有效的设计决策奠定基础。</p>
+
+<section data-type="sect2" id="ch08_event_based_patterns_cqrs_and_saga_1734552289326383">
+<h2>基于事件的模式：CQRS 与 Saga</h2>
+
+<p>基于事件的架构利用以下模式来管理分布式事务和操作：</p>
+
+<dl>
+	<dt>命令查询责任分离（CQRS）</dt>
+	<dd>
+	<p>CQRS 是<a contenteditable="false" data-primary="command query responsibility segregation (CQRS)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="CQRS (command query responsibility segregation)" data-type="indexterm">&nbsp;</a>一种将读取数据的操作（查询）与更新数据的操作（命令）分离到不同接口的架构模式。这种分离允许读写操作以不同方式处理，从而优化性能、可扩展性和安全性。例如，读模型可以独立于写模型进行扩展，这在读操作数量远超写操作数量的系统中尤为有益。</p>
+	</dd>
+	<dt>Saga</dt>
+	<dd>
+	<p>Saga 模式管理<a contenteditable="false" data-primary="sagas" data-type="indexterm">&nbsp;</a>跨多个服务的事务，其中每个事务步骤都与一个补偿操作配对，以便在需要时进行回滚。Saga 基于编配或编排来实现。在编配方式下，参与 Saga 的每个服务执行其事务并发布触发其他服务后续步骤的事件。在编排方式下，中央协调器（编排器）指导 Saga 的每个步骤，管理执行顺序并在必要时触发补偿事务。</p>
+	</dd>
+</dl>
+
+<p>这些模式在需要跨微服务管理分布式事务的环境中至关重要，为可靠、高效地处理复杂操作提供了结构化框架。</p>
+</section>
+
+<section data-type="sect2" id="ch08_failure_tolerant_patterns_circuit_breaker_retry_1734552289326446">
+<h2>容错模式：断路器、<span class="keep-together">带退避的重试与限流器</span></h2>
+
+<p>为提升<a contenteditable="false" data-primary="failure-tolerant patterns" data-type="indexterm" id="failure-tolerant">&nbsp;</a>系统在面对故障时的弹性，可采用以下模式：</p>
+
+<dl>
+	<dt>断路器</dt>
+	<dd>
+	<p><a contenteditable="false" data-primary="circuit breaker pattern" data-type="indexterm">&nbsp;</a>断路器模式防止分布式系统中的级联故障。当某个服务或操作的失败次数达到阈值时，断路器"跳闸"，对故障服务的进一步调用将被暂时中止，从而使其得以恢复并维持系统稳定性。</p>
+	</dd>
+	<dt>带退避的重试</dt>
+	<dd>
+	<p>带退避的重试<a contenteditable="false" data-primary="retry with backoff pattern" data-type="indexterm">&nbsp;</a>涉及以递增的延迟重新尝试失败的操作，每次重试都逐步增加间隔（退避），直到达到最大重试次数。这种模式在处理瞬时故障时特别有用，它为问题的解决提供了等待时间，然后再进行重试。</p>
+	</dd>
+	<dt>限流器</dt>
+	<dd>
+	<p>限流器模式<a contenteditable="false" data-primary="rate limiter pattern" data-type="indexterm">&nbsp;</a>控制在指定时间段内对服务的请求数量，防止系统被大量流量或突发需求压垮。限流可以在多个层面应用：按用户、按服务或在系统层面全局应用。这种模式确保服务即使在高负载下也能平稳运行，降低因资源耗尽导致性能下降或系统崩溃的可能性。</p>
+	</dd>
+</dl>
+
+<p>这些模式协同工作，防止分布式系统中的级联故障，确保系统某一部分的故障不会导致大面积停机。</p>
+</section>
+
+<section data-type="sect2" id="ch08_domain_based_patterns_domain_driven_design_and_de_1734552289326510">
+<h2>领域模式：领域驱动设计<span class="keep-together">与按子域分解</span></h2>
+
+<p>以下<a contenteditable="false" data-primary="domain-based patterns" data-type="indexterm">&nbsp;</a>模式专注于使软件设计与业务目标保持一致：</p>
+
+<dl>
+	<dt>领域驱动设计（DDD）</dt>
+	<dd>
+	<p>DDD 专注于<a contenteditable="false" data-primary="domain-driven design (DDD)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="DDD (domain-driven design)" data-type="indexterm">&nbsp;</a>核心领域逻辑及其复杂性，将设计建立在领域的行为和逻辑之上。这种模式鼓励创建融入业务规则和行为的领域模型，从而在软件与其所要实现的业务需求之间建立更直观的关联。</p>
+	</dd>
+	<dt>按子域分解</dt>
+	<dd>
+	<p>按子域分解<em> </em>在微服务架构中以 DDD 为基础，<a contenteditable="false" data-primary="decompose by subdomains pattern" data-type="indexterm">&nbsp;</a>将系统划分为多个子域，每个子域处理特定的业务能力。每个微服务管理一个子域，通过允许微服务根据其独特的业务需求独立演进，提升了可维护性和可扩展性。</p>
+	</dd>
+</dl>
+
+<p>这些模式对于构建可随业务需求变化而演进的模块化、可扩展系统至关重要。</p>
+</section>
+
+<section data-type="sect2" id="ch08_api_routing_strategies_and_patterns_1734552289326571">
+<h2>API 路由策略与模式</h2>
+
+<p>API 路由模式<a contenteditable="false" data-primary="API routing patterns" data-type="indexterm" id="api-route-pattern">&nbsp;</a>决定了请求在云环境中如何被定向至相应服务。这些模式对于确保请求高效、安全地到达正确的后端系统至关重要。常见的路由策略包括：</p>
+
+<dl>
+	<dt>主机名路由</dt>
+	<dd>
+	<p>这种<a contenteditable="false" data-primary="hostname routing" data-type="indexterm">&nbsp;</a>策略根据 URL 中的主机名将请求路由至不同的后端系统。常用于多个服务托管在不同子域或域名下的场景。</p>
+	</dd>
+	<dt>路径路由</dt>
+	<dd>
+	<p>这种<a contenteditable="false" data-primary="path routing" data-type="indexterm">&nbsp;</a>路由模式使用 URL 路径将请求定向至特定服务或处理程序。它基于 URL 的结构提供清晰、有序的路由，使服务的管理和扩展更加便捷。</p>
+	</dd>
+	<dt>HTTP 标头路由</dt>
+	<dd>
+	<p>在<a contenteditable="false" data-primary="HTTP header routing" data-type="indexterm">&nbsp;</a>这种方式中，利用请求中的 HTTP 标头来做出路由决策。这对于 A/B 测试（将不同用户群定向至不同后端服务）或新功能的灰度发布等场景特别有用。</p>
+	</dd>
+</dl>
+
+<p>在基于微服务的系统中，API 路由架构采用 API 网关或服务网格：</p>
+
+<dl>
+	<dt>API 网关</dt>
+	<dd>
+	<p>API 网关<a contenteditable="false" data-primary="API gateways" data-type="indexterm">&nbsp;</a>充当所有客户端请求的集中入口点，向一组后端服务提供统一接口。它处理请求路由、组合和协议转换等任务。API 网关可以调用多个微服务来满足单个客户端请求，并将响应聚合为连贯的结果。这种模式在微服务<span class="keep-together">架构</span>中尤为有用，因为它通过集中访问控制和监控简化了客户端交互并增强了安全性。</p>
+	</dd>
+	<dt>服务网格</dt>
+	<dd>
+	<p>服务网格架构<a contenteditable="false" data-primary="service mesh architecture" data-type="indexterm">&nbsp;</a>是一个管理微服务架构内服务间通信的基础设施层。它提供高级路由、负载均衡、服务发现以及相互传输层安全（TLS）认证和流量加密等安全特性。与处理外部客户端到服务通信的 API 网关不同，服务网格专注于内部服务间交互，确保云环境内可靠、安全的通信。它通过边车代理实现，边车代理拦截并管理服务间的网络流量，在无需修改应用代码的情况下提供可观测性和弹性。</p>
+	</dd>
+</dl>
+
+<p>这些 API 路由策略和模式，以及 API 网关和服务网格架构，是构建可扩展、安全、可维护的云原生<a contenteditable="false" data-primary="API routing patterns" data-startref="api-route-pattern" data-type="indexterm">&nbsp;</a>应用的基础。</p>
+</section>
+
+<section data-type="sect2" id="ch08_other_cloud_architecture_patterns_1734552289326631">
+<h2>其他云架构模式</h2>
+
+<p>除上述核心模式外，还有若干云架构模式针对特定挑战并增强系统设计：</p>
+
+<dl>
+	<dt>防腐层</dt>
+	<dd>
+	<p><a contenteditable="false" data-primary="anticorruption layer" data-type="indexterm">&nbsp;</a>防腐层（ACL）作为保护屏障，防止潜在的破坏性数据或请求进入系统的某个部分，从而保护应用核心业务模型的完整性。它充当不同子系统或外部应用之间的翻译器，确保数据交换不会破坏领域模型。</p>
+	</dd>
+	<dt>绞杀者模式</dt>
+	<dd>
+	<p>该模式<a contenteditable="false" data-primary="strangler fig pattern" data-type="indexterm">&nbsp;</a>用于通过将特定功能逐步替换为新应用和服务来渐进式改造遗留系统。随着时间推移，这些新组件"绞杀"旧系统，最终完全取而代之。</p>
+	</dd>
+	<dt>事务性发件箱</dt>
+	<dd>
+	<p><a contenteditable="false" data-primary="transactional outbox pattern" data-type="indexterm">&nbsp;</a>事务性发件箱模式用于确保服务间的可靠消息传递。当数据库发生变更时，记录同样会在同一事务内被添加到"发件箱"表中。随后，一个独立的进程将这些消息发送至消息队列或其他目标，确保跨服务边界的数据一致性。</p>
+	</dd>
+	<dt>边车模式</dt>
+	<dd>
+	<p>边车模式<a contenteditable="false" data-primary="sidecar pattern" data-type="indexterm">&nbsp;</a>常用于微服务架构。它涉及在服务容器旁部署额外的容器或进程，<span class="keep-together">提供</span>监控、日志记录、配置和网络能力等平台连接服务。边车可以用任何语言编写，与主容器之间没有强依赖性，从而实现解耦。这种模式将基础设施关注点与应用隔离，使应用更简洁、更模块化。</p>
+	</dd>
+	<dt>前端专属后端（BFF）</dt>
+	<dd>
+	<p>该模式<a contenteditable="false" data-primary="backend for frontend (BFF)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="BFF (backend for frontend)" data-type="indexterm">&nbsp;</a>涉及为不同类型的客户端（如桌面浏览器和移动设备）创建专属的后端服务。它允许开发者针对特定用户界面优化这些后端服务，通过减少数据过度获取或获取不足来提升用户体验。</p>
+	</dd>
+	<dt>单元式架构</dt>
+	<dd>
+	<p>单元式架构<a contenteditable="false" data-primary="cellular architecture" data-type="indexterm">&nbsp;</a>涉及将系统设计为单元（cell）的集合，每个单元独立运行但可以与其他单元通信。每个单元都是自包含的，拥有自己的数据存储和逻辑，能够自主扩展。这种方式具有高度弹性，因为一个单元的故障不会影响其他单元；同时它支持演进式架构，允许每个单元独立演进。</p>
+	</dd>
+</dl>
+
+<p>这些模式分别针对开发和管理云原生应用中的常见问题提供定向解决方案，为构建更具弹性、灵活性和可扩展性的架构提供路径。请记住，这并非架构模式的详尽列表，该列表会随着系统设计的最新发展而持续演进。然而，这些模式共同为您在设计<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="cloud" data-startref="arch-design-cloud" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="cloud architecture patterns" data-startref="cloud-pattern" data-type="indexterm">&nbsp;</a>复杂系统时可能面临的各类架构挑战提供了健壮的解决方案。</p>
+</section>
+</section>
+
+<section data-type="sect1" id="ch08_open_source_distributed_systems_architecture_1734552289326718">
+<h1>开源分布式系统架构</h1>
+
+<p><em>分布式系统架构</em>涉及将职责<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-type="indexterm" id="arch-design-distributed">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-type="indexterm" id="distributed-system-arch">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-type="indexterm" id="open-source-distributed-system-arch">&nbsp;</a>分散到多个计算节点，以确保系统具备可扩展性、容错性和高效性。在本节中，我们将探讨两个核心组件：分布式文件系统和分布式消息队列，重点关注开源实现——文件系统领域的 HDFS 和消息队列领域的 Kafka。</p>
+
+<section data-type="sect2" id="ch08_hdfs_1734552289326806">
+<h2>HDFS</h2>
+
+<p>HDFS 是<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="HDFS" data-type="indexterm" id="arch-design-distributed-hdfs">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-type="indexterm" id="distributed-system-arch-hdfs">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-type="indexterm" id="open-source-distributed-system-arch-hdfs">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-type="indexterm" id="hdfs">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-type="indexterm" id="hadoop-dist-filesystem">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-type="indexterm" id="filesystem-hdfs">&nbsp;</a>一个设计在商用硬件上运行的开源文件系统。它具有高度容错性，专为部署在低成本硬件上而设计。HDFS 为应用数据提供高吞吐量访问，适用于需要处理大型数据集的应用。以下是 HDFS 的主要特性：</p>
+
+<dl class="pagebreak-before less_space">
+	<dt>分布式存储</dt>
+	<dd>
+	<p>HDFS 为可扩展性而设计，将数据分布在集群中的多个节点上。它将大文件分割成数据块，并在不同机器上进行复制，确保即使在硬件故障的情况下也能实现数据冗余和可用性。</p>
+	</dd>
+	<dt>容错性</dt>
+	<dd>
+	<p>HDFS 的关键特性之一是其内置的容错性。数据会自动跨三个不同节点进行复制，确保即使一个节点故障，数据仍可从其他节点访问。这种复制机制提供了可靠性和高可用性，使 HDFS 非常适合大规模数据存储。</p>
+	</dd>
+	<dt>可扩展性与灵活性</dt>
+	<dd>
+	<p>HDFS 可以通过向集群添加更多节点来横向扩展，从而在无需对基础设施进行重大变更的情况下管理不断增长的数据量。这种可扩展性，加上其存储多种格式数据的能力，使 HDFS 成为满足广泛数据处理需求的灵活解决方案。</p>
+	</dd>
+	<dt>高吞吐量</dt>
+	<dd>
+	<p>HDFS 针对高吞吐量进行了优化，优先考虑数据访问速度而非低延迟。它专为处理大型数据集并侧重于批处理而设计，非常适合涉及读写大量数据的大数据应用。</p>
+	</dd>
+	<dt>成本效益</dt>
+	<dd>
+	<p>通过使用商用硬件，HDFS 为存储和处理大量数据提供了具有成本效益的解决方案。</p>
+	</dd>
+	<dt>与 Hadoop 生态系统的集成</dt>
+	<dd>
+	<p>HDFS 与<a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="HDFS integration" data-type="indexterm">&nbsp;</a>更广泛的 Hadoop 生态系统深度集成，支持 MapReduce、Apache Hive 和 Apache Spark 等各类处理框架。这种集成实现了无缝的数据处理和分析，借助 HDFS 的分布式架构在靠近数据的地方执行计算，可以减少网络瓶颈并提升效率。</p>
+	</dd>
+</dl>
+
+<div data-type="note">
+<p>AWS 提供了<a contenteditable="false" data-primary="Elastic MapReduce (EMR)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EMR (Elastic MapReduce)" data-type="indexterm">&nbsp;</a> Amazon EMR（亚马逊弹性 MapReduce），这是一项托管服务，简化了在 AWS 云上运行 Hadoop（包括 HDFS）等大数据框架的工作。我们将在 <a data-type="xref" href="#ch13_big_data_analytics_and_machine_learning_services_1734552292002899">#ch13_big_data_analytics_and_machine_learning_services_1734552292002899</a> 中进一步探讨。Amazon EMR 支持使用 HDFS（或 EMRFS）处理大量数据，充分利用其可扩展性、容错性以及与更广泛 Hadoop 生态系统的集成能力。</p>
+</div>
+
+<section data-type="sect3" id="ch08_hdfs_architecture_1734552289326874">
+<h3>HDFS 架构</h3>
+
+<p>HDFS 架构如图 <a data-type="xref" href="#ch08_figure_8_1734552289299761">#ch08_figure_8_1734552289299761</a> 所示，由若干关键组件协同工作，共同构成一个分布式、容错、可扩展的文件系统。</p>
+
+<figure id="ch08_figure_8_1734552289299761"><img src="images/sdoa_0808.png" />
+<figcaption>HDFS 架构</figcaption>
+</figure>
+
+<p>HDFS 架构的组成部分如下：</p>
+
+<dl>
+	<dt>NameNode（名称节点）</dt>
+	<dd>
+	<p><a contenteditable="false" data-primary="NameNodes" data-type="indexterm">&nbsp;</a>NameNode 是 HDFS 的核心组件，负责管理文件系统的元数据和命名空间。它追踪文件位置，并通过协调跨 DataNode 的存储来管理文件访问。NameNode 对 HDFS 的运行至关重要；如果它发生故障，文件系统将无法访问。</p>
+	</dd>
+	<dt>DataNode（数据节点）</dt>
+	<dd>
+	<p>DataNode <a contenteditable="false" data-primary="DataNodes" data-type="indexterm">&nbsp;</a>是 HDFS 架构中的工作节点。它们存储构成 HDFS 文件的实际数据块。每个 DataNode 定期向 NameNode 发送心跳和块报告，确保系统拥有关于存储健康状况和可用性的最新视图。</p>
+	</dd>
+	<dt>辅助 NameNode</dt>
+	<dd>
+	<p>尽管名称如此，<a contenteditable="false" data-primary="secondary NameNodes" data-type="indexterm">&nbsp;</a>辅助 NameNode 并不是 NameNode 的备份。它与 NameNode 协同工作，共同管理文件系统的元数据。它定期对元数据进行快照并应用编辑日志，有助于在 NameNode 发生故障时缩短恢复时间。</p>
+	</dd>
+	<dt>数据块</dt>
+	<dd>
+	<p>HDFS <a contenteditable="false" data-primary="blocks (HDFS)" data-type="indexterm">&nbsp;</a>以数据块的形式存储数据，通常每块大小为 128 MB，并在多个 DataNode（通常为三个）间进行复制以实现冗余。这种基于块的存储系统使 HDFS 能够高效处理大文件，确保即使 DataNode 发生故障，数据仍可从其他副本中获取。</p>
+	</dd>
+</dl>
+
+<p>当客户端想要读取或写入文件时，它与 NameNode 通信以定位存储数据块的 DataNode。对于写操作，NameNode 提供客户端应写入数据块的 DataNode 列表。写入完成后，DataNode 根据 NameNode 的指示将数据块复制到其他节点。</p>
+
+<p>HDFS 具有机架感知能力，即它了解数据中心不同机架上各节点的物理布局。NameNode 利用这一信息对数据块放置做出智能决策，确保副本分布在不同机架上，从而提升容错性，确保机架故障不会导致数据丢失。</p>
+
+<p>HDFS 通过数据复制和 NameNode 的定期检查来实现容错性。如果 DataNode 发生故障，NameNode 将启动对受影响数据块的复制，将其复制到其他节点以确保数据可用性。</p>
+
+<p>这些组件和特性共同构成了一个高度可靠、可扩展的分布式文件系统，是 Hadoop 生态系统的核心。HDFS 的架构旨在跨数千个节点处理大规模数据的存储和检索，非常适合大数据应用。</p>
+
+<p>HDFS 在更广泛的 Hadoop 生态系统中发挥着关键作用，为大数据处理提供了必不可少的存储能力。然而，在评估大数据解决方案时，也应考虑其他平台。尽管 Hadoop 生态系统提供了一套全面的开源工具来管理和处理大型数据集，但 AWS 等云平台提供的托管服务可以简化部署和<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed-hdfs" data-tertiary="HDFS" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-startref="distributed-system-arch-hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-startref="open-source-distributed-system-arch-hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-startref="hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-startref="hadoop-dist-filesystem" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-startref="filesystem-hdfs" data-type="indexterm">&nbsp;</a>扩展工作。接下来，我们将比较 Hadoop 生态系统与 AWS，重点介绍它们的差异、优势和使用场景。</p>
+</section>
+
+<section data-type="sect3" id="ch08_hadoop_ecosystem_versus_aws_1734552289326940">
+<h3>Hadoop 生态系统与 AWS 的对比</h3>
+
+<p>Hadoop 生态系统<a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="AWS versus" data-type="indexterm" id="hadoop-aws-compare">&nbsp;</a><a contenteditable="false" data-primary="AWS (Amazon Web Services)" data-secondary="Hadoop ecosystem versus" data-type="indexterm" id="aws-hadoop-compare">&nbsp;</a>是一套专为跨大型计算机集群进行分布式数据存储和处理而设计的综合工具套件。Hadoop 的核心包括用于可扩展存储的 HDFS 和用于并行处理大型数据集的 MapReduce。然而，生态系统远不止这两个组件，还包括 Apache Hive（用于对大型数据集进行 SQL 式查询）、Apache Pig（用于数据分析的高级脚本语言）、Apache HBase（用于实时数据的 NoSQL 数据库）以及 YARN（用于资源管理）等工具。此外还包括用于内存数据处理的 Apache Spark、用于工作流调度的 Apache Oozie 以及用于分布式协调的 ZooKeeper。</p>
+
+<p>AWS 为大多数 Hadoop 服务提供了完全托管的等效产品，大幅减少了运营开销。Amazon S3（用于可扩展的对象存储）、Amazon EMR（用于运行 Hadoop 和 Spark 集群）、Amazon Athena（用于交互式查询服务）以及 AWS Glue（用于 ETL 操作）等 AWS 服务，在扩展、成本管理和安全功能方面都提供了更集成的解决方案。表 <a data-type="xref" href="#ch08_table_1_1734552289307598">#ch08_table_1_1734552289307598</a> 对 Hadoop 服务及其对应的 AWS 服务进行了比较。</p>
+
+<table id="ch08_table_1_1734552289307598">
+	<caption>Hadoop 生态系统与 AWS 服务对比</caption>
+	<thead>
+		<tr>
+			<th>Hadoop 生态系统服务</th>
+			<th>描述</th>
+			<th>对应的 AWS 服务</th>
+			<th>比较</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>
+			<p>HDFS</p>
+			</td>
+			<td>
+			<p>用于大规模数据的分布式文件系统</p>
+			</td>
+			<td>
+			<p>Amazon S3/EMRFS（构建在 S3 之上）</p>
+			</td>
+			<td>
+			<p>S3 是可扩展的对象存储，比 HDFS 更易于管理，采用按用量付费的定价模式。</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>MapReduce</p>
+			</td>
+			<td>
+			<p>并行数据处理</p>
+			</td>
+			<td>
+			<p>Amazon EMR</p>
+			</td>
+			<td>
+			<p>EMR 支持 MapReduce 并自动化集群管理，在实例类型选择上提供了灵活性。</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Hive</p>
+			</td>
+			<td>
+			<p>用于联机分析处理（OLAP）的分布式数据仓库</p>
+			</td>
+			<td>
+			<p>Amazon Redshift</p>
+			</td>
+			<td>
+			<p>Redshift 提供完全托管的 PB 级数据仓库，针对 OLAP 进行了优化，且更易于扩展。</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Pig</p>
+			</td>
+			<td>
+			<p>高级数据分析语言</p>
+			</td>
+			<td>
+			<p>AWS Glue</p>
+			</td>
+			<td>
+			<p>Glue 提供具有集成工作流能力的无服务器 ETL，替代了手动配置 Pig 的繁琐工作。</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Presto</p>
+			</td>
+			<td>
+			<p>对大型数据集的 SQL 式查询</p>
+			</td>
+			<td>
+			<p>Amazon Athena</p>
+			</td>
+			<td>
+			<p>Athena 是无服务器查询服务，无需预置基础设施即可对 S3 中的数据执行 SQL 查询。</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>HBase</p>
+			</td>
+			<td>
+			<p>用于实时分析的 NoSQL 数据库</p>
+			</td>
+			<td>
+			<p>HBase on EMR</p>
+			</td>
+			<td>
+			<p>HBase on EMR 提供与自管 HBase 类似的托管 Hadoop 框架，后者需要手动扩展。</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>YARN</p>
+			</td>
+			<td>
+			<p>集群计算资源管理器</p>
+			</td>
+			<td>
+			<p>Amazon EMR/ECS</p>
+			</td>
+			<td>
+			<p>EMR 简化了 YARN 管理；ECS 提供容器编排，将集群管理抽象化。</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>ZooKeeper</p>
+			</td>
+			<td>
+			<p>分布式应用的协调服务</p>
+			</td>
+			<td>
+			<p>AWS AppConfig</p>
+			</td>
+			<td>
+			<p>ZooKeeper 用于 Hadoop 和 Kafka 中的元数据管理；AppConfig 用于 AWS 上的配置管理。</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Oozie</p>
+			</td>
+			<td>
+			<p>工作流调度</p>
+			</td>
+			<td>
+			<p>AWS Step Functions</p>
+			</td>
+			<td>
+			<p>Step Functions 提供无服务器编排，与 Oozie 的工作流管理相比，对 AWS 服务的 ETL 和工作流有更好的集成。</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Sqoop</p>
+			</td>
+			<td>
+			<p>Hadoop 与关系数据库之间的结构化数据传输</p>
+			</td>
+			<td>
+			<p>AWS Database Migration Service（亚马逊数据库迁移服务，DMS）</p>
+			</td>
+			<td>
+			<p>DMS 提供完全托管的服务，用于将各类数据库（关系型和非关系型）的数据迁移至云端，支持实时迁移或批量迁移（类似 Sqoop），并提供额外的云集成功能。</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Flume</p>
+			</td>
+			<td>
+			<p>从各种来源向 Hadoop 持续、实时地流传输非结构化数据</p>
+			</td>
+			<td>
+			<p>Amazon Kinesis</p>
+			</td>
+			<td>
+			<p>Kinesis 为分析和流处理应用提供实时数据摄取和处理，相比 Flume 手动配置的流处理方式，提供了完全托管的服务。</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>Spark</p>
+			</td>
+			<td>
+			<p>内存数据处理</p>
+			</td>
+			<td>
+			<p>Spark on Amazon EMR</p>
+			</td>
+			<td>
+			<p>EMR 支持运行 Spark 作业，相比 Hadoop 原生 Spark 配置，提供了更大的灵活性和更多的管理选项。</p>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>这一比较突显了 AWS 如何提供比传统 Hadoop 服务更集成、更可扩展的替代方案，并且通常具有更低的运营开销。我们将在 <a data-type="xref" href="#part2">#part2</a> 中进一步讨论这些相关<a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="AWS versus" data-startref="hadoop-aws-compare" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="AWS (Amazon Web Services)" data-secondary="Hadoop ecosystem versus" data-startref="aws-hadoop-compare" data-type="indexterm">&nbsp;</a> AWS 服务。</p>
+</section>
+</section>
+
+<section data-type="sect2" id="ch08_apache_kafka_s_distributed_message_queue_1734552289327017">
+<h2>Apache Kafka：分布式消息队列</h2>
+
+<p>Apache Kafka <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="Kafka" data-type="indexterm" id="arch-design-distributed-kafka">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="Kafka" data-type="indexterm" id="distributed-system-arch-kafka">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="Kafka" data-type="indexterm" id="open-source-distributed-system-arch-kafka">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-type="indexterm" id="kafka">&nbsp;</a><a contenteditable="false" data-primary="message queues" data-secondary="Kafka" data-type="indexterm" id="message-queue-kafka">&nbsp;</a><a contenteditable="false" data-primary="Apache Kafka" data-see="Kafka" data-type="indexterm">&nbsp;</a>是一个开源的分布式事件流处理平台，能够实时处理每天数万亿个事件。作为一个高度可靠、可扩展的消息系统，Kafka 每秒可处理数百万条记录，非常适合事件驱动架构、实时分析和复杂数据管道。以下是 Kafka 的主要特性：</p>
+
+<dl>
+	<dt>可扩展性</dt>
+	<dd>
+	<p>Kafka 的分区机制允许其通过在多个节点间分布数据来实现横向扩展。这种架构支持高吞吐量，并能处理大量数据。</p>
+	</dd>
+	<dt>持久性与可靠性</dt>
+	<dd>
+	<p>Kafka 通过将消息持久化到磁盘并跨多个 Broker 进行复制来确保数据持久性。这种复制机制保证了即使某个 Broker 发生故障，数据也不会丢失。</p>
+	</dd>
+	<dt>容错性</dt>
+	<dd>
+	<p>Kafka 设计为能够优雅地处理故障。当某个 Broker 发生故障时，Kafka 的复制机制确保另一个 Broker 能够接管故障 Broker 的职责而不会造成数据丢失。</p>
+	</dd>
+	<dt>高吞吐量</dt>
+	<dd>
+	<p>Kafka 的设计针对高吞吐量进行了优化，能够每秒处理数百万条记录。这使得 Kafka 非常适合实时数据管道和事件驱动架构。</p>
+	</dd>
+</dl>
+
+<section data-type="sect3" id="ch08_kafka_architecture_1734552289327085">
+<h3>Kafka 架构</h3>
+
+<p>图 <a data-type="xref" href="#ch08_figure_9_1734552289299781">#ch08_figure_9_1734552289299781</a> 展示了 Kafka 的组件和架构。</p>
+
+<figure id="ch08_figure_9_1734552289299781"><img src="images/sdoa_0809.png" />
+<figcaption>Kafka 架构</figcaption>
+</figure>
+
+<p>让我们详细了解这些组件：</p>
+
+<dl>
+	<dt>生产者</dt>
+	<dd>
+	<p>生产者<a contenteditable="false" data-primary="producers" data-type="indexterm">&nbsp;</a>负责将数据（记录）推送到 Kafka 主题中。它们将数据发送至 Kafka Broker，Broker 负责对数据进行分区和跨集群复制。</p>
+	</dd>
+	<dt>消费者</dt>
+	<dd>
+	<p>消费者<a contenteditable="false" data-primary="consumers" data-type="indexterm">&nbsp;</a>从 Kafka 主题中读取数据。它们订阅一个或多个主题，并按照记录在分区中存储的顺序消费记录。</p>
+	</dd>
+	<dt>Schema Registry</dt>
+	<dd>
+	<p>Schema Registry <a contenteditable="false" data-primary="Schema Registry" data-type="indexterm">&nbsp;</a>是一项管理和执行 Kafka 生产者和消费者所使用 Schema 的服务。它确保数据以一致的格式写入，防止数据结构随时间演进时不同版本之间出现兼容性问题。</p>
+	</dd>
+	<dt>Broker</dt>
+	<dd>
+	<p>Kafka Broker <a contenteditable="false" data-primary="brokers" data-type="indexterm">&nbsp;</a>是管理数据持久化和复制的服务器。每个 Broker 以<em>分区</em>的形式存储数据，分区是 Kafka 可扩展性的基本单位。分区允许 Kafka 通过在多个节点间分布数据来实现横向扩展。</p>
+	</dd>
+	<dt>协调器</dt>
+	<dd>
+	<p>ZooKeeper 曾用于<a contenteditable="false" data-primary="ZooKeeper" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="KRaft (Apache Kafka Raft)" data-type="indexterm">&nbsp;</a>管理集群中 Kafka Broker 的协调工作，处理分区的 Leader 选举、集群配置和元数据管理等任务。Kafka 的最新版本已将 ZooKeeper 替换为 <a href="https://oreil.ly/BBg6D">Apache Kafka Raft（KRaft）</a>，用于共识协议和元数据管理。</p>
+	</dd>
+	<dt>主题</dt>
+	<dd>
+	<p>Kafka 主题<a contenteditable="false" data-primary="topics (Kafka)" data-type="indexterm">&nbsp;</a>是记录存储和发布的类别或订阅源名称。Kafka 中的主题经过分区处理，允许数据分布在多个 Broker 上。每个分区是一个有序的、不可变的记录序列，持续追加到日志中。</p>
+	</dd>
+	<dt>分区</dt>
+	<dd>
+	<p>Kafka 分区实现<a contenteditable="false" data-primary="partitions (Kafka)" data-type="indexterm">&nbsp;</a>了主题内记录的并行处理。每个分区可以托管在不同的 Broker 上，允许 Kafka 横向扩展并处理海量数据。分区也是 Kafka 中复制的基本单位，确保数据持久性和容错性。</p>
+	</dd>
+	<dt>键</dt>
+	<dd>
+	<p>在 Kafka 中，<a contenteditable="false" data-primary="keys" data-secondary="Kafka" data-type="indexterm">&nbsp;</a>键在决定记录发送到主题中的哪个分区方面发挥着关键作用。当生产者发送记录时，可以指定一个键。Kafka 使用该键结合哈希函数将记录映射到特定分区。这确保了具有相同键的记录始终进入同一分区，从而保证了该键对应记录的顺序。</p>
+	</dd>
+</dl>
+
+<div data-type="note">
+<p>Kafka 按照生产者发送消息的确切顺序将消息追加到分区中。如果生产者先发送消息 M1，再发送 M2 到同一分区，M1 将获得比 M2 更小的偏移量，从而确保它在日志中出现得更早。需要注意的是，这种顺序保证仅适用于各个分区内部。用户可以管理分区策略，以便在不同数据段之间利用这种有序投递。</p>
+</div>
+</section>
+
+<section data-type="sect3" id="ch08_kafka_s_configuration_levels_1734552289327148">
+<h3>Kafka 的配置级别</h3>
+
+<p>Kafka <a contenteditable="false" data-primary="configuration levels (Kafka)" data-type="indexterm">&nbsp;</a>提供多个配置级别，用于精细调整系统以满足特定需求：</p>
+
+<dl>
+	<dt>复制因子</dt>
+	<dd>
+	<p>该级别决定 Kafka 将在不同 Broker 间维护的分区副本数量。更高的复制因子可提升容错性，但同时需要更多的存储和网络资源。</p>
+	</dd>
+	<dt>确认</dt>
+	<dd>
+	<p>生产者可以配置需要从 Broker 获取的确认级别。例如，设置 <code>acks=all</code> 可确保只有当所有同步副本都确认后，消息才被视为成功写入，以更高的延迟为代价换取更高的可靠性。</p>
+	</dd>
+	<dt>保留策略</dt>
+	<dd>
+	<p>Kafka 允许配置记录在主题中的保留时长。保留策略可以基于时间（如七天）或大小（如 100 GB），确保只保留相关数据，实现更有效的存储管理。</p>
+	</dd>
+	<dt>压缩</dt>
+	<dd>
+	<p>Kafka 中的消息压缩减少了网络传输和磁盘存储的数据量。可根据使用场景配置不同的压缩算法，如 gzip、snappy 和 lz4。</p>
+	</dd>
+</dl>
+
+<p>Kafka 提供强大的<a contenteditable="false" data-primary="messaging guarantees (Kafka)" data-type="indexterm" id="message-guarantee">&nbsp;</a>消息投递保证，确保分布式系统中消息的可靠传递。这些保证对于维护复杂数据管道中的数据一致性和完整性至关重要：</p>
+
+<dl>
+	<dt>最多一次投递</dt>
+	<dd>
+	<p>消息<a contenteditable="false" data-primary="at-most-once delivery" data-type="indexterm">&nbsp;</a>最多投递给消费者一次，这意味着消息可能丢失，但绝不会重复投递。这是未配置重试或确认时的默认设置。</p>
+	</dd>
+	<dt>至少一次投递</dt>
+	<dd>
+	<p>每条消息<a contenteditable="false" data-primary="at-least-once delivery" data-type="indexterm">&nbsp;</a>至少投递一次。这意味着即使发生故障，消息最终也会到达消费者，但可能出现重复。这种保证常用于不允许数据丢失的场景，且应用逻辑可以处理重复消息。为了管理潜在的重复消息，在至少一次投递设置下消费消息的应用应在处理逻辑中实现幂等性。</p>
+
+	<div data-type="note">
+	<p><a contenteditable="false" data-primary="idempotence" data-type="indexterm">&nbsp;</a>如果一个操作多次应用的效果与应用一次相同，则称该操作是<em>幂等的</em>。例如，消费者可以追踪已处理的消息 ID 以防止重复处理。这种方式确保重复消息不会产生意外的副作用，从而在需要精确处理的应用中维护数据完整性。</p>
+	</div>
+	</dd>
+	<dt>精确一次投递</dt>
+	<dd>
+	<p>Kafka 中的精确一次语义（EOS）确保每条消息<a contenteditable="false" data-primary="exactly-once semantics (EOS)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EOS (exactly-once semantics)" data-type="indexterm">&nbsp;</a>仅被精确地投递给消费者一次，即使在发生故障的情况下也不会出现重复。这是通过 Kafka 的幂等生产者和事务 API 实现的，它们在多个分区和主题间维护原子性。EOS 在数据完整性至关重要的系统中尤为有价值，例如金融交易场景。</p>
+	</dd>
+</dl>
+
+<p>这些消息投递保证，加上 Kafka 强大的容错性和可扩展性，使其成为构建分布式数据流和处理系统的可靠选择。Kafka 以低延迟处理大规模数据流的能力，使其成为现代分布式系统中的基石技术。</p>
+
+<div data-type="note">
+<p>AWS 提供了<a contenteditable="false" data-primary="Managed Streaming for Apache Kafka (MSK)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="MSK (Managed Streaming for Apache Kafka)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kinesis" data-type="indexterm">&nbsp;</a> Amazon MSK（Amazon Managed Streaming for Apache Kafka）和 Amazon Kinesis，这两项托管服务专为实时数据流处理而设计。MSK 简化了在 AWS 上运行 Apache Kafka 的工作，而 Kinesis 则提供了用于收集、处理和分析流数据的工具。两项服务均支持可扩展、可靠的数据处理。我们将在 <a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a> 中进一步探讨。</p>
+</div>
+</section>
+</section>
+
+<section data-type="sect2" id="ch08_comparing_hdfs_and_kafka_1734552289327212">
+<h2>HDFS 与 Kafka 的比较</h2>
+
+<p>HDFS 和 Kafka <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="HDFS" data-type="indexterm" id="arch-design-distributed-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-type="indexterm" id="distributed-system-arch-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-type="indexterm" id="open-source-distributed-system-arch-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-type="indexterm" id="hdfs2">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-type="indexterm" id="hadoop-dist-filesystem2">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-type="indexterm" id="filesystem-hdfs2">&nbsp;</a>都旨在高效处理大量数据。表 <a data-type="xref" href="#ch08_table_2_1734552289307636">#ch08_table_2_1734552289307636</a> 对两者的特性进行了比较。</p>
+
+<table id="ch08_table_2_1734552289307636">
+	<caption>HDFS 与 Kafka 对比</caption>
+	<thead>
+		<tr>
+			<th>特性</th>
+			<th>HDFS</th>
+			<th>Kafka</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>
+			<p>核心功能</p>
+			</td>
+			<td>
+			<p>分布式文件存储</p>
+			</td>
+			<td>
+			<p>消息队列/事件流处理平台</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>使用场景</p>
+			</td>
+			<td>
+			<p>大数据存储、大规模处理</p>
+			</td>
+			<td>
+			<p>实时消息传递、事件溯源</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>数据模型</p>
+			</td>
+			<td>
+			<p>文件</p>
+			</td>
+			<td>
+			<p>记录流</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>性能</p>
+			</td>
+			<td>
+			<p>高吞吐量，针对大文件优化</p>
+			</td>
+			<td>
+			<p>高吞吐量，针对消息传递优化</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>可扩展性</p>
+			</td>
+			<td>
+			<p>随节点增加线性扩展</p>
+			</td>
+			<td>
+			<p>通过主题和分区横向扩展</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>容错性</p>
+			</td>
+			<td>
+			<p>跨节点复制</p>
+			</td>
+			<td>
+			<p>集群内及跨集群复制</p>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>HDFS 和 Kafka 都是强大的开源技术，各自满足分布式系统中的特定需求。HDFS 非常适合需要大规模数据存储和处理的应用，而 Kafka 则适用于需要健壮的实时数据处理和消息传递能力的应用。在 HDFS 和 Kafka 之间做出选择，取决于您组织的具体数据管理和<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed-kafka" data-tertiary="Kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="Kafka" data-startref="distributed-system-arch-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="Kafka" data-startref="open-source-distributed-system-arch-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-startref="kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="message queues" data-secondary="Kafka" data-startref="message-queue-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-startref="distributed-system-arch" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-startref="open-source-distributed-system-arch" data-type="indexterm">&nbsp;</a>处理需求。</p>
+</section>
+</section>
+
+<section data-type="sect1" id="ch08_conclusion_1734552289327271">
+<h1>结语</h1>
+
+<p>本章所讨论的架构设计与模式为构建可扩展、可维护、高效的系统提供了一套全面的工具箱。变更数据捕获（CDC）提供了一种在分布式环境中确保数据始终保持最新的机制，而发布-订阅架构则促进了系统组件之间的解耦通信。Lambda、Kappa 和数据湖等大数据架构为处理和分析海量数据提供了健壮的解决方案。与此同时，Kafka 和 HDFS 作为分布式系统中的基础技术，各自在其领域中表现卓越：实时事件流处理和大规模数据存储。</p>
+
+<p>通过理解和利用本章最后几节中讨论的架构模式和技术，组织不仅能够构建满足当前需求的系统，还能适应未来的挑战。这些设计模式所提供的灵活性、可扩展性和容错性，确保您的系统架构能够随着不断增长的业务需求和技术进步而同步演进。请记住，设计模式在不断演变，没有任何一份清单能够穷尽所有模式——我们在这里只是触及了冰山一角。这些架构模式犹如指导方针，您可以遵循，但无需完全照搬。根据您的业务需求灵活运用，不要强行将设计模式套用于您的需求之上。随着技术的进步，新的模式和策略将持续涌现，塑造系统架构与设计的未来。</p>
+
+<p>至此，<a data-type="xref" href="#part1">#part1</a> 告一段落。<a data-type="xref" href="#part2">#part2</a> 将深入介绍众多 AWS 服务，您将开始理解本部分所涵盖的概念与 AWS 服务设计和选型之间的内在联系。</p>
+</section>
+</section>

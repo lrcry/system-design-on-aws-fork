@@ -1,0 +1,116 @@
+<div xmlns="http://www.w3.org/1999/xhtml" data-type="part" id="part3">
+      <h1>系统设计实战案例</h1>
+      <blockquote data-type="epigraph">
+        <p>现在交付九成功能，远胜于永远交付不了的百分之百。</p>
+        <p data-type="attribution">布莱恩·柯尼汉 和 P. J. 普劳格尔</p>
+      </blockquote>
+      <p>本书第三部分涵盖若干常见的系统设计使用场景与示例，我们将携手在 AWS 云计算服务之上构建并扩展这些系统。对于所有使用场景，我们将从梳理系统需求入手，继而深入剖析系统各组件，最后以 AWS 上的部署视角作结——包括 Day 0 架构（面向初创企业最小可行产品的参考，假设用户量约为一千人）和 Day N 架构（扩展至百万用户规模）。在此过程中，我们还将探讨设计中可能出现的瓶颈、大规模系统设计的最佳实践，以及相似 AWS 服务之间的比较。</p>
+      <p>我们<a contenteditable="false" data-type="indexterm" data-primary="Make it Work, Make it Right, Make it Fast principle">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scalability">&nbsp;</a>建议遵循<a href="https://oreil.ly/_J-U2">先让它跑起来，再让它做对，最后让它快起来</a>原则，第三部分的所有章节均秉持这一理念。乐观地憧憬有朝一日系统能服务十亿活跃用户固然美好，但从第一天起就把系统构建得能支撑这种规模，实属没有必要。宏大的规模目标绝不应成为阻碍产品上线的理由——只需确保系统具备足够的可扩展性，以便在未来有需求时，随着新用户的加入和新功能的引入，系统能够持续演进。例如，下方这张 <em>amazon.com</em> 网站最初上线时的截图清楚地说明了这一点——彼时根本无需考虑如何让它承载十亿用户。</p>
+      <p>对现有系统进行重新设计的其他原因，还可能包括成本与运维开销——就像 Uber 最初使用 Amazon DynamoDB 构建账本存储，但后来迁移到了其自研存储方案 <a href="https://oreil.ly/KUvJ3">Docstore</a>。同样的原则在我们梳理任何系统的各个组件时也同样适用：<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="goals of">&nbsp;</a>目标始终是尽快将系统交到用户手中并收集反馈。如果始终无法实现"解决用户问题并最终从中获得收益"的目标，那么对系统进行过度优化毫无意义——毕竟，每个人投身其中，要么是为了从所设计的系统中获利，要么是帮助他人做到这一点（正如开源项目所体现的那样）。</p>
+      <figure class="informal" id="part3_figure_1_1734552296194637">
+        <img src="images/sdoa_p3in01.png"/>
+        <figcaption/>
+      </figure>
+      <p>第三部分每一章均遵循以下通用结构：</p>
+      <ol>
+        <li>
+          <p>引言</p>
+          <ol>
+            <li>
+              <p>背景</p>
+            </li>
+            <li>
+              <p>业务使用场景</p>
+            </li>
+          </ol>
+        </li>
+        <li>
+          <p>系统需求</p>
+          <ol>
+            <li>
+              <p>功能性需求与非功能性需求</p>
+            </li>
+            <li>
+              <p>系统规模</p>
+            </li>
+          </ol>
+        </li>
+        <li>
+          <p>开始设计</p>
+          <ol>
+            <li>
+              <p>概念与原则</p>
+            </li>
+            <li>
+              <p>系统组件</p>
+            </li>
+            <li>
+              <p>初步系统设计</p>
+            </li>
+          </ol>
+        </li>
+        <li>
+          <p>在 AWS 上部署系统</p>
+          <ol>
+            <li>
+              <p>Day 0 架构</p>
+            </li>
+            <li>
+              <p>扩展至百万用户及更大规模</p>
+            </li>
+            <li>
+              <p>Day N 架构</p>
+            </li>
+          </ol>
+        </li>
+        <li>
+          <p>总结</p>
+        </li>
+      </ol>
+      <p>学完第三部分，你将能够：</p>
+      <ul>
+        <li>
+          <p>理解每个系统设计问题的业务背景，并学会如何提出正确的问题来评估需求</p>
+        </li>
+        <li>
+          <p>掌握如何梳理使用场景的功能性需求与非功能性需求，以及如何估算存储、吞吐量和延迟方面的规模需求，进而推导出容量与成本估算</p>
+        </li>
+        <li>
+          <p>掌握如何运用系统设计基础知识和第一性原理构建解决方案，以及如何处理设计中的边缘情况与细节</p>
+        </li>
+        <li>
+          <p>在 AWS 上以 Day 0 架构部署最小可行产品的初始方案，并将其演进为最有价值产品</p>
+        </li>
+        <li>
+          <p>将架构扩展至 Day 1 及更长远的百万用户规模，使其在 AWS 上安全、高性能、高弹性且高效运行</p>
+        </li>
+      </ul>
+      <p>我们精选了八个使用场景，以覆盖行业中广泛的问题陈述：</p>
+      <ul>
+        <li>
+          <p>想象一个能将长网址变成短链接的工具。<a data-type="xref" href="#ch14_designing_a_url_shortener_service_1734552292687677">#ch14_designing_a_url_shortener_service_1734552292687677</a> 将带你走进 URL 短链服务的世界。我们将了解它为何重要、需要实现哪些功能，以及如何在 AWS 上构建。我们将从适合初创企业的简单架构出发，然后了解如何使其支撑百万用户。</p>
+        </li>
+        <li>
+          <p><a data-type="xref" href="#ch15_designing_a_web_crawler_and_search_engine_1734552293105400">#ch15_designing_a_web_crawler_and_search_engine_1734552293105400</a> 聚焦网络爬虫和 Google、Bing 等搜索引擎。我们将探讨这些系统的工作原理、功能需求，以及如何在 AWS 上构建。我们将从小规模起步，然后逐步解决海量数据处理的挑战。</p>
+        </li>
+        <li>
+          <p>好奇 Facebook 这样的社交网络是如何将全球各地的人们连接起来的吗？<a data-type="xref" href="#ch16_designing_a_social_network_and_newsfeed_system_1734552293547861">#ch16_designing_a_social_network_and_newsfeed_system_1734552293547861</a> 将介绍如何设计一个类似 Facebook 或 Instagram 的社交网络，并构建新闻信息流系统。我们将讨论如何让用户能够分享和查看动态，以及如何在 AWS 上实现这一切。</p>
+        </li>
+        <li>
+          <p>网络游戏趣味横生，实时排行榜是这类游戏的重要组成部分。<a data-type="xref" href="#ch17_designing_an_online_game_leaderboard_1734552294109327">#ch17_designing_an_online_game_leaderboard_1734552294109327</a> 将展示如何设计一个追踪游戏分数、对玩家进行排名的系统。我们将借助 AWS 确保排行榜能够承载大量玩家和高频更新。</p>
+        </li>
+        <li>
+          <p>规划一次旅行、预订心仪住所令人心情愉悦，但你是否曾想过背后那套复杂的系统是如何运转的？<a data-type="xref" href="#ch18_designing_a_hotel_reservation_system_1734552294615548">#ch18_designing_a_hotel_reservation_system_1734552294615548</a> 将深入探讨在线酒店预订系统的架构，应对预订冲突和事务处理等复杂需求，拆解各个组件，并在 AWS 云上部署可扩展的解决方案。</p>
+        </li>
+        <li>
+          <p><a data-type="xref" href="#ch19_designing_a_chat_application_1734552294951889">#ch19_designing_a_chat_application_1734552294951889</a> 专注于设计一个支持实时消息收发的聊天应用程序。我们将了解 AWS 如何帮助我们打造流畅、响应迅速的聊天体验。</p>
+        </li>
+        <li>
+          <p>很多人喜欢用 Netflix 放松休闲，<a data-type="xref" href="#ch20_designing_a_video_processing_pipeline_for_a_stream_1734552295245731">#ch20_designing_a_video_processing_pipeline_for_a_stream_1734552295245731</a> 将教你如何设计一个流畅处理和流式传输视频的系统。我们将学习如何将视频上传至系统，以及视频如何无<span class='keep-together'>中断</span>地流畅传输到全球各地的各类设备上。</p>
+        </li>
+        <li>
+          <p><a data-type="xref" href="#ch21_designing_an_online_stock_trading_platform_1734552295606829">#ch21_designing_an_online_stock_trading_platform_1734552295606829</a> 着眼于股票买卖系统的设计——一个股票经纪商应用程序。你将学习如何构建一个可靠、高效的股票经纪系统并将其部署在 AWS 上。</p>
+        </li>
+      </ul>
+      <p>读完本书，你将清楚地了解如何借助 AWS 云计算服务应对各类真实世界的挑战，掌握设计高效、可靠、能承载百万用户的系统的方法。让我们一起投入其中，开始设计一些令人叹为观止的系统吧！</p>
+    </div>

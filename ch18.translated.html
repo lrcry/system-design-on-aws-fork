@@ -1,0 +1,591 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch18_designing_a_hotel_reservation_system_1734552294615548">
+      <h1>设计酒店预订系统</h1>
+      <p>我们都热爱旅行 <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="hotel reservation system" id="use-case-hotel">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" id="hotel-use-case">&nbsp;</a>，也经常使用 <a class="orm:hideurl" href="https://booking.com">Booking.com</a>、<a class="orm:hideurl" href="https://agoda.com">Agoda</a> 和 <a class="orm:hideurl" href="https://airbnb.com">Airbnb</a> 等在线酒店预订系统提前预订住所。本章将深入探讨酒店客房（或任何类型住宿场所——本章统称为<em>房源</em>）预订系统的底层设计。该预订系统应能展示特定区域内的房源列表，并允许用户预订指定时段的客房。在设计此类系统时，需要考虑大量边界场景，例如如何处理重复付款，以及同一客房不得被多人同时预订同一时段等问题。我们将逐一梳理这些场景，并最终确定整体系统架构。</p>
+      <p>本章将从需求梳理和系统预期目标开始，将整个预订系统拆分为多个子系统逐步设计，最后讨论在 AWS 云上部署此类系统时可以利用的 AWS 服务。</p>
+      <section data-type="sect1" id="ch18_system_requirements_1734552294615772">
+        <h1>系统需求</h1>
+        <p>最 <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="hotel reservation system" data-tertiary="system requirements" id="use-case-hotel-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-secondary="system requirements" id="hotel-use-case-require">&nbsp;</a>核心的需求其实很简单：允许用户预订未来的住宿。我们先来做一些需求澄清：</p>
+        <ul>
+          <li>
+            <p>系统负责将单一酒店集团或任意房源引入平台，以便发布客房信息。系统支持房源方完成入驻，并允许其添加附有设施说明的客房信息。</p>
+          </li>
+          <li>
+            <p>需要确定谁来代收用户的付款。是由系统代表房东收款，还是用户直接在房源现场付款？这是一个重要的需求考量点——如果用户直接向房东付款，系统就无需处理付款生命周期。但这会影响房东的体验，因为用户可能完成预订后不实际入住。为了让用户和房东都满意，系统将付款方式及其他房源专属政策的决定权交由房东自行选择。</p>
+          </li>
+          <li>
+            <p>系统是否提供预订房源附近景点的推荐功能？不提供——尽管这类功能（以及行程规划等）确实能提升用户体验，但我们将跳过这一功能，保持范围聚焦。系统可通过外部集成来提供此类服务。</p>
+          </li>
+          <li>
+            <p>房源可能同时在多个预订系统上发布，因此需要确定：如果房源在其他平台上被预订，本系统如何保证可用性及时同步。这可以通过自动化方式（由其他系统向本系统发送更新）或由房东手动更新来实现。由于各预订平台差异较大（且平台未必支持集成），我们依赖房东手动更新房源状态。在设计过程中，我们将讨论该场景下重复预订的边界情况。</p>
+          </li>
+          <li>
+            <p>还需要考虑动态定价：房价是否可以根据预订率、特殊时节或其他因素动态调整？系统架构应赋予房东自主权，允许其自行设定固定价格，或提供房价的最高/最低值交由预订系统来决策。我们不会深入讨论机器学习算法，但会概要介绍系统中支持动态定价的通用策略。</p>
+          </li>
+        </ul>
+        <p>基于以上澄清，我们接下来确定系统的功能性需求和非功能性需求。</p>
+        <section data-type="sect2" id="ch18_functional_and_nonfunctional_requirements_1734552294615853">
+          <h2>功能性需求与非功能性需求</h2>
+          <p>系统 <a contenteditable="false" data-type="indexterm" data-primary="functional requirements" data-secondary="hotel reservation system" id="function-require-hotel">&nbsp;</a>有两类用户：发布房源的房东，以及在特定时段预订房源的用户。</p>
+          <p>针对房东，系统应支持以下功能性需求：</p>
+          <ul>
+            <li>
+              <p>提供个人信息、结算信息等资料，完成平台入驻</p>
+            </li>
+            <li>
+              <p>发布一处或多处房源，包含客房数量与类型、定价结构、房源图片及附加权益等详情</p>
+            </li>
+            <li>
+              <p>更新房源详情，如可用客房数量、价格和图片</p>
+            </li>
+            <li>
+              <p>查看当前及历史预订状态、用户评价、收入等信息</p>
+            </li>
+          </ul>
+          <p>针对预订用户，功能性需求如下：</p>
+          <ul>
+            <li>
+              <p>按地理位置搜索房源，并选择入住/退房日期区间；可附加过滤条件，如房源评级（四星、五星等）、是否允许携宠、取消政策及是否含早餐等。</p>
+            </li>
+            <li>
+              <p>预订客房并付款（如为房源政策要求——房源也可选择由用户现场付款并仅需支付少量定金）。</p>
+            </li>
+            <li>
+              <p>修改预订，包括选择新日期、增加客房数量、更新入住/退房时间、完成付款、添加客房服务及预约水疗项目等。</p>
+            </li>
+            <li>
+              <p>查看当前及历史预订。</p>
+            </li>
+            <li>
+              <p>取消预订。付款细节取决于房源政策：是否允许免费取消？用户是否需支付一定费用？退款如何处理？</p>
+            </li>
+            <li>
+              <p>入住结束后发表评价。系统限制用户只能在完成入住后，才能对已预订的<a contenteditable="false" data-type="indexterm" data-primary="functional requirements" data-secondary="hotel reservation system" data-startref="function-require-hotel">&nbsp;</a>房源发表评价。</p>
+            </li>
+          </ul>
+          <p>系统应保证以下<a contenteditable="false" data-type="indexterm" data-primary="nonfunctional requirements" data-secondary="hotel reservation system">&nbsp;</a>非功能性需求（NFR）：</p>
+          <ul>
+            <li>
+              <p>系统整体应具备高可用性和高可靠性。</p>
+            </li>
+            <li>
+              <p>预订和付款具备强一致性。预订状态应在所有预订系统中保持同步。</p>
+            </li>
+            <li>
+              <p>搜索系统以极低延迟呈现房源列表。</p>
+            </li>
+            <li>
+              <p>系统仅负责房源预订，但不应对支持机票、租车等其他类型预订产生架构上的限制。系统应具备可扩展性，支持上述需求无需进行大规模重新设计。</p>
+            </li>
+            <li>
+              <p>系统的容错机制应以避免重复预订或重复扣款为首要目标，并在发生时能够优雅处理。</p>
+            </li>
+          </ul>
+          <p>系统规模是做出设计决策时的另一重要因素。下一节将给出估算的规模数字供参考。</p>
+        </section>
+        <section data-type="sect2" id="ch18_system_scale_1734552294615924">
+          <h2>系统规模</h2>
+          <p>与功 <a contenteditable="false" data-type="indexterm" data-primary="scale (of system)" data-secondary="hotel reservation system" id="scale-system-hotel">&nbsp;</a>能性需求类似，系统规模可分为两个维度：系统上发布的房源数量，以及搜索房源和完成预订的用户数量。注意，本节使用的数字均基于假设，并非来自具体数据来源。建议结合实际业务场景推导初始数字，后续再据此规划扩容方案。</p>
+          <p>用于确定规模的假设如下：</p>
+          <div data-type="equation">
+            <p>全球房源数量 = 1000 万</p>
+                           <p>每个地点的平均房源数量 = 500</p>
+                           <p>每处房源的平均客房数量 = 100</p>
+                           <p>全球客房总数 = 1000 万 &times; 100 = 10 亿</p>
+                           <p>平均每次入住时长 = 2 天</p>
+            </div>
+          <p>平台上的房源搜索规模与实际完成预订的规模可能差异显著，以下是设计所采用的估算：</p>
+          <div data-type="equation">
+            <p>搜索请求量 = 2000 万次/天 = 250 次/秒</p>
+            <p>平台活跃用户数 = 1 亿</p>
+            <p>实际预订量 = 搜索量的 10% = 200 万次/天 = 25 次/秒</p>
+          </div>
+          <p>我们还可以估算近似的存储需求，这有助于为架构选型提供参考依据。系统需存储用户信息、房源信息和预订信息：</p>
+          <div data-type="equation">
+            <p>客房详情存储空间 {客房 ID、类型、设施、最低价格、最高价格、面积} = 500 字节</p>
+            <p>房源详情存储空间 {房源 ID、地址、客房数量、设施} = 500 字节</p>
+            <p>每处房源平均 50 条评价，每条评价 500 字节 {评价内容、星级、用户 ID} = 50 &times; 500 字节 = 25 KB</p>
+            <p>每处房源总存储空间 = 500 字节 + 100 &times; 500 字节 + 25 KB = 75 KB</p>
+            <p>所有房源存储空间 = 1000 万 &times; 75 KB &asymp; 715 GB</p>
+            <p>房源媒体存储空间（图片和视频），平均每处房源 10 张图片，每张 1 KB = 10 KB &times; 1000 万 &asymp; 100 GB</p>
+          </div>
+          <p>房源媒体数据的存储量相对较小，因为房源新增速率远低于每日预订量。下面计算预订数据的存储需求：</p>
+          <div data-type="equation">
+            <p>单条预订存储空间 {住客信息、预订详情、总金额} = <span class='keep-together'>1 KB</span></p>
+            <p>总存储空间 = 1 KB × 200 万 = 2 GB/天 = 730 GB/年</p>
+          </div>
+          <p>有了这些估算，让我们开始设计<a contenteditable="false" data-type="indexterm" data-primary="scale (of system)" data-secondary="hotel reservation system" data-startref="scale-system-hotel">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="hotel reservation system" data-tertiary="system requirements" data-startref="use-case-hotel-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-secondary="system requirements" data-startref="hotel-use-case-require">&nbsp;</a>预订系统的架构。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch18_starting_with_the_design_1734552294616016">
+        <h1>开始设计</h1>
+        <p>房源 <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="hotel reservation system" data-tertiary="architecture design" id="use-case-hotel-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-secondary="architecture design" id="hotel-use-case-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="in hotel reservation system" data-secondary-sortas="hotel reservation system" id="schema-hotel">&nbsp;</a>预订系统与我们在 <a data-type="xref" href="#ch15_designing_a_web_crawler_and_search_engine_1734552293105400">#ch15_designing_a_web_crawler_and_search_engine_1734552293105400</a> 中讨论的网络爬虫与搜索引擎系统有相似之处。房东发布房源，如同网络爬虫从网站抓取数据。两种场景下，系统都将这些数据存储起来，供用户后续搜索使用。因此，我们知道来自房东的房源数据需要以支持高效搜索的方式存储，我们将借助倒排索引数据结构来实现搜索功能。</p>
+        <p>在深入探讨存储方案之前，先将系统拆分为三个高层次部分，如图 <a data-type="xref" href="#ch18_figure_1_1734552294593080">#ch18_figure_1_1734552294593080</a> 所示：房源入驻、房源搜索和房源预订。</p>
+        <figure id="ch18_figure_1_1734552294593080">
+          <img src="images/sdoa_1801.png"/>
+          <figcaption>房源预订系统高层次视图</figcaption>
+        </figure>
+        <section data-type="sect2" id="ch18_property_onboarding_architecture_1734552294616108">
+          <h2>房源入驻架构</h2>
+          <p>入驻 <a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-secondary="architecture design" data-tertiary="property onboarding architecture" id="hotel-use-case-design-onboard">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="property onboarding architecture (hotel reservation system)" id="property-onboard">&nbsp;</a>系统最基本的需求是收集房东的数据，并以支持高效搜索的方式存储。这可以分解为类似工作流的多个步骤，每个步骤接受特定类型的输入，如图 <a data-type="xref" href="#ch18_figure_2_1734552294593113">#ch18_figure_2_1734552294593113</a> 所示。</p>
+          <figure id="ch18_figure_2_1734552294593113">
+            <img src="images/sdoa_1802.png"/>
+            <figcaption>房源入驻状态机</figcaption>
+          </figure>
+          <p>为了保持状态机简洁，我们省略了部分状态，例如添加房源限制、价格详情、图片等。状态机可使用 AWS Step Functions 等工作流引擎实现。</p>
+          <p>选择 <a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="for property onboarding architecture" data-secondary-sortas="property onboarding" id="database-property-onboard">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="relational databases" data-secondary="for property onboarding architecture" data-secondary-sortas="property onboarding" id="relational-database-onboard">&nbsp;</a>何种数据库来存储房源详情，是另一项关键决策。这些数据天然具有关联关系：房源按城市挂牌，房源下含客房，预订则对应具体客房。因此可以考虑使用关系型数据库。关联关系可设计为：以房源表为核心，关联房源地址表、房源客房表、房源评价表和房源设施表。房源客房还可进一步关联客房设施表和客房价格表。这只是 Day 0 架构的建议模式，随着系统扩展，定价和评价等功能可以由完全独立的系统来维护。</p>
+          <p>使用关系型数据库管理系统（RDBMS）还带来一个额外优势——强大的 ACID 支持，但随着数据增长，实现数据分区技术可能需要额外的工作量。系统需要对房源可用客房数量提供强一致性支持，以确保预订仅在有空余客房时才能确认。关于分区，如果系统为房源数据和预订数据分别使用独立数据库，所需存储空间并不大，可通过 Amazon Aurora 分布式存储进行管理。</p>
+          <p>对于 <a href="https://oreil.ly/Hr35Z">Aurora</a>，集群的存储 <a contenteditable="false" data-type="indexterm" data-primary="Aurora">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Aurora">&nbsp;</a>空间最高可扩展至 128 TB（适用于所有 PostgreSQL 版本以及 MySQL 2、2.09、3 及更高版本），旧版 MySQL 引擎版本最高为 64 TB，存储容量相当充裕。我们还将在 <a data-type="xref" href="#ch18_scaling_to_millions_and_beyond_1734552294617083">#ch18_scaling_to_millions_and_beyond_1734552294617083</a> 中讨论具备无限存储能力的 Aurora Limitless 数据库。</p>
+          <p>如果确实需要分区，一种方案是按房源 ID 对数据进行分片，前端的路由层负责定位数据所在位置。我们建议不要对表中的数据进行完全范式化，并避免复杂的 JOIN 操作。这有助于优化查询性能（代价是在各表之间存储冗余数据），即便使用 JOIN，也应确保在数据过滤后才执行关联。这与 DynamoDB 表中的查询表达式（Query Expression）与过滤表达式（Filter Expression）的概念类似：过滤表达式是在数据被取出后才应用的，无论最终结果集大小如何，耗时是相同的。</p>
+          <p>我们再思考一下 <a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-secondary="for property onboarding architecture" data-secondary-sortas="property onboarding">&nbsp;</a>DynamoDB 这类方案的适用性——通过避免 JOIN、支持并行查询和开箱即用的水平扩展来提升可扩展性和性能。分区键为房源 ID，可以定义多个排序键来存储与房源关联的不同属性，如表 <a data-type="xref" href="#ch18_table_1_1734552294600486">#ch18_table_1_1734552294600486</a> 所示。</p>
+          <table id="ch18_table_1_1734552294600486">
+            <caption>在 Amazon DynamoDB 中存储房源详情的排序键</caption>
+            <thead>
+              <tr>
+                <th>排序键</th>
+                <th>说明</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>PY</p>
+                </td>
+                <td>
+                  <p>房源主对象，包含地址、设施等详细信息。</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>PY#IMG#{imageId}</p>
+                </td>
+                <td>
+                  <p>房源图片详情。此处仅维护图片在 Amazon S3 中的存储链接。可创建类似的排序键以支持不同媒体类型。</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>PY#R#PY#R#{roomId}</p>
+                </td>
+                <td>
+                  <p>唯一标识一个客房对象。</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>PY#R#{roomType} </p>
+                </td>
+                <td>
+                  <p>包含按客房类型划分的不同客房属性。</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>PY#R#{roomType}#{imageId}</p>
+                </td>
+                <td>
+                  <p>按客房类型划分的图片详情。</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>可根据需求保留其他详情，例如餐食菜单、房源详情的历史变更记录等。综合来看，RDBMS 和 DynamoDB 均是存储和访问房源信息的可行方案。表 <a data-type="xref" href="#ch18_table_1_1734552294600486">#ch18_table_1_1734552294600486</a> 中的排序键之一是 <code>PY#R#{roomType}#{imageId}</code>：图片 ID 代表图片存储位置的标识符，例如 Amazon S3 URL（我们在 <a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a> 中介绍了 Amazon S3）。</p>
+          <p>房源详情存入数据库后，还需要一套系统在此数据之上提供搜索功能。接下来讨论房源<a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="for property onboarding architecture" data-secondary-sortas="property onboarding" data-startref="database-property-onboard">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="relational databases" data-secondary="for property onboarding architecture" data-secondary-sortas="property onboarding" data-startref="relational-database-onboard">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-secondary="architecture design" data-tertiary="property onboarding architecture" data-startref="hotel-use-case-design-onboard">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="property onboarding architecture (hotel reservation system)" data-startref="property-onboard">&nbsp;</a>搜索的架构。</p>
+        </section>
+        <section data-type="sect2" id="ch18_property_search_architecture_1734552294616186">
+          <h2>房源搜索架构</h2>
+          <p>任何 <a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-secondary="architecture design" data-tertiary="property search architecture" id="hotel-use-case-design-search">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="property search architecture (hotel reservation system)" id="property-search">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search service" data-secondary="in hotel reservation system" data-secondary-sortas="hotel reservation system" id="search-service-hotel">&nbsp;</a>搜索请求的核心参数都是位置。用户选定位置后，系统应能呈现该位置的房源列表。用户还可添加过滤条件来细化结果，例如房源类型、是否允许携宠或是否含早餐等。上一节创建的数据库无法直接支持搜索功能，除非针对所有过滤查询模式分别创建全局二级索引（GSI，适用于 DynamoDB）或 RDBMS 索引。随着搜索条件不断增加，全局二级索引（GSI）方案会变得越来越复杂。更好的方案是借助 Elasticsearch <a contenteditable="false" data-type="indexterm" data-primary="Elasticsearch" id="elasticsearch">&nbsp;</a>或 Amazon OpenSearch 等搜索解决方案。</p>
+          <p>我们在 <a data-type="xref" href="#ch15_designing_a_web_crawler_and_search_engine_1734552293105400">#ch15_designing_a_web_crawler_and_search_engine_1734552293105400</a> 中探讨的这些解决方案的架构，可以直接应用于本章的房源搜索场景。除了支持固定搜索参数的查询外，Elasticsearch 还能支持模糊文本查询。房源数据库中的数据可以以变更数据捕获（CDC）事件的形式发布到消息队列，再转换为 Elasticsearch 兼容的数据结构并持久化，如图 <a data-type="xref" href="#ch18_figure_3_1734552294593138">#ch18_figure_3_1734552294593138</a> 所示。</p>
+          <figure id="ch18_figure_3_1734552294593138">
+            <img src="images/sdoa_1803.png"/>
+            <figcaption>通过 CDC 将数据从数据库持久化到 Elasticsearch</figcaption>
+          </figure>
+          <p>系统可能还需要组合来自两个数据存储的数据——因为客房可用性需要强一致性保障，而这些信息存储于强一致性数据库中。搜索可分解为两个步骤：</p>
+          <ol>
+            <li>
+              <p>根据搜索条件从 Elasticsearch 集群检索房源。</p>
+            </li>
+            <li>
+              <p>针对检索到的房源，在强一致性数据库中核查其可用性。</p>
+            </li>
+          </ol>
+          <p>搜索功能也可能由多个团队分别维护，分别托管在不同的 Elasticsearch 集群或其他数据库方案上。这正是使用 GraphQL 联邦的典型场景——有关 GraphQL 的详细信息请参阅 <a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a>，有关 AWS AppSync（托管的 GraphQL 联邦服务）请参阅 <a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a>。搜索服务可作为一个独立的聚合层，与各服务通信并根据用户过滤条件汇总房源数据。</p>
+          <div data-type="note">
+            <p>还有一种方案是让应用程序在内存中执行过滤，而不是在数据库或 Elasticsearch 上创建过多索引。具体做法是：应用程序先从数据库取出某一位置的全部数据，再在应用层执行额外过滤。这种方案在本场景下不推荐，但在通信量较小的类似场景中可以考虑。某一地点的房源数量可能非常庞大，很容易成为性能瓶颈。</p>
+          </div>
+          <p>我们之前提到使用强一致性数据库来核查客房可用性。也可以采用另一种方式：先从最终一致性数据库返回结果（查询更快），同时并行地在强一致性数据库中核查客房可用性，但不阻塞等待结果合并。若两个数据源中的可用性不一致，在前端应用中再做结果合并。</p>
+          <p>任何方案都存在权衡。另一种策略是：仅当客房可用数量极少时（例如只剩两间）才等待强一致性数据库的结果，否则直接从最终一致性数据库返回结果。</p>
+          <div data-type="note">
+            <p>客房可用性检查是为了确保只有在客房有空余时才能完成预订。各公司对此采取了不同的处理方式。一种完全不同的思路是：根据对特定房源历史取消记录的分析，允许超额预订。这有助于简化问题范围，并确保客房不会空置。</p>
+          </div>
+          <p>接下来进一步深入介绍 Elasticsearch 的底层架构（结合 <a data-type="xref" href="#ch15_designing_a_web_crawler_and_search_engine_1734552293105400">#ch15_designing_a_web_crawler_and_search_engine_1734552293105400</a> 中的讨论），以及确定 Elasticsearch 配置的策略。</p>
+          <section data-type="sect3" id="ch18_elasticsearch_configuration_and_scaling_1734552294616258">
+            <h3>Elasticsearch 配置与扩展</h3>
+            <p>如您所知，<a contenteditable="false" data-type="indexterm" data-primary="scaling" data-secondary="Elasticsearch" id="scale-elasticsearch">&nbsp;</a>可扩展性是系统需求的重要方面。在 <a data-type="xref" href="#ch15_designing_a_web_crawler_and_search_engine_1734552293105400">#ch15_designing_a_web_crawler_and_search_engine_1734552293105400</a> 中，我们讨论了多种独立扩展读写的方案，这些方案同样适用于本章。本节重点关注 Elasticsearch 集群的可扩展性——如何支持不断增长的读写负载，以及如何解决热节点问题（少数节点承担了所有读写请求，其余节点处于空闲状态）。事后更改 Elasticsearch 的分片配置需要重新建立索引，这对生产运行的系统来说是一项代价高昂的操作。分片大小应适中（不能太小也不能太大）；通常建议：对于对搜索延迟敏感的场景，分片大小控制在 10 GB 至 30 GB 之间；对于日志分析等写密集型工作负载，分片大小控制在 30 GB 至 50 GB 之间。</p>
+            <div data-type="note">
+              <p>我们常常误以为分片<a contenteditable="false" data-type="indexterm" data-primary="sharding">&nbsp;</a>只是为了解决存储问题。<em>分片</em>是一个更宽泛的概念，指的是将工作负载拆分到多个资源上，以解决存储、计算、网络、性能和可靠性等方面的瓶颈或组合瓶颈。</p>
+            </div>
+            <p class="pagebreak-before less_space">较小的分片会产生更小的段（segment），过多的小段会增加硬件资源的管理开销。小分片支持更多并发查询，但也可能导致大量查询在分片层排队积压。总体而言，较少数量的大分片优于大量小分片。同样，应避免分片过大，以减少节点故障时数据重新均衡的开销。</p>
+            <div data-type="note">
+              <p>对于需要删除数据的场景（例如按时间存储日志），我们<a contenteditable="false" data-type="indexterm" data-primary="indexes" data-secondary="deleting">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deleting indexes">&nbsp;</a>建议删除索引而不是删除文档。索引被删除后会立即从磁盘移除，而文档则不然——文档被标记为软删除（已删除的文档仍会占用资源），实际删除操作发生在段合并时。这与我们在 <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a> 中讨论的 Cassandra 墓碑（tombstone）问题类似。</p>
+            </div>
+            <p>回到 Elasticsearch 集群索引应配置的分片数量，分片大小取决于实际数据量和预期增长，因此我们先来确定<a href="https://oreil.ly/lNKqz">存储需求</a>，再计算分片数量。总存储空间取决于原始数据大小、副本数量、索引开销、操作系统预留空间和服务运维开销：</p>
+            <ul>
+              <li>
+                <p>至少应配置一个副本以防止数据丢失。副本还有助于提升搜索查询性能。每个副本包含索引的完整副本，我们在系统架构中初始配置两个副本。</p>
+              </li>
+              <li>
+                <p>数据以特定数据结构格式存储，通常索引后的总数据量为原始数据的 110%。</p>
+              </li>
+              <li>
+                <p>操作系统为自身进程预留 5% 的存储空间。</p>
+              </li>
+              <li>
+                <p>OpenSearch 服务（或 Elasticsearch 服务）为段合并、日志等各类操作预留存储空间。对于 OpenSearch 服务，每个实例预留空间为其存储容量的 20%（最多 20 GB）。</p>
+              </li>
+            </ul>
+            <p>基于以上参数，可以估算所需存储容量：</p>
+            <div data-type="equation">
+              <p data-type="tex">\[
+                \text{最小存储需求} =
+                \frac{\text{原始数据} \times (1 + \text{副本数量}) \times (1 + \text{索引开销})}
+                {(1 - \text{Linux 预留空间}) \times (1 - \text{OpenSearch 服务开销})}
+                \]</p>
+                <p data-type="tex">\[
+                \text{最小存储需求} = \text{原始数据} \times (1 + \text{副本数量}) \times 1.45
+                \]</p>
+                <p data-type="tex">\[
+                \text{本系统存储量} = 715 \, \text{GB} \times (1 + 2) \times 1.45 = 3.1 \, \text{TB}
+                \]</p>
+            </div>
+            <p class="pagebreak-before less_space">同样，计算近似分片数量的公式为：</p>
+            <div data-type="equation">
+              <p>分片数量 = (原始数据 + 预留增长空间) &times; (1 + 索引开销) / 目标分片大小</p>
+              <p>本系统按 2 倍增长估算的分片数量 = (715 GB + 715 GB) &times; 1.1 / 30 = 53</p>
+              <p>当前存储量下每个分片所占空间 = 715 &times; 1.1 / 53 <span class='keep-together'>≈ 15 GB</span></p>
+            </div>
+            <p>可以看到，分片大小落在对搜索延迟敏感场景推荐的 10—30 GB 区间内。结合上述计算，还可以初步判断集群中应使用的实例类型。建议通过迭代方式确定实例类型，并持续监控指标以找到最优配置。</p>
+            <div data-type="note">
+              <p>如果分片过大，Elasticsearch 的水平扩展（新增数据节点）并不能改善查询性能，因为写入或查询的数据分区仍然很大。在这种情况下，可以在应用层引入逻辑：当索引大小超过阈值时创建新索引，<a contenteditable="false" data-type="indexterm" data-primary="index aliases">&nbsp;</a>这样即便数据持续增长，分片大小也能保持在合理范围内。此外，可以创建<a contenteditable="false" data-type="indexterm" data-primary="scaling" data-secondary="Elasticsearch" data-startref="scale-elasticsearch">&nbsp;</a><a href="https://oreil.ly/Ooky_">索引别名（index alias）</a>，指向所有这些索引<a contenteditable="false" data-type="indexterm" data-primary="Elasticsearch" data-startref="elasticsearch">&nbsp;</a>并聚合搜索结果。</p>
+            </div>
+            <p>本节开头提到了 GraphQL 联邦，接下来进一步阐述它如何融入预订系统架构中的房源搜索场景。</p>
+          </section>
+          <section data-type="sect3" id="ch18_graphql_federation_for_search_1734552294616322">
+            <h3>基于 GraphQL 联邦的搜索</h3>
+            <p>客户 <a contenteditable="false" data-type="indexterm" data-primary="GraphQL" id="graphql-ch18">&nbsp;</a>发起搜索请求后，响应应包含房源列表，且每处房源附带额外信息——如房源详情、评分、所选日期区间的价格（房源可能提供多种客房类型，系统可展示最受欢迎客房类型的价格）以及房源标签（如含免费早餐或允许携宠）。所有这些信息来自不同系统，最终聚合展示在 Web 界面上，如图 <a data-type="xref" href="#ch18_figure_4_1734552294593160">#ch18_figure_4_1734552294593160</a> 所示。</p>
+            <figure id="ch18_figure_4_1734552294593160">
+              <img src="images/sdoa_1804.png"/>
+              <figcaption>基于 GraphQL 联邦的房源搜索架构</figcaption>
+            </figure>
+            <p><em>解析器（resolver）</em>和<em>模式注册表（schema registry）</em>的定义与我们在 <a data-type="xref" href="#ch12_aws_appsync_1734552291640757">#ch12_aws_appsync_1734552291640757</a>（<a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a>）中介绍的一致。<a href="https://oreil.ly/yOUjA">Booking.com</a> 使用 <a href="https://apollographql.com">Apollo</a> 作为 GraphQL 联邦方案，模式默认每 10 秒从各解析器拉取一次。为避免完全依赖 Apollo 服务器并减少频繁的模式拉取，模式会被缓存，并在 Apollo 发出新模式构建 Webhook 事件时更新缓存。</p>
+            <div data-type="note">
+              <p><em>Webhook</em> 是一种<a contenteditable="false" data-type="indexterm" data-primary="webhooks">&nbsp;</a>由源系统向目标系统发送的回调，用于实现多系统之间的事件驱动通信。例如，用户完成预订后，后端系统向前端系统端点推送 HTTP 载荷，前端随即在 Web 界面上将其呈现给用户。</p>
+            </div>
+            <p>我们介绍了基于位置关键词在 Elasticsearch 集群中执行搜索。例如，用户搜索"果阿"，搜索结果应包含印度果阿邦的房源；搜索"斋普尔"，则返回印度斋普尔市的房源。搜索关键词可以是位置数据的任意粒度，如街道、镇、市、<a contenteditable="false" data-type="indexterm" data-primary="GraphQL" data-startref="graphql-ch18">&nbsp;</a>省/州或国家。</p>
+            <p>预订系统的另一功能是：用户可以开启当前位置搜索附近房源，以及查找已预订房源附近的兴趣点（POI）。这可以通过一种叫做 <a href="https://oreil.ly/go11H"><em>地理哈希（Geohash）</em></a>的概念实现。</p>
+          </section>
+          <section data-type="sect3" id="ch18_exploring_points_of_interests_1734552294616404">
+            <h3>探索兴趣点</h3>
+            <p>地理哈希 <a contenteditable="false" data-type="indexterm" data-primary="location searches" id="location-search">&nbsp;</a>用于将经纬度编码为字母数字字符串。假设世界是一个巨大的二维网格，地理哈希<a contenteditable="false" data-type="indexterm" data-primary="Geohash">&nbsp;</a>通过递归地将其划分为更小的网格来生成，如图 <a data-type="xref" href="#ch18_figure_5_1734552294593180">#ch18_figure_5_1734552294593180</a> 所示。</p>
+            <figure id="ch18_figure_5_1734552294593180">
+              <img src="images/sdoa_1805.png"/>
+              <figcaption>地理哈希表示法</figcaption>
+            </figure>
+            <p>地理哈希字符串的长度决定了位置精度：字符串越长，精度越高，因为网格被划分的次数越多，表示的区域越小。地理哈希的公共前缀代表两个位置的接近程度，因此可以高效地找出距离搜索位置最近的地点。要获取周边地点，只需去掉地理哈希的最后一位字符，得到高一级的网格，再通过前缀匹配查找周边地点。</p>
+            <div data-type="note">
+              <p>世界各地的人口密度并不均匀。算法需要考虑到这一点，可以将网格划分为更小的级别，使每个网格仅包含少量地点（例如，当某网格包含超过 200 个地点时继续细分）。对于海洋区域，进一步细分意义不大，因为几乎没有兴趣点；而对于人口密集的纽约市，细分则非常有价值。</p>
+            </div>
+            <p>另一种表示位置的方式是使用树形结构。最常见的实现是<a contenteditable="false" data-type="indexterm" data-primary="quadtree">&nbsp;</a>四叉树（Booking.com 使用四叉树实现其<a href="https://oreil.ly/YbjHj">兴趣点功能</a>），其原理与地理哈希类似。系统不断将某个网格划分为四个子区域，直到该区域内的地点数量达到预期值。查找附近地点的一种方法是维护指向父节点的指针，向上一级并获取周围所有子节点。另一种方法是通过数据结构（如双向链表）维护子节点之间的链接。</p>
+            <div data-type="note">
+              <p>Redis 提供了<a href="https://oreil.ly/mqz_O">地理空间功能</a>，允许用户存储位置坐标，并在给定半径内查询附近位置。</p>
+            </div>
+            <p>系统还会缓存搜索结果以提升查询性能。搜索结果可缓存在 Redis 等方案中，媒体内容（如房源图片）可缓存在 <a contenteditable="false" data-type="indexterm" data-primary="location searches" data-startref="location-search">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-secondary="architecture design" data-tertiary="property search architecture" data-startref="hotel-use-case-design-search">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="property search architecture (hotel reservation system)" data-startref="property-search">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search service" data-secondary="in hotel reservation system" data-secondary-sortas="hotel reservation system" data-startref="search-service-hotel">&nbsp;</a>Amazon CloudFront 等 CDN 方案中。</p>
+            <p>下一节将讨论房源预订的架构细节。</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch18_property_booking_architecture_1734552294616483">
+          <h2>房源预订架构</h2>
+          <p>房源 <a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-secondary="architecture design" data-tertiary="property booking architecture" id="hotel-use-case-design-book">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="property booking architecture (hotel reservation system)" id="property-book">&nbsp;</a>搜索之后的下一步是从搜索结果中选定房源并完成预订。预订流程的简化视图如图 <a data-type="xref" href="#ch18_figure_6_1734552294593204">#ch18_figure_6_1734552294593204</a> 所示。付款系统和预订流程经历多个状态，我们将逐一详细讨论。</p>
+          <figure id="ch18_figure_6_1734552294593204">
+            <img src="images/sdoa_1806.png"/>
+            <figcaption>房源预订状态机</figcaption>
+          </figure>
+          <p>预订在各状态之间流转，需要时刻了解预订的当前状态。图 <a data-type="xref" href="#ch18_figure_7_1734552294593224">#ch18_figure_7_1734552294593224</a> 展示了端到端预订流程中各状态及其转换关系的精简状态图。当用户在图 <a data-type="xref" href="#ch18_figure_6_1734552294593204">#ch18_figure_6_1734552294593204</a> 中进入 BookProperty（预订房源）状态时，预订状态机启动。注意，付款状态由付款系统独立管理，与预订系统相互独立。</p>
+          <figure id="ch18_figure_7_1734552294593224">
+            <img src="images/sdoa_1807.png"/>
+            <figcaption>预订状态</figcaption>
+          </figure>
+          <p>从 PENDING_CONFIRMATION（待确认）到 CONFIRMED（已确认）的状态转换因房源而异——部分房源要求在付款确认后才确认预订。接下来讨论如何在数据存储中保存预订信息。</p>
+          <section data-type="sect3" id="ch18_data_store_selection_1734552294616574">
+            <h3>数据存储选型</h3>
+            <p>预订系统 <a contenteditable="false" data-type="indexterm" data-primary="data storage systems" data-secondary="for hotel reservation system" data-secondary-sortas="hotel reservation system" id="data-storage-hotel">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="choosing" data-secondary="databases" data-tertiary="for hotel reservation system" data-tertiary-sortas="hotel reservation system" id="choose-database-hotel">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="choosing" data-tertiary="for hotel reservation system" data-tertiary-sortas="hotel reservation system" id="database-choose-hotel">&nbsp;</a>按图 <a data-type="xref" href="#ch18_figure_6_1734552294593204">#ch18_figure_6_1734552294593204</a> 所示创建预订记录，并将信息存入数据存储。我们在房源入驻架构中评估了 Amazon Aurora 和 Amazon DynamoDB，此处同样对这两种方案进行对比。</p>
+            <p>一项关键考量是：用户主要关注当前进行中的预订，很少查看历史预订。针对此类场景，通常的设计决策是维护两个数据存储：一个用于存储近期数据并支持强一致性读取，另一个用于存储历史归档数据。<a href="https://oreil.ly/rj4i4">Gojek</a> 采用了类似方案：活跃预订存储在 PostgreSQL 中，并借助 PostgreSQL <a href="https://oreil.ly/rL_Ov">分区功能</a>按周对数据进行分区，代码示例如下：</p>
+            <pre data-type="programlisting">CREATE TABLE bookings (
+    booking_number PRIMARY KEY,
+    customer_id,
+    booking_details,
+    created_at_timestamp,
+    start_date,
+    end_date,
+    booking_status,
+    payment_id
+) PARTITION BY RANGE(created_at_timestamp)</pre>
+            <p>过期分区通过定时调度任务归档，该架构支持每分钟 12 万次请求。</p>
+            <p>值得注意的是，客房预订可以提前很长时间进行，与 Gojek 大多是即时预订的模式差别较大，因此能否直接借鉴该架构值得商榷。这种设计决策对即时预订（如叫车服务）效果明显，但对我们的场景并不完全适用。不过，我们仍然可以参考双数据存储的思路：将旧预订从活跃数据库迁移后需要持久保存，可采用类似图 <a data-type="xref" href="#ch18_figure_3_1734552294593138">#ch18_figure_3_1734552294593138</a> 的方案。与其只保留活跃预订，不如将归档时间延长（例如一年），并确保数据在一年后从主数据库中彻底删除。</p>
+            <div data-type="note">
+              <p>与前面讨论的 Elasticsearch 索引删除类似，我们建议也按分区方式处理数据删除。PostgreSQL 中数据是软删除的，需要定期执行 <a href="https://oreil.ly/bOt6E">VACUUM 操作</a>才能从磁盘上真正清除数据，这会对数据库性能产生影响。如果使用 Amazon DynamoDB 作为主数据存储，可以利用 TTL 功能，在固定时间戳后自动清除数据。</p>
+            </div>
+            <p>在数据存储选型方面，我们需要一个能够保证预订状态随时强一致的数据库。在 <a data-type="xref" href="#ch18_system_scale_1734552294615924">#ch18_system_scale_173455229461592</a> 中，我们计算出每日 200 万笔预订（25 RPS）和 730 GB/年的存储需求。这一存储需求可通过 Amazon Aurora 数据库的垂直扩展轻松满足，不会构成瓶颈，因此我们选择 Aurora 作为数据库来设计方案。</p>
+            <div data-type="note">
+              <p>Amazon DynamoDB 也支持强一致性读取，但仅限于主键属性和本地二级索引（LSI）。应在前期明确查询模式，以避免后期出现问题：不明确的查询模式可能导致额外成本，以及未来使用全局二级索引（GSI）时出现最终一致性的情况。</p>
+            </div>
+            <p>除预订表（见上方代码片段）外，数据库还将包含 booking_history（存储特定预订的状态转换历史，便于审计）、booking_payments <a contenteditable="false" data-type="indexterm" data-primary="data storage systems" data-secondary="for hotel reservation system" data-secondary-sortas="hotel reservation system" data-startref="data-storage-hotel">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="choosing" data-secondary="databases" data-tertiary="for hotel reservation system" data-tertiary-sortas="hotel reservation system" data-startref="choose-database-hotel">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="choosing" data-tertiary="for hotel reservation system" data-tertiary-sortas="hotel reservation system" data-startref="database-choose-hotel">&nbsp;</a>等表。</p>
+            <p>一个非常常见且有趣的问题是：如果只剩一间客房，而多名用户同时试图预订这间客房，会发生什么？下一节将对此展开讨论。</p>
+          </section>
+          <section data-type="sect3" id="ch18_handling_concurrent_bookings_1734552294616653">
+            <h3>处理并发预订</h3>
+            <p>处理重复 <a contenteditable="false" data-type="indexterm" data-primary="concurrency in hotel reservation system" id="concurrency-hotel">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="locking" id="locking">&nbsp;</a>预订场景有多种方式，但我们首先需要判断是否真的有必要处理这一问题。即便系统内部的并发控制做得很好，同一房源也可能在多个预订平台上被同时预订，因此仍然需要房东（或系统）介入来消除预订的歧义。一个关键点是：我们可以根据历史取消记录等特定标准允许超额预订。此外，如图 <a data-type="xref" href="#ch18_figure_6_1734552294593204">#ch18_figure_6_1734552294593204</a> 所示，客房只有在收到房源确认后才会最终确认，因此无需特殊处理。</p>
+            <p>虽然在我们的场景中不需要特殊处理，但我们仍将讨论系统处理多个并发请求的几种常见方式（例如多名用户同时抢购同一场电影的座位，或抢订同一房源的同一间客房）。思路是使用锁将座位或客房临时锁定一段时间，让用户在此期间完成预订；若用户在限定时间内未完成预订，则解除锁定，重新开放给其他用户。</p>
+            <div data-type="note">
+              <p><em>锁</em>是软件 <a contenteditable="false" data-type="indexterm" data-primary="locks">&nbsp;</a>工程中的一种技术，用于在特定时间段内独占访问某资源，使其他访问者无法在该时间内使用该资源。</p>
+            </div>
+            <p>预订客房包含两个步骤：检查客房可用性（读操作）和预订客房（将可用性更新为不可用）。锁可以在任一步骤获取：在读步骤获取锁称为<em>悲观锁</em>，在更新步骤获取锁称为<em>乐观锁</em>。可以使用这两种并发技术来锁定某房源的特定客房：</p>
+            <dl>
+              <dt>悲观并发技术</dt>
+              <dd>
+                <p>悲观锁 <a contenteditable="false" data-type="indexterm" data-primary="pessimistic locking">&nbsp;</a>在读取时即获取锁，锁在操作完成后才释放。在锁未被释放之前，其他请求处于等待状态，若等待队列过长，显然会造成性能瓶颈。</p>
+              </dd>
+              <dt>乐观并发技术</dt>
+              <dd>
+                <p>乐观锁 <a contenteditable="false" data-type="indexterm" data-primary="optimistic locking">&nbsp;</a>允许多个用户请求同时读写数据。如果更新操作发生冲突，则数据不提交，并相应通知用户。这可以通过对数据启用版本号来实现：每次更新时版本号递增，最新更新的版本号应高于前一次更新的版本号。Amazon DynamoDB 提供多种<a href="https://oreil.ly/kpaJq">机制</a>支持乐观并发，<a href="https://oreil.ly/nzR7A">DynamoDBVersionAttribute 注解</a>是其中一种实现方式。</p>
+              </dd>
+            </dl>
+            <p>回到预订电影票并临时锁定座位的场景，可以通过在数据库中记录一条带有用户 ID 的条目（如 <code>HOLD_FOR_ID</code>）来实现锁，时间字段 <code>HOLD_START_AT_TIME</code> 保存时间戳（例如 20 分钟）。时间戳超时后，锁自动释放。使用 Redis 作为后端数据存储可以轻松实现这一逻辑，步骤如下：</p>
+            <ol>
+              <li>
+                <p>用户选定座位（或客房）并进入付款流程。系统在该座位实体上创建一条带过期时间（TTL）的记录。系统使用 Redis <a class="orm:hideurl" href="https://oreil.ly/x4wgc"><code>SET</code></a> 命令，配合 <code>EX</code>（设置过期秒数）和 <code>NX</code>（不存在时才设置）选项，以键 <code>seat_{theatreId}_{showId}_{seatId}</code> 存储数据。可根据数据存储模式添加更多标识符。</p>
+              </li>
+              <li>
+                <p>用户完成付款后，使用 <code>DEL</code> 操作从 Redis 中删除该键。若键未被删除，Redis 会在配置的过期时间后自动清除。</p>
+              </li>
+            </ol>
+            <p>该方案在单个 Redis 实例上运行良好，但在 Redis 集群（或其他分布式系统方案）中，数据的添加和删除会变得复杂。Redis 推荐在分布式环境中使用 <a href="https://oreil.ly/0qz6J">Redlock 算法</a>来正确实现分布式锁。此外，建议使用 <a href="https://github.com/redis/jedis">Jedis</a> 或 <a href="https://github.com/redis/lettuce">Lettuce</a> 等 Redis 开源客户端库以简化集成。</p>
+            <p>系统还支持取消预订。此时系统更新预订状态、通知房东，并在用户已付款的情况下发起退款。此外，系统应保证幂等性，解决同一用户对同一客房重复预订（或重复扣款）的问题。下<a contenteditable="false" data-type="indexterm" data-primary="locking" data-startref="locking">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="concurrency in hotel reservation system" data-startref="concurrency-hotel">&nbsp;</a>一节将结合预订付款处理对此进行详细讨论。</p>
+          </section>
+          <section data-type="sect3" id="ch18_payment_processing_architecture_1734552294616717">
+            <h3>付款处理架构</h3>
+            <p>不同 <a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-secondary="architecture design" data-tertiary="payment processing architecture" id="hotel-use-case-design-payment">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="payment processing architecture (hotel reservation system)" id="payment-process">&nbsp;</a>国家使用不同的付款方案，每个国家也可能有不同的合规监管要求。例如，PayPal 在美国被广泛使用，而<a href="https://oreil.ly/d3xnu">统一支付接口（UPI）</a>在印度非常流行，但在其他国家并不普遍。付款系统的核心职责是：允许用户通过偏好的付款方式完成付款并记录（收款系统）。付款系统还负责与 Razorpay 或 PayPal 等第三方支付网关进行对账，并在扣除预订佣金后向房东结算（付款系统）。收款和付款共用同一套核心付款系统，通过 <code>debitFrom</code> 和 <code>CreditTo</code> 属性区分不同的资金流向。</p>
+            <p>系统还应满足以下附加需求：</p>
+            <ul>
+              <li>
+                <p>在一次入住期间，用户可以修改预订，例如延长入住天数或添加午餐、晚餐等房源权益。</p>
+              </li>
+              <li>
+                <p>可用的付款方式可能随时间扩展，且因地域而异。</p>
+              </li>
+              <li>
+                <p>无需赘言（但仍要强调）：用户只应被收费一次，以保证顺畅的付款体验。</p>
+              </li>
+            </ul>
+            <p>管理端到端付款生命周期的系统高层次视图如图 <a data-type="xref" href="#ch18_figure_8_1734552294593243">#ch18_figure_8_1734552294593243</a> 所示。</p>
+            <figure id="ch18_figure_8_1734552294593243">
+              <img src="images/sdoa_1808.png"/>
+              <figcaption>预订付款系统架构</figcaption>
+            </figure>
+            <p>架构中各组件说明如下：</p>
+            <dl>
+              <dt>预订编排服务</dt>
+              <dd>
+                <p>负责所有与预订相关的工作。收集用户信息和房源信息后，付款编排系统（称为<em>订单管理</em>）接管整个收款和付款的完整流程。</p>
+              </dd>
+              <dt>定价系统</dt>
+              <dd>
+                <p>负责推导客房价格。</p>
+              </dd>
+              <dt>账单系统</dt>
+              <dd>
+                <p>负责生成发票。</p>
+              </dd>
+              <dt>订单管理</dt>
+              <dd>
+                <p>引入订单管理层的原因是为了支持预订修改的系统需求。一个订单可以包含与同一预订关联的多笔付款。订单结构还通过将其与收款所对应的同一预订系统绑定，简化了付款结算流程。</p>
+              </dd>
+              <dt>钱包服务</dt>
+              <dd>
+                <p>管理提供给用户的钱包。钱包可包含用户在预订中获得的奖励积分、退款转入的金额，或从其他付款方式充入的自定义金额。当付款方式不可用时，钱包可以作为备用手段，通过扣减余额来完成预订。</p>
+              </dd>
+              <dt>收款服务（PayIn Service）</dt>
+              <dd>
+                <p>负责用户端付款：从用户到预订系统，或从预订系统到用户（退款场景）。用户可通过钱包服务管理的内部钱包或礼品卡付款，也可通过外部支付网关提供的借记卡等方式付款。单次付款也可以是钱包与外部支付网关的组合。</p>
+              </dd>
+              <dt>付款服务（PayOut Service）</dt>
+              <dd>
+                <p>负责向房东结算的逻辑。该系统扣除预订平台佣金后，将余额转入房东账户。</p>
+              </dd>
+              <dt>对账系统</dt>
+              <dd>
+                <p>任何付款系统都需要一套对账系统，以确保所有付款的借贷方平衡、不产生任何差异，并在整个付款生命周期内维护交易完整性（如有差异则触发告警）。对账系统基于内外部系统的输入运行，包括来自内外部付款系统的回调、银行合作方的结算报告、付款状态查询 API 等。</p>
+              </dd>
+            </dl>
+            <p>所有经付款系统处理的付款都会经历一系列状态，最终到达终态，如 SUCCESS（成功）、FAILURE（失败）、REFUND（退款）或 CANCELED（已取消）。中间状态可能包括 PAYMENT_CREATED（已创建）、PROCESSING（处理中）等。数据库还存储外部支付网关在付款失败时的响应，以便向用户提供付款失败原因的具体说明。对于事务型系统而言，保证一致性和幂等性至关重要，下面深入探讨这一话题。</p>
+            <p>幂等性 <a contenteditable="false" data-type="indexterm" data-primary="idempotence" id="idempotence-ch18">&nbsp;</a>确保 API 的响应无论何时调用都保持一致，从而避免重复付款（即用户被收费两次或房东被付款两次）。建议通过维护唯一幂等标识符来保证幂等性；Airbnb 使用其自主开发的 <a href="https://oreil.ly/w13DT">Orpheus 通用幂等库</a>来保证 API 的幂等性。以下是 Airbnb 付款架构的概要，可供参考：</p>
+            <ul>
+              <li>
+                <p>每个客户端请求包含一个幂等键，用于唯一识别重复请求。对于 Amazon DynamoDB 的事务请求，可利用 <a href="https://oreil.ly/348GA">clientToken 功能</a>。clientToken 在 10 分钟时间窗口内有效，可保证相同请求的幂等性。</p>
+              </li>
+              <li>
+                <p>每笔付款分为三个阶段：RPC 前（pre-RPC）、RPC 和 RPC 后（post-RPC）。RPC 前阶段为付款发起调用，在数据库中记录一条带有付款意图的事务。RPC 阶段为实际付款处理，包括调用外部支付合作方处理付款。RPC 后阶段负责处理外部合作方的响应或回调，并将其记录到数据库中。关键设计思路是将数据库调用与外部网络调用分离：数据库调用只在第一和最后阶段进行，外部网络调用只在 RPC 阶段进行。简要实现如图 <a data-type="xref" href="#ch18_figure_9_1734552294593265">#ch18_figure_9_1734552294593265</a> 所示。</p>
+              </li>
+              <li>
+                <p>异常按可重试和不可重试进行分类，便于客户端判断是否可以重试请求。Orpheus 端为每个请求配置了可重试时间窗口，以避免客户端向系统发起大量重试。</p>
+              </li>
+              <li>
+                <p>请求仅由数据库的主实例处理，该主实例按幂等键进行分片，以支持规模扩展。</p>
+              </li>
+            </ul>
+            <p>如图 <a data-type="xref" href="#ch18_figure_9_1734552294593265">#ch18_figure_9_1734552294593265</a> 中的架构图所示，标识符的生成责任可由客户端或付款处理系统承担。例如，付款确认 ID 可由付款系统生成后发送给外部合作方，或由外部合作方在收到处理付款调用后在响应中返回。对于单次付款调用场景，建议由客户端生成标识符，因为该标识符可用于后续查询付款状态或通过接收到的回调对账。这种方案的缺点是由外部客户端负责生成主要付款属性；这正是将处理拆分为 RPC 前和 RPC 两个阶段的价值所在。</p>
+            <p>客房价格通常随可用性、预订时间及其他多种因素而变动。我们不会深入探讨具体细节，但来了解一下动态定价组件可以如何<a contenteditable="false" data-type="indexterm" data-primary="idempotence" data-startref="idempotence-ch18">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-secondary="architecture design" data-tertiary="payment processing architecture" data-startref="hotel-use-case-design-payment">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="payment processing architecture (hotel reservation system)" data-startref="payment-process">&nbsp;</a>融入系统的整体设计。</p>
+            <figure id="ch18_figure_9_1734552294593265">
+              <img alt="付款系统示意图" src="images/sdoa_1809.png"/>
+              <figcaption>付款处理的三个阶段：RPC 前、RPC 和 RPC 后</figcaption>
+            </figure>
+          </section>
+          <section data-type="sect3" id="ch18_dynamic_pricing_in_the_system_1734552294616799">
+            <h3>系统中的动态定价</h3>
+            <p>预订平台<a contenteditable="false" data-type="indexterm" data-primary="dynamic pricing" id="dynamic-price">&nbsp;</a>通常不会维持固定价格。价格根据多种因素动态调整，例如位置、所选日期区间、入住天数和房源热度等。预订系统和搜索系统持续通过事件流向定价系统发布用户行为数据，定价系统消费这些数据并运行机器学习推断来计算价格。定价系统数据库则根据机器学习推断结果和房东提供的自定义价格（或价格区间），在后台持续更新。图 <a data-type="xref" href="#ch18_figure_10_1734552294593284">#ch18_figure_10_1734552294593284</a> 展示了动态定价系统的参考架构。</p>
+            <p>我们使用 Amazon S3 来存储来自不同来源（预订、搜索和外部来源）的原始数据。Amazon SageMaker 特征存储（Feature Store）是另一个可用于存储所有定价特征的服务仓库。</p>
+            <p>定价系统包含两个独立的扩展层，可以根据系统服务的工作负载情况，选择将其分别部署或合并在同一系统中。第一层完全异步，负责消费事件并更新定价结构；第二层为读取层，供各系统获取房源的最新价格。</p>
+            <figure id="ch18_figure_10_1734552294593284">
+              <img src="images/sdoa_1810.png"/>
+              <figcaption>动态定价系统</figcaption>
+            </figure>
+            <div data-type="note">
+              <p>由于价格在系统中可能持续更新，预订系统应确保在固定时间段内（例如 10 分钟）为用户锁定价格。这可以避免用户进入付款环节后价格发生变化带来的糟糕体验。另外需要注意，同一时间不同用户看到同一房源的价格可能不同，这取决于业务所采用的定价策略。</p>
+            </div>
+            <p>房源预订系统内部有多个子系统，需要关注它们之间的通信方式。是否所有通信都同步进行，还是可以在部分环节引入消息队列？对于付款系统与预订系统之间的交互，二者结合使用是合理的。原因是付款系统本身的处理可能耗时，预订系统只需发起付款请求并收到付款已启动的确认即可。付款系统发布付款状态的生命周期事件，预订系统通过消费这些事件来获取最新的付款状态。</p>
+            <div data-type="note">
+              <p>消息队列 <a contenteditable="false" data-type="indexterm" data-primary="queues">&nbsp;</a>有助于解耦两个系统，使发布和消费事件的速率相互独立。但系统不应假设队列大小可以无限增长，也不应假设可以无限制地发布消息而不消费（或发布速率与消费速率差异悬殊）。这通常通过降低发布速率（称为<em>背压</em>）或让队列按特定条件丢弃消息（例如超过一天的消息将被删除）来解决。</p>
+            </div>
+            <p>预订系统在消费付款系统（或架构中遵循相同通信模式的其他系统）发出的事件时，可能出现事件乱序、事件丢失和重复事件等情况。对此，要么由队列系统保证以上问题不会发生，要么由消费事件的系统自行处理。Apache Kafka 支持<a href="https://oreil.ly/QXLFx">精确一次语义</a>和单分区内的<a href="https://oreil.ly/zNKBb">事件有序性</a>（Amazon SQS 中对应群组 ID）。也可以在预订系统中按如下方式处理：</p>
+            <ul>
+              <li>
+                <p>系统在更新状态前，先从数据库中查询最新状态。</p>
+              </li>
+              <li>
+                <p>有可能在中间状态之前先收到终态。此时，若付款已达终态，系统应丢弃后续接收到的事件。</p>
+              </li>
+              <li>
+                <p>系统内置主动查询机制，可调用付款系统接口查询最新付款状态。这使预订系统具备独立性，即便部分付款回调事件丢失，系统仍能正常工作。</p>
+              </li>
+            </ul>
+            <p>我们已讨论了房源预订架构中的多个组件。用户创建预订、完成付款并实际入住后，下一步是提交用户评价。<a contenteditable="false" data-type="indexterm" data-primary="dynamic pricing" data-startref="dynamic-price">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-secondary="architecture design" data-tertiary="property booking architecture" data-startref="hotel-use-case-design-book">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="property booking architecture (hotel reservation system)" data-startref="property-book">&nbsp;</a>预订系统将通知用户分享其入住体验，用户留下评价后，我们将在下一节对此进行讨论。</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch18_property_reviews_architecture_1734552294616862">
+          <h2>房源评价架构</h2>
+          <p>评价<a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-secondary="architecture design" data-tertiary="property reviews architecture" id="hotel-use-case-design-review">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="property reviews architecture (hotel reservation system)" id="property-review">&nbsp;</a>与房源和用户相关联。系统可以就入住体验提出若干预设问题（员工服务如何？性价比如何？餐食体验如何？），并允许用户提交通用反馈。通常，预订系统还会利用机器学习算法，根据反馈内容判断体验类型，并通过运行多个数据分析流水线来优化其他用户的搜索条件。</p>
+          <p>与搜索系统类似，评价系统也是典型的读多写少场景。用户搜索房源后会查阅评价，再决定是否预订某一房源。读取流量与搜索系统流量成正比，而写入流量与房源预订流量成正比（可假设约 10% 的已预订用户会实际提交评价）。以下是评价系统需要支持的搜索条件：</p>
+          <ul>
+            <li>
+              <p>获取某房源的全部评价。</p>
+            </li>
+            <li>
+              <p>根据文本过滤条件获取评价，例如与餐食、卫生间或客房大小相关的评价，或特定时间范围内的评价。</p>
+            </li>
+          </ul>
+          <p>综上，用户评价需要文本搜索能力，以及部分已支持的功能。Elasticsearch（或 Amazon OpenSearch）适用于此类场景，可用于支持读取用例。那么写入流量该如何处理？评价与用户和房源相关联，每位用户针对同一次入住只能提交一条评价。评价数据的读取可以接受最终一致性，但从单用户视角来看，必须保证强一致性，以确保每位用户只有一条评价。</p>
+          <p>以下是使用 Amazon DynamoDB 数据模式支持写入场景的示例，它作为评价数据的权威数据源：</p>
+          <div data-type="equation">
+            <p>分区键 = {propertyId}</p>
+            <p>排序键 = {userId}</p></div>
+          <p>数据始终从 Elasticsearch 集群中查询，无需担心因大量评价集中于单一房源而导致的热键问题。但无论使用 DynamoDB、Elasticsearch 还是其他数据存储，查询结果都应始终分页返回固定数量的记录。图 <a data-type="xref" href="#ch18_figure_11_1734552294593303">#ch18_figure_11_1734552294593303</a> 所示的房源评价简化架构如下：</p>
+          <dl>
+            <dt>评价系统</dt>
+            <dd>
+              <p>允许用户对其在房源的入住体验提交评价。系统数据库层将评价流式传输供读取层使用。评价数据同时被分析流水线消费，用于计算房源热度；这也可以作为定价系统的输入，根据评价情况调整价格。</p>
+            </dd>
+            <dt>评价系统读取层</dt>
+            <dd>
+              <p>从 Elasticsearch 集群中，按用户提供的过滤条件检索指定房源的评价。</p>
+            </dd>
+          </dl>
+          <figure id="ch18_figure_11_1734552294593303">
+            <img src="images/sdoa_1811.png"/>
+            <figcaption>评价系统高层次架构</figcaption>
+          </figure>
+          <p>掌握了整体预订系统的所有设计细节后，让我们来确定在 AWS 云上<a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-secondary="architecture design" data-tertiary="property reviews architecture" data-startref="hotel-use-case-design-review">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="property reviews architecture (hotel reservation system)" data-startref="property-review">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="hotel reservation system" data-tertiary="architecture design" data-startref="use-case-hotel-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-secondary="architecture design" data-startref="hotel-use-case-design">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="in hotel reservation system" data-secondary-sortas="hotel reservation system" data-startref="schema-hotel">&nbsp;</a>部署系统时应选用哪些 AWS 技术。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch18_launching_the_system_on_aws_1734552294616927">
+        <h1>在 AWS 上部署系统</h1>
+        <p>与系统设计的讨论方式相同，我们将系统拆分为多个子部分，分别在 Day 0 和 Day N 架构中设计各子系统的部署视图。非关系型数据库开箱即支持水平扩展，用户无需操心；而关系型数据库需要用户调整应用代码并自行管理水平扩展。本节还将介绍 Aurora Limitless 数据库的架构，探讨客户如何将管理开销转交给 AWS，由 AWS 托管关系型数据库的水平扩展。先从整体预订系统的 Day 0 架构开始讨论。</p>
+        <section data-type="sect2" id="ch18_day_0_architecture_1734552294617020">
+          <h2>初始架构（Day 0）</h2>
+          <p>我们 <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="hotel reservation system" data-tertiary="Day 0 architecture" id="use-case-hotel-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-secondary="Day 0 architecture" id="hotel-use-case-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for hotel reservation system" data-secondary-sortas="hotel reservation system" id="dayzero-hotel">&nbsp;</a>参考 <a href="https://oreil.ly/bOLz0">AWS 技术博客</a>，将设计拆分为多个组件，以呈现更清晰的架构图，从房源入驻系统开始。系统架构使用 Amazon API Gateway 暴露所有创建和更新 API，身份认证由 Amazon Cognito 用户池管理。Amazon Route 53 为用户提供唯一域名，域名内部解析至 API Gateway 端点。AWS Lambda 作为后端处理所有房源配置管理，并进一步与三个数据存储交互：两个 Amazon S3 存储桶和一个 Amazon DynamoDB 表。第一个 S3 存储桶用于存储媒体内容（如房源和客房图片），第二个 S3 存储桶用于以静态格式发布所有配置信息。</p>
+          <p>发布到 S3 的新房源配置（包括房源的增减及定价变更）由搜索系统消费，以支持用户房源搜索。DynamoDB 按照我们<a contenteditable="false" data-type="indexterm" data-primary="property onboarding architecture (hotel reservation system)">&nbsp;</a>在 <a data-type="xref" href="#ch18_property_onboarding_architecture_1734552294616108">#ch18_property_onboarding_architecture_1734552294616108</a> 中讨论的数据模式存储房源信息。架构如图 <a data-type="xref" href="#ch18_figure_12_1734552294593323">#ch18_figure_12_1734552294593323</a> 所示。</p>
+          <figure id="ch18_figure_12_1734552294593323">
+            <img src="images/sdoa_1812.png"/>
+            <figcaption>AWS 上的房源入驻架构</figcaption>
+          </figure>
+          <p>客房可用性由房东和预订系统持续更新。一个关键考量是：能否使用 DynamoDB 流将数据发布到定价系统和搜索系统？当然可以，但数据以不同模型构建以支持各种搜索场景，将所有模型化数据都推送给各系统并不理想。通过一份静态配置供这些系统消费并自行建模，可以让整体架构更易于运维。</p>
+          <p>第二个子系统<a contenteditable="false" data-type="indexterm" data-primary="property search architecture (hotel reservation system)" id="property-search-arch2">&nbsp;</a>是搜索系统，允许用户在特定位置搜索房源及其价格和可用客房。用户无需登录即可搜索房源，身份认证为可选项。如果用户已登录，该信息可用于未来提供个性化推荐。此外，系统可集成 Amazon Location Service 以提供地图和兴趣点查询等功能。搜索结果基于两类数据库的组合：第一类使用地理哈希数据库定位用户搜索范围内的房源，并通过 Elasticsearch 应用搜索过滤条件；第二类维护房源的客房可用性。系统还会发出事件，记录特定日期区间内关注度最高的房源，定价系统可据此相应调整这些房源的价格。房源搜索系统的高层次架构如图 <a data-type="xref" href="#ch18_figure_13_1734552294593343">#ch18_figure_13_1734552294593343</a> 所示。</p>
+          <figure id="ch18_figure_13_1734552294593343">
+            <img src="images/sdoa_1813.png"/>
+            <figcaption>AWS 上的房源搜索架构</figcaption>
+          </figure>
+          <p>下<a contenteditable="false" data-type="indexterm" data-primary="property search architecture (hotel reservation system)" data-startref="property-search-arch2">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="property booking architecture (hotel reservation system)" id="property-book-arch2">&nbsp;</a>一个子系统是预订系统，允许用户预订从搜索结果中选定的房源。预订系统负责锁定一间可用客房、通知房东确认、如有需要则处理付款，并最终根据房东响应更新预订状态。预订系统的架构如图 <a data-type="xref" href="#ch18_figure_14_1734552294593363">#ch18_figure_14_1734552294593363</a> 所示。</p>
+          <figure id="ch18_figure_14_1734552294593363">
+            <img src="images/sdoa_1814.png"/>
+            <figcaption>AWS 上的房源预订架构</figcaption>
+          </figure>
+          <p>在本节<a contenteditable="false" data-type="indexterm" data-primary="property booking architecture (hotel reservation system)" data-startref="property-book-arch2">&nbsp;</a>所有架构描述中，我们大量使用了 AWS 无服务器技术。接下来进一步评估这些系统在扩展至海量用户时的表现。</p>
+        </section>
+        <section data-type="sect2" id="ch18_scaling_to_millions_and_beyond_1734552294617083">
+          <h2>扩展至百万级及以上</h2>
+          <p>使用 <a contenteditable="false" data-type="indexterm" data-primary="Aurora" id="aurora-scale-ch18">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Aurora" id="aws-database-service-aurora">&nbsp;</a>无服务器方案并不意味着它们无法扩展，但随着流量增长，成本也会相应增加。AWS 服务的成本是合理的，因为用户不需要承担任何运维管理开销。我们先来看 Amazon Aurora，评估它是否能满足不断增长的存储需求。根据存储需求计算，由于 Aurora 的存储容量最高为 128 TB（旧版引擎最高 64 TB），系统应能满足所需负载。Aurora 共享存储以 10 GB 为单位扩展，最高可达 128 TB；在此基础上，可以添加多达 15 个只读副本，并对写实例进行垂直扩展以应对增长的负载，如图 <a data-type="xref" href="#ch18_figure_15_1734552294593382">#ch18_figure_15_1734552294593382</a> 所示。</p>
+          <figure id="ch18_figure_15_1734552294593382">
+            <img src="images/sdoa_1815.png"/>
+            <figcaption>Amazon Aurora 集群的扩展方式</figcaption>
+          </figure>
+          <p>当用户自管的 Aurora 集群超过 128 TB 时，需要由用户自行实现存储分片。也可以通过使用 Aurora Serverless 计算层，<a contenteditable="false" data-type="indexterm" data-primary="Aurora Limitless Database" id="aurora-limitless">&nbsp;</a>借助其提供的 <a href="https://oreil.ly/0ZNmJ">Aurora Limitless 数据库能力</a>将管理工作交给 AWS。该功能支持每秒处理数百万次写入事务，管理 PB 级数据，同时无需用户承担任何分片管理开销。</p>
+          <div data-type="note">
+            <p>我们在 <a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a> 中对 Amazon RDS 和 Aurora 进行了一定程度的比较。一些 RDS 的运维难题可以通过迁移到 Aurora 来解决。这些难题包括：RDS 为大型集群创建和恢复只读副本约需一天时间，以及需要对 RDS 的磁盘层进行预热。通过在 Aurora 集群中提供独立的分布式存储层，这些挑战得以解决。</p>
+          </div>
+          <p>现在简要介绍 Aurora Limitless 数据库的架构——其关键特性是同时支持写入的垂直扩展和水平扩展。用户连接单一写端点，该端点在内部与多个分布式事务路由器通信。这些路由器负责确保数据库的一致性和隔离性，先进行垂直扩展，再水平扩展以承载更高负载。事务路由器存储表模式和映射表键范围的元数据，进而确定数据应落在哪个分片上。</p>
+          <p>Aurora Limitless 数据库支持三种类型的表：分片表、标准表和参考表。标准表是非分片 Aurora 集群中默认创建的表。分片表通过基于哈希的分区方式进行分区，将分片键哈希到 64 位，再将 64 位空间的各范围段分配给对应的分片。参考表是一类体量小的表，适用于不共享分片键的场景，存储在每一个分片上。所有相关联的表都同位（colocated）存储在同一分片上，以确保数据关联操作的最低延迟。数据访问分片负责存储分片键空间和参考表，同时负责执行本地事务逻辑（跨分片的全局事务逻辑由事务路由器处理）、本地查询规划和查询执行。</p>
+          <p>数据访问分片进一步由 Aurora 的分布式存储层支撑，以确保数据持久性和高可用性，如图 <a data-type="xref" href="#ch18_figure_16_1734552294593421">#ch18_figure_16_1734552294593421</a> 所示。</p>
+          <figure id="ch18_figure_16_1734552294593421">
+            <img src="images/sdoa_1816.png"/>
+            <figcaption>Amazon Aurora Limitless 数据库架构</figcaption>
+          </figure>
+          <div data-type="note">
+            <p>Aurora 在内部将分片进一步划分为切片（slice，同位数据位于相同切片上）。这使得水平扩展时的数据迁移变得简单，并提供分片内并行处理能力以提升查询性能。这与我们在 <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a> 中讨论的一致性哈希环中，将数据划分为虚拟节点并分配到物理节点的概念非常相似。</p>
+          </div>
+          <p>Aurora <a contenteditable="false" data-type="indexterm" data-primary="Aurora Limitless Database" data-startref="aurora-limitless">&nbsp;</a>通过跨可用区（AZ）复制数据，自动保障高可用性和数据持久性。对于事务路由器层，任何故障的事务路由器都会被自动替换，其他实例可继续处理请求。对于数据访问分片层，分片存储实际数据，因此任一分片故障都会带来短暂停机。Aurora 提供计算冗余配置，冗余度可设置为 0、1 或 2，对应跨可用区的分片副本数：0 表示不跨可用区复制，2 表示分片在两个可用区均有副本。</p>
+          <p>关系型数据库在单实例部署中开箱即提供 ACID 特性，但在分布式环境中，这一支持需要在自定义应用逻辑中实现。Aurora Limitless 数据库将这一能力开箱即提供。我们来了解分布式分片节点中事务的工作原理。一个事务中执行多条查询时，可能出现两种场景：所有查询访问同一分片，或跨多个分片访问。单分片查询通过单阶段提交（1PC）提交，多分片事务则使用两阶段提交（2PC）。</p>
+          <p>时间同步 <a contenteditable="false" data-type="indexterm" data-primary="time synchronization">&nbsp;</a>是多分片事务的另一难题，但 Amazon EC2 时间同步服务与 Aurora 的有界时钟自定义实现共同解决了这一问题。一条 SQL 语句经事务路由器发送后，被转发到不同的数据访问分片，但到达各分片的时间可能不同，从而导致事务提交时的时间同步问题。在从快照恢复数据时（因为单个数据快照是由多个分片合并生成的），数据不一致可能成为问题。EC2 时间同步服务提供三个时间参数：当前近似时间、最早可能时间和最晚可能时间。时间始终落在最早和最晚可能时间范围内，因此各分片可以就一个统一时间（精度达微秒级）达成一致。</p>
+          <p>我们深入介绍 Aurora Limitless 数据库的这些细节，是为了让大家了解自行实现分片并同时保障关系型数据库基本特性所需的额外工作量。对于各架构中的计算部分，我们在不同系统的 Day 0 架构中大量使用了 AWS Lambda。AWS Lambda 可在规模化场景中继续使用，也可以根据我们在第 <a data-type="xref" href="#ch10_aws_storage_services_1734552290474903" data-xrefstyle="select:labelnumber">#ch10_aws_storage_services_1734552290474903</a> 章和第 <a data-type="xref" href="#ch14_designing_a_url_shortener_service_1734552292687677" data-xrefstyle="select:labelnumber">#ch14_designing_a_url_shortener_service_1734552292687677</a> 章的比较分析替换为其他计算选项。数据库和计算的选型最终都取决于每项技术与您具体业务场景的契合程度。</p>
+          <p>我们通常先使用 Amazon API Gateway 配合 AWS Lambda，后续再切换为 ELB 配合 Amazon EC2 或容器服务。我们在 <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a> 中介绍了这些服务的异同。除非需要 API Gateway 的特定功能，否则在应用部署场景 <a contenteditable="false" data-type="indexterm" data-primary="Aurora" data-startref="aurora-scale-ch18">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Aurora" data-startref="aws-database-service-aurora">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="hotel reservation system" data-tertiary="Day 0 architecture" data-startref="use-case-hotel-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-secondary="Day 0 architecture" data-startref="hotel-use-case-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for hotel reservation system" data-secondary-sortas="hotel reservation system" data-startref="dayzero-hotel">&nbsp;</a>中建议选择 ELB 而非 API Gateway。</p>
+          <p>接下来进入 Day N 架构的讨论。</p>
+        </section>
+        <section data-type="sect2" id="ch18_day_n_architecture_1734552294617147">
+          <h2>成熟期架构（Day N）</h2>
+          <p>思考 <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="hotel reservation system" data-tertiary="Day N architecture" id="use-case-hotel-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-secondary="Day N architecture" id="hotel-use-case-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for hotel reservation system" data-secondary-sortas="hotel reservation system" id="dayn-hotel">&nbsp;</a>如果 Day 0 架构需要扩展至数百万用户，哪些方面需要调整？在 <a data-type="xref" href="#ch18_starting_with_the_design_1734552294616016">#ch18_starting_with_the_design_173455229461601</a> 中，我们讨论了多个组件，并将整体系统拆分为各个子组件；在上一节中，我们介绍了 Amazon Aurora 的分片机制。在 Day 0 架构中，我们已将系统职责划分给各子系统，并优先采用 AWS 的无服务器服务。</p>
+          <p>在前面的章节中，我们也介绍了多个从 AWS Lambda 迁移至 Amazon EC2 或 Amazon EKS 以支持 Day N 架构的实际案例。需要注意的是，我们并不是说无服务器方案无法扩展，或在所有场景中成本过高。例如，Amazon DynamoDB 在大规模场景中表现出色，且在确定的查询模式下成本可预测。同理，Amazon Aurora Limitless 数据库专为支持大规模分片数据库而设计，因此说规模增长后就应该自行管理基础设施是不正确的。建议仔细评估设计选型，以最少的痛点为原则做出最终决策。</p>
+          <p>架构还需要一套通知系统，用于向用户推送预订相关的最新动态。在 Day 0 架构中（参见图 <a data-type="xref" href="#ch18_figure_14_1734552294593363">#ch18_figure_14_1734552294593363</a>），我们使用 Amazon SNS 和 Amazon SES 的组合向用户发送通知。这套组合可进一步扩展，集成更多通知渠道，如 WhatsApp、移动端推送通知等。此外，该系统还用于营销活动，向用户推送各类通知。为了实现以上功能，可以在系统架构中引入一个独立组件，专门负责通知的投递与管理。可以选择将同类服务（例如付款架构中的收款和付款微服务）部署在同一个 EKS 集群上，以节省一定成本。再次强调：如果预见不到独立拆分的必要性，组件之间保持合并是完全合理的。</p>
+          <p>房源预订架构中的所有应用均通过前端服务对外提供访问。前端系统负责处理各类用户操作的流量，并将请求路由至对应的应用，例如用户身份认证、房源入驻、房源搜索、预订、评价<span class='keep-together'>等</span>。</p>
+          <p>图 <a data-type="xref" href="#ch18_figure_17_1734552294593444">#ch18_figure_17_1734552294593444</a> 展示了预订系统的简化视图，包含前述各节讨论的所有组件。</p>
+          <figure id="ch18_figure_17_1734552294593444">
+            <img src="images/sdoa_1817.png"/>
+            <figcaption>房源预订系统成熟期架构（Day N）</figcaption>
+          </figure>
+          <p>在架构图中，为了清晰展示，所有服务都集中在单个 AWS 账户内。也可以按业务垂直领域划分 AWS 账户，这将需要额外配置跨账户 <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="hotel reservation system" data-tertiary="Day N architecture" data-startref="use-case-hotel-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-secondary="Day N architecture" data-startref="hotel-use-case-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for hotel reservation system" data-secondary-sortas="hotel reservation system" data-startref="dayn-hotel">&nbsp;</a>通信所需的网络基础设施。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch18_conclusion_1734552294617203">
+        <h1>本章小结</h1>
+        <p>任何系统的端到端实现都涉及大量内部用例的处理，需要对问题范围加以限定，才能推动讨论收敛。本书各章节均采用了类似方法：先界定范围，再深入探讨。</p>
+        <p>本章识别了整体预订架构中的若干关键子系统，并明确了设计方案及适合用于部署该应用的 AWS 服务。我们得出一个重要结论：Amazon DynamoDB 和 Amazon Aurora 均可满足房源入驻系统的设计需求。这一结论具有普遍意义：多个服务同时满足需求的情况并不少见。当出现这种情况时，建议从以下三个维度优先评估：您对某项服务的既有经验、该服务的运维开销，以及使用该服务所需支付的 AWS 费用。</p>
+        <p>请记住，在 Day 0 阶段会做出大量假设，但随着系统在生产环境中运行，我们会从中不断学习。基于这些观察，应重新评估系统是否需要进一步拆分为更多子组件，以便在系统规模和团队运维方面更好地扩展。</p>
+        <p>预订系统的需求之一是在预订完成后，为房东和用户提供一个沟通渠道。这允许用户与房东直接交流，提出特殊需求。在下一章中，我们将介绍<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="hotel reservation system" data-startref="use-case-hotel">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hotel reservation system use case" data-startref="hotel-use-case">&nbsp;</a>此类即时通讯应用的设计，以及如何在高并发场景下保障其稳定运行。</p>
+      </section>
+    </section>

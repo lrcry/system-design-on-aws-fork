@@ -1,0 +1,641 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch06_communication_networks_and_protocols_1734552288217584">
+      <h1>通信网络与协议</h1>
+      <p>我们如何得知他人的想法？那就是直接询问。你可能会说："我觉得你心里有事，说出来或许能让你轻松一些。"这是一次简单的文字交流，我们将其称为<a contenteditable="false" data-type="indexterm" data-primary="communication">&nbsp;</a><em>通信</em>。通信的方式可以多种多样。例如在上述情境中，对话可能是面对面发生的，也可能是通过即时通讯应用或电话进行的，但前提是双方都能理解所使用的语言。我们在<a data-type="xref" href="#ch01_system_design_trade_offs_and_guidelines_1734552285979675">#ch01_system_design_trade_offs_and_guidelines_1734552285979675</a>中已简要介绍了通信的基本概念，本章将对这一话题作更为深入的探讨。</p>
+      <p>互联网随时间不断演进，人们也构建了大量解决方案来应对网络通信中涌现的新问题。制定规范和机制以确保人与机器能够相互协作至关重要。我们将从通信模型入手，加深对遵循特定规则（即<a contenteditable="false" data-type="indexterm" data-primary="protocols">&nbsp;</a><em>协议</em>）的网络通信的理解。你可能曾见过许多关键词，例如 TCP、XMPP、WebSocket、WebRTC、HTTP、GraphQL、REST 等，常常令人感到困惑——它们究竟是什么意思，又应该在哪些场景下使用。本章将帮助你理解这些通信相关术语，并明确在何种场景下应选用特定技术。</p>
+      <section data-type="sect1" id="ch06_communication_models_and_protocols_1734552288217828">
+        <h1>通信模型与协议</h1>
+        <p>与他人通信的首要条件，是拥有一门双方都能理解并用于传递信息的共同语言。这门共同语言有一套规则，通常称为<em>语法</em>，它规定了说话和书写的方式。类比到机器领域也同样适用：机器为了在互联网上通信，也遵循一套特定规则，称为<em>通信协议</em>。<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocols">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols">&nbsp;</a>不同的通信协议运行在通信模型的不同层级上。通信模型中的各层代表数据如何以可靠的方式在互联网上从一个位置传输到另一个位置，同时确保数据在人类可理解的形式与机器可处理的形式之间相互转换。我们将介绍两种这样的模型——开放系统互联（OSI）模型和传输控制协议/互联网协议（TCP/IP）模型——然后再讨论各类协议。</p>
+        <section data-type="sect2" id="ch06_osi_model_1734552288217929">
+          <h2>OSI 模型</h2>
+          <p><em>OSI 模型</em>是一个<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="OSI model" id="comms-osi">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="OSI model" id="osi-model">&nbsp;</a>参考模型，将通信网络划分为七层，每层负责执行特定功能。最顶层为应用层（L7），最底层为物理层（L1）。L7 对应人类可感知的数据形式（如普通英文文本），L1 则对应机器可处理的数据形式（如二进制格式）。每次通信发生时，数据都会依次经过 OSI 模型各层，从顶层传至底层，再从底层传回顶层，如<a data-type="xref" href="#ch06_table_1_1734552288203762">#ch06_table_1_1734552288203762</a>所述。</p>
+          <p>我们将在后续章节中探讨<a data-type="xref" href="#ch06_table_1_1734552288203762">#ch06_table_1_1734552288203762</a>中列举的示例协议。</p>
+          <table id="ch06_table_1_1734552288203762">
+            <caption>OSI 模型</caption>
+            <thead>
+              <tr>
+                <th>层编号</th>
+                <th>层名称</th>
+                <th>层功能</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>第 7 层</p>
+                </td>
+                <td>
+                  <p>应用层</p>
+                </td>
+                <td>
+                  <p>L7 可直接访问用户数据，软件应用程序通过 HTTP、SMTP、SSH 等协议依赖于此层。该层还有助于服务通告，例如告知网络上哪些服务可供连接。</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>第 6 层</p>
+                </td>
+                <td>
+                  <p>表示层</p>
+                </td>
+                <td>
+                  <p>该层负责数据的格式转换、加密、解密和压缩。格式转换确保 L6 能够以 L7 所期望的格式处理数据。若数据已加密，L6 会在将数据传递给 L7 之前先进行解密；如有加密需求，则在传递给 L5 之前对数据进行加密。为减小数据体积，L6 会在将数据传递给 L5 之前对其进行压缩。</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>第 5 层</p>
+                </td>
+                <td>
+                  <p>会话层</p>
+                </td>
+                <td>
+                  <p>该层负责会话的生命周期管理：建立、维护和终止。</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>第 4 层</p>
+                </td>
+                <td>
+                  <p>传输层</p>
+                </td>
+                <td>
+                  <p>该层通过 TCP 和 UDP 等协议负责设备间的数据传输，同时提供数据缓冲、错误控制和窗口管理功能。它能计算出发送方与接收方之间数据通信的最优速率，使连接较慢的接收方能以所需速度接收数据，多余的数据可暂存于缓冲队列等待按需发送。若缓冲队列已满，新的数据段将被丢弃，这称为<em>尾部丢弃</em>。在 TCP 协议中，如有数据段丢失，该层可请求重传以确保可靠连接。窗口功能则用于确定在等待接收方确认之前可传输的数据量。</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>第 3 层</p>
+                </td>
+                <td>
+                  <p>网络层</p>
+                </td>
+                <td>
+                  <p>该层借助逻辑寻址（如 IP 地址）负责跨网络的数据传输。L4 会在将数据传递给 L3 之前，将其拆分为更小的数据块，称为<em>数据包</em>。</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>第 2 层</p>
+                </td>
+                <td>
+                  <p>数据链路层</p>
+                </td>
+                <td>
+                  <p>该层以帧（数据包被进一步拆分为数据帧）的形式在设备之间传输数据，从入站网络接口传至出站网络接口。该层包含两个部分：</p>
+                  <ul>
+                    <li><em>介质访问控制（MAC）</em>负责网络通信中所涉及设备的物理寻址。任何设备的 MAC 地址全局唯一，可用于标识数据传输目标。</li>
+                    <li><em>逻辑链路控制（LLC）</em>负责流量控制和错误控制。与 L3 跨网络的流量控制不同，该层的流量与错误控制仅作用于同一网络内部。</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>第 1 层</p>
+                </td>
+                <td>
+                  <p>物理层</p>
+                </td>
+                <td>
+                  <p>L2 的数据帧在 L1 中被转换为比特流（以 0 和 1 的形式表示）。该层涉及实体设备，如电缆和交换机。</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>在现代互联网应用中，OSI 模型并未被实际采用，它仅作为参考通信模型存在。实际的互联网通信通常通过 TCP/IP 模型进行。TCP/IP 模型的各层与 OSI 模型各层并非一一对应，但两者之间存在<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="OSI model" data-startref="comms-osi">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="OSI model" data-startref="osi-model">&nbsp;</a>诸多相似之处。</p>
+        </section>
+        <section data-type="sect2" id="ch06_tcp_ip_model_1734552288218017">
+          <h2>TCP/IP 模型</h2>
+          <p><em>TCP/IP 模型</em>，<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="TCP/IP model" id="comms-tcpip">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TCP/IP model" id="tcpip-model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="internet protocol suite" data-see="TCP/IP model">&nbsp;</a>又称<em>互联网协议套件</em>，主要包含 TCP、IP 和 UDP。TCP/IP 模型将 OSI 模型的多个层合并为一层以执行类似功能；两种模型各层的对应关系如<a data-type="xref" href="#ch06_table_2_1734552288203800">#ch06_table_2_1734552288203800</a>所示。</p>
+          <table id="ch06_table_2_1734552288203800">
+            <caption>OSI 模型与 TCP/IP 模型各层对照</caption>
+            <thead>
+              <tr>
+                <th>OSI 模型层</th>
+                <th>TCP/IP 模型层</th>
+                <th>TCP/IP 协议示例</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>应用层、表示层、会话层</p>
+                </td>
+                <td>
+                  <p>应用层</p>
+                </td>
+                <td>
+                  <p>SMTP、HTTP</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>传输层</p>
+                </td>
+                <td>
+                  <p>传输层</p>
+                </td>
+                <td>
+                  <p>TCP、UDP</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>网络层</p>
+                </td>
+                <td>
+                  <p>网际层</p>
+                </td>
+                <td>
+                  <p>IP、ICMP</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>数据链路层</p>
+                </td>
+                <td>
+                  <p>数据链路层</p>
+                </td>
+                <td>
+                  <p>IEEE 802.2</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>物理层</p>
+                </td>
+                <td>
+                  <p>物理网络层</p>
+                </td>
+                <td>
+                  <p>以太网</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div data-type="note">
+            <p>如需深入了解本章所讨论的各协议，请参阅 <a href="https://oreil.ly/3nu3W">RFC 文档</a>。你可以在搜索引擎中以"TCP 协议 RFC 文档"等关键词进行检索。我们在此附上<a href="https://oreil.ly/vZHMC">TCP 文档</a>链接以供参考。</p>
+          </div>
+          <p>不同的协议运行在通信模型的不同层级上。我们将讨论一些较为通用的协议，以帮助你理解<span class='keep-together'>网络通信</span>的工作原理，从网络层协议（如 IP）开始，逐步了解不同协议如何服务于特定的通信需求。</p>
+          <section data-type="sect3" id="ch06_network_layer_protocols_1734552288218099">
+            <h3>网络层协议</h3>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="TCP/IP model" data-tertiary="network layer protocols">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TCP/IP model" data-secondary="network layer protocols">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="network layer">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="network layer protocols">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Internet Protocol (IP)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IP (Internet Protocol)">&nbsp;</a>网络层/网际层中使用最广泛的协议是<em>互联网协议（IP）</em>。IP 是一套规则，负责将数据包从源 IP 地址传递到目标 IP 地址。（我们将在<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>中更详细地讨论 IP 地址及其类型。）<a contenteditable="false" data-type="indexterm" data-primary="IP addresses">&nbsp;</a>IP 地址在网络中唯一标识数据包的源与目标，并帮助路由器将信息从一处传递到另一处。互联网上的数据通常会被拆分为若干块（称为<a contenteditable="false" data-type="indexterm" data-primary="fragmentation">&nbsp;</a><em>分片</em>），以避免传输大数据包带来的负担并降低延迟。网络接口对可传输的数据包大小也有上限（以太网为 1500 字节），这称为<em>最大传输单元（MTU）</em>。<a contenteditable="false" data-type="indexterm" data-primary="maximum transmission unit (MTU)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MTU (maximum transmission unit)">&nbsp;</a></p>
+            <p>IP 协议中的每个数据包都包含 IP 头部和载荷。<a contenteditable="false" data-type="indexterm" data-primary="IP headers">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="payload">&nbsp;</a>IP 头部包含源 IP 地址、目标 IP 地址以及路由数据包所需的其他元数据（如 IP 版本、数据包大小和 TTL）。载荷则是待在网络上传输的实际数据（称为<em>IP 数据报</em>）。<a contenteditable="false" data-type="indexterm" data-primary="IP datagrams">&nbsp;</a></p>
+            <p>另一个<a contenteditable="false" data-type="indexterm" data-primary="Internet Control Message Protocol (ICMP)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ICMP (Internet Control Message Protocol)">&nbsp;</a>在该层运行的协议是<em>互联网控制消息协议（ICMP）</em>。该协议通常用于网络诊断和错误机制的实现。例如，要检查谷歌服务器是否响应流量，可以使用 <code>ping google.com</code> 命令（命令输出如下所示）。假设 <em>google.com</em> 这个 URL 无法解析到服务器，路由器便会向发送方回复一条 ICMP 消息：</p>
+            <pre data-type="programlisting">PING google.com (142.250.74.206) 56(84) bytes of data.
+64 bytes from fra24s02-in-f14.1e100.net (142.250.74.206): icmp_seq=1 ttl=116
+64 bytes from fra24s02-in-f14.1e100.net (142.250.74.206): icmp_seq=2 ttl=116
+64 bytes from fra24s02-in-f14.1e100.net (142.250.74.206): icmp_seq=3 ttl=116</pre>
+            <p>网络层协议通常与传输层协议<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="TCP/IP model" data-tertiary="transport layer protocols" id="comms-tcpip-transport">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TCP/IP model" data-secondary="transport layer protocols" id="tcpip-transport">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="transport layer" id="protocol-transport">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="transport layer protocols" id="transport-layer">&nbsp;</a>（如 TCP 和 UDP）配合使用，共同完成数据传输。</p>
+          </section>
+          <section data-type="sect3" id="ch06_transmission_control_protocol_1734552288218161">
+            <h3>传输控制协议</h3>
+            <p><em>传输控制协议（TCP）</em>是一种传输层协议，<a contenteditable="false" data-type="indexterm" data-primary="Transmission Control Protocol (TCP)" id="transmission-control-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TCP (Transmission Control Protocol)" id="tcp">&nbsp;</a>能够在发送方与接收方之间提供可靠的通信，并在数据包丢失时具备重传能力。TCP 通信通过如图<a data-type="xref" href="#ch06_figure_1_1734552288196810">#ch06_figure_1_1734552288196810</a>所示的三次握手过程在发送方与接收方之间建立连接。三次握手是双方就数据发送与接收所达成的约定。TCP 头部包含源端口号与目标端口号、序列号（标识会话期间已发送的数据量）、确认号（由接收方用于发送确认并请求下一段数据）以及窗口大小（接收方可接受的字节数）等信息。</p>
+            <figure id="ch06_figure_1_1734552288196810">
+              <img src="images/sdoa_0601.png"/>
+              <figcaption>TCP 三次握手过程</figcaption>
+            </figure>
+            <p>握手成功建立连接后，协议需要确定在等待确认（ACK）之前可传输的最优数据量（窗口大小），以充分利用可用带宽并在避免网络拥塞的前提下完成数据传输。这通过两种机制实现：<a href="https://oreil.ly/kNVMG">慢启动与拥塞避免</a>。</p>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="slow start">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="congestion avoidance">&nbsp;</a>数据传输从较小的数据量（拥塞窗口中的一个段）开始，因此称为<em>慢启动</em>。发送方随后以指数方式逐步增大窗口大小（每收到一个 ACK，窗口增加一个段）。最大允许的数据传输量取决于接收方通告的窗口大小。若超过了网络允许的带宽上限，中间路由器（或接收方）会丢弃数据包。连接超时或收到重复 ACK 均表明发生了拥塞。拥塞避免机制随即介入处理已丢弃的数据包；在超时场景下，拥塞窗口大小会减半并重置为一个段。</p>
+            <p>我们建议将应用部署在距离较近的位置（同一地理区域）以提升性能。地理上的接近可以减少网络跳数，改善往返时间（RTT），帮助发送方在出现拥塞时快速调整拥塞窗口大小。</p>
+            <p class="pagebreak-before less_space">通信连接同时具有源端口和目标端口。<em>端口</em>是<a contenteditable="false" data-type="indexterm" data-primary="ports">&nbsp;</a>由操作系统管理的虚拟接入点，用于定义软件应用程序的数据进出通道（编号范围为 0 到 65535）。你可以将其类比于个人计算机上的物理接口（如 USB 接口）。每个端口负责特定类型的网络通信，其职责由端口号所处的范围决定。0 到 65535 范围内的端口划分为以下三类：</p>
+            <dl>
+              <dt>知名端口</dt>
+              <dd>
+                <p>编号为 0 到 1023 的<a contenteditable="false" data-type="indexterm" data-primary="well-known ports">&nbsp;</a>端口称为<a href="https://oreil.ly/raByZ"><em>知名端口</em></a>（也称为<em>系统端口</em>）。这些端口由系统进程使用，受<a href="https://oreil.ly/MZMMP">互联网号码分配机构（IANA）</a>管控。例如，端口 22 用于<a href="https://oreil.ly/TFmzf">安全外壳（SSH）</a>，端口 80 用于 <a href="https://oreil.ly/J5p9j">HTTP</a>。</p>
+              </dd>
+              <dt>注册端口</dt>
+              <dd>
+                <p>编号为 1024 到 49151 的<a contenteditable="false" data-type="indexterm" data-primary="registered ports">&nbsp;</a>端口称为<a href="https://oreil.ly/3QPN1"><em>注册端口</em></a>（也称为<em>用户端口</em>），由用户进程使用。例如，端口 1194 用于 <a href="https://oreil.ly/gc6GS">OpenVPN</a>。知名端口和注册端口统称为<em>非临时端口</em>，均由 IANA 分配。</p>
+              </dd>
+              <dt>临时端口</dt>
+              <dd>
+                <p>编号为 49152 到 65535 的<a contenteditable="false" data-type="indexterm" data-primary="ephemeral ports">&nbsp;</a>端口称为<em>临时端口</em>（也称为<em>私有端口</em>或<em>动态端口</em>）。这些端口不受 IANA 管控，可用于私有或临时目的。</p>
+              </dd>
+            </dl>
+            <p>如前所述，TCP 在建立连接或重传丢失数据包时会带来额外的延迟开销。若无此类需求，可选用另一种<a contenteditable="false" data-type="indexterm" data-primary="Transmission Control Protocol (TCP)" data-startref="transmission-control-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TCP (Transmission Control Protocol)" data-startref="tcp">&nbsp;</a>传输层协议：<em>用户数据报协议（UDP）</em>。</p>
+          </section>
+          <section data-type="sect3" id="ch06_user_datagram_protocol_1734552288218221">
+            <h3>用户数据报协议</h3>
+            <p>部分<a contenteditable="false" data-type="indexterm" data-primary="User Datagram Protocol (UDP)" id="user-datagram-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="UDP (User Datagram Protocol)" id="udp">&nbsp;</a>业务场景对延迟（实时通信）的要求高于对丢包的容忍，例如语音通话、视频通话、直播流媒体、游戏和 DNS。UDP 传输协议的可靠性不如 TCP，但速度更快，适用于上述场景。它更快的原因在于：无需通过三次握手建立连接，且不保证数据传输，因此没有重试的开销。</p>
+            <p>UDP 头部包含源端口、目标端口、长度、UDP 校验和及数据等信息。UDP 头部不像 TCP 头部那么庞大，仅包含数据段传输所需的最少信息，且不保证数据段的顺序（接收方收到的数据顺序可能与发送方发出时不同）。然而，发送方与接收方之间无需三次握手即可开始通信，这可能带来安全隐患。为说明其工作方式，我们先来了解 UDP 通信的步骤：</p>
+            <ol>
+              <li>
+                <p>发送方向目标特定端口发送一个 UDP 段。</p>
+              </li>
+              <li>
+                <p>接收方检查该端口上是否有应用程序在等待此请求。若有，则由相应应用程序接收并处理该请求。</p>
+              </li>
+              <li>
+                <p>若无，接收方则回复一条 ICMP 数据包，表明目标不可达。</p>
+              </li>
+            </ol>
+            <p>由于上述处理在大规模场景下进行，恶意攻击者可能会故意向服务器大量发送 UDP 请求，使服务器资源完全消耗于处理这些请求，从而导致正常流量遭受拒绝服务攻击。我们需要在系统中引入相应机制来缓解此类问题。一种方法是超过设定阈值后不再回复 ICMP 消息，直接忽略这些请求。这种方法的缺点是可能丢弃真实的客户请求，但至少可以维持系统的健康状态。另一种方法是利用云服务商提供的第三方应用，如 <a href="https://aws.amazon.com/shield">AWS Shield</a>。</p>
+            <p>TCP 和 UDP 各有其适用场景，应根据业务需求进行选择。对于需要可靠性和全双工（双向）通信的场景，优先选用 TCP；对于响应速度要求更高的单向<a contenteditable="false" data-type="indexterm" data-primary="User Datagram Protocol (UDP)" data-startref="user-datagram-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="UDP (User Datagram Protocol)" data-startref="udp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="TCP/IP model" data-tertiary="transport layer protocols" data-startref="comms-tcpip-transport">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TCP/IP model" data-secondary="transport layer protocols" data-startref="tcpip-transport">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="transport layer" data-startref="protocol-transport">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="transport layer protocols" data-startref="transport-layer">&nbsp;</a><span class='keep-together'>通信场景</span>，则选用 UDP。</p>
+            <p>位于网络层之上的是 TCP/IP 模型中的应用层。<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="TCP/IP model" data-tertiary="application layer protocols" id="comms-tcpip-application">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TCP/IP model" data-secondary="application layer protocols" id="tcpip-application">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="application layer" id="protocol-application">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="application layer protocols" id="application-layer">&nbsp;</a>让我们深入了解几种应用层协议，从 HTTP 开始。</p>
+          </section>
+          <section data-type="sect3" id="ch06_hypertext_transfer_protocol_1734552288218284">
+            <h3>超文本传输协议</h3>
+            <p><a contenteditable="false" data-type="indexterm" data-primary="Hypertext Transfer Protocol (HTTP)" id="hypertext-transfer-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="HTTP (Hypertext Transfer Protocol)" id="http">&nbsp;</a>现代世界高度依赖互联网处理日常事务，而这些事务大多通过 Web 浏览器和移动设备上的软件应用程序来完成。互联网上的通信通常遵循客户端-服务器模型：客户端发起请求（HTTP 请求），服务器则通过端口 80（HTTPS 使用端口 443，HTTPS 是 HTTP 的安全版本）返回对应的数据（HTTP 响应）。为更深入地了解该协议的工作方式，我们来看一个根据订单 ID 获取客户订单的 HTTP 请求示例：</p>
+            <pre data-type="programlisting">GET /api/orders?id=23234555&amp;customerId=dhfsd348e48ddd HTTP/1.1
+Host: api.myFoodApp.com
+Authorization: Bearer MyAccessToken
+User-Agent: MyOnlineFoodOrderApplication/1.0
+Accept: application/json
+HTTP/1.1 200 OK
+Content-Type: application/json
+{
+  "orderId": "23234555",
+  "customerId": "dhfsd348e48ddd",
+  "amount": 199,
+  "currency": "INR",
+  "items": [
+    {
+      "product": "Paneer Tikka Masala",
+      "quantity": 1,
+      "price": 119
+    },
+    {
+      "product": "Tandoori Roti Butter",
+      "quantity": 3,
+      "price": 80
+    }
+  ],
+  "address": "House 740, 1st Block, Koramangala, Bengaluru",
+  "status": "Delivered"
+}
+ </pre>
+            <div data-type="note">
+              <p>本章所包含的请求响应示例仅供说明参考，并未经过生产环境测试。</p>
+            </div>
+            <p>HTTP 请求包含 HTTP 方法（本例中为 <code>GET</code>）、版本（1.1）以及 Host 等信息，用于指定请求路由的目标主机及所需的认证机制。我们可以根据对服务器的调用类型指定不同的 HTTP 方法（<code>GET</code>、<code>HEAD</code>、<code>POST</code>、<code>PUT</code>、<code>DELETE</code>、<code>CONNECT</code>、<code>OPTIONS</code>、<code>TRACE</code>、<code>PATCH</code>）。以下是最常用的方法：</p>
+            <dl>
+              <dt><code>GET</code> 方法</dt>
+              <dd>
+                <p>用于<a contenteditable="false" data-type="indexterm" data-primary="GET method">&nbsp;</a>在不修改系统内部状态的情况下获取数据（具有幂等性）。例如，根据订单 ID 和客户 ID 查询订单详情。</p>
+              </dd>
+              <dt><code>POST</code> 方法</dt>
+              <dd>
+                <p>用于<a contenteditable="false" data-type="indexterm" data-primary="POST method">&nbsp;</a>在服务器上创建新资源或提交数据以供处理，本质上是非幂等的。例如，下单并完成交易。</p>
+              </dd>
+              <dt><code>PUT</code> 方法</dt>
+              <dd>
+                <p>用于更新<a contenteditable="false" data-type="indexterm" data-primary="PUT method">&nbsp;</a>服务器上的某个资源，本质上是幂等的。例如，下单后修改收货地址。</p>
+              </dd>
+              <dt><code>DELETE</code> 方法</dt>
+              <dd>
+                <p>用于<a contenteditable="false" data-type="indexterm" data-primary="DELETE method">&nbsp;</a>从服务器删除某个资源，本质上是幂等的。例如，删除已保存的地址记录。</p>
+              </dd>
+            </dl>
+            <div data-type="note">
+              <p><code>POST</code>、<code>PUT</code> 和 <code>DELETE</code> 方法的 API 在设计上应具有幂等性，但 API 的实际行为仍取决于开发者的代码实现。请遵循基于方法类型的幂等性通用规范，以避免系统出现意外行为。</p>
+            </div>
+            <p>HTTP 方法之后是请求目标，用于指定客户端尝试访问的主机（服务器）上的位置。HTTP 协议已历经多次演进，版本号代表应用程序所使用的具体规范；旧版本已被弃用。目前最常用的版本如下：</p>
+            <dl>
+              <dt>HTTP/1.1</dt>
+              <dd>
+                <p>目前<a contenteditable="false" data-type="indexterm" data-primary="HTTP/1.1">&nbsp;</a>使用最广泛的版本，HTTP/1.1 相较于早期版本提供了更好的支持，例如复用 TCP 连接以处理多个请求。</p>
+              </dd>
+              <dt>HTTP/2</dt>
+              <dd>
+                <p>HTTP/2<a contenteditable="false" data-type="indexterm" data-primary="HTTP/2">&nbsp;</a>优化了头部压缩格式（相比 HTTP/1.1 带宽占用更小），支持单域名复用一条 TCP 连接，并具备服务器推送能力，可避免客户端为异步调用进行轮询（详见后续章节）。</p>
+              </dd>
+              <dt>HTTP/3</dt>
+              <dd>
+                <p>HTTP/3<a contenteditable="false" data-type="indexterm" data-primary="HTTP/3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="congestion avoidance">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="QUIC (Quick UDP Internet Connections)">&nbsp;</a>通过以 UDP 替代 TCP/IP 协议——即<a href="https://oreil.ly/uQ7fx"><em>快速 UDP 网络连接（QUIC）</em></a>——来提升速度（相比 HTTP/2），从而借助拥塞控制算法规避了 TCP/IP 偶发的拥塞问题。</p>
+              </dd>
+            </dl>
+            <p>请求中还可以包含额外的元数据，称为<a contenteditable="false" data-type="indexterm" data-primary="HTTP headers">&nbsp;</a><em>HTTP 头部</em>，可包含用户代理（发出请求的来源，如软件应用程序或 Web 浏览器名称）、Accept（期望服务器返回的内容格式类型）等信息。</p>
+            <p>HTTP 响应包含对请求的回复内容（本例中为对应订单 ID 和客户 ID 的订单详情）。除响应对象外，响应中还包含<a contenteditable="false" data-type="indexterm" data-primary="HTTP response status codes" id="http-response-status-code">&nbsp;</a>HTTP 状态码。状态码表示请求的处理结果。例如，"200 OK"表示请求已被服务器成功处理。状态码从 100 系列到 500 系列，如<a data-type="xref" href="#ch06_table_3_1734552288203826">#ch06_table_3_1734552288203826</a>所列。</p>
+            <table id="ch06_table_3_1734552288203826">
+              <caption>HTTP 响应状态码</caption>
+              <thead>
+                <tr>
+                  <th>状态码系列</th>
+                  <th>状态码含义及示例</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <p>100</p>
+                  </td>
+                  <td>
+                    <p>信息性状态，例如服务器已收到请求且正在处理。</p>
+                    <ul>
+                      <li>100：继续（Continue）</li>
+                      <li>101：协议切换（Switching Protocols）</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>200</p>
+                  </td>
+                  <td>
+                    <p>表示请求已被服务器成功处理。</p>
+                    <ul>
+                      <li>200：成功（OK），响应中包含对应请求的数据</li>
+                      <li>201：请求已被服务器处理，并成功创建了新资源</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>300</p>
+                  </td>
+                  <td>
+                    <p>服务器已将请求重定向至另一资源以完成处理。</p>
+                    <ul>
+                      <li>301：资源已永久移至新位置，客户端应更新本地引用。响应的 Location 头部包含更新后的 URL。</li>
+                      <li>302：资源已临时移至新位置。</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>400</p>
+                  </td>
+                  <td>
+                    <p>客户端请求存在问题，需在重新发送前加以纠正。</p>
+                    <ul>
+                      <li>400：请求与服务器请求目标的预期不符。</li>
+                      <li>401：请求中未包含有效的身份验证凭据。</li>
+                      <li>403：客户端无权访问该请求。</li>
+                      <li>404：请求的资源在服务器上不存在。</li>
+                    </ul>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <p>500</p>
+                  </td>
+                  <td>
+                    <p>服务器在处理请求时遇到错误。</p>
+                    <ul>
+                      <li>500：服务器在处理请求时遇到意外异常。</li>
+                      <li>503：服务器暂时无法处理客户端请求。</li>
+                    </ul>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <p>HTTP 是互联网上应用通信的通用协议。<a contenteditable="false" data-type="indexterm" data-primary="HTTP response status codes" data-startref="http-response-status-code">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Hypertext Transfer Protocol (HTTP)" data-startref="hypertext-transfer-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="HTTP (Hypertext Transfer Protocol)" data-startref="http">&nbsp;</a>部分协议则专为特定使用场景而设计，例如用于电子邮件通信的<em>简单邮件传输协议（SMTP）</em>。</p>
+          </section>
+          <section data-type="sect3" id="ch06_simple_mail_transfer_protocol_1734552288218349">
+            <h3>简单邮件传输协议</h3>
+            <p>在互联网早期，<a contenteditable="false" data-type="indexterm" data-primary="Simple Mail Transfer Protocol (SMTP)" id="simple-mail-transfer-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SMTP (Simple Mail Transfer Protocol)" id="smtp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="email communications (SMTP)" id="email-smtp">&nbsp;</a>电子邮件的访问与个人计算机直接绑定，需要在计算机上安装专用邮件客户端才能下载并阅读邮件。这种方式的局限性在于：需要拥有个人计算机（在互联网早期并不普及）、邮件客户端配置繁琐，且难以在不同设备间同步。1996 年，Hotmail 作为免费服务推出了基于 Web 的电子邮件客户端，解决了上述问题。</p>
+            <p>软件应用程序通过应用层协议（如用于邮件服务的 SMTP）进行交互，并将通信流向传递至 TCP/IP 模型的其他各层。SMTP 协议用于两方或多方之间的电子邮件通信。我们来看一个示例（如<a data-type="xref" href="#ch06_figure_2_1734552288196860">#ch06_figure_2_1734552288196860</a>所示），了解邮件如何通过不同的邮件代理进行传递。</p>
+            <p>SMTP 客户端识别邮件域名（如 <em>gmail.com</em>、<em>hotmail.com</em> 等），然后向相应的 SMTP 服务器建立双向有状态传输通道以传输邮件。连接通过 SMTP 命令发起，服务器以成功或失败的响应进行回复。SMTP 服务器可以是邮件传输的最终目的地，也可以作为中间服务器转发邮件。当发件人和收件人属于不同域名时（例如从 <em>gmail.com</em> 发送到 <em>hotmail.com</em>），中间服务器<a contenteditable="false" data-type="indexterm" data-primary="relay servers">&nbsp;</a>称为<em>中继服务器</em>。</p>
+            <figure id="ch06_figure_2_1734552288196860">
+              <img src="images/sdoa_0602.png"/>
+              <figcaption>通过 SMTP 进行电子邮件通信</figcaption>
+            </figure>
+            <p>我们可以将其类比于实体邮件投递：你去当地邮局寄了两封信——一封投递到本镇，另一封投递到邻镇的朋友。第一封信无需经过其他邮局即可完成投递，但第二封信需要先转到邻镇的邮局，再由那里投递给你的朋友。就像我们的投递员无法直接前往其他城镇投递信件一样，SMTP 中也需要中间服务器（即中继服务器）承担这一职责。</p>
+            <p>SMTP 服务器还可以充当<a contenteditable="false" data-type="indexterm" data-primary="gateways">&nbsp;</a><em>网关</em>，即邮件的后续传输由其他协议（而非 SMTP）承担。SMTP 客户端和服务器也称为<em>邮件传输代理（MTA）</em>，<a contenteditable="false" data-type="indexterm" data-primary="mail transfer agents (MTAs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MTAs (mail transfer agents)">&nbsp;</a>因为它们提供邮件传输服务。各方之间通过 <a href="https://oreil.ly/rpweI">SMTP 命令</a>进行通信，回复中包含对应命令的成功或失败确认。</p>
+            <p>我们经常以附件形式在电子邮件中添加媒体内容，而 SMTP 本身并不支持这一功能。为此，<a contenteditable="false" data-type="indexterm" data-primary="Multipurpose Internet Mail Extensions (MIME)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MIME (Multipurpose Internet Mail Extensions)">&nbsp;</a>我们使用<em>多用途互联网邮件扩展（MIME）</em>。MIME 协议使 SMTP 能够扩展支持媒体附件，并将非 ASCII 字符转换为 7 位 ASCII 字符（英文字母和数字）。回顾讨论 TCP 时提到的端口——SMTP 在端口 25 上进行明文通信，在端口 587 上进行加密邮件通信。</p>
+            <p>SMTP 本质上采用推送机制，将邮件内容从客户端传输至服务器。另外还有两种协议——邮局协议（POP）和互联网邮件访问协议（IMAP）——专门<a contenteditable="false" data-type="indexterm" data-primary="Post Office Protocol (POP)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="POP (Post Office Protocol)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Internet Message Access Protocol (IMAP)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IMAP (Internet Message Access Protocol)">&nbsp;</a>采用拉取机制，从服务器将邮件下载到用户设备。POP 连接到邮件服务器后，将邮件下载到本地机器并从服务器上删除。IMAP 则直接从服务器读取邮件，不将内容下载到本地，读取后也不删除。这两种协议各有优势：POP 由于邮件已预先下载，读取速度更快，但由于邮件从服务器删除，无法在不同设备上阅读相同邮件；IMAP 允许在任意数量的设备上阅读邮件，但速度不如 POP。</p>
+            <p>我们讨论了专为电子邮件通信设计的协议，但电子邮件通信并非近实时的。接下来，我们将介绍<em>可扩展消息处理现场协议（XMPP）</em>，它可通过<a contenteditable="false" data-type="indexterm" data-primary="Simple Mail Transfer Protocol (SMTP)" data-startref="simple-mail-transfer-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SMTP (Simple Mail Transfer Protocol)" data-startref="smtp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="email communications (SMTP)" data-startref="email-smtp">&nbsp;</a>互联网实现近实时通信。</p>
+          </section>
+          <section data-type="sect3" id="ch06_extensible_messaging_and_presence_protocol_1734552288218409">
+            <h3>可扩展消息处理现场协议</h3>
+            <p><a href="https://xmpp.org">XMPP</a> 是一种即时消息协议，<a contenteditable="false" data-type="indexterm" data-primary="Extensible Messaging and Presence Protocol (XMPP)" id="extensible-message-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="XMPP (Extensible Messaging and Presence Protocol)" id="xmpp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="real-time communications" data-secondary="XMPP" id="real-time-comms-xmpp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="XMPP" id="chat-xmpp">&nbsp;</a>基于可扩展标记语言（XML），并具备附加功能，例如在线状态信息（显示用户在线或离线状态）和联系人列表<a contenteditable="false" data-type="indexterm" data-primary="rosters">&nbsp;</a>（称为<em>名册</em>）。XMPP 通过在持久 TCP 或 HTTP 连接上传输<a contenteditable="false" data-type="indexterm" data-primary="stanzas">&nbsp;</a>XML <em>节（stanza）</em>（XMPP 中通信的基本单元，包含消息和接收方信息），在用户之间实现近实时通信。XMPP 还可以更高效地运行，使用<a contenteditable="false" data-type="indexterm" data-primary="WebSockets">&nbsp;</a><a href="https://oreil.ly/4DbrQ">WebSocket</a> 作为子协议（稍后将详细介绍），替代 <a href="https://oreil.ly/hlzDp">HTTP 绑定</a>，因为 WebSocket 天然支持双向通信。该协议还支持异步模式，这意味着接收方用户无需在线即可接收消息，适用于通知广播等场景。</p>
+            <p>XMPP 连接的生命周期从客户端在端口 5222（明文）或 5223（加密通信）上发起 TCP 连接开始，后续步骤如下：</p>
+            <ol>
+              <li>
+                <p>客户端发送流头部，启动流特性（如认证机制和加密方法）的协商过程。</p>
+              </li>
+              <li>
+                <p>协商完成后，客户端根据协商结果发送凭据进行身份验证。</p>
+              </li>
+              <li>
+                <p>客户端绑定资源，通过 Jabber ID 实现唯一标识（稍后详述）。</p>
+              </li>
+              <li>
+                <p>如有需要，客户端可向服务器发送会话请求以建立会话。</p>
+              </li>
+              <li>
+                <p>会话建立后，客户端向服务器分享在线状态信息。此后，客户端即可请求名册并通过 XML 节发送或接收消息。</p>
+              </li>
+              <li>
+                <p>与其他协议一样，会话结束时，连接在客户端请求且服务器确认后被终止。</p>
+              </li>
+            </ol>
+            <p>XMPP 是一种去中心化协议——任何人均可托管 XMPP 服务器——其工作方式与 SMTP 类似。每位用户都有一个唯一 ID，称为 <em>Jabber ID</em>（JID——注意 XMPP 前身即 Jabber），形如电子邮件地址。<a contenteditable="false" data-type="indexterm" data-primary="Jabber ID (JID)">&nbsp;</a>JID 由唯一用户 ID 和域名组成（如 <em>myUserId@example.com</em>）。用户可能通过多台设备登录，可通过指定资源标识符加以区分，例如 <em>myUserId@example.com/mobile</em>。</p>
+            <p>XMPP 是聊天应用的广泛使用协议；例如，你可能使用过或听说过 <a class="orm:hideurl" href="https://whatsapp.com">WhatsApp 聊天应用</a>。WhatsApp 基于 <a href="https://oreil.ly/7asN1">ejabberd</a> 构建——一款用 <a href="https://erlang.org">Erlang 编程语言</a>编写的开源软件应用，<a contenteditable="false" data-type="indexterm" data-primary="Extensible Messaging and Presence Protocol (XMPP)" data-startref="extensible-message-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="XMPP (Extensible Messaging and Presence Protocol)" data-startref="xmpp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="real-time communications" data-secondary="XMPP" data-startref="real-time-comms-xmpp">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="XMPP" data-startref="chat-xmpp">&nbsp;</a>运行于 XMPP 之上。</p>
+            <p>接下来，我们将介绍另一种实时协议——<a href="https://oreil.ly/nO5UU">消息队列遥测传输（MQTT）</a>。</p>
+          </section>
+          <section data-type="sect3" id="ch06_message_queuing_telemetry_transport_1734552288218470">
+            <h3>消息队列遥测传输</h3>
+            <p>顾名思义，<a contenteditable="false" data-type="indexterm" data-primary="Message Queuing Telemetry Transport (MQTT)" id="messaging-queue-telemetry">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MQTT (Message Queuing Telemetry Transport)" id="mqtt">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="real-time communications" data-secondary="MQTT" id="real-time-comms-mqtt">&nbsp;</a>MQTT 最初是为使用最少资源向空间探测器发送和接收遥测数据而设计的。MQTT 协议被广泛用于物联网（IoT）设备通信，也可支持消息传递应用。MQTT 基于发布/订阅（pub/sub）模型：用户向某个主题发布消息，并通过订阅主题来接收消息。发布者和订阅者彼此完全独立，发布/订阅操作由 MQTT 代理（broker）负责协调，如<a data-type="xref" href="#ch06_figure_3_1734552288196887">#ch06_figure_3_1734552288196887</a>所示。</p>
+            <figure id="ch06_figure_3_1734552288196887">
+              <img src="images/sdoa_0603.png"/>
+              <figcaption>MQTT 架构</figcaption>
+            </figure>
+            <p>MQTT 支持设备与云端之间的双向通信，并提供<a contenteditable="false" data-type="indexterm" data-primary="quality of service (QoS) levels (in MQTT)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="QoS (quality of service) levels (in MQTT)">&nbsp;</a>多种<a href="https://oreil.ly/Ir-vL">服务质量（QoS）</a>级别，以保证消息传递。发布者（将消息发布至主题）和订阅者（从主题消费消息）分别独立配置 QoS 级别。MQTT 支持的三个 QoS 级别如下：</p>
+            <dl>
+              <dt>至多一次——QoS 级别 0</dt>
+              <dd>
+                <p>QoS 0 基于"即发即忘（fire and forget）"原则。发送方仅发布一次消息（不重传），消费方也不发送确认。QoS 级别 0 实现最为简单，无需保证消息传递。</p>
+              </dd>
+              <dt>至少一次——QoS 级别 1</dt>
+              <dd>
+                <p>QoS 1 确保消息至少被传递给订阅者一次，因此存在重复消息的可能，订阅者需妥善处理。发布者等待消息传递确认，若在规定时间内未收到确认，则重传消息。该级别在可靠性和实现复杂度上介于级别 0 和级别 2 之间。</p>
+              </dd>
+              <dt>恰好一次——QoS 级别 2</dt>
+              <dd>
+                <p>QoS 2 保证消息恰好被传递给接收方一次。这通过发布者与订阅者之间对每条消息进行四步验证来实现（从而降低了效率并增加了实现复杂度）。</p>
+              </dd>
+            </dl>
+            <p>可根据效率和可靠性需求选择相应的 QoS 级别。QoS 0 效率最高但可靠性最低，QoS 2 可靠性最高但效率最低。</p>
+            <p>协议本质上是建立通信各方之间通信的一套规则。下一节中，我们将讨论互联网上可用的不同通信类型，以及如何根据<a contenteditable="false" data-type="indexterm" data-primary="Message Queuing Telemetry Transport (MQTT)" data-startref="messaging-queue-telemetry">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MQTT (Message Queuing Telemetry Transport)" data-startref="mqtt">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="real-time communications" data-secondary="MQTT" data-startref="real-time-comms-mqtt">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="TCP/IP model" data-tertiary="application layer protocols" data-startref="comms-tcpip-application">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TCP/IP model" data-secondary="application layer protocols" data-startref="tcpip-application">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="application layer" data-startref="protocol-application">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="application layer protocols" data-startref="application-layer">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="TCP/IP model" data-startref="comms-tcpip">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TCP/IP model" data-startref="tcpip-model">&nbsp;</a>业务需求加以选用。</p>
+          </section>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch06_communication_types_1734552288218532">
+        <h1>通信类型</h1>
+        <p>我们在<a data-type="xref" href="#ch01_system_design_trade_offs_and_guidelines_1734552285979675">#ch01_system_design_trade_offs_and_guidelines_1734552285979675</a>中已简要介绍了同步（sync）和异步（async）通信的基本概念。<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="synchronous">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="synchronous communication">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="asynchronous" id="comms-async-ch6">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="asynchronous communication" id="async-comms-ch6">&nbsp;</a>在同步通信中，第一方请求数据后等待第二方的响应；在异步通信中，第一方请求数据但不等待响应，第二方可在稍后通过事件或其他机制进行响应。同步和异步通信模式各有挑战和优势，明确各自适用的业务场景至关重要。</p>
+        <p>同步通信通常适用于低延迟调用场景：我们预先知道服务器将在预期时间内返回响应，不会耗时过长。原因在于：如果预知请求需要较长时间处理，那么客户端白白占用系统资源却不执行任何实际工作，显然是一种浪费。需要注意的是，使用异步模式并不意味着系统延迟高——请求一旦被服务端接收，同样可以立即处理。两者的根本区别在于通信方式的不同。</p>
+        <p>在异步调用中，响应不会立即随请求返回，也不会通过同一连接返回。未来接收响应的方式有两种：一是客户端在一段时间后再次向服务器发送请求获取响应，二是服务器主动推送响应而无需客户端再次请求。第一种机制<a contenteditable="false" data-type="indexterm" data-primary="pull-based communication mechanisms">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="pull-based mechanisms">&nbsp;</a>称为<em>拉取</em>机制，第二种称为<em>推送</em>机制。</p>
+        <p>拉取和推送机制各有多种实现方式。我们将逐一进行介绍，从拉取<span class='keep-together'>方式——即</span> HTTP 常规轮询和 HTTP 长轮询开始。</p>
+        <section data-type="sect2" id="ch06_pull_mechanism_http_polling_1734552288218593">
+          <h2>拉取机制：HTTP 轮询</h2>
+          <p>以一个在线餐饮订单平台为例，<a contenteditable="false" data-type="indexterm" data-primary="HTTP polling">&nbsp;</a>来理解不同的拉取机制。下单之后，我们希望了解订单状态，例如订单正在备餐、已分配配送员、配送员已取餐、配送员位于某处，以及餐品已送达。<a data-type="xref" href="#ch06_table_4_1734552288203847">#ch06_table_4_1734552288203847</a>列出了客户端应用程序从服务器应用程序获取最新订单状态的不同方法。</p>
+          <table id="ch06_table_4_1734552288203847">
+            <caption>拉取机制方法对比</caption>
+            <thead>
+              <tr>
+                <th>方法</th>
+                <th>方法特点</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>HTTP 常规轮询：</p>
+                  <ol>
+                    <li>客户端每隔固定间隔（如 5 秒）向服务器请求最新状态。</li>
+                    <li>服务器检查状态并返回响应。</li>
+                  </ol>
+                </td>
+                <td>
+                  <p>客户端频繁发起 API 调用，可能得不到有效响应，造成网络带宽浪费。不建议在生产环境使用此方式，因为它会消耗不必要的资源。</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>HTTP 长轮询：</p>
+                  <ol>
+                    <li>客户端每隔较长间隔（如 1 分钟）向服务器请求最新状态。</li>
+                    <li>仅在状态发生变化时，服务器才返回响应；否则保持连接一段固定时间（如 1 分钟）。</li>
+                    <li>客户端在该间隔结束后重新建立连接以获取最新状态。</li>
+                  </ol>
+                </td>
+                <td>
+                  <p>与 HTTP 常规轮询相比，这种方式减少了服务器调用次数，降低了整体资源消耗，因此是对常规轮询的改进。建议在首次未收到响应时采用指数退避策略。例如，你可能见过 Gmail 在断网时的行为：先在 1 秒内尝试重连，然后 5 秒、30 秒，以此类推。</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>接下来，我们将讨论推送机制——即由服务器在结果就绪后主动向客户端发送响应，客户端无需主动请求。</p>
+        </section>
+        <section data-type="sect2" id="ch06_push_mechanism_websockets_1734552288218649">
+          <h2>推送机制：WebSocket</h2>
+          <p>在<a contenteditable="false" data-type="indexterm" data-primary="push-based communication mechanisms" id="push-comms">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="push-based mechanisms" id="comms-push">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="WebSockets" id="websockets">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="persistence" data-secondary="WebSockets" id="persistence-websockets">&nbsp;</a>HTTP 长轮询中，连接在一定时间后会断开，然后由客户端重新发起连接。但如果我们需要持久连接怎么办？<a href="https://oreil.ly/p6xfg">WebSocket</a> 是一种基于 HTTP 的双向持久连接（在单条 TCP 连接上实现全双工通信），客户端和服务器可通过该连接相互通信。连接建立后，消息可在双方之间自由流动。聊天应用是<a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="with WebSockets" data-secondary-sortas="WebSockets" id="chat-websockets">&nbsp;</a>此类需求的典型场景（架构详情见<a data-type="xref" href="#ch19_designing_a_chat_application_1734552294951889">#ch19_designing_a_chat_application_1734552294951889</a>）：两人（或群组中的多人）实时互动，持久连接显然比客户端反复轮询更合适。</p>
+          <p>WebSocket 连接的建立流程与 TCP 类似：先通过<a contenteditable="false" data-type="indexterm" data-primary="handshake process">&nbsp;</a>握手，再进行实际数据传输。握手过程确保客户端与服务器就双向通信达成共识。第一步，客户端向主机服务器发起 HTTP <code>GET</code> 请求（见如下代码片段），将 <code>Connection</code> 类型设置为 <code>Upgrade</code>，并附上用于安全验证的 <code>Sec-WebSocket-Key</code>（<a href="https://oreil.ly/YrUen">随机生成的 Base64 编码密钥</a>）：</p>
+          <pre data-type="programlisting">GET ws://myChatApp.com/chat HTTP/1.1
+Host: myChatApp.com
+Connection: Upgrade
+Upgrade: websocket
+Sec-WebSocket-Version: 13
+Sec-WebSocket-Key: q4xkcO32u266gldTuKaSOw==</pre>
+          <p>服务器收到请求后，以 HTTP 状态码 101 响应，表示协议从 HTTP 切换为 WebSocket，如下所示：</p>
+          <pre data-type="programlisting">HTTP/1.1 101 Switching Protocols
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Accept: skjfdPPEKjdksejsl+sdr=</pre>
+          <p>服务器同时返回 <code>Sec-WebSocket-Accept</code>，其生成方式为：将预定义的 GUID（<code>258EAFA5-E914-47DA-95CA-C5AB0DC85B11</code>，如 RFC 6455 所定义）附加到 <code>Sec-WebSocket-Key</code> 后，经 <a href="https://oreil.ly/sZ2hk">SHA-1 算法</a>哈希并 Base64 编码生成。</p>
+          <p>收到服务器确认后，客户端与服务器之间的 WebSocket 连接即告建立，双方可开始通信。通信消息遵循帧结构，可为文本或二进制格式。发往服务器的帧必须经过掩码处理——若未掩码，服务器收到后会关闭连接。掩码密钥长度为 4 字节，应随机生成以对消息载荷进行掩码处理。掩码密钥与载荷通过<a href="https://oreil.ly/duwH5">异或（XOR）</a>运算生成掩码帧，服务器则执行反向操作恢复原始载荷。</p>
+          <p>帧由载荷数据及附加元数据组成，元数据包括是否掩码（以 1 或 0 表示）、载荷长度和掩码密钥等。载荷数据由扩展数据和应用数据组合而成。应用数据包含原始消息，扩展数据为可选字段，可实现加密和压缩等附加能力。最后，客户端与服务器之间的连接在<a contenteditable="false" data-type="indexterm" data-primary="chat applications" data-secondary="with WebSockets" data-secondary-sortas="WebSockets" data-startref="chat-websockets">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="WebSockets" data-startref="websockets">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="persistence" data-secondary="WebSockets" data-startref="persistence-websockets">&nbsp;</a>通信结束时关闭。</p>
+          <p>有时我们并不需要双向连接，仅需要服务器到客户端的单向通信通道。下一节将介绍服务器发送事件（SSE），以进一步阐述这一思路。</p>
+        </section>
+        <section data-type="sect2" id="ch06_push_mechanism_server_sent_events_1734552288218705">
+          <h2>推送机制：服务器发送事件</h2>
+          <p>回到我们<a contenteditable="false" data-type="indexterm" data-primary="server-sent events (SSEs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SSEs (server-sent events)">&nbsp;</a>之前在线餐饮平台查询订单状态的例子。SSE 在此场景中是一个可行方案：更新订单状态是服务器的职责，客户端无需提供任何输入。服务器不依赖客户端的消息送达确认——若有此需求，SSE 则不一定是最佳选择。SSE 基于持久的 HTTP 长连接实现，以文本格式从服务器接收更新或通知。在客户端应用中定义一个 EventSource（包含服务器上 SSE 事件流的 URL），任何新事件都会通过事件流传递至该 EventSource。</p>
+          <div data-type="note">
+            <p>SSE 也被用于即时通讯应用，其作用与 WebSocket 类似；例如，黑莓 Messenger（BBM）和 <a href="https://oreil.ly/9zlxR">LinkedIn</a> 的消息及直播视频互动均以 SSE 作为底层技术。</p>
+          </div>
+          <p>我们在<a data-type="xref" href="#ch01_system_design_trade_offs_and_guidelines_1734552285979675">#ch01_system_design_trade_offs_and_guidelines_1734552285979675</a>中提到，网络并非完全可靠，长连接 HTTP 连接随时可能中断。在这种情况下，我们需要能够从断点续传、继续消费服务器事件的能力。SSE 内置了这一能力：它可以重建断开的连接，并恢复客户端在连接中断期间可能遗漏的消息。</p>
+          <p>我们提到，异步架构中的响应可通过 WebSocket 或 SSE 传递。另一种方式是将响应发布到客户端已订阅的主题，或投递至客户端暴露的 HTTP 端点，此机制广泛用于服务间回调通信（API 的响应以异步方式传递）。我们将在<a data-type="xref" href="#ch08_architectural_designs_and_patterns_1734552289324317">#ch08_architectural_designs_and_patterns_1734552289324317</a>讨论发布/订阅架构时，以及在<a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a>讨论亚马逊简单队列服务（Amazon SQS）和亚马逊简单通知服务（Amazon SNS）时进一步阐述这一思路。</p>
+          <p>至此，我们已了解了互联网通信的各种网络协议和机制。在网络协议之外，客户端-服务器架构中还有一些通用的通信标准（协议或架构风格）被普遍遵循。让我们<a contenteditable="false" data-type="indexterm" data-primary="push-based communication mechanisms" data-startref="push-comms">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="push-based mechanisms" data-startref="comms-push">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="asynchronous" data-startref="comms-async-ch6">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="asynchronous communication" data-startref="async-comms-ch6">&nbsp;</a>深入了解这一话题。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch06_common_communication_protocol_standards_1734552288218768">
+        <h1>通用通信协议标准</h1>
+        <p>在<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" id="comms-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" id="protocol-comms-standard">&nbsp;</a>客户端-服务器架构中，客户端通过与服务器交互来获取信息或对服务器执行某项操作。设想一个场景：每个客户端和服务器都定义自己的交互范式——软件应用程序适配如此大量的范式将极为困难。若客户端-服务器调用能够统一定义并被普遍采用，问题就会简单得多。本节将介绍<em>应用程序编程接口（API）</em><a contenteditable="false" data-type="indexterm" data-primary="application programming interfaces" data-see="APIs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)">&nbsp;</a>的概念及其多种类型，以便明确它们如何满足特定业务需求。API 通过一组定义和协议使两个软件应用程序能够在互联网上通信。我们将从 RPC 开始讨论，然后探索其他范式。</p>
+        <section data-type="sect2" id="ch06_remote_procedure_call_1734552288218829">
+          <h2>远程过程调用</h2>
+          <p>通常，<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" data-tertiary="RPC" id="comms-protocol-rpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" data-tertiary="RPC" id="protocol-comms-standard-rpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Remote Procedure Call (RPC)" id="remote-proc-call">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RPC (Remote Procedure Call)" id="rpc">&nbsp;</a>单台机器无法承载所有必要的实现逻辑，部分代码被托管在其他地方，可能由你的公司所有，也可能不是。以在线餐饮平台的订单履行为例：前端应用调用后端服务下单，后端服务与支付服务交互以通过所选支付方式完成支付，支付服务再与银行或支付网关（PG）等外部提供商交互处理支付，最终完成下单。试想我们的支付服务与支付网关之间的交互：支付网关并非由我们自己拥有，但我们调用支付处理方法的方式，与调用本地代码库中任何本地方法的方式完全相同——这就是<em>远程过程调用（RPC）</em>。</p>
+          <p><em>过程</em>是<a contenteditable="false" data-type="indexterm" data-primary="procedures">&nbsp;</a>负责执行一组特定任务的代码块。它可以简单到只是将两数相加，也可以复杂如通过支付网关处理支付。RPC 意味着在远程机器上执行这段代码（即过程），就好像在本地个人计算机或笔记本电脑上执行一样。现在我们来理解为何需要这一机制，以及远程代码执行的工作原理。</p>
+          <p>将代码托管在远程机器上的一个明显优势是代码复用性和可扩展性：代码可在多个客户端间共享，为客户端提供代码执行的抽象，且可分布于多台机器以实现扩展。此外，它还对本地机器与远程机器之间如何交互以执行过程的网络通信进行了抽象，使开发者的体验与调用本地过程无异。组织中可能有多个团队拥有数百个使用不同编程语言编写的微服务。我们定义接口，RPC 通过承担数据编组（序列化）和反编组（反序列化）的工作，提供跨语言和跨平台支持。</p>
+          <p>回顾 RPC 的优势时，我们提到不同微服务可能用不同编程语言编写，因此无法直接调用远程函数。我们需要一个能够处理转换逻辑的中间层，这称为<em>存根（stub）</em>。<a contenteditable="false" data-type="indexterm" data-primary="stub functions">&nbsp;</a>存根函数提供与远程方法相似的接口供客户端调用，并在内部处理实现细节，例如网络通信和方法参数到网络消息的编组。在服务器端，存根函数将消息反编组为远程方法期望的参数格式。方法处理完成后，方法响应再次被编组并通过网络发送回来，客户端存根函数将其反编组为客户端机器可读的对象。</p>
+          <p>用于指定远程过程和数据类型的通用接口或契约定义在<em>接口定义语言（IDL）</em>中。<a contenteditable="false" data-type="indexterm" data-primary="interface definition language (IDL)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IDL (interface definition language)">&nbsp;</a>该接口与语言无关，可与任意编程语言配合使用。IDL 用于生成客户端通信所使用的存根。常见示例包括：与简单对象访问协议（SOAP）配合使用的 Web 服务描述语言（WSDL），以及 Apache Thrift IDL。</p>
+          <p>RPC 虽有优势，但在分布式环境中也存在局限——与本地方法调用不同，我们需要关注网络延迟、处理网络故障及重试机制，以及随系统演进确保接口兼容性等问题。</p>
+          <p>RPC 的典型实现包括 <a href="https://oreil.ly/72X4-">SOAP</a>、表述性状态转移（REST）、<a href="https://grpc.io">gRPC</a> 和 <a href="https://thrift.apache.org">Thrift</a>。<em>SOAP</em> 是一种协议，为客户端和服务器之间使用 XML 消息进行通信提供了机制。<a contenteditable="false" data-type="indexterm" data-primary="Simple Object Access Protocol (SOAP)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SOAP (Simple Object Access Protocol)">&nbsp;</a>SOAP 不依赖特定协议，可与 HTTP、SMTP、TCP 等多种协议配合使用，但最常见的是与 HTTP 配合。SOAP 基于 XML 结构，相对复杂，有一定的学习曲线。目前鲜有新项目采用该协议——开发者在应用开发和网络交互中往往倾向于更简单的范式（如 REST），而非<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" data-tertiary="RPC" data-startref="comms-protocol-rpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" data-tertiary="RPC" data-startref="protocol-comms-standard-rpc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Remote Procedure Call (RPC)" data-startref="remote-proc-call">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RPC (Remote Procedure Call)" data-startref="rpc">&nbsp;</a>SOAP。</p>
+        </section>
+        <section data-type="sect2" id="ch06_rest_1734552288218883">
+          <h2>REST</h2>
+          <p>REST<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" data-tertiary="REST" id="comms-protocol-rest">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" data-tertiary="REST" id="protocol-comms-standard-rest">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Representational State Transfer (REST)" id="represent-state-transfer">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="REST (Representational State Transfer)" id="rest">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)" data-secondary="RESTful" id="api-rest">&nbsp;</a>广泛与 HTTP 协议配合使用，通过 HTTP 方法实现不同的增删改查（CRUD）操作，是当今互联网应用开发的主流软件架构风格，而非 SOAP 那样的协议。</p>
+          <p class="pagebreak-before less_space">REST 设计模式的指导原则如下：</p>
+          <ul>
+            <li>
+              <p>REST API 的通信涉及客户端、服务器和资源。<em>资源</em>是可以通过 URL 唯一标识的基本实体，客户端通过 HTTP 方法与服务器交互，对这些资源执行各种操作。</p>
+            </li>
+            <li>
+              <p>REST 采用无状态范式，即服务器不负责维护历史请求的状态。状态的维护（如有需要）由客户端处理，所有相关信息都应包含在 HTTP 请求中，以便服务器进行处理。</p>
+            </li>
+            <li>
+              <p>某些 REST API 的响应变化不频繁。在这类场景中，响应可在客户端、浏览器层面或通过 CDN 及其他缓存机制进行缓存。</p>
+            </li>
+            <li>
+              <p>信息传输所涉及的各组件之间存在统一接口，遵循标准化的通信方式，从而便于软件应用程序能力的演进。关键要素包括：资源的唯一标识、通过表述进行资源更新（客户端和服务器以纯文本、JSON、XML 或 HTML 等格式进行交互以更新资源）、自描述消息（服务器应在响应中包含足够的信息以供客户端处理）以及超媒体作为应用状态引擎（客户端应能通过服务器响应中的超链接在资源间导航）。</p>
+            </li>
+            <li>
+              <p>获取信息可能涉及多个系统。客户端对系统内部的多层调用进行了抽象，仅需向第一层（如负载均衡器、API 网关或其他服务端点）发送请求并获取响应。</p>
+            </li>
+            <li>
+              <p>服务器可以在响应中向客户端下发可执行代码（如脚本），客户端可按需执行。</p>
+            </li>
+          </ul>
+          <p>遵循上述标准的 API 称为 <em>RESTful API</em>。</p>
+          <div data-type="note">
+            <p>负载均衡器、API 网关、NAT、IP 地址及相关网络概念将在<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>中详细介绍。</p>
+          </div>
+          <p>由于 REST 支持 JSON 格式，对开发者而言使用起来相对简单。SOAP 以其对高级安全特性、强类型数据和过程调用（SOAP 支持类似本地过程的 RPC）的内置支持而著称，但复杂度较高。在 REST 中同样可以实现高级安全机制，但这需要额外的设计考量，而 SOAP 天然提供这些支持。一如既往，选择取决于具体场景，并不存在一个普遍最优的答案。</p>
+          <p>REST 架构模式遵循由服务器定义的固定模式，但在某些情况下，我们可能希望客户端能够灵活定义所需数据。下一节我们将深入探讨这一思路，介绍<a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)" data-secondary="RESTful" data-startref="api-rest">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" data-tertiary="REST" data-startref="comms-protocol-rest">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" data-tertiary="REST" data-startref="protocol-comms-standard-rest">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Representational State Transfer (REST)" data-startref="represent-state-transfer">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="REST (Representational State Transfer)" data-startref="rest">&nbsp;</a>GraphQL。</p>
+        </section>
+        <section data-type="sect2" id="ch06_graphql_1734552288218937">
+          <h2>GraphQL</h2>
+          <p><em>GraphQL</em> 是一种 API 查询语言，<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" data-tertiary="GraphQL" id="comms-protocol-graphql">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" data-tertiary="GraphQL" id="protocol-comms-standard-graphql">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)" data-secondary="GraphQL" id="api-graphql">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="GraphQL" id="graphql">&nbsp;</a>允许客户端在单一 API 端点上编写针对所需数据的查询（而 REST 为每个 API 定义独立的端点）。将 GraphQL 与 REST 作一比较：假设我们希望在在线餐饮平台上获取某餐厅某种食品的名称和描述。使用 REST 时，我们需要一个能精确返回这些字段的 API，或者使用一个返回食品完整信息的 API 并仅展示所需字段（类似地，有时还需要合并多个 API 的数据）。REST 可能存在过度获取（overfetching）或获取不足（underfetching）数据的问题，而 GraphQL 的查询灵活性正是为解决这一问题而生，此外还提供了其他若干特性（稍后详述）。只查询所需数据可节省网络带宽，在较慢的网络环境下能显著提升应用响应速度。</p>
+          <p>了解了 GraphQL 相对于 REST 的优势后，让我们进一步探讨其工作原理。GraphQL 拥有强大的类型系统，用于定义客户端查询所支持的实体，查询使用 GraphQL 模式定义语言（SDL）编写。以前述示例为例，演示如何通过 GraphQL 实现：</p>
+          <pre data-type="programlisting">type Restaurant {
+  id: String!
+  name: String!
+  rating: Float
+  foodItems: [FoodItem!]!
+}
+
+type FoodItem {
+  id: String!
+  name: String!
+  rating: Float
+  isVeg: Boolean!
+}
+query {
+  Restaurant (id: "lsoa34444lsoa") {
+    name
+    foodItems {
+      name
+      description
+    }
+  }
+}</pre>
+          <p>我们在 SDL 中定义了两个对象以支持本示例：<code>Restaurant</code>（餐厅）和 <code>FoodItem</code>（食品，感叹号 [!] 表示必填属性）。查询时，客户端仅指定所需的属性。</p>
+          <div data-type="note">
+            <p>如需了解 GraphQL 的完整信息，请访问 <a href="https://graphql.org/learn">GraphQL 文档</a>。</p>
+          </div>
+          <p>数据查询（读取）并非 API 所需的唯一能力，我们还需要支持创建、更新和删除数据（对服务器数据存储进行数据修改）的操作。GraphQL 通过名为<em>变更（mutation）</em><a contenteditable="false" data-type="indexterm" data-primary="mutations">&nbsp;</a>的特性支持这些操作。变更以 <code>mutation</code> 关键字开头，语法与 GraphQL 查询类似。来看一个为餐厅创建新食品的变更示例：</p>
+          <pre data-type="programlisting">mutation {
+  createFoodItem(name: "Paneer Tikka Masala", isVeg: true) {
+    id
+    name
+  }
+}</pre>
+          <p>变更同样可以像 GraphQL 查询一样返回响应。在上例中，变更完成数据修改的主要任务后，还会在响应中返回新创建食品的 ID 和名称。</p>
+          <p>我们可能还希望了解服务器端发生的新变化。为此，可以利用本章前面讨论过的 SSE 或 WebSocket 等技术，也可以使用 GraphQL 订阅（由 <code>Subscription</code> 关键字定义）——它天然建立双向连接，以近实时方式通知我们新事件（例如新食品被创建）。GraphQL 查询、变更和订阅均定义在 GraphQL 模式中，为客户端提供 API 能力的全貌。</p>
+          <p>GraphQL 相对于 REST 的优势之一在于其单一端点集成，所有 API 需求均通过同一端点提供服务，而无需多个端点。随着系统演进，前端应用可能需要与多个后端应用交互以汇聚所需数据，而每个后端应用都暴露自己的 GraphQL 端点。这时，可以选择 <a href="https://apollographql.com">Apollo</a> 或 AWS AppSync（将在<a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a>中详述）等 GraphQL 客户端加以优化，帮助应用更<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" data-tertiary="GraphQL" data-startref="comms-protocol-graphql">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" data-tertiary="GraphQL" data-startref="protocol-comms-standard-graphql">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)" data-secondary="GraphQL" data-startref="api-graphql">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="GraphQL" data-startref="graphql">&nbsp;</a>从容地实现规模化扩展。</p>
+        </section>
+        <section data-type="sect2" id="ch06_web_real_time_communication_1734552288218993">
+          <h2>网页实时通信</h2>
+          <p>世界各地的人通过文字消息、语音通话或视频通话相互交流。<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" data-tertiary="WebRTC" id="comms-protocol-webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" data-tertiary="WebRTC" id="protocol-comms-standard-webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)" data-secondary="WebRTC" id="api-webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="real-time communications" data-secondary="WebRTC" id="real-time-comms-webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="WebRTC (Web Real-Time Communication)" id="webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="peer-to-peer connections" id="peer-to-peer-webrtc">&nbsp;</a>文字消息相比语音和视频通话实现和运营更为简单。设想一个场景：你正在与朋友进行视频通话，对通话应用你有哪些体验期望？最核心的期望是能清晰地看到朋友的画面，并能流畅地听到对方的声音，没有卡顿。WebRTC（即网页实时通信，Web Real-Time Communication）通过 API 为 Web 浏览器或移动应用提供音视频通信支持，无需安装任何特定插件。它还支持近实时的 Web 服务间文件共享和数据交换。</p>
+          <p>至此，我们讨论的所有协议或架构模式都涉及服务器，我们的讨论重点也在于客户端-服务器通信。WebRTC 允许两端设备之间建立直接的点对点连接，无需中间服务器。尽管对等端可以直接通信，但在有需要时（例如为确保安全通信）也可以引入服务器。需要注意的是，当互相通信的对等端数量增加至两位数时（例如拥有千名成员的 <a href="https://oreil.ly/u1Ya1">Discord 服务器</a>语音频道），延迟可能会显著增加。</p>
+          <p>WebRTC 本身并非协议——它是建立在多种协议之上的工具集，以服务于特定场景。WebRTC 提供的 API 包括：用于建立对等端连接的 RTCPeerConnection、用于访问用户设备音视频的 getUserMedia，以及用于对等端间双向数据交换的 RTCDataChannel。下面来了解点对点连接的建立过程。</p>
+          <p>在互联网上通信并与另一台设备建立连接，需要对方的 IP 地址和端口号。如果设备位于 NAT 之后，这就变得复杂了（详情见<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>）。在此类场景中，WebRTC 可以使用<a contenteditable="false" data-type="indexterm" data-primary="Interactive Connectivity Establishment (ICE)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ICE (Interactive Connectivity Establishment)">&nbsp;</a>交互式连接建立（ICE）来寻找最优通信路径。若系统不采用直接的点对点连接而是基于客户端-服务器架构运行，则无需使用 ICE。</p>
+          <p>与任意设备通信都需要一个唯一地址，但如果设备在 NAT 之后的私有网络中运行（该网络中所有设备共用同一个公共 IP 地址，以私有 IP 地址相互区分），这就不那么简单了。<a contenteditable="false" data-type="indexterm" data-primary="Session Traversal Utilities for NAT (STUN) protocol" id="session-traversal-utility-nat">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="STUN (Session Traversal Utilities for NAT) protocol" id="stun">&nbsp;</a>在设备位于 NAT 之后的情况下，可使用 <a href="https://oreil.ly/ABUGB">NAT 会话穿越工具（STUN）协议</a>。双端设备均连接至 STUN 服务器，以获取各自的 IP 地址、端口（由 NAT 根据私有 IP 地址和端口分配）以及设备所在 NAT 的类型。获取这些信息后，将作为<a contenteditable="false" data-type="indexterm" data-primary="Session Description Protocol (SDP)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SDP (Session Description Protocol)">&nbsp;</a><a href="https://oreil.ly/ZTpvz">会话描述协议（SDP）</a>的一部分，如<a data-type="xref" href="#ch06_figure_4_1734552288196910">#ch06_figure_4_1734552288196910</a>所示。</p>
+          <p>两台对等设备通过 SDP 等信令机制相互交换 ICE 候选者（网络地址和端口）。SDP 包含媒体类型（音频或视频）、传输协议（UDP、IP 等）、媒体格式、远端地址和媒体端口等信息。</p>
+          <figure id="ch06_figure_4_1734552288196910">
+            <img alt="计算机网络示意图" src="images/sdoa_0604.png"/>
+            <figcaption>通过 STUN 服务器进行 WebRTC 通信</figcaption>
+          </figure>
+          <p>在某些情况下，由于防火墙限制，直接点对点连接不可行，STUN 服务器无法完成其工作。此时，<a contenteditable="false" data-type="indexterm" data-primary="Traversal Using Relays around NAT (TURN) servers">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="TURN (Traversal Using Relays around NAT) servers">&nbsp;</a>可以使用<a href="https://oreil.ly/VjhcQ">使用中继穿越 NAT（TURN）服务器</a>。TURN 服务器作为对等端之间的中间人：一端将消息发送至 TURN 服务器，再由 TURN 服务器转发给另一端。TURN 服务器可以单独承担 STUN 和流量中继的全部功能，但 STUN 服务器始终应作为第一选择——因为使用 TURN 服务器传输高质量数据相对成本较高，且在架构中增加了一个额外的网络跳点。</p>
+          <p>点对点连接建立后，双方即可双向交换媒体数据以完成通信。WebRTC 在 IT 行业中被广泛应用于语音和<a contenteditable="false" data-type="indexterm" data-primary="Session Traversal Utilities for NAT (STUN) protocol" data-startref="session-traversal-utility-nat">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="STUN (Session Traversal Utilities for NAT) protocol" data-startref="stun">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" data-tertiary="WebRTC" data-startref="comms-protocol-webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" data-tertiary="WebRTC" data-startref="protocol-comms-standard-webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)" data-secondary="WebRTC" data-startref="api-webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="real-time communications" data-secondary="WebRTC" data-startref="real-time-comms-webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="WebRTC (Web Real-Time Communication)" data-startref="webrtc">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="protocol standards" data-startref="comms-protocol">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="protocols" data-secondary="communications standards" data-startref="protocol-comms-standard">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="peer-to-peer connections" data-startref="peer-to-peer-webrtc">&nbsp;</a>视频通信。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch06_conclusion_1734552288219046">
+        <h1>结论</h1>
+        <p>OSI 模型是理解互联网数据通信的良好起点。我们日常所见的设备通信大多遵循 TCP/IP 模型，TCP、UDP 和 IP 是数据传输的基础协议。在此之上，诸多协议得以构建，例如 HTTP、SMTP 和 XMPP，各自服务于特定场景。确定哪种协议更适合特定场景可能令人困惑，因此关键在于识别最核心的需求再作决策。你也可能发现，结合多种技术来满足客户需求才是最佳方案。例如，XMPP 被广泛用于文字消息，而 WebRTC 则是音视频通信的优选方案。直接点对点通信在涉及多用户体验（如群组视频或音频通话）时可能变得复杂，结合使用这两种工具可以降低这种复杂性，将 WebRTC 和 XMPP 的文字、音频和视频功能优势融为一体。</p>
+        <p>我们还讨论了通信类型，以及哪种机制更适合你的实现场景。我们建议在比较方案之前先确立好场景需求——在大规模分布式系统的设计中，往往不会有一个明显的最优解。我们以客户端-服务器信息共享在互联网上如何运作的不同通信标准和架构结束了本章的讨论。虽然我们尽力涵盖了最基本和最广泛使用的通信工具，但还有许多其他专为特定场景设计的协议或技术，限于篇幅未能在此一一介绍。</p>
+        <p>下一章，我们将深入探讨容器的概念。Docker 和 Kubernetes 是业界炙手可热的关键词——你很可能已经对这些用于部署和运行软件应用程序的概念有所了解。</p>
+      </section>
+    </section>

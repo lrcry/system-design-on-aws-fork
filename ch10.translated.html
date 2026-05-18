@@ -1,0 +1,765 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch10_aws_storage_services_1734552290474903">
+      <h1>AWS 存储服务</h1>
+      <p><a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892" data-xrefstyle="select:labelnumber">#ch02_storage_types_and_relational_stores_1734552286519892</a> 和 <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587" data-xrefstyle="select:labelnumber">#ch03_nonrelational_stores_1734552286860587</a> 介绍了多种存储类型与解决方案。本章将探讨 <a href="https://oreil.ly/a1A_9">AWS 特有的存储服务</a>，这些服务对应市场上不同类型的存储解决方案。我们将从块存储等传统存储服务入手，然后介绍用于存储数据的各类数据库，并结合业务和技术需求加以说明。</p>
+      <p>回顾 <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a> 中 Cafe Delhi Heights 的案例——这家连锁餐厅正在开展线上业务，让顾客能够浏览餐品并在线下单。为提供最佳的客户体验和线上外卖服务，Cafe Delhi Heights 将把餐厅图片、菜单、营销活动信息等数据存储在 AWS 存储服务上。Cafe Delhi Heights 委托我们完成这项工作，因此让我们明确其存储需求，并选择最合适的 AWS 存储方案。我们需要能够：</p>
+      <ul>
+        <li>
+          <p>存储顾客的个人资料及访问凭证，如用户名和密码</p>
+        </li>
+        <li>
+          <p>存储食品信息，如可用菜单项</p>
+        </li>
+        <li>
+          <p>存储各类媒体文件，如餐品图片及顾客上传的评价</p>
+        </li>
+        <li>
+          <p>进行大数据分析以改善客户体验，例如区分好评与差评</p>
+        </li>
+        <li>
+          <p>创建美食社区，让人们在社交圈中互动</p>
+        </li>
+        <li>
+          <p>根据多种标识符搜索餐品，如名称、餐厅位置和评分</p>
+        </li>
+        <li>
+          <p>在 90 天后归档应用程序日志和指标，并保留一年</p>
+        </li>
+      </ul>
+      <p>AWS 存储服务让客户能够存储、保护和分析数据，而无需担忧任何运维开销。我们将在两个主要部分讨论存储服务：云存储和数据库。我们将先从云存储入手，了解块存储、文件存储和对象存储服务。</p>
+      <section data-type="sect1" id="ch10_cloud_storage_on_aws_1734552290475193">
+        <h1>AWS 云存储</h1>
+        <p>AWS <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="cloud storage services" id="aws-cloud-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" id="cloud-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data storage systems" data-secondary="cloud storage services (AWS)" id="data-storage-cloud">&nbsp;</a>提供多种云存储选项：亚马逊弹性块存储（Amazon EBS）作为块存储服务、亚马逊弹性文件系统（Amazon EFS）作为文件存储服务，以及亚马逊简单存储服务（Amazon S3）作为对象存储服务。我们在 <a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a> 中已经讨论了这些存储选项的通用概念。在本节中，我们将了解 AWS 为支持这些解决方案所提供的服务。每项服务针对特定的存储需求，因此我们将在以下各节中分别介绍它们各自的优势。</p>
+        <section data-type="sect2" id="ch10_amazon_elastic_block_store_1734552290475287">
+          <h2>亚马逊弹性块存储</h2>
+          <p><a href="https://oreil.ly/4vn6V">Amazon EBS</a> 是一种块存储解决方案，<a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="EBS (Elastic Block Store)" id="cloud-storage-ebs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic Block Store (EBS)" id="elastic-block-store-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EBS (Elastic Block Store)" id="ebs-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="block-based storage" id="block-storage-ch10">&nbsp;</a>其作用类似于连接到个人计算机的物理硬盘。EBS 可以挂载到亚马逊 EC2 实例（EC2 的更多内容见 <a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a>），其生命周期独立于 EC2 实例，并具有灵活性，支持对生产环境中运行的工作负载进行配置修改，例如：</p>
+          <ul>
+            <li>
+              <p>动态增加容量</p>
+            </li>
+            <li>
+              <p>更改已预置的每秒输入/输出操作数（IOPS）容量</p>
+            </li>
+            <li>
+              <p>更改卷类型</p>
+            </li>
+          </ul>
+          <p>EBS 卷以最低延迟提供对磁盘上存储数据的访问，适用于需要频繁访问磁盘的场景，例如：</p>
+          <ul>
+            <li>
+              <p>自建并维护数据库，而非使用 AWS 提供的数据库服务</p>
+            </li>
+            <li>
+              <p>创建操作系统引导卷</p>
+            </li>
+          </ul>
+          <p>对于需要临时块存储且 I/O 性能要求高于 EBS 的场景（如缓存、设备缓冲区等），AWS 提供了另一种存储解决方案——<a href="https://oreil.ly/gsMeo">实例存储</a>，<a contenteditable="false" data-type="indexterm" data-primary="instance stores">&nbsp;</a>它直接挂载到实例上，与 EBS（网络挂载存储）不同。在磁盘故障或 EC2 实例状态变更（停止、休眠或终止）等情况下，实例存储中的数据将被清除。实例存储不具备 EBS 卷的灵活性，例如无法挂载到任意 EC2 实例、无法动态扩容等。</p>
+          <p>AWS <a contenteditable="false" data-type="indexterm" data-primary="volumes (EBS)">&nbsp;</a>提供多种 EBS 卷类型供选择，可根据成本和性能等多种因素进行评估。以下是各类卷类型的适用场景：</p>
+          <dl>
+            <dt>固态硬盘（SSD）</dt>
+            <dd>
+              <p>包括<a contenteditable="false" data-type="indexterm" data-primary="solid-state drives (SSDs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SSDs (solid-state drives)">&nbsp;</a>通用型 SSD 和预置 IOPS SSD 在内的此类卷类型，针对事务性工作负载进行了优化。其主要性能指标为小 I/O 规模。</p>
+            </dd>
+            <dt>硬盘驱动器（HDD）</dt>
+            <dd>
+              <p>包括<a contenteditable="false" data-type="indexterm" data-primary="hard disk drives (HDDs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="HDDs (hard disk drives)">&nbsp;</a>吞吐量优化型 HDD 和冷存储 HDD 在内的此类卷类型，针对大型流式工作负载进行了优化。其主要性能指标为吞吐量。</p>
+            </dd>
+            <dt>磁性磁盘</dt>
+            <dd>
+              <p>此类<a contenteditable="false" data-type="indexterm" data-primary="magnetic disks">&nbsp;</a>卷类型主要适用于性能要求不高的小型工作负载，例如对存储磁盘进行低频数据访问。</p>
+            </dd>
+          </dl>
+          <p>以下是关于 EBS 卷的几个重要注意事项：</p>
+          <ul>
+            <li>
+              <p>一个 EC2 实例可以挂载多个 EBS 卷。</p>
+            </li>
+            <li>
+              <p>EBS 卷的作用范围在可用区（AZ）级别。us-east-1a 中的 EBS 卷无法挂载到 us-east-1b 中的 EC2 实例。我们可以为 EBS 卷创建时间点快照（备份），以实现跨可用区或跨区域的复制并确保高可用性。</p>
+            </li>
+            <li>
+              <p>EBS 卷最初作为非共享块存储推出，即一个 EBS 卷无法在多个 EC2 实例间共享。AWS 推出了 <a href="https://oreil.ly/sup6p">EBS 多重挂载功能</a>，允许用户将一个预置 IOPS SSD 卷挂载到同一可用区内最多 16 个 <a href="https://oreil.ly/Yj49e">Nitro 架构 EC2</a> 实例，适用于 Linux <span class='keep-together'>应用程序</span>。</p>
+            </li>
+            <li>
+              <p>EBS 卷在可用区内自动复制，以防止数据丢失。</p>
+            </li>
+          </ul>
+          <p>EBS 卷存在一定局限性，例如作用范围限于可用区级别，以及无法在 EC2 实例间共享数据。AWS 提供了另一种存储解决方案 Amazon EFS，以克服这些<a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="EBS (Elastic Block Store)" data-startref="cloud-storage-ebs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic Block Store (EBS)" data-startref="elastic-block-store-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EBS (Elastic Block Store)" data-startref="ebs-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="block-based storage" data-startref="block-storage-ch10">&nbsp;</a>局限性。</p>
+        </section>
+        <section data-type="sect2" id="ch10_amazon_elastic_file_system_1734552290475356">
+          <h2>亚马逊弹性文件系统</h2>
+          <p><a href="https://oreil.ly/6Fmlc">EFS</a> 是一种共享文件系统，<a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="EFS (Elastic File System)" id="cloud-storage-efs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic File System (EFS)" id="elastic-file-system-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EFS (Elastic File System)" id="efs-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="file-based storage" id="file-storage-ch10">&nbsp;</a>允许在某个区域内的多台服务器或本地数据中心之间共享存储。EFS 是一种完全托管的无服务器解决方案，支持所有 AWS 计算平台，如 Amazon EC2、Amazon ECS 和 AWS Lambda。无需预先配置存储空间，定价根据应用程序实际使用的存储空间计算。</p>
+          <p>Amazon EFS 通常用于企业级业务场景，如大数据分析、机器学习工作负载和内容管理。EFS 和 EBS 存储解决方案均提供低延迟的数据访问，但整体性能受延迟、吞吐量和 IOPS 等多种因素影响。</p>
+          <p>EFS 提供多种存储类。您可以根据业务需求选择最合适的<a contenteditable="false" data-type="indexterm" data-primary="storage classes" data-secondary="EFS">&nbsp;</a>存储类：</p>
+          <dl>
+            <dt>EFS 标准版和标准低频访问版（Standard IA）</dt>
+            <dd>
+              <p>两种存储类均在 AWS 区域的各可用区之间提供最高级别的可用性。EFS 标准版适用于需要频繁访问数据的场景，而标准低频访问版则更适合低频数据访问，是一种经济高效的选择。低频访问（IA）存储类的首字节读写延迟较高。</p>
+            </dd>
+            <dt>EFS 单区版和单区低频访问版（One Zone IA）</dt>
+            <dd>
+              <p>单区存储类与标准存储类在可用性和成本方面有所不同。单区版在单个可用区内提供高可用性，而标准版则跨区域内的多个可用区。因此，单区版相对较便宜。可借助 AWS Backup 跨三个可用区复制数据，进一步提高数据持久性。</p>
+            </dd>
+          </dl>
+          <p>云对于托管业务应用程序而言仍是相对较新的技术，在某些场景下仍需依赖其他文件系统，例如 Windows 文件服务器。针对此类场景，AWS 提供了一种托管服务：<a href="https://oreil.ly/ldVSO">亚马逊 FSx</a>，它无需任何运维开销即可自动扩展。您可以利用 FSx 运行流行的开源和商业授权文件系统，无需担心维护或硬件设置。根据使用场景，您可以选择以下两种 FSx 变体：</p>
+          <dl>
+            <dt>
+              <p><a href="https://oreil.ly/fW9na"><em>FSx for Windows File Server</em>
+              </a></p>
+            </dt>
+            <dd>
+              <p>此选项<a contenteditable="false" data-type="indexterm" data-primary="FSx for Windows File Server">&nbsp;</a>基于 Windows Server 构建，可通过服务器消息块（SMB）协议从 Windows、Linux 或 macOS 访问，支持数据去重、终端用户文件存储以及 Microsoft Active Directory（AD）集成等使用场景。</p>
+            </dd>
+            <dt>
+              <p><a href="https://oreil.ly/_BuxA"><em>FSx for Lustre</em>
+              </a></p>
+            </dt>
+            <dd>
+              <p>此选项<a contenteditable="false" data-type="indexterm" data-primary="FSx for Lustre">&nbsp;</a>基于流行的高性能文件系统 <a href="https://lustre.org">Lustre</a> 构建，适用于计算密集型工作负载，如机器学习、高性能计算和视频渲染。它还可以与 Amazon S3 关联，支持同时通过文件系统和 S3 API 访问和处理数据。</p>
+            </dd>
+          </dl>
+          <p>请注意，访问 EBS 和 EFS 存储服务中的数据需要服务器。S3 是 AWS 提供的一种无限容量存储解决方案，允许用户通过公共互联网或 AWS 私有网络直接访问文件，无需中间服务器。<a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="EFS (Elastic File System)" data-startref="cloud-storage-efs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic File System (EFS)" data-startref="elastic-file-system-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EFS (Elastic File System)" data-startref="efs-ch10">&nbsp;</a></p>
+        </section>
+        <section data-type="sect2" id="ch10_amazon_simple_storage_service_1734552290475435">
+          <h2>亚马逊简单存储服务</h2>
+          <p>AWS <a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="S3 (Simple Storage Service)" id="cloud-storage-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Simple Storage Service (S3)" id="simple-storage-service-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="S3 (Simple Storage Service)" id="s3-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="object-based storage" id="object-storage-ch10">&nbsp;</a>提供 Amazon S3 作为无限容量的对象存储解决方案。您可以使用 S3 存储和保护各种使用场景下的数据，如网站、媒体存储、备份和大数据分析。S3 将对象存储在称为<em>存储桶</em>的容器中。以下是帮助您深入了解如何使用 S3 的几个关键概念：</p>
+          <dl>
+            <dt>存储桶</dt>
+            <dd>
+              <p>存储桶<a contenteditable="false" data-type="indexterm" data-primary="buckets">&nbsp;</a>是以唯一名称标识的容器。创建存储桶时需要指定存储桶名称和 AWS 区域，以及其他选项，如版本控制支持。</p>
+            </dd>
+            <dt>对象</dt>
+            <dd>
+              <p>对象<a contenteditable="false" data-type="indexterm" data-primary="objects (S3)">&nbsp;</a>是上传到存储桶的文件，由在存储桶内唯一的键名标识。存储桶中的对象恰好有一个键作为标识符。</p>
+            </dd>
+            <dt>版本控制</dt>
+            <dd>
+              <p>S3 允许您<a contenteditable="false" data-type="indexterm" data-primary="versioning">&nbsp;</a>存储同一对象的多个版本。这使用户可以访问任意版本的对象，在应用程序故障等场景中非常有用。每个版本的对象都关联有唯一的版本 ID。</p>
+            </dd>
+          </dl>
+          <section data-type="sect3" id="ch10_amazon_s3_storage_classes_1734552290475530">
+            <h3>S3 存储类</h3>
+            <p>不同<a contenteditable="false" data-type="indexterm" data-primary="storage classes" data-secondary="S3" id="storage-class-s3">&nbsp;</a>使用场景下的数据存储模式各不相同，因此 S3 提供了多种存储类。您可以根据业务需求选择存储类，例如：是否需要频繁访问数据，还是需要数据归档存储？</p>
+            <p>识别业务使用场景，选择最合适的 <a href="https://oreil.ly/i3Qco">S3 存储类</a>，是以最低成本充分利用 S3 的关键。S3 根据对象的访问类型和冗余度提供三种存储类。</p>
+            <section data-type="sect4" id="ch10_frequently_accessed_objects_1734552290475613">
+              <h4>频繁访问对象</h4>
+              <p>频繁访问对象的<a contenteditable="false" data-type="indexterm" data-primary="frequently accessed objects storage class">&nbsp;</a>存储类适用于对延迟敏感（毫秒级）的场景。根据所需冗余支持，有两个子类：</p>
+              <dl>
+                <dt>S3 标准版</dt>
+                <dd>
+                  <p>创建存储桶时的默认存储类</p>
+                </dd>
+                <dt>低冗余存储</dt>
+                <dd>
+                  <p>可用于非关键性场景，冗余度低于 S3 标准版</p>
+                </dd>
+              </dl>
+              <p>AWS 推荐使用 S3 标准存储类而非低冗余存储，因为前者更具成本效益。</p>
+            </section>
+            <section data-type="sect4" id="ch10_infrequently_accessed_objects_1734552290475677">
+              <h4>低频访问对象</h4>
+              <p>低频访问对象的<a contenteditable="false" data-type="indexterm" data-primary="infrequently accessed objects storage class">&nbsp;</a>存储类适用于长期保存、低频访问的数据，如备份。根据所需冗余支持，有两个子类：</p>
+              <dl>
+                <dt>标准低频访问（Standard IA）</dt>
+                <dd>
+                  <p>数据冗余存储在多个可用区，因此对象能够抵御单个可用区故障。</p>
+                </dd>
+                <dt>单区低频访问（One Zone IA）</dt>
+                <dd>
+                  <p>数据存储在单个可用区，与标准低频访问版相比弹性较低，因此价格也相对较低。如果数据丢失对业务影响不大，或数据可以某种方式重新创建，则适合使用此存储类。</p>
+                </dd>
+              </dl>
+            </section>
+            <section data-type="sect4" id="ch10_archived_objects_1734552290475736">
+              <h4>归档对象</h4>
+              <p>归档对象的<a contenteditable="false" data-type="indexterm" data-primary="archived objects storage class">&nbsp;</a>存储类提供低成本的数据归档支持，弹性类似于 S3 标准存储类。根据数据检索需求，有三个子类：</p>
+              <dl>
+                <dt>S3 Glacier 即时检索</dt>
+                <dd>
+                  <p>此存储类适用于极少访问但需要毫秒级检索的数据。存储成本较低，但与标准低频访问版相比，数据访问成本较高。</p>
+                </dd>
+                <dt>S3 Glacier 灵活检索</dt>
+                <dd>
+                  <p>此存储类适用于可在几分钟内（1 至 5 分钟）完成数据检索的场景。此子类要求最短存储时长为 90 天，即使数据在此期限前被删除或转移，费用仍按完整 90 天计算。</p>
+                </dd>
+                <dt>S3 Glacier 深度归档</dt>
+                <dd>
+                  <p>此存储类成本最低，要求最短存储时长为 180 天，默认检索时间为 12 小时。您也可以使用批量检索选项，数据将在 48 小时内完成检索。</p>
+                </dd>
+              </dl>
+            </section>
+            <section data-type="sect4" id="ch10_lifecycle_configurations_1734552290475795">
+              <h4>生命周期配置</h4>
+              <p>假设<a contenteditable="false" data-type="indexterm" data-primary="lifecycle configurations">&nbsp;</a>某个场景需要在前 30 天频繁访问数据，之后则低频访问。此类使用场景可通过 S3 生命周期配置来满足；这些配置是应用于存储桶对象的规则。作为配置的一部分，您需要定义两种类型的操作：</p>
+              <dl>
+                <dt>转换操作</dt>
+                <dd>
+                  <p>定义对象向另一存储类的转换，例如在 30 天后将对象从标准存储类移至标准低频访问存储类。</p>
+                </dd>
+                <dt>过期操作</dt>
+                <dd>
+                  <p>定义对象的过期策略。S3 将根据配置的规则自动删除已过期的对象。</p>
+                </dd>
+              </dl>
+            </section>
+            <section data-type="sect4" id="ch10_intelligent_tiering_1734552290475871">
+              <h4>智能分层</h4>
+              <p>S3 <a contenteditable="false" data-type="indexterm" data-primary="intelligent tiering">&nbsp;</a>可选择性地提供智能分层支持，数据将自动在不同存储类之间迁移，无需任何运维开销。以下是对象被移至不同存储类所遵循的生命周期：</p>
+              <dl>
+                <dt>频繁访问</dt>
+                <dd>
+                  <p>上传或转移到 S3 智能分层的对象存储在频繁访问层。</p>
+                </dd>
+                <dt>低频访问</dt>
+                <dd>
+                  <p>连续 30 天未被访问的对象将移至低频访问层。</p>
+                </dd>
+                <dt>归档即时访问</dt>
+                <dd>
+                  <p>连续 90 天未被访问的对象将移至归档即时访问层。S3 根据数据访问的时间周期提供两个可选的归档访问层。如果启用，连续至少 90 天未被访问的数据将移至归档访问层，连续至少 180 天未被访问的数据则移至深度归档访问层。</p>
+                </dd>
+              </dl>
+              <p>存储类根据访问模式或所需冗余支持将数据存储到 S3。在将对象存储到 S3 时，还需要考虑另一个因素——数据安全。<a contenteditable="false" data-type="indexterm" data-primary="storage classes" data-secondary="S3" data-startref="storage-class-s3">&nbsp;</a></p>
+            </section>
+          </section>
+          <section data-type="sect3" id="ch10_amazon_s3_data_security_1734552290475936">
+            <h3>Amazon S3 数据安全</h3>
+            <p>S3 存储桶中的对象<a contenteditable="false" data-type="indexterm" data-primary="data security (S3)" id="data-security-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="security" data-secondary="S3" id="security-s3">&nbsp;</a>默认只有存储桶所有者可以访问。S3 提供不同的机制来保障数据安全并配置 S3 存储桶及对象的访问权限：</p>
+            <dl>
+              <dt>加密</dt>
+              <dd>
+                <p>S3 <a contenteditable="false" data-type="indexterm" data-primary="encryption">&nbsp;</a>默认使用服务器端加密（SSE-S3）对所有对象进行加密，除非选择了其他加密选项，例如 AWS 密钥管理服务（KMS），即 <a href="https://oreil.ly/skNNa">SSE-KMS</a>。您也可以配置客户端加密以获得更高安全性。</p>
+              </dd>
+              <dt>对象锁定</dt>
+              <dd>
+                <p><a href="https://oreil.ly/RWgqD">对象锁定</a>可在<a contenteditable="false" data-type="indexterm" data-primary="object lock">&nbsp;</a>已启用版本控制的存储桶上开启。启用后，对象将使用一次写入、多次读取（WORM）模型存储，这可能是组织的合规要求。对象锁定为对象变更提供额外保护层，可防止对象在固定保留期内或无限期（称为<em>依法保留</em>）被删除或覆盖。</p>
+              </dd>
+              <dt>阻止公共访问</dt>
+              <dd>
+                <p>此<a contenteditable="false" data-type="indexterm" data-primary="public access (S3)">&nbsp;</a>选项用于设置和管理对存储桶公共访问的集中控制。此配置也可应用于账户级别，以便对 AWS 账户中的所有 S3 存储桶生效。通常，除非有特定的业务需求（如存储桶中包含可公开访问的媒体文件），否则不建议将存储桶设为公开。您可以使用 <a href="https://oreil.ly/R_H-_">S3 访问分析器</a>来识别授予公共访问权限的存储桶。</p>
+              </dd>
+              <dt>IAM 策略</dt>
+              <dd>
+                <p><a href="https://oreil.ly/BWlOg">IAM 策略</a>向用户或用户组<a contenteditable="false" data-type="indexterm" data-primary="IAM (Identity and Access Management)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Identity and Access Management (IAM)">&nbsp;</a>授予对 S3 资源的读写访问权限。</p>
+              </dd>
+              <dt>Amazon Macie</dt>
+              <dd>
+                <p><a href="https://aws.amazon.com/macie">Amazon Macie</a> 可识别并<a contenteditable="false" data-type="indexterm" data-primary="Macie">&nbsp;</a>保护存储在 S3 存储桶中的敏感数据，如信用卡号。它还帮助评估存储桶级别的访问控制（类似于访问分析器），例如可公开访问的存储桶。</p>
+              </dd>
+              <dt>访问控制列表（ACL）</dt>
+              <dd>
+                <p><a href="https://oreil.ly/wVf4E">S3 ACL</a> 作为子资源附加到 S3 存储桶或对象，<a contenteditable="false" data-type="indexterm" data-primary="access control lists (ACLs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ACLs (access control lists)">&nbsp;</a>用于管理其他用户的访问权限。ACL 默认禁用，建议保持禁用状态，除非需要对每个对象单独控制访问权限。可以使用<a href="https://oreil.ly/QVffd">策略</a>替代 ACL 进行访问控制。</p>
+              </dd>
+              <dt>存储桶策略</dt>
+              <dd>
+                <p><a href="https://oreil.ly/qhwTP">存储桶策略</a>管理对<a contenteditable="false" data-type="indexterm" data-primary="bucket policies">&nbsp;</a> S3 存储桶及其中对象的访问权限。例如，允许账户 A 从账户 B 拥有的 S3 存储桶中读取对象。存储桶策略的大小限制为 20 KB。</p>
+              </dd>
+            </dl>
+            <p>我们已经介绍了允许您通过云存储存储数据的不同服务，<a contenteditable="false" data-type="indexterm" data-primary="data security (S3)" data-startref="data-security-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="security" data-secondary="S3" data-startref="security-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="S3 (Simple Storage Service)" data-startref="cloud-storage-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Simple Storage Service (S3)" data-startref="simple-storage-service-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="S3 (Simple Storage Service)" data-startref="s3-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="object-based storage" data-startref="object-storage-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="cloud storage services" data-startref="aws-cloud-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-startref="cloud-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data storage systems" data-secondary="cloud storage services (AWS)" data-startref="data-storage-cloud">&nbsp;</a>并像使用个人计算机存储一样处理数据。接下来，我们将讨论 AWS 提供的数据库服务。您应该已经熟悉数据库中数据的存储方式——<a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>（关系数据库）和 <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a>（非关系数据库）。</p>
+          </section>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch10_aws_databases_1734552290476028">
+        <h1>AWS 数据库</h1>
+        <p>AWS 提供<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" id="aws-database">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" id="database-aws">&nbsp;</a>一系列数据库服务——Amazon RDS、Amazon DynamoDB、Amazon DocumentDB、Amazon ElastiCache 等——以满足客户在不同使用场景下的需求。这些服务将软件和硬件管理的运维开销降至最低，甚至完全消除，使您能够获得组织所需的规模扩展能力。我们将从关系数据库产品入手，该产品涵盖在 RDS 服务下，支持 Oracle、Microsoft SQL Server、MySQL、PostgreSQL、MariaDB 和 Amazon Aurora 作为数据库引擎。</p>
+        <section data-type="sect2" id="ch10_amazon_rds_1734552290476113">
+          <h2>Amazon RDS</h2>
+          <p>没有<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="RDS" id="aws-database-rds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="RDS" id="database-aws-rds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RDS (Relational Database Service)" id="rds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Relational Database Service (RDS)" id="relational-database-service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="relational databases" data-secondary="RDS" id="relational-db-rds">&nbsp;</a> Amazon RDS 时，如果想运行 MySQL 或 PostgreSQL 等关系数据库引擎（详见 <a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>），您有几种选择。如果要在本地机器上使用 MySQL 数据库引擎，需要下载安装包并进行安装。如果使用 AWS 云计算服务，可以在 EC2 机器上安装，但安装完成后，您必须自行负责维护、挂载 EBS 卷等工作。</p>
+          <p>RDS 消除了所有这些开销，让您只需专注于创建数据库实例，并通过几次点击即可开始使用。您可以按照<a href="https://oreil.ly/IxH3y">创建 RDS 数据库实例的文档</a>中的步骤操作，但创建数据库时需要注意以下几个重要细节：</p>
+          <dl>
+            <dt>引擎类型</dt>
+            <dd>
+              <p>您可以选择满足需求的数据库引擎。选定具体引擎后，需要指定一些额外配置，如数据库发行版和引擎版本。</p>
+            </dd>
+            <dt>模板</dt>
+            <dd>
+              <p>模板允许您在设置数据库时预先选择配置选项。可用模板包括生产环境、开发/测试环境和免费套餐。</p>
+            </dd>
+            <dt>设置</dt>
+            <dd>
+              <p>设置包括数据库实例标识符（在区域内的 AWS 账户中唯一）和凭证信息（用户名和密码）等详细信息。</p>
+            </dd>
+            <dt>数据库实例类</dt>
+            <dd>
+              <p>数据库实例类决定实例的计算和内存容量。您可以根据工作负载的处理和内存要求，从<a href="https://oreil.ly/X87Ed">标准型、内存优化型和可突发型</a>实例类列表中进行选择。</p>
+            </dd>
+            <dt>存储</dt>
+            <dd>
+              <p>存储配置允许您选择存储类型（SSD、HDD 或磁性磁盘）以及存储分配数量，并可启用或禁用自动扩展。</p>
+            </dd>
+            <dt>可用性和持久性</dt>
+            <dd>
+              <p>为确保生产数据库的高可用性，RDS 提供多可用区部署选项，可在不同可用区创建备用实例。这有助于克服数据库或可用区故障。</p>
+            </dd>
+            <dt>连接</dt>
+            <dd>
+              <p>连接配置允许您选择 VPC 数据库实例。其他配置用于建立与数据库实例的连接，包括子网组、安全组、实例是否可公开访问、可用区和数据库端口。</p>
+            </dd>
+          </dl>
+          <p>除上述选项外，您还可以配置备份、监控和维护窗口等设置。</p>
+          <p>Amazon 还<a contenteditable="false" data-type="indexterm" data-primary="Aurora">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Aurora">&nbsp;</a>提供了其自研的专有数据库引擎 <a href="https://oreil.ly/_7Ash">Aurora</a>，与 MySQL 和 PostgreSQL 兼容。Aurora 比在相同硬件上运行的 MySQL 快最多 5 倍，比 PostgreSQL 快最多 3 倍。它还可以根据应用程序需求自动扩展。Aurora 将数据的 6 个副本分布在三个可用区中，并持续备份至 S3。Aurora 还可以跨多个区域复制数据，以实现更快的全球访问。对于不可预测的工作负载，或在开发阶段无需持续运行数据库实例时，可以使用 Aurora Serverless。</p>
+          <p>以下是关于 Aurora 的几个重要注意事项：</p>
+          <ul>
+            <li>
+              <p>无需像 RDS 那样配置存储需求，Aurora 在内部自动处理。</p>
+            </li>
+            <li>
+              <p>Aurora Serverless 基于最小和最大 Aurora 容量单位运行，而非像 RDS 那样基于实例类型。</p>
+            </li>
+            <li>
+              <p>RDS 在 VPC 级别运行。常规 RDS 可以对公共互联网开放，或限制仅允许特定 IP 从外部访问。Aurora Serverless 不支持公共访问，但可以使用 <a href="https://oreil.ly/40qsr">Data API</a>，或在与 Aurora 相同的 VPC 内使用 EC2 机器来建立连接。</p>
+            </li>
+            <li>
+              <p>为满足静态数据加密的数据安全或合规要求，<a href="https://oreil.ly/ZLguz">RDS</a> 和 <a href="https://oreil.ly/y33pf">Aurora</a> 均具有加密数据库实例的功能。</p>
+            </li>
+            <li>
+              <p>Aurora 数据库集群最多可包含 <a href="https://oreil.ly/tiIKU">15 个 Aurora 只读副本</a>。只读副本可扩展并将读取工作负载分布到多个实例，确保延迟优化的读取操作。当写入实例出现故障时，只读副本将被提升为写入实例，提高 Aurora 集群的整体可用性。</p>
+            </li>
+          </ul>
+          <p>当业务需求要求支持完全符合 ACID 属性的关系型结构化数据时，RDS 是一项有价值的服务。许多现代应用程序不需要强 ACID 合规性、完整的关系型支持或固定模式。NoSQL 数据库是满足此类使用场景的可行解决方案，同时还能提供可扩展性、高性能和零运维开销。我们在 <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a> 中介绍了多种类型的 NoSQL 数据库。在本章中，我们将介绍 AWS 为不同类型 NoSQL 数据库提供的等效服务，<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="RDS" data-startref="aws-database-rds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="RDS" data-startref="database-aws-rds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RDS (Relational Database Service)" data-startref="rds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Relational Database Service (RDS)" data-startref="relational-database-service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="relational databases" data-secondary="RDS" data-startref="relational-db-rds">&nbsp;</a>首先介绍 Amazon DynamoDB 作为键值数据库解决方案。</p>
+          <div data-type="note">
+            <p>为支持关系数据库在事务性工作负载中的无限计算和存储扩展，AWS <a contenteditable="false" data-type="indexterm" data-primary="Aurora DSQL">&nbsp;</a>已发布 Aurora DSQL。Aurora DSQL 是一种兼容 PostgreSQL 的分布式关系数据库，具备 ACID 合规性和零维护开销。</p>
+          </div>
+        </section>
+        <section data-type="sect2" id="ch10_amazon_dynamodb_1734552290476179">
+          <h2>Amazon DynamoDB</h2>
+          <p>Amazon DynamoDB <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="DynamoDB" id="aws-database-dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="DynamoDB" id="database-aws-dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" id="dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="key-value stores" data-tertiary="DynamoDB" id="nonrelational-keyvalue-dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="key-value stores" data-secondary="DynamoDB" id="keyvalue-dynamodb">&nbsp;</a>是一种键值数据库，旨在为任意规模的工作负载提供个位数毫秒级延迟。DynamoDB 将数据存储在表中，采用无模式设计。我们在 <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a> 中已讨论了主键、分区键和排序键，用于在键值数据存储中唯一标识数据项。在 DynamoDB 架构中，<a contenteditable="false" data-type="indexterm" data-primary="primary keys" data-secondary="in DynamoDB" data-secondary-sortas="DynamoDB">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="keys" data-secondary="in DynamoDB" data-secondary-sortas="DynamoDB">&nbsp;</a>主键由分区键或分区键与排序键的组合表示。可以通过 AWS CLI、AWS 控制台或您首选编程语言的 AWS 软件开发工具包（SDK）对数据执行查询。DynamoDB 基于主从节点模型，并在内部将数据存储于称为<em>分区</em>的存储节点上。</p>
+          <p>以下是负责 DynamoDB 数据存储的键：</p>
+          <dl>
+            <dt>分区键</dt>
+            <dd>
+              <p>分区键<a contenteditable="false" data-type="indexterm" data-primary="partition keys" data-secondary="in DynamoDB" data-secondary-sortas="DynamoDB">&nbsp;</a>必须在创建表时指定，作为内部哈希函数的输入来确定数据应存储的物理分区。请求路由器（RR）组件将请求路由到特定分区，如 <a data-type="xref" href="#ch10_figure_1_1734552290456045">#ch10_figure_1_1734552290456045</a> 所示。RR 是无状态服务，它会查询分区元数据服务以确定目标分区，然后将请求转发至该分区。<code>PUT</code> 请求发送到主节点，而 <code>GET</code> 请求可以由主节点或从节点提供服务，具体取决于所需的一致性支持。</p>
+            </dd>
+            <dt>排序键</dt>
+            <dd>
+              <p>排序键<a contenteditable="false" data-type="indexterm" data-primary="sort keys" data-secondary="in DynamoDB" data-secondary-sortas="DynamoDB">&nbsp;</a>是创建表时的可选属性。如果指定了排序键，则主键是分区键和排序键的组合；否则仅为分区键。分区键和排序键的组合在数据存储中必须唯一。具有相同分区键的所有数据项存储在同一物理分区上，并按排序键值排序。我们建议根据读写查询模式同时使用分区键和排序键创建 DynamoDB 表，以便在无需全局二级索引（GSI）的情况下满足用户请求。</p>
+            </dd>
+          </dl>
+          <figure id="ch10_figure_1_1734552290456045">
+            <img src="images/sdoa_1001.png"/>
+            <figcaption>DynamoDB 内部架构</figcaption>
+          </figure>
+          <p>DynamoDB 是一种完全托管服务。您无需配置任何服务器或存储空间。相反，您可以针对特定表选择不同的<a href="https://oreil.ly/IbKC6">容量模式</a>以控制表的读写吞吐量。DynamoDB 将<a contenteditable="false" data-type="indexterm" data-primary="read capacity units (RCUs)" id="read-capacity">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RCUs (read capacity units)" id="rcu">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="write capacity units (WCUs)" id="write-capacity">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="WCUs (write capacity units)" id="wcu">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="capacity modes (DynamoDB)" id="capacity-mode">&nbsp;</a>读取和写入分别定义为读取容量单位（RCU）和写入容量单位（WCU），<a href="https://oreil.ly/XxmZK">定价</a>基于消耗的 RCU 和 WCU，以及所需的一致性或事务支持。让我们了解可用的 DynamoDB 容量模式：</p>
+          <dl>
+            <dt>预置容量</dt>
+            <dd>
+              <p>客户可以为需要支持的表配置具体的 RCU 和 WCU 值，DynamoDB 在内部管理资源以支持此规模。此模式适用于流量可预测、能够轻松预估 RCU 和 WCU 需求的应用程序。</p>
+            </dd>
+            <dt>自动扩展</dt>
+            <dd>
+              <p>对于工作负载变化且无法确定固定预置容量的情况，可以使用设置了 RCU 和 WCU 上下限的自动扩展模式，DynamoDB 将根据流量自动扩展或缩减。</p>
+            </dd>
+            <dt>按需</dt>
+            <dd>
+              <p>按需模式是一种无服务器支持，无需配置 RCU 和 WCU 值。DynamoDB 在后端自动管理扩展，客户无需为此操心。此模式适用于工作负载未知或应用程序流量不可预测的表等使用场景。</p>
+            </dd>
+          </dl>
+          <p>DynamoDB 表可能需要服务多种使用场景，并非所有场景都能仅通过主键设计获得良好性能。DynamoDB 提供<a href="https://oreil.ly/bZ5UM">索引支持</a>以加速查询，可根据需要在表之上创建索引。我们可以将 DynamoDB 索引视为通过从主表中选取部分属性创建的子表。DynamoDB <a contenteditable="false" data-type="indexterm" data-primary="index support">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="local secondary indexes (LSIs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LSI (local secondary indexes)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="global secondary indexes (GSIs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="GSIs (global secondary indexes)">&nbsp;</a>支持两种类型的索引：本地二级索引（LSI）和全局二级索引（GSI）。两者的区别列于 <a data-type="xref" href="#ch10_table_1_1734552290462351">#ch10_table_1_1734552290462351</a>。</p>
+          <table id="ch10_table_1_1734552290462351">
+            <caption>Amazon DynamoDB 中 LSI 与 GSI 的区别</caption>
+            <thead>
+              <tr>
+                <th>参数</th>
+                <th>LSI</th>
+                <th>GSI</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>生命周期</p>
+                </td>
+                <td>
+                  <p>LSI 的生命周期与表相同，只能随表的创建和删除而创建或删除。</p>
+                </td>
+                <td>
+                  <p>GSI 的生命周期独立于表，可根据需要创建或删除。</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>主键模式</p>
+                </td>
+                <td>
+                  <p>分区键与基础表相同，但排序键不同。</p>
+                </td>
+                <td>
+                  <p>分区键和排序键可以与基础表不同。</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>查询能力</p>
+                </td>
+                <td>
+                  <p>与基础表的分区一样受限于分区范围——因此称为"本地"——索引数据大小限制为 10 GB。</p>
+                </td>
+                <td>
+                  <p>查询可以跨基础表数据的分区——因此称为"全局"——没有大小限制。</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>预置容量</p>
+                </td>
+                <td>
+                  <p>LSI 与基础表共享读/写吞吐量容量。</p>
+                </td>
+                <td>
+                  <p>GSI 具有独立于基础表的读/写吞吐量设置。</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>读取一致性</p>
+                </td>
+                <td>
+                  <p>提供强一致性读取和最终一致性读取。</p>
+                </td>
+                <td>
+                  <p>仅提供最终一致性读取。</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>从传统关系数据库过渡到各类现代 NoSQL 数据库时，一个关键差异是事务支持。事务在类 SQL 数据库中是内置的，但并非所有 NoSQL 数据库都支持。DynamoDB 提供<a contenteditable="false" data-type="indexterm" data-primary="transaction support">&nbsp;</a>事务支持，如果使用场景有事务需求，可以选择特定的<a href="https://oreil.ly/Hr4K-">读写 API</a>。另一个差异是强一致性支持：DynamoDB 提供最终一致性和强一致性两种支持（GSI 仅支持最终一致性），我们可以在访问数据时指定所需的<a href="https://oreil.ly/F0DLV">支持类型</a>。</p>
+          <p>我们讨论了基于分区键确定物理分区的方式以及不同的容量模式，这有助于我们为 DynamoDB 表配置读写吞吐量。吞吐量值适用于整个表，并在各分区之间平均分配。分区有硬性限制，每秒允许 3,000 个 RCU 和 1,000 个 WCU（或两者的组合），超过此限制后请求将被限流。除读写请求外，每个分区的存储上限为 10 GB。在设计模式时，应充分理解查询模式以及 DynamoDB 架构，以避免超出这些限制。</p>
+          <p>超出定义限制的分区称为<em>热分区</em>（或<em>热键</em>）。<a contenteditable="false" data-type="indexterm" data-primary="hot partitions/hot keys">&nbsp;</a>如果某个分区键收到的读取或写入流量（或两者）远高于其他分区，则该分区键可能被归类为热键。深入理解查询模式，是为 DynamoDB 表设计出最优方案的关键。您可以使用 <a href="https://oreil.ly/voj-0">CloudWatch 贡献者洞察</a>进行调试，识别 DynamoDB 表中现有的热分区或最频繁访问的数据项。</p>
+          <p>让我们讨论一些分区键设计的最佳实践，以避免 DynamoDB 中的热分区问题：</p>
+          <ul>
+            <li>
+              <p>表模式应设计为具有高基数的分区键。这确保数据广泛分布在各个分区，提高读写效率。</p>
+            </li>
+            <li>
+              <p>DynamoDB API（以及 AWS SDK 中所有 AWS 服务）会抛出带有详细信息的特定异常，应用程序可以相应地处理这些异常。如果热分区问题很少发生，采用指数退避策略进行<a href="https://oreil.ly/mmLFl">重试</a>是推荐做法。对于频繁出现的热分区问题，应进行更详细的分析以找到稳定的解决方案。</p>
+            </li>
+            <li>
+              <p>使用现有数据重新设计表结构可能工作量较大，需要从不同角度考虑，如迁移停机时间和应用程序代码变更。以下是针对热分区引起的读写限流的临时解决方案——或在使用场景允许的情况下作为长期方案：</p>
+              <ul>
+                <li>
+                  <p>对于读取，缓存（见 <a data-type="xref" href="#ch10_amazon_elasticache_1734552290476591">#ch10_amazon_elasticache_1734552290476591</a>）是推荐的解决方案。缓存可以改善延迟并解决热分区问题。</p>
+                </li>
+                <li>
+                  <p>对于<a href="https://oreil.ly/Z654h">写入</a>，解决方案是在分区键上附加随机（或基于逻辑计算的）后缀，如 1 到 100 之间的数字。读取查询将需要额外的应用程序逻辑来确定实际分区（随机逻辑情况下访问 1 到 100 的所有分区，或基于某种逻辑的后缀则访问特定分区）。</p>
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <p>评估数据访问模式，以更低的成本充分利用 DynamoDB，<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="DynamoDB" data-startref="aws-database-dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="DynamoDB" data-startref="database-aws-dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-startref="dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="key-value stores" data-tertiary="DynamoDB" data-startref="nonrelational-keyvalue-dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="key-value stores" data-secondary="DynamoDB" data-startref="keyvalue-dynamodb">&nbsp;</a>实现零运维负担。</p>
+        </section>
+        <section data-type="sect2" id="ch10_amazon_documentdb_1734552290476246">
+          <h2>Amazon DocumentDB</h2>
+          <p>Amazon DocumentDB <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="DocumentDB" id="aws-database-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="DocumentDB" id="database-aws-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DocumentDB" id="documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="document stores" data-tertiary="DocumentDB" id="nonrelational-document-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="document stores" data-secondary="DocumentDB" id="document-documentdb">&nbsp;</a>是 AWS 提供的文档数据库，旨在以类 JSON 文档的形式存储和查询数据。<a href="https://oreil.ly/OqK-v">文档</a>被构建为嵌套键值对的集合，适用于存储食品项目信息等场景，例如 Cafe Delhi Heights 的在线商店。以下是顾客订单的示例文档：</p>
+          <pre data-type="programlisting">{
+  "Name": "Mandeep Singh",
+  "orderId": "1234-1234-4567",
+  "FoodItems": [
+    {
+      "itemName": "Biryani",
+      "qty": 1
+    },
+    {
+      "itemName": "Nuggets",
+      "qty": 2
+    }
+  ]
+}</pre>
+          <p>我们可以为食品项目添加或删除属性，而无需担心像关系数据库中那样的固定模式。其他业务使用场景包括<a href="https://oreil.ly/CpG9l">内容管理</a>、实时大数据以及用户资料<span class='keep-together'>维护</span>。</p>
+          <p>作为参考，<a data-type="xref" href="#ch10_table_2_1734552290462384">#ch10_table_2_1734552290462384</a> 对比了 DocumentDB 与关系数据库的术语。</p>
+          <table id="ch10_table_2_1734552290462384">
+            <caption>SQL 与 Amazon DocumentDB 术语对比</caption>
+            <thead>
+              <tr>
+                <th>SQL</th>
+                <th>Amazon DocumentDB</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>表（Table）</p>
+                </td>
+                <td>
+                  <p>集合（Collection）</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>行（Row）</p>
+                </td>
+                <td>
+                  <p>文档（Document）</p>                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>列（Column）</p>
+                </td>
+                <td>
+                  <p>字段（Field）</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>主键（Primary key）</p>
+                </td>
+                <td>
+                  <p>对象 ID（Object ID）</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>DocumentDB 与 <a href="https://mongodb.com">MongoDB</a> <a contenteditable="false" data-type="indexterm" data-primary="MongoDB">&nbsp;</a>兼容，支持强大的即席查询，并附带与 DynamoDB 类似的<a href="https://oreil.ly/czpQE">事务支持</a>。DocumentDB 相比 MongoDB 有若干功能优势，例如对所有 CRUD 语句（包括对多个文档的操作）提供事务支持。关于 MongoDB 和 DocumentDB 之间的所有功能差异，请参阅 <a href="https://oreil.ly/KLy5s">AWS 文档</a>。</p>
+          <p>与 DynamoDB 不同，设置 DocumentDB 集群时需要指定<a href="https://oreil.ly/d-Ek5">实例类</a>和实例数量。对于生产系统，建议至少选择三个实例以获得更高的可用性。最后一步是设置用户名和密码进行身份验证，并建立与 DocumentDB 集群的连接。</p>
+          <p>AWS 还提供<a href="https://oreil.ly/K_wcP">迁移工具</a>，例如数据库迁移服务（DMS），以便于将 MongoDB 工作负载从本地或 EC2 服务器迁移到<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="DocumentDB" data-startref="aws-database-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="DocumentDB" data-startref="database-aws-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DocumentDB" data-startref="documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="document stores" data-tertiary="DocumentDB" data-startref="nonrelational-document-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="document stores" data-secondary="DocumentDB" data-startref="document-documentdb">&nbsp;</a> DocumentDB。</p>
+        </section>
+        <section data-type="sect2" id="ch10_amazon_neptune_1734552290476308">
+          <h2>Amazon Neptune</h2>
+          <p>回到<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Neptune" id="aws-database-neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="Neptune" id="database-aws-Neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Neptune" id="neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="graph databases" id="nonrelational-graph-neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="graph databases" id="graph-database-neptune">&nbsp;</a>我们的 Cafe Delhi Heights 场景，启动在线餐厅的需求之一是为顾客创建美食社区，允许追踪顾客对特定食品项目的喜好。例如，假设您想了解某道菜是否受到社区中所有人的喜爱。</p>
+          <p>这类具有高度互联数据的使用场景，可以通过 AWS 的完全托管图数据库服务 Amazon Neptune 进行大规模存储和查询。Neptune 经过优化，能够存储和映射数十亿关系，并通过 <a href="https://oreil.ly/dvvYF">Apache TinkerPop Gremlin</a> 或 <a href="http://opencypher.org">openCypher</a> 对属性图数据库实现毫秒级查询响应时间的实时关系导航，以及通过 <a href="https://oreil.ly/hr_wX">SPARQL</a> 对资源描述框架（RDF）格式的图数据库进行查询。AWS 建议参阅 GitHub 仓库 <a href="https://oreil.ly/i2v70">AWS Reference Architectures for Using Graph Databases</a>，以了解图数据模型和使用场景、查询语言以及部署架构的示例。</p>
+          <p>Neptune 的另一个示例使用场景是清晰了解您的云基础设施，查看不同服务或实体之间的连接关系。您可能想知道哪些实体使用了特定的 IAM 角色，如 <a data-type="xref" href="#ch10_figure_2_1734552290456078">#ch10_figure_2_1734552290456078</a> 所示，或找出资源权限上标有 * 的过度授权 IAM 策略。例如，您可能不希望组织中的所有用户都能修改网络安全组。</p>
+          <figure id="ch10_figure_2_1734552290456078">
+            <img src="images/sdoa_1002.png"/>
+            <figcaption>IAM 角色与实体关联的图表示</figcaption>
+          </figure>
+          <p>有关集群设置的分步指南，请参阅 <a href="https://oreil.ly/JwbLg">AWS 文档</a>。现在，我们将讨论设置图数据库集群时需要注意的一些要点。</p>
+          <section data-type="sect3" id="ch10_compute_1734552290476366">
+            <h3>计算</h3>
+            <p>Neptune 集群以特定实例类型启动，该类型应在创建集群时选定。集群最多可有一个写入实例和最多 15 个只读副本；请注意，写入实例纵向扩展，而只读实例可以纵向或横向扩展。建议配置至少一个只读副本以提高应用程序可用性和读取性能。如果写入实例出现故障，只读副本将被提升为写入实例，写入实例则作为只读副本重新启动。如果集群中只有单个写入实例，在其重启并重新上线期间，集群可能会中断几分钟。</p>
+            <p>Neptune 还提供无服务器配置，适用于变化的工作负载。我们可以指定容量上限，仅在需要时才使用。</p>
+          </section>
+          <section data-type="sect3" id="ch10_storage_1734552290476421">
+            <h3>存储</h3>
+            <p>Neptune 在三个可用区中存储数据的六个副本。Neptune 的存储层独立于计算层，可根据需要独立且自动扩展。它从 10 GB 开始，随着数据增加可增长至 128 TB。</p>
+          </section>
+          <section data-type="sect3" id="ch10_traffic_distribution_1734552290476476">
+            <h3>流量分发</h3>
+            <p>Neptune <a contenteditable="false" data-type="indexterm" data-primary="load balancing" data-secondary="in Neptune" data-secondary-sortas="Neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cluster endpoints">&nbsp;</a>提供独立的写入和读取端点。写入端点（称为<em>集群端点</em>）指向主实例，应用于写入操作，也可选择性地用于读取查询。读取端点以轮询方式在只读副本间分发请求，应用于所有读取查询。Neptune 还提供<em>实例端点</em><a contenteditable="false" data-type="indexterm" data-primary="instance endpoints">&nbsp;</a>（连接到特定数据库实例的端点）以及可用于表示一组数据库实例的自定义端点。Neptune 不提供实例级别的负载均衡功能。如有此类需求，应在应用程序代码中实现。</p>
+          </section>
+          <section data-type="sect3" id="ch10_caching_1734552290476530">
+            <h3>缓存</h3>
+            <p>Neptune 提供<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="in Neptune" data-secondary-sortas="Neptune">&nbsp;</a>三种类型的缓存支持以提高性能：</p>
+            <dl>
+              <dt>缓冲区缓存</dt>
+              <dd>
+                <p>用于提高查询性能的内存缓存。Neptune 将实例内存的三分之二分配给缓存。</p>
+              </dd>
+              <dt>
+                <a href="https://oreil.ly/xkShP">查找缓存</a>
+              </dt>
+              <dd>
+                <p>用于提高重复查找属性值或 RDF 字面量的查询读取性能的实例级缓存。对于<a href="https://oreil.ly/yo1_9">R5d 实例</a>（专为在内存中处理大型工作负载而构建），默认启用此缓存，并使用实例的基于 NVM Express（NVMe）的 SSD 存储这些值以实现快速访问。</p>
+              </dd>
+              <dt>
+                <a href="https://oreil.ly/GKaKi">查询结果缓存</a>
+              </dt>
+              <dd>
+                <p>Gremlin 只读查询结果可以被缓存，以便在重新运行查询时获得更快的响应。要清除缓存，可以为查询指定 TTL（生存时间）、在查询级别清除缓存，或清除<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Neptune" data-startref="aws-database-neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="Neptune" data-startref="database-aws-Neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Neptune" data-startref="neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="graph databases" data-startref="nonrelational-graph-neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="graph databases" data-startref="graph-database-neptune">&nbsp;</a>整个缓存。</p>
+              </dd>
+            </dl>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch10_amazon_elasticache_1734552290476591">
+          <h2>亚马逊 ElastiCache</h2>
+          <p>内存数据库<a contenteditable="false" data-type="indexterm" data-primary="in-memory databases" data-see="caching">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="ElastiCache" id="aws-database-ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="ElastiCache" id="database-aws-ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ElastiCache" id="ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="with ElastiCache" data-secondary-sortas="ElastiCache" id="cache-elasticache">&nbsp;</a>被广泛用作缓存解决方案，以提升系统性能。亚马逊 ElastiCache 是 AWS 提供的托管服务，作为分布式缓存环境，支持 <a contenteditable="false" data-type="indexterm" data-primary="Redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Memcached">&nbsp;</a>Redis 和 Memcached 引擎，两者均在 <a data-type="xref" href="#ch04_caching_policies_and_strategies_1734552287178593">#ch04_caching_policies_and_strategies_1734552287178593</a> 中详细介绍。Redis 和 Memcached 都是内存键值缓存解决方案，但存在<a href="https://oreil.ly/OZoO9">相关差异</a>，了解哪种缓存引擎满足业务需求至关重要。Memcached 是一种简单的键值缓存解决方案，支持多线程，可有效减轻主数据源的读取压力。Redis 具备支持长期数据的持久化、高级数据类型（如列表和集合）、在内存中对数据集进行排序和排名、地理空间支持、消息代理等多种功能。以下是 ElastiCache 中每种缓存引擎的一些关键注意事项。</p>
+          <section data-type="sect3" id="ch10_subnet_1734552290476650">
+            <h3>子网</h3>
+            <p>如 <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a> 中所述，可用 IP 地址的数量<a contenteditable="false" data-type="indexterm" data-primary="subnets">&nbsp;</a>基于子网 CIDR。在创建集群的第一步，应创建与 Amazon VPC 关联的子网，并支持所需数量的 IP 地址，因为这些 IP 地址将分配给集群中的节点。</p>
+          </section>
+          <section data-type="sect3" id="ch10_data_tiering_1734552290476706">
+            <h3>数据分层</h3>
+            <p>数据可以<a contenteditable="false" data-type="indexterm" data-primary="data tiering">&nbsp;</a>在内存和 NVMe SSD 存储之间分层以优化成本，适用于定期访问最多 20% 数据的应用程序。此功能适用于 R6gd 实例系列的 ElastiCache for Redis，当内存（DRAM）完全占用时，低频访问数据将异步移至 SSD，如 <a data-type="xref" href="#ch10_figure_3_1734552290456102">#ch10_figure_3_1734552290456102</a> 所示。单个集群的存储可扩展至 1 PB。</p>
+            <p>Redis 和 Memcached 均可水平和垂直扩展。Redis 基于主节点和只读副本的概念，可以两种配置启动：</p>
+            <dl>
+              <dt>禁用集群模式</dt>
+              <dd>
+                <p>最多可有一个主节点和最多五个副本节点。此配置针对读取水平扩展，针对写入垂直扩展。</p>
+              </dd>
+              <dt>启用集群模式</dt>
+              <dd>
+                <p>最多可有 500 个节点，每个节点最多关联 5 个副本。</p>
+              </dd>
+            </dl>
+            <figure id="ch10_figure_3_1734552290456102">
+              <img alt="A diagram of a computer system&#10;&#10;Description automatically generated" src="images/sdoa_1003.png"/>
+              <figcaption>Redis 数据分层支持</figcaption>
+            </figure>
+          </section>
+          <section data-type="sect3" id="ch10_redundancy_and_replication_1734552290476764">
+            <h3>冗余与复制</h3>
+            <p>ElastiCache for Redis<a contenteditable="false" data-type="indexterm" data-primary="redundancy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="replication">&nbsp;</a>具有类似于 RDS 的<a href="https://oreil.ly/fkNRY">多可用区部署</a>支持。每当主节点出现故障，只读副本（1 到 5 个只读副本分布在不同可用区）将被提升为主节点，即使整个可用区出现故障也能确保高可用性。只读副本上的数据复制还确保了读写工作负载的分离。</p>
+          </section>
+          <section data-type="sect3" id="ch10_multithreading_1734552290476818">
+            <h3>多线程</h3>
+            <p>Redis 是<a contenteditable="false" data-type="indexterm" data-primary="multithreading">&nbsp;</a>单线程进程，按顺序处理传入请求，而 Memcached 是多线程的，能够充分利用具有多核的较大 Amazon EC2 实例。</p>
+          </section>
+          <section data-type="sect3" id="ch10_persistence_1734552290476872">
+            <h3>持久化</h3>
+            <p>Redis 可以作为<a contenteditable="false" data-type="indexterm" data-primary="persistence">&nbsp;</a>应用程序的独立数据库使用，因为它支持长寿命数据的持久化。Memcached 是纯粹的缓存解决方案，通常部署在数据库（如 RDS）之前充当缓存层，以提高读取性能。</p>
+          </section>
+          <section data-type="sect3" id="ch10_encryption_and_compliance_1734552290476928">
+            <h3>加密与合规</h3>
+            <p>Redis 支持<a contenteditable="false" data-type="indexterm" data-primary="encryption">&nbsp;</a><a class="orm:hideurl" href="https://oreil.ly/8HW9H">支付卡行业数据安全标准（PCI DSS）</a>、<a class="orm:hideurl" href="https://oreil.ly/oQIDq">健康保险可携带性和责任法案（HIPAA）</a>以及 <a class="orm:hideurl" href="https://oreil.ly/H4DaF">联邦风险和授权管理计划（FedRAMP）</a>要求，并具备加密功能。Memcached 对身份验证和加密的支持不够完善，因此建议在没有公共连接的私有子网中启动 Memcached 节点，以确保更高的安全性。</p>
+            <p>有关创建集群的分步指南，请参阅 <a href="https://oreil.ly/RgKCB">AWS Redis 和 Memcached 页面</a>。</p>
+          </section>
+          <section data-type="sect3" id="ch10_amazon_dynamodb_accelerator_1734552290476998">
+            <h3>Amazon DynamoDB Accelerator</h3>
+            <p>如前所述，<a contenteditable="false" data-type="indexterm" data-primary="DynamoDB Accelerator (DAX)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DAX (DynamoDB Accelerator)">&nbsp;</a>您可以使用 Memcached 或 Redis 来卸载数据库（如 RDS 或 DynamoDB）的读取查询。DynamoDB 还提供自定义内存缓存方案——<a href="https://oreil.ly/O7Fad">DynamoDB Accelerator（DAX）</a>，以提高读取性能。DAX 是一个由主节点和只读副本组成的集群，运行在 VPC 内部，如 <a data-type="xref" href="#ch10_figure_4_1734552290456122">#ch10_figure_4_1734552290456122</a> 所示。要访问 DAX，需要在服务器的应用程序旁边安装 DAX 客户端，将应用程序的 DynamoDB API 请求定向到 DAX 集群。</p>
+            <figure id="ch10_figure_4_1734552290456122">
+              <img src="images/sdoa_1004.png"/>
+              <figcaption>DAX 集群设置</figcaption>
+            </figure>
+            <p>以下是在 DAX 集群和 DynamoDB 同时存在的情况下，读写 API 的执行方式：</p>
+            <dl>
+              <dt>读取 API</dt>
+              <dd>
+                <p>最终一致性读取 API 调用（GetItem、BatchGetItem、Query 和 Scan）由 DAX 提供服务。在缓存未命中的情况下，请求会传递给 DynamoDB 以检索响应。DynamoDB 返回结果时，也会将结果写入主节点上的 DAX 缓存。</p>
+              </dd>
+              <dt>写入 API</dt>
+              <dd>
+                <p>对于写入 API 调用（BatchWriteItem、UpdateItem、DeleteItem 和 PutItem），数据首先写入 DynamoDB 表，然后写入 DAX 集群。只有在 DynamoDB 和 DAX 上的写入均成功时，API 才返回成功。<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="ElastiCache" data-startref="aws-database-ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="ElastiCache" data-startref="database-aws-ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ElastiCache" data-startref="ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="with ElastiCache" data-secondary-sortas="ElastiCache" data-startref="cache-elasticache">&nbsp;</a></p>
+              </dd>
+            </dl>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch10_amazon_opensearch_1734552290477057">
+          <h2>亚马逊 OpenSearch 服务</h2>
+          <p>您可能<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="OpenSearch" id="aws-database-OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="OpenSearch" id="database-aws-OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="OpenSearch" id="OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search databases (OpenSearch)" id="search-db-OpenSearch">&nbsp;</a>希望根据用户搜索查询向用户显示搜索结果；在 Cafe Delhi Heights 的示例中，这些搜索结果可以是食品项目、餐厅位置或任何支持的筛选条件。搜索食品项目应返回提供该餐品的所有餐厅位置，而搜索餐厅位置应显示该位置提供的所有菜肴。如何在数据库中对这类数据建模以实现更快的检索？对于这类业务使用场景，AWS 提供了搜索数据库——OpenSearch。</p>
+          <p><a href="https://oreil.ly/S2MvR">OpenSearch</a> 是一个从 Elasticsearch 派生的开源项目，与大多数运行在专有软件上的 AWS 服务不同。OpenSearch 广泛用于全文搜索、日志分析、数据摄取管道和机器学习等场景。AWS 在搜索引擎之上提供 OpenSearch 控制面板，帮助可视化数据。以下是关于 OpenSearch 架构的几个关键注意事项，以及我们作为客户如何充分利用它：</p>
+          <dl>
+            <dt>集群设置</dt>
+            <dd>
+              <p>OpenSearch 可以作为单节点或多节点集群运行。由于这是一个开源项目，您也可以按照<a href="https://oreil.ly/sQ3dA">这些步骤</a>自行设置集群。OpenSearch 是一种托管服务，帮助您避免设置的运维开销，可以基于实例（集群管理器节点和数据节点）或无服务器模式运行。AWS 建议为生产 OpenSearch 集群设置奇数个集群管理器节点，最少为三个节点。集群管理器节点的类型可以根据域中<a href="https://oreil.ly/nqOHv">数据节点的数量</a>来决定，例如对于 1 到 10 个数据节点，可以设置 m5.large.search 或 m6g.large.search。对于开发用途可以跳过设置专用集群管理器节点以节省成本（其中一个数据节点承担集群管理器节点的职责），但建议在生产场景中配置专用节点，以提高集群稳定性并为集群管理任务提供专用节点。</p>
+            </dd>
+            <dt>存储</dt>
+            <dd>
+              <p>您可以选择 EBS 或实例存储卷与实例关联；可用的卷类型取决于所选择的实例类型。</p>
+            </dd>
+            <dt>集群访问</dt>
+            <dd>
+              <p>对于集群访问和网络，您可以选择 VPC 访问或公共访问。VPC 访问允许您在 VPC 内运行集群，以及配置子网、安全组和 IAM 角色。</p>
+            </dd>
+            <dt>部署</dt>
+            <dd>
+              <p>OpenSearch 支持在运行中的集群上进行配置更新，例如增加 EBS 存储空间或升级实例类型。这些配置通过<a href="https://oreil.ly/kW07Y">蓝绿部署</a>的方式部署到新集群，以避免任何影响。建议在非高峰时段执行此类更新。</p>
+            </dd>
+            <dt>控制面板身份验证</dt>
+            <dd>
+              <p>OpenSearch 提供<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="OpenSearch" data-startref="aws-database-OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="OpenSearch" data-startref="database-aws-OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="OpenSearch" data-startref="OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search databases (OpenSearch)" data-startref="search-db-OpenSearch">&nbsp;</a>通过<a href="https://oreil.ly/rreMP">安全断言标记语言（SAML）身份验证</a>或 <a href="https://oreil.ly/_BG_h">Amazon Cognito 身份验证</a>为控制面板配置身份验证的选项。</p>
+            </dd>
+          </dl>
+        </section>
+        <section data-type="sect2" id="ch10_amazon_timestream_1734552290477123">
+          <h2>亚马逊 Timestream</h2>
+          <p>亚马逊 Timestream <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Timestream" id="aws-database-Timestream">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="Timestream" id="database-aws-Timestream">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Timestream" id="Timestream">&nbsp;</a>是一种完全托管的无服务器数据库服务，适用于需要时序数据操作的使用场景，如 DevOps 分析数据。<span class='keep-together'>Timestream</span> 自动扩展，每天可处理数万亿个事件，成本仅为关系数据库的十分之一，速度是关系数据库的一千倍。</p>
+          <p>以下是使用 Timestream 时需要注意的几点：</p>
+          <ul>
+            <li>
+              <p>由于 Timestream 是无服务器的，使用简单，无需分析实例数量或类型。</p>
+            </li>
+            <li>
+              <p>Timestream 提供内置的分析支持，包括插值和平滑函数，可使用标准 SQL 识别趋势、规律和异常。</p>
+            </li>
+            <li>
+              <p>数据默认使用标准密钥或客户自有 KMS 密钥进行加密。</p>
+            </li>
+            <li>
+              <p>Timestream 支持基于配置时间的数据保留策略，并支持按策略将数据移至不同存储层。它支持两种存储层：内存层（适用于对延迟敏感的查询）和磁性磁盘层（适用于分析查询）。</p>
+            </li>
+            <li>
+              <p>记录需要时间戳作为必填维度，存储到 Timestream 的数据无法删除或更新。数据的删除应通过配置保留策略来处理。</p>
+            </li>
+          </ul>
+        </section>
+        <section data-type="sect2" id="ch10_amazon_keyspaces_1734552290477186">
+          <h2>Amazon Keyspaces</h2>
+          <p>我们在<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Keyspaces" id="aws-database-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="Keyspaces" id="database-aws-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Keyspaces" id="Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="Keyspaces" id="nonrelational-column-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="Keyspaces" id="colummn-Keyspaces">&nbsp;</a> <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a> 中讨论了宽列数据库，并了解了其开源变体 Apache Cassandra。满足类似需求的 AWS 托管解决方案是 Amazon Keyspaces。</p>
+          <p>Keyspaces 是一种高度可扩展、高可用的托管宽列数据库服务，与开源 Apache Cassandra 数据库兼容。Keyspaces 以无服务器服务形式提供，意味着您无需担心资源预置，只需专注于构建应用程序。以下是考虑使用 Keyspaces 的几个使用场景：</p>
+          <ul>
+            <li>
+              <p>您希望将本地 Cassandra 集群或运行在 EC2 实例上的集群迁移到完全托管的 AWS 服务。这有助于减少大量集群管理开销，例如管理部署、为工作负载找出最佳配置（如针对垃圾回收的 Java 虚拟机 (JVM) 调优）、了解 Cassandra 内部机制、为预期工作负载预置容量、升级至新版本、修补和维护集群基础设施等。</p>
+            </li>
+            <li>
+              <p>您有与开源 Cassandra 兼容的业务需求。</p>
+            </li>
+            <li>
+              <p>与客户自行管理相比，Keyspaces 与 AWS 服务（如用于监控的 Amazon CloudWatch 或用于身份验证的 AWS IAM）的集成更好。</p>
+            </li>
+          </ul>
+          <p>由于 Keyspaces 抽象了基础设施管理，您无法访问低级别集群管理控制平面 API。Keyspaces 为表的读写工作负载提供两种类型的容量模式，类似于 DynamoDB：带自动扩展的预置容量和按需模式。Keyspaces 表中的所有数据默认加密，并在多个可用区中复制，以实现高可用性和持久性。请参阅 <a href="https://oreil.ly/LTqIN">AWS 指南</a>了解 Cassandra 和 Keyspaces 之间的功能<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Keyspaces" data-startref="aws-database-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="Keyspaces" data-startref="database-aws-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Keyspaces" data-startref="Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="Keyspaces" data-startref="nonrelational-column-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="Keyspaces" data-startref="colummn-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-startref="aws-database">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-startref="database-aws">&nbsp;</a>差异。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch10_conclusion_1734552290477246">
+        <h1>总结</h1>
+        <p>我们讨论了 AWS 提供的各种存储服务，可用于满足您的业务需求。<a data-type="xref" href="#ch10_cloud_storage_on_aws_1734552290475193">#ch10_cloud_storage_on_aws_1734552290475193</a> 重点介绍了块存储、文件存储和对象存储等基础存储选项，<a data-type="xref" href="#ch10_aws_databases_1734552290476028">#ch10_aws_databases_1734552290476028</a> 涵盖了 AWS 为关系数据库和非关系数据库提供的服务。了解业务使用场景对于选择最具成本效益的存储服务至关重要。为此，让我们再次审视 Cafe Delhi Heights 的存储需求。<a data-type="xref" href="#ch10_table_3_1734552290462408">#ch10_table_3_1734552290462408</a> 列出了可用于满足这些需求的 AWS 存储服务。</p>
+        <table id="ch10_table_3_1734552290462408">
+          <caption>Cafe Delhi Heights 的存储服务选型</caption>
+          <thead>
+            <tr>
+              <th>需求</th>
+              <th>存储服务</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <p>存储顾客的个人资料及访问凭证，如用户名和密码</p>
+              </td>
+              <td>
+                <p>Amazon RDS、Amazon Aurora、Amazon ElastiCache（作为持久存储顶层的缓存，用于频繁查询）</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>存储食品信息，如可用菜单项</p>
+              </td>
+              <td>
+                <p>Amazon DynamoDB、Amazon DocumentDB、Amazon Keyspaces、Amazon OpenSearch</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>存储各类媒体文件，如餐厅食品图片和顾客上传的评价</p>
+              </td>
+              <td>
+                <p>Amazon S3</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>大数据分析以改善客户体验，例如区分好评与差评</p>
+              </td>
+              <td>
+                <p>Amazon S3、Amazon EFS、Amazon DynamoDB</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>创建美食社区，让人们在社交圈中互动</p>
+              </td>
+              <td>
+                <p>Amazon Neptune</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>根据多种标识符搜索餐品，如食品名称、餐厅位置、评分等</p>
+              </td>
+              <td>
+                <p>Amazon OpenSearch</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>应用程序日志和指标在 90 天后归档并保留一年</p>
+              </td>
+              <td>
+                <p>Amazon S3、Amazon OpenSearch</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div data-type="note">
+          <p>请参阅 <a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892" data-xrefstyle="select:labelnumber">#ch02_storage_types_and_relational_stores_1734552286519892</a> 和 <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587" data-xrefstyle="select:labelnumber">#ch03_nonrelational_stores_1734552286860587</a>，了解根据业务使用场景选择存储解决方案的通用指南和流程图。</p>
+        </div>
+        <p>为处理客户端请求或对存储在 AWS 存储服务上的数据进行处理，我们需要服务器或计算平台。在下一章中，我们将深入探讨 AWS 提供的不同计算平台，并了解如何为我们的业务使用场景选择最佳方案。</p>
+      </section>
+    </section>

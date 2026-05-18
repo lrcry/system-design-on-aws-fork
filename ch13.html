@@ -1,0 +1,470 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch13_big_data_analytics_and_machine_learning_services_1734552292002899">
+      <h1>Big Data, Analytics, and <span class='keep-together'>Machine Learning Services</span></h1>
+      <p>In the world of information technology, data is generated at a huge volume. This data can be just the information of all registered users on online food-ordering applications or real-time user actions captured on the application. Data generated at large volume is referred to as <em>big data</em>. If you have a use case to store this data, you can utilize the storage solutions we discussed in <a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a> based on your requirements. This chapter focuses on how to process the data at high volume. How can we generate insights out of data already present in storage or live streaming data by running data analytics or ML models on top of it? For example, we might want to determine the most ordered food item based on location or the restaurant with the highest rating in a particular locality.</p>
+      <p>The first part of this chapter introduces you to AWS big data, live streaming, and analytics services such as Amazon Elastic MapReduce (EMR), AWS Glue, Amazon Athena, Amazon QuickSight, and Amazon Redshift. The second section explores how you can run ML workloads on the AWS cloud and the different services supporting that.</p>
+      <section data-type="sect1" id="ch13_aws_big_data_and_analytics_1734552292003119">
+        <h1>AWS Big Data and Analytics</h1>
+        <p>Information is <a contenteditable="false" data-type="indexterm" data-primary="analytics" data-see="big data analytics">&nbsp;</a>vital to making business decisions or serving our customers better, but the volume of data is rapidly growing, ranging from terabytes to petabytes (and more). The variety of data is also increasing—data can be in any form. We require specific tools to store and process big data. Traditional tools can become a bottleneck as we can no longer operate on a single machine for data processing. Another challenge is the velocity at which this data is produced: we require tools to consume the data and produce insights from it in near real time to gain maximum output. In this section, we’ll talk about data processing tools like Amazon EMR, AWS Glue, Amazon Athena, and Amazon Redshift, as well as a business intelligence service, Amazon QuickSight.</p>
+        <section data-type="sect2" id="ch13_amazon_elastic_mapreduce_1734552292003220">
+          <h2>Amazon Elastic MapReduce</h2>
+          <p>In <a data-type="xref" href="#ch08_architectural_designs_and_patterns_1734552289324317">#ch08_architectural_designs_and_patterns_1734552289324317</a>, we introduced you <a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="EMR (Elastic MapReduce)" id="big-data-emr">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EMR (Elastic MapReduce)" id="emr">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic MapReduce (EMR)" id="elastic-mapreduce">&nbsp;</a>to big data architecture, multiple concepts underlying it, and open source tools for working with it, such as Hadoop, MapReduce, Spark, Presto, and HDFS. AWS offers managed services that are built directly on top of these open source software applications to get started easily with zero (or minimum) operational overhead. Hadoop open source software is popular for big data processing; Amazon EMR is a managed service for executing data processing frameworks and tools such as <a href="https://oreil.ly/fz6-c">MapReduce</a>, <a href="https://spark.apache.org">Apache Spark</a>, <a href="https://hive.apache.org">Apache Hive</a>, <a href="https://hbase.apache.org">Apache HBase</a>, and <a href="https://prestodb.io">Presto</a>. </p>
+          <p>Setting up and managing large clusters require time and expertise, but EMR makes it easy by offering a managed service where you can launch clusters in minutes and run large data-processing workloads. Open source Hadoop clusters default to <a href="https://oreil.ly/3nV3d">HDFS</a> for data storage. You can also explore using different tools available in the community to extend the storage to Amazon S3. </p>
+          <p>HDFS is<a contenteditable="false" data-type="indexterm" data-primary="HDFS (Hadoop Distributed File System)" id="HDFS">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Hadoop Distributed File System (HDFS)" id="hadoop-distr-fs">&nbsp;</a> tied to the local disks, which disappear once the cluster terminates. Since our use case is processing big data, our storage needs will grow over time, and since HDFS is attached to compute instances, the number of instances will also increase. There is a possibility that our use case has high storage requirements but the compute requirement is relatively less, so we’re paying for the compute but not using it at full capacity. This is where the <a href="https://oreil.ly/82GWO">EMR File System (EMRFS)</a> can be a better solution.</p>
+          <section data-type="sect3" id="ch13_emrfs_1734552292003291">
+            <h3>EMRFS</h3>
+            <p>EMRFS <a contenteditable="false" data-type="indexterm" data-primary="EMRFS (EMR File System)" id="emrfs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="filesystems" data-secondary="EMRFS" id="filesystem-emrfs">&nbsp;</a>uses Amazon S3 as a filesystem for data processing instead of a local HDFS, so essentially, it’s a connector that links EMR clusters to S3. EMRFS ensures streaming of data directly to S3 and uses HDFS as intermediate storage.</p>
+            <p>Before we dive into EMRFS, understand that it is not a solution to every problem, and you should not see it as a replacement for HDFS. HDFS can still be a better option for jobs with iterative reads on the same dataset or I/O-intensive workloads (meaning workloads that require frequent disk access and retrieval of data over the network since these scenarios could prove to be latency-intensive operations). You can use a combination of S3 and HDFS to address the temporary data storage limitation of HDFS (data is lost on cluster termination) by leveraging tools such as <a href="https://oreil.ly/fYJ97">S3DistCP</a> to copy data from S3 to HDFS or from HDFS to S3.</p>
+            <p>Let’s look into some of the benefits that EMRFS offers over traditional HDFS:</p>
+            <ul>
+              <li>
+                <p>In scenarios when you require the same data to be accessed by multiple clusters, you need to copy data from one cluster to another since HDFS is associated with a single cluster and not shared among all clusters. You can save this cost by using EMRFS as a storage option. EMRFS allows multiple clusters to access the data from the same place, decoupling compute and storage completely, and offers flexibility to scale them independently.</p>
+              </li>
+              <li>
+                <p>You might not always require your EMR cluster to be running. So you can terminate the cluster, and storage is maintained in S3, saving compute costs.</p>
+              </li>
+              <li>
+                <p>To ensure data availability, HDFS replicates the data at multiple nodes per the replication factor. For example, with a replication factor of three, you’ll be paying three times the storage cost. EMRFS is backed by S3, so you don’t have to worry about <a href="https://oreil.ly/JVPs6">data durability</a> as it is already handled by S3.</p>
+              </li>
+            </ul>
+            <p>These data points provide a clear picture of why EMRFS is a useful utility to consider for storing data. You can get the most out of any tool if you follow certain best practices associated with it. Here are some tips for using EMRFS:</p>
+            <ul>
+              <li>
+                <p>The data should be partitioned so that the EMR cluster fetches only the data required for processing. This ensures faster data retrieval along with reduced costs.</p>
+              </li>
+              <li>
+                <p>The file size should be optimized such that you don’t have too many or too few files. As you start using EMRFS, try to avoid files with a size of less than 128 MB because that will ensure fewer calls to S3 along with HDFS requests. </p>
+              </li>
+              <li>
+                <p>We also recommend considering data compression, ensuring less usage of storage space on S3. This helps reduce costs on two fronts: storage costs and network costs for data retrieval. </p>
+              </li>
+              <li>
+                <p>The data-access patterns can vary based on the use case. You might be interested in only a subset of columns across the columns or a subset of rows across the rows. <a href="https://parquet.apache.org">Apache Parquet</a> and <a href="https://orc.apache.org">Apache ORC</a> are columnar file formats that give increased read performance to meet the first use case, and <a href="https://oreil.ly/pSj-M">Apache Avro</a>, a row-optimized file format, is helpful for the latter use case.</p>
+              </li>
+            </ul>
+            <p>Now that you have a good grasp of the concept of EMRFS as a storage option, let’s explore other EMR features and <a contenteditable="false" data-type="indexterm" data-primary="HDFS (Hadoop Distributed File System)" data-startref="HDFS">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Hadoop Distributed File System (HDFS)" data-startref="hadoop-distr-fs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EMRFS (EMR File System)" data-startref="emrfs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="filesystems" data-secondary="EMRFS" data-startref="filesystem-emrfs">&nbsp;</a>specifications.</p>
+          </section>
+          <section data-type="sect3" id="ch13_emr_cluster_considerations_1734552292003356">
+            <h3>EMR cluster considerations</h3>
+            <p>The <a contenteditable="false" data-type="indexterm" data-primary="clusters" id="cluster-emr">&nbsp;</a>data-processing jobs run on a set of servers, and instance types can be chosen based on workload requirements. As a compute option, you can choose to run an EMR cluster on <a href="https://oreil.ly/fN_7O">EC2 instances</a> or <a href="https://oreil.ly/eCRHT">EKS</a>, or you can go completely <a href="https://oreil.ly/zIhxj">serverless</a>. </p>
+            <p>The EMR cluster architecture can have three types of nodes, shown in <a data-type="xref" href="#ch13_figure_1_1734552291986472">#ch13_figure_1_1734552291986472</a>:</p>
+            <dl>
+              <dt>Primary node</dt>
+              <dd>
+                <p>The <a contenteditable="false" data-type="indexterm" data-primary="primary nodes">&nbsp;</a>primary node is the primary node in the EMR cluster. The primary node uses the YARN resource manager service for application resource management and runs the HDFS NameNode service to track the status of jobs submitted on the cluster along with health monitoring of instance groups.</p>
+              </dd>
+              <dt>Core node</dt>
+              <dd>
+                <p>The core nodes <a contenteditable="false" data-type="indexterm" data-primary="core nodes">&nbsp;</a>run the data daemon for HDFS data storage and the task tracker daemon to perform computation tasks on data. The EMR cluster can have a maximum of one core <a href="https://oreil.ly/dMjJZ">instance group or instance fleet</a>.</p>
+              </dd>
+              <dt>Task node </dt>
+              <dd>
+                <p>Task nodes don’t <a contenteditable="false" data-type="indexterm" data-primary="task nodes">&nbsp;</a>provide data storage—they should be used as extra computation power for the EMR cluster. EMR by default ensures that the application primary of any job runs on the core node to make sure the job doesn’t terminate if any of the task nodes are terminated (as in the case of EC2 spot instances). You can configure up to 48 task instance groups depending on the job requirements.</p>
+              </dd>
+            </dl>
+            <figure id="ch13_figure_1_1734552291986472">
+              <img src="images/sdoa_1301.png"/>
+              <figcaption>EMR cluster nodes</figcaption>
+            </figure>
+            <p>The EMR cluster allows you to choose from the available applications, and it will auto-install all the software without any effort from your end. There may also be a requirement to install custom software or modify a configuration for nodes on EMR nodes. To support this, you can use <a href="https://oreil.ly/1_9Y_">EMR bootstrap actions</a>, which execute the action after the cluster instances are up. </p>
+            <p>Depending on the requirements, the EMR cluster can consist of a large number of nodes, which will definitely add to the resource cost incurred from AWS. You can introduce some cost-saving mechanisms:</p>
+            <ul>
+              <li>
+                <p>EMR provides a configuration to automatically terminate clusters. This ensures the cluster is auto-terminated once the submitted jobs are completed.</p>
+              </li>
+              <li>
+                <p>You may have requirements for long-running clusters. If you’re sure of the capacity requirements, you can explore reserved instances and AWS saving plans.</p>
+              </li>
+              <li>
+                <p>If the EMR workloads are noncritical, you can use EC2 spot instances (discussed in <a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a>). The spot instances are offered at up to a 90% discount compared to the on-demand instances and can substantially reduce costs. You can also set up clusters with a mix of spot and on-demand instances to ensure the cluster is always up and running while keeping cluster pricing in mind.</p>
+              </li>
+              <li>
+                <p>For the variable workloads on long-running clusters, you can use automatic scaling policies on instance groups to add or remove instances.</p>
+              </li>
+            </ul>
+            <p>Before we close our discussion on EMR, let’s ponder some considerations for ensuring high reliability of workloads running on EMR clusters:</p>
+            <ul>
+              <li>
+                <p>The instances in clusters should be spread across AZs to avoid any AZ downtimes. By default, the <a href="https://oreil.ly/Ai0f0">Hive</a> metastore is stored on the primary node’s filesystem. Store the metastore <a href="https://oreil.ly/FghKi">outside the EMR cluster</a>, such as inside a multi-AZ RDS cluster or Amazon Aurora, to avoid data loss upon cluster termination.</p>
+              </li>
+              <li>
+                <p>We recommend using EMR with multiple primary nodes instead of single-primary node. The primary node is a single point of failure, and if it goes down, the entire cluster goes down. Multiple primary node setup provides a safety net.</p>
+              </li>
+              <li>
+                <p>Critical data should be kept in S3 instead of a local HDFS to avoid any data dependency issues.</p>
+              </li>
+              <li>
+                <p>We recommend EC2 spot instances only for task nodes and not for core nodes. As HDFS is managed by core nodes for data storage, termination of these nodes might lead to data loss.</p>
+              </li>
+            </ul>
+            <p>To address the requirement of spawning EMR clusters at regular intervals, you can leverage Amazon EventBridge and automate the workflow via AWS Step Functions (or Apache Airflow) like so: create an EMR cluster with a specific configuration, submit jobs to the cluster, and once the jobs are complete, terminate the cluster. </p>
+            <p>In some scenarios, we just care about executing the ETL jobs without worrying about instance or storage management. AWS Glue is a completely serverless data integration application for performing analytical tasks on <a contenteditable="false" data-type="indexterm" data-primary="clusters" data-startref="cluster-emr">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="EMR (Elastic MapReduce)" data-startref="big-data-emr">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EMR (Elastic MapReduce)" data-startref="emr">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic MapReduce (EMR)" data-startref="elastic-mapreduce">&nbsp;</a>big data.</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch13_aws_glue_1734552292003425">
+          <h2>AWS Glue</h2>
+          <p>AWS Glue is <a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="Glue" id="big-data-glue">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Glue" id="glue">&nbsp;</a>a data integration service that helps make sense of data with different features. Before digging into these features, let’s quickly understand some of the terminology associated with Glue:</p>
+          <dl>
+            <dt>Classifier</dt>
+            <dd>
+              <p>A <a href="https://oreil.ly/wCZ76">classifier</a> validates whether it<a contenteditable="false" data-type="indexterm" data-primary="classifiers (Glue)">&nbsp;</a> can handle the data available in the specific format, and if it can, then it is classified into a <code>StructType</code> object. You can use the classifiers offered by Glue or define a <a href="https://oreil.ly/I1Ahs">custom classifier as needed</a>, such as when a data file is not in a format supported by Glue.</p>
+            </dd>
+            <dt>Metadata</dt>
+            <dd>
+              <p>The <a contenteditable="false" data-type="indexterm" data-primary="metadata">&nbsp;</a>metadata is the inferred schema by the classifier from the available data in any of the data stores.</p>
+            </dd>
+            <dt>Database</dt>
+            <dd>
+              <p>The database <a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="Glue">&nbsp;</a>is the place where you keep metadata tables. A single table can be associated to a single database only, and in case the database is not specified, Glue uses the default database.</p>
+            </dd>
+            <dt>Data catalog</dt>
+            <dd>
+              <p>The<a contenteditable="false" data-type="indexterm" data-primary="data catalogs">&nbsp;</a> data catalog maintains databases, which then consist of one or more metadata tables. These tables can be useful as source and target.</p>
+            </dd>
+            <dt>Data crawler</dt>
+            <dd>
+              <p>The data crawler <a contenteditable="false" data-type="indexterm" data-primary="data crawlers">&nbsp;</a>crawls the data from data sources like Amazon S3, figures out the schema via the classifier, and then creates the required tables or partitions in the Glue data catalog. For use cases where the data schema frequently changes, you can run the <a href="https://oreil.ly/xAgEh">crawler on a schedule</a>, and it automatically figures out modifications since the last run and creates new tables or partitions per the requirements.</p>
+            </dd>
+            <dt>Table partitioning</dt>
+            <dd>
+              <p>Partitioning <a contenteditable="false" data-type="indexterm" data-primary="table partitioning">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="partitioning">&nbsp;</a>is a way to improve query performance on data. Let’s understand it with the help of an example, shown in <a data-type="xref" href="#ch13_figure_2_1734552291986508">#ch13_figure_2_1734552291986508</a>. Your application processes sales data and is stored in S3, divided into folders with the parent folder as the year and child folders as months and days. It can have further subfolders, such as hours or minutes, depending on the type and amount of data. If the data is partitioned in such a fashion, it becomes very easy to query for it. Extracting data for February 2022 means going to the folder for Year 2022 and then to the subfolder Month 02, making the query much faster. There can be multiple partition keys for a table, and you can create a <a href="https://oreil.ly/NNT2o">partition index</a>, a subset of partitions, to avoid loading all the partitions.</p>
+            </dd>
+          </dl>
+          <figure id="ch13_figure_2_1734552291986508">
+            <img alt="A screenshot of a computer&#10;&#10;Description automatically generated" src="images/sdoa_1302.png"/>
+            <figcaption>Data partitioning by folders in Amazon S3</figcaption>
+          </figure>
+          <dl>
+            <dt>Data engine</dt>
+            <dd>
+              <p>The <a contenteditable="false" data-type="indexterm" data-primary="data engines">&nbsp;</a>data engine runs data-processing jobs on top of the data. Glue supports three data engines at the time of writing: <a href="https://oreil.ly/HhVFY">AWS Glue for Apache Spark</a>, <a href="https://oreil.ly/1D89I">AWS Glue for Ray</a>, and <a href="https://oreil.ly/OMzCx">AWS Glue for Python Shell</a>. You can choose one based on your workload requirements:</p>
+           
+            <ul>
+              <li>
+                <p>With Glue for Apache Spark, you can write ETL code in Python and Scala languages, and the code executes in a distributed environment. The Spark environment on Glue can be assumed as a serverless EMR cluster being operated by AWS. The Spark engine is supported for both batch processing and live streaming data. Glue also addresses a very general problem of disk spilling due to data shuffling (data redistribution within the cluster) by providing a <a href="https://oreil.ly/82tDZ">Cloud Shuffle plug-in</a>. This plug-in allows you to use S3 or any other object storage in data-spilling situations. The plug-in is available as open source software, so it can be used in custom Spark jobs as well.</p>
+              </li>
+              <li>
+                <p>With Glue for Python, a single-node Python engine runs workloads written in Python. It offers default integration with open source libraries like <em>numpy</em> or <em>pandas</em>, and you can add custom libraries as well. The one problem that customers might face is workload scaling as data grows, which can be resolved by using <a href="https://oreil.ly/zdbuC">Glue for Ray</a>.</p>
+              </li>
+              <li>
+                <p>Glue for Ray allows you to execute Python code in a distributed environment setup and is scalable to hundreds of nodes. This processing engine is based on the open source compute framework <a href="https://ray.io">Ray</a>, which is extensively used to run Python workloads at large scale, such as deep learning models.</p>
+              </li>
+            </ul>
+             </dd>
+          
+            <dt>Data processing units (DPUs)</dt>
+            <dd>
+              <p>Glue allows <a contenteditable="false" data-type="indexterm" data-primary="data processing units (DPUs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DPUs (data processing units)">&nbsp;</a>customers to configure types of workers to run the data processing jobs, referred to as DPUs. You can <a href="https://oreil.ly/EHo56">analyze your workload requirements</a> to find the best configuration of DPUs. </p>
+            </dd>
+          </dl>
+          <p>Now, we’ll combine our understanding of these different concepts into a simple architecture for how Glue operates, shown in <a data-type="xref" href="#ch13_figure_3_1734552291986532">#ch13_figure_3_1734552291986532</a>. Once the structure of the data is created, you can create and run Glue ETL jobs with any data engines of your choice for further visualization and analysis. </p>
+          <figure id="ch13_figure_3_1734552291986532">
+            <img src="images/sdoa_1303.png"/>
+            <figcaption>AWS Glue architecture overview</figcaption>
+          </figure>
+          <p><a data-type="xref" href="#ch13_figure_3_1734552291986532">#ch13_figure_3_1734552291986532</a> shows a high-level picture of how Glue manages and runs ETL jobs. We’ll now discuss some additional features and offerings of Glue that you can use on an as-needed basis:</p>
+          <dl>
+            <dt>Glue Studio</dt>
+            <dd>
+              <p>Glue Studio supports visual workflows, built-in transformations, and the Glue Studio notebook. This helps you run tests on the data, and once you’re happy with the testing, the code from the notebook can be imported to an ETL job.</p>
+            </dd>
+            <dt>Data Quality </dt>
+            <dd>
+              <p>The <a href="https://oreil.ly/V1spg">Data Quality feature</a> automatically figures out conditions or logic on which to validate data quality. You can override these as required. Consider an example of sales data: a sales company started its operations in the year 2021, but there is some data with the year marked as 2019. The feature notifies us that this is invalid data and should be scraped out or alerts put on top of it. This feature is available for both data at rest and in transit.</p>
+            </dd>
+            <dt>Personally identifiable information </dt>
+            <dd>
+              <p>A validation feature of <a href="https://oreil.ly/bo4_p">PII data</a> can be used to detect sensitive data and take any appropriate action, such as masking it.</p>
+            </dd>
+            <dt>Autoscaling</dt>
+            <dd>
+              <p>To reduce compute cost and configure an optimal number of DPUs to run Glue jobs, you can leverage the <a href="https://oreil.ly/dhP2b">autoscaling feature</a>. This will automatically add or remove workers per the workload requirement. You can also configure a maximum number of workers to ensure that Glue doesn’t configure workers above a particular limit.</p>
+            </dd>
+            <dt>Flex job type</dt>
+            <dd>
+              <p>In <a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a>, we discussed EC2 spot instances and how they can help reduce overall compute costs. Glue provides similar functionality with the <a href="https://oreil.ly/w91db">Flex job type</a>, which offers a cost savings of up to 34%. You can leverage this for noncritical workloads.</p>
+            </dd>
+            <dt>Scheduling</dt>
+            <dd>
+              <p>There may be use cases where it would be useful to <a href="https://oreil.ly/5PC-d">schedule the crawlers or jobs</a> to run at a particular time or on regular intervals. Glue inherently provides support for this. You can also trigger jobs and crawlers on external events via Amazon EventBridge.</p>
+            </dd>
+            <dt>Version control</dt>
+            <dd>
+              <p>Glue offers easy integration with <a href="https://oreil.ly/j9fPm">GitHub and AWS CodeCommit</a> to manage source version control for your Glue jobs.</p>
+            </dd>
+            <dt>Schema registry</dt>
+            <dd>
+              <p>The <a href="https://oreil.ly/LpeCM">Glue schema registry</a> is a registry where you can publish your schemas and enforce data-streaming service integrations, such as Amazon MSK, Apache Kafka, Amazon KDS, Amazon KDA, and AWS Lambda.</p>
+            </dd>
+          </dl>
+          <p>This long list of features makes it evident that Glue is a powerful ETL service that helps to reduce operational overhead and can operate at a large scale. After learning about EMR and Glue, you might be wondering how the Spark application running on the EMR serverless option differs from Glue Spark. Let’s throw some light on this in <a data-type="xref" href="#ch13_table_1_1734552291991892">#ch13_table_1_1734552291991892</a> as both options seem quite similar. </p>
+          <table id="ch13_table_1_1734552291991892">
+            <caption>Comparison of Amazon EMR serverless and AWS Glue</caption>
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Amazon EMR serverless</th>
+                <th>AWS Glue</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p>Feature functionality</p>
+                </td>
+                <td>
+                  <p>Data processing and analytics tool that leverages open source software</p>
+                </td>
+                <td>
+                  <p>End-to-end ETL solution with abstraction over software that offers AWS-customized solutions with a focus on data integration, the data catalog, and running transformations on data sources</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Operational overhead</p>
+                </td>
+                <td>
+                  <p>Fully managed service</p>
+                </td>
+                <td>
+                  <p>Customers specify the number and type of DPUs</p>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <p>Supported big data applications</p>
+                </td>
+                <td>
+                  <p>Apache Spark and Apache Hive</p>
+                </td>
+                <td>
+                  <p>Apache Spark and Python jobs</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p>Glue and <a contenteditable="false" data-type="indexterm" data-primary="EMR (Elastic MapReduce)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic MapReduce (EMR)">&nbsp;</a>EMR vary on their base functionality, and we as customers should clearly lay out our requirements to choose one for our workloads. Amazon EMR comes with almost all the open source integrations, and we can easily deploy the cluster with these services preinstalled. We discussed some of the reasons you might prefer Glue to EMR; most often, the reasons are operational overhead and system expertise.</p>
+          <p>Much like EMR and Glue, Amazon Athena is an AWS service that is helpful for querying and analyzing data stored in Amazon S3. You can compare Athena with Presto running on an EMR cluster, which provides similar functionality. The main advantage of such solutions is that data analysis can be performed on raw data without any transformation at the<a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="Glue" data-startref="big-data-glue">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Glue" data-startref="glue">&nbsp;</a> customer’s end.</p>
+        </section>
+        <section data-type="sect2" id="ch13_amazon_athena_1734552292003521">
+          <h2>Amazon Athena</h2>
+          <p>Amazon Athena <a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="Athena" id="big-data-athena">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Athena" id="athena">&nbsp;</a>is a fully managed, serverless, big data analysis tool that offers SQL query support on top of data stored in S3. The data analysis doesn’t require any transfer of data to other data storage; the data can be directly read from S3 objects and can be queried. </p>
+          <p>Athena requires that we as customers define the databases and tables with schema. You can do this task manually or leverage the Glue data crawler and <a href="https://oreil.ly/Lx1qY">Apache Hive metastore</a> to perform this task for you. Once the database and tables are defined, you can query this data with simple SQL. As you execute the SQL query, Athena internally submits a job that operates in asynchronous fashion, and the response to the query is saved to S3. Additionally, you can integrate Athena with various <a href="https://oreil.ly/Apj0y">BI tools</a> for interactive analysis, such as Amazon QuickSight, which we’ll discuss in the next section.</p>
+          <p>Like many other services, Athena’s main advantage is that you don’t have to worry about infrastructure management. Let’s discuss a few other features and considerations for using this service for your data analytics use cases:</p>
+          <dl>
+            <dt>Federated query</dt>
+            <dd>
+              <p>We mentioned <a contenteditable="false" data-type="indexterm" data-primary="federated query">&nbsp;</a>that Athena is used to query on data stored in S3, but what about data present in other AWS data stores, such as Amazon DynamoDB or on-premises data sources? For these kinds of use cases, Athena offers a feature called <a href="https://oreil.ly/6Kjbc">federated query</a>. This feature allows you to run SQL queries on a variety of data stores, be they on the AWS cloud or on-premises. Athena achieves this via a Lambda-based data source connector; the connector essentially helps establish a connection and retrieve data. In addition, Athena can have multiple Lambda invocations in parallel to fasten data processing tasks. It is also possible that data won’t fit into Lambda memory; to handle this, the data is spilled to S3, avoiding any data loss.</p>
+            </dd>
+            <dt>User-defined functions (UDFs)</dt>
+            <dd>
+            <p><a href="https://oreil.ly/SjivZ">UDFs</a> are another feature of Athena supported<a contenteditable="false" data-type="indexterm" data-primary="user-defined functions (UDFs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="UDFs (user-defined functions)">&nbsp;</a> via the federated query SDK. They allow you to write custom Java code on Lambda and invoke directly from SQL queries to perform any preprocessing or postprocessing tasks on data. Consider a scenario of sensitive data handling: to avoid storing sensitive information to S3 as part of the Athena query response, it is masked via logic executed in UDFs.</p>
+             </dd>
+            <dt>ML models</dt>
+         
+            <dd>
+              <p>Athena allows you to use deployed ML models on Amazon SageMaker. You can directly invoke these <a href="https://oreil.ly/R81Hk">models in a SQL query</a> for required data analysis. One example could be detecting negative reviews for our online food-ordering platform.</p>
+            </dd>
+          </dl>
+          <p>To help with regular scheduling of workflows or invocation based on certain events, we can leverage Amazon EventBridge. For use cases of workflow orchestration and integration with other services, we can utilize AWS Step Functions.</p>
+          <p>The limitation of using Amazon Athena instead of self-managed Amazon EMR clusters or Amazon Redshift (which we’ll discuss shortly) could be the time it takes to execute queries on large datasets, so it might not be the best solution for latency-sensitive operations.</p>
+          <p>Amazon EMR, AWS Glue, and Amazon Athena are powerful services for big data analytics tasks. Now, let’s discuss the AWS-powered business<a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="Athena" data-startref="big-data-athena">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Athena" data-startref="athena">&nbsp;</a> intelligence tool Amazon QuickSight.</p>
+        </section>
+        <section data-type="sect2" id="ch13_amazon_quicksight_1734552292003582">
+          <h2>Amazon QuickSight</h2>
+          <p>Recall that<a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="QuickSight" id="big-data-quicksight">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="dashboards (QuickSight)" id="dashboard-quicksight">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="QuickSight" id="quicksight">&nbsp;</a> our online food-ordering application stores data in multiple data stores, such as total orders in a particular region, top-rated restaurants, and most ordered food items. How can we create a unified dashboard connecting to different data stores without providing direct access to data stores to everyone? This can easily be achieved using Amazon QuickSight. QuickSight is a fully managed, serverless business intelligence service offering analytics, visualization, and reporting. It can connect to different kinds of data stores and include them in a single dashboard. The data can include AWS data, third-party data, spreadsheet data, SaaS data, and more.</p>
+          <p>Here are the key features of and considerations for QuickSight:</p>
+          <ul>
+            <li>
+              <p>QuickSight essentially enables every user to perform analytics and visualize the data for your use cases with much less expertise. With QuickSight, you don’t need to depend on business intelligence teams for your data requests.</p>
+            </li>
+            <li>
+              <p>QuickSight is offered in two variants: <a href="https://oreil.ly/G8oGk">standard and enterprise</a>. The standard edition contains all the features described previously. The enterprise edition includes more advanced capabilities, such as automated and customizable data insights powered by ML and security features, including federated user identities, single sign-on, and encryption at rest. The enterprise edition also helps monetize dashboards via a pay-per-session pricing model. The consumers of the dashboards you’ve created pay for them per their usage.</p>
+            </li>
+            <li>
+              <p>An additional feature is available as part of the enterprise edition: <a href="https://oreil.ly/r0C0r">QuickSight Q</a>. It is a natural language processing tool where, instead of writing queries, you can directly ask questions like “What are the top five restaurants in Mumbai?”</p>
+            </li>
+            <li>
+              <p>QuickSight supports fast advanced calculations to serve data via SPICE (Super-fast, Parallel, In-memory Calculation Engine). To use this in-memory data store, you should enable it as part of the database creation or editing process, and you need to configure the required <a href="https://oreil.ly/KLg8m">SPICE capacity</a>. </p>
+            </li>
+          </ul>
+          <p>We mentioned that QuickSight is helpful for drawing insights, and it can do that for any data source. One such <a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="QuickSight" data-startref="big-data-quicksight">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="dashboards (QuickSight)" data-startref="dashboard-quicksight">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="QuickSight" data-startref="quicksight">&nbsp;</a>data source is Amazon Redshift.</p>
+        </section>
+        <section data-type="sect2" id="ch13_amazon_redshift_1734552292003647">
+          <h2>Amazon Redshift</h2>
+          <p>In simple <a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="Redshift" id="big-data-redshift">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Redshift" id="redshift">&nbsp;</a>terms, Amazon Redshift is a data warehousing tool that can act as a data store for data from multiple sources and that lets you run SQL queries at a single place for data analytics. Redshift is an AWS-managed service and can scale to petabytes of data with an <a href="https://oreil.ly/JXUz6">elastic scaling</a> option. There is also a <a href="https://oreil.ly/ETobh">serverless option</a>, which helps you avoid any burden of resource provisioning and workload management.</p>
+          <p>We’ll begin by discussing the architecture of Redshift and then move on to key features offered by this service. Redshift is columnar, PostgreSQL-based storage based on a leader-follower cluster architecture, where the leader acts as a query coordinator that parses and complies the query and then forwards the query to follower (compute) nodes, which work in parallel to gather results. This architecture is shown in <a data-type="xref" href="#ch13_figure_4_1734552291986557">#ch13_figure_4_1734552291986557</a>. There can be from 2 to 128 nodes in a Redshift cluster, and in the case of the serverless option, the entire architecture is abstracted out from customers. The query can be invoked from SQL clients via a <a href="https://oreil.ly/3_SxR">Java Database Connectivity (JDBC)</a> or <a href="https://oreil.ly/qXcYO">Open Database Connectivity (ODBC) connection</a>, or it can use the Data API. The <a href="https://oreil.ly/90nj2">Data API</a> offers query execution in both synchronous and asynchronous fashion and can query for results within 24 hours with a query ID.</p>
+          <figure id="ch13_figure_4_1734552291986557">
+            <img src="images/sdoa_1304.png"/>
+            <figcaption>Amazon Redshift architecture</figcaption>
+          </figure>
+          <p>With the Redshift architecture, the compute nodes are partitioned into slices, and each slice has its own allocated disk and memory to perform parallel processing. The data is stored in immutable <a href="https://oreil.ly/TMx2I">blocks</a>. A block consists of column data spanning multiple rows, and a full block can contain millions of values with a size of 1 MB.</p>
+          <p>To improve query performance over the data blocks, Redshift maintains in-memory metadata information called<em> </em><a href="https://oreil.ly/bjhjH"><em>zone maps</em></a>. It<a contenteditable="false" data-type="indexterm" data-primary="zone maps">&nbsp;</a> stores the minimum and maximum values for a block and effectively prunes the data blocks that don’t contain data for a specific query. Zone maps can be optimized using a <a href="https://oreil.ly/h6cao">sort key</a>, which defines how data is sorted on the physical disk. The sort key works well except in a very few scenarios: when there is only one block per column per slice; when the values within blocks have the same prefix (for strings longer than 8 bytes—Redshift takes the first 8 bytes as a prefix, so sorting won’t matter if it’s the same); and when the column contains a single distinct value (sorting won’t matter since minimum and maximum values are consistent). </p>
+          <p>To optimize query performance, you can optionally choose to provide a <a href="https://oreil.ly/BN5J8">distribution style</a> for data. This ensures that data is evenly distributed across the cluster and that you can make the best out of parallel processing. Redshift supports <a contenteditable="false" data-type="indexterm" data-primary="distribution styles (Redshift)">&nbsp;</a>four distribution styles: </p>
+          <dl>
+            <dt>AUTO option (default)</dt>
+            <dd>
+              <p>Redshift chooses the distribution style based on the size of the table data and internally switches among the different distribution styles based on the size.</p>
+            </dd>
+            <dt>EVEN option</dt>
+            <dd>
+              <p>Data is distributed across the compute node slices in round-robin fashion by the leader node. This is a recommended option when there are no join operations on the table.</p>
+            </dd>
+            <dt>KEY option</dt>
+            <dd>
+              <p>The leader node checks the column value and places it on the compute node slice matching its value.</p>
+            </dd>
+            <dt>ALL option</dt>
+            <dd>
+              <p>The entire table data is available on each node. This is only recommended if there are very few insert or update operations on the table.</p>
+            </dd>
+          </dl>
+          <p>Redshift offers<a contenteditable="false" data-type="indexterm" data-primary="Redshift Spectrum">&nbsp;</a> Redshift Spectrum, which can use S3 as storage; the compute nodes are only responsible for gathering the results. This helps customers directly query the data from S3 without loading it to Redshift clusters. One key consideration here is repeated reads against S3 since the storage doesn’t adhere to transactional guarantees.</p>
+          <p>Redshift also offers <a contenteditable="false" data-type="indexterm" data-primary="Redshift Managed Storage (RMS)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RMS (Redshift Managed Storage)">&nbsp;</a>Redshift Managed Storage (RMS), which allows customers to scale compute and storage independently. It uses S3 as persistent storage and offers-high speed, SSD-backed, Tier 1 cache support. RMS allows scaling up to 128 TB per instance and up to 16 PB per cluster storage capacity. For scaling further, you can always use S3 as storage.</p>
+          <p>You can choose from <a href="https://oreil.ly/lbvDY">different instance types</a> available for your Redshift cluster. The feature is supported by the new Redshift instance type <a href="https://oreil.ly/1iAee">RA3</a>. The other instance types are DC2 (dense compute) with SSD as storage and DS2 (dense storage) with magnetic disks as storage. The DS2 instance types are legacy, and we don’t recommend using them for your workloads.</p>
+          <p>Redshift Spectrum is similar to Athena, where you query on top of the data that sits in S3. The one big difference is you can configure compute, enabling the queries to be much faster. There are additional feature sets for both these services that you should evaluate before choosing one for your workloads:</p>
+          <dl>
+            <dt>Materialized views</dt>
+            <dd>
+              <p>Redshift allows <a contenteditable="false" data-type="indexterm" data-primary="materialized views">&nbsp;</a>you to create <a href="https://oreil.ly/L8csr">materialized views</a> from one or more tables to make the queries faster. The materialized views contain precompute result sets based on table joins with all or a subset of columns, aggregations, and filters. You can also create materialized views on top of already created materialized views, similar to base tables.</p>
+            </dd>
+            <dt>Workload management tools</dt>
+            <dd>
+              <p>Redshift offers <a href="https://oreil.ly/Hg1JD">workload management (WLM) tools</a> to <a contenteditable="false" data-type="indexterm" data-primary="workload management (WLM) tools">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="WLM (workload management) tools">&nbsp;</a>separate different query workloads and assign priority so that important queries are executed and less important queries can be throttled or aborted.</p>
+            </dd>
+            <dt>Data copying</dt>
+            <dd>
+              <p>You<a contenteditable="false" data-type="indexterm" data-primary="data copying">&nbsp;</a> can use the <a href="https://oreil.ly/pOZQc">COPY</a> command to load data to Redshift from Amazon S3, Amazon DynamoDB, Amazon EMR, or any remote host accessible via SSH. Support is also available for <a href="https://oreil.ly/k1SGb">autocopy</a>, which automatically ingests data from Amazon S3 to Redshift clusters.</p>
+            </dd>
+            <dt>Data ingestion </dt>
+            <dd>
+              <p>You can integrate<a contenteditable="false" data-type="indexterm" data-primary="data ingestion">&nbsp;</a> Redshift with Amazon MSK or Amazon KDS for ingesting live streaming data and use <a href="https://oreil.ly/naeCZ">Informatica Data Loader for Amazon Redshift</a> to access data from on-premises or third-party applications.</p>
+            </dd>
+            <dt>Federated query</dt>
+            <dd>
+              <p>You can <a contenteditable="false" data-type="indexterm" data-primary="federated query">&nbsp;</a>use Redshift’s <a href="https://oreil.ly/OcRRv">federated query feature</a> to access live data from external data stores, such as RDS PostgreSQL and MySQL and Aurora PostgreSQL and MySQL, without loading it to Redshift clusters.</p>
+            </dd>
+            <dt>Data sharing</dt>
+            <dd>
+              <p>Redshift <a contenteditable="false" data-type="indexterm" data-primary="data sharing">&nbsp;</a>allows <a href="https://oreil.ly/3HIfR">data sharing</a> across the clusters. This helps isolate the read workloads without copying data on multiple clusters.</p>
+              <p>Redshift provides <a href="https://oreil.ly/4rX2L">direct integration</a> with Amazon Aurora so as to avoid any pipeline set up by customers, and the data is directly available in Redshift once it is pushed to Aurora within seconds.</p>
+              <p><a href="https://oreil.ly/u9WgB">Amazon Redshift Advisor</a> recommends cluster optimizations around query performance and cost savings, such as query-tuning recommendations, deletion of unused clusters, and table data compression. </p>
+            </dd>
+          </dl>
+          <p>Redshift is a great tool for data warehousing and analytics use cases scaling to petabytes of data. In the next section, we’ll look into different ML services offered by AWS and how they can fit<a contenteditable="false" data-type="indexterm" data-primary="big data analytics" data-secondary="Redshift" data-startref="big-data-redshift">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Redshift" data-startref="redshift">&nbsp;</a> into various use cases.</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch13_machine_learning_on_aws_1734552292003724">
+        <h1>Machine Learning on AWS</h1>
+        <p>To support<a contenteditable="false" data-type="indexterm" data-primary="machine learning" id="machine-learning">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ML (machine learning)" id="ml">&nbsp;</a> ML and AI use cases, AWS offers a <a href="https://oreil.ly/AXCws">range of services</a> from building and running your own ML models to leveraging fully customized applications for specific purposes. For example, Amazon Polly converts text to speech, Amazon Comprehend helps you figure out insights and relationships in unstructured data, and Amazon CodeGuru offers intelligent recommendations to improve code quality. Visit the AWS product pages for the latest updates on their capabilities in the field of AI and ML.</p>
+        <p>The services can be divided into three broad categories: application services, platform services, and frameworks and hardware solutions. Application services are customized solutions for solving a specific use case. Amazon SageMaker is a platform service that enables you to create your own services by training and deploying ML models. AWS offers different frameworks, such as <a href="https://pytorch.org">PyTorch</a>, <a href="https://keras.io">Keras</a>, and <a href="https://tensorflow.org">TensorFlow</a>, and special hardware with customized <a href="https://oreil.ly/hGljt">CPU</a> and <a href="https://oreil.ly/ACYPT">GPU</a> to run ML workloads. We’ll start our discussion with Amazon SageMaker and then briefly touch on other offerings.</p>
+        <div data-type="note">
+          <p><em>Intelligence</em> refers to <a contenteditable="false" data-type="indexterm" data-primary="intelligence">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AI (artificial intelligence)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="artificial intelligence (AI)">&nbsp;</a>our ability to ask questions and provide reasons for the answers to these questions. We call it <em>AI</em> when this intelligence is shown by machines. <em>Machine learning</em> is a branch of AI representing this intelligence based on previous data and algorithms. This book will not introduce you to ML concepts but rather will explore a few AWS services offering ML capabilities. </p>
+        </div>
+        <section data-type="sect2" id="ch13_amazon_sagemaker_1734552292003791">
+          <h2>Amazon SageMaker</h2>
+          <p>The <a contenteditable="false" data-type="indexterm" data-primary="SageMaker" id="sagemaker">&nbsp;</a>default benefit we achieve by choosing the AWS cloud is running any service without the worry of infrastructure management. Amazon SageMaker is an AWS-managed service that allows customers to prepare data and build, train, and deploy ML models quickly. SageMaker offers features to complete each of these steps and then finally deploy your models with ease, getting the best out of it with minimal effort:</p>
+          <dl>
+            <dt>Prepare data</dt>
+            <dd>
+              <p>SageMaker offers tools for initial data preparation that allow you to build on top of the data, such as <a href="https://oreil.ly/kdw5W">Data Wrangler</a>. Data Wrangler can be added in ML workflows in <a href="https://oreil.ly/oRElj">Amazon SageMaker Studio</a> to import, prepare, transform, and identify features and analyze data.</p>
+            </dd>
+            <dt>Build</dt>
+            <dd>
+              <p>Customers can use Jupyter notebooks inside SageMaker Studio to build their ML models. AWS offers its own custom-built algorithms that run efficiently on the AWS infrastructure as well as on popular open source frameworks, such as TensorFlow and PyTorch. You can also write custom code if the available solutions don’t fit your use case.</p>
+            </dd>
+            <dt>Train</dt>
+            <dd>
+              <p>As SageMaker manages all the infrastructure, you don’t have to worry about training. You can use the managed infrastructure from storage to compute.</p>
+            </dd>
+            <dt>Deploy</dt>
+            <dd>
+              <p>Deployment of ML models is also taken care of by SageMaker. There are multiple ways to deploy a model, and a particular method can be selected based on the use case. We recommend using <a href="https://oreil.ly/SdNn6">real-time inference</a> for workloads with low latency requirements, <a href="https://oreil.ly/xsLLb">serverless inference</a> as a fully managed solution and for workloads that can tolerate cold-start problems, <a href="https://oreil.ly/K1jnb">asynchronous inference</a> for workloads with large payload sizes (up to 1 GB) and near real-time processing requirements, and <a href="https://oreil.ly/1Gpok">batch transforms</a> for processing entire datasets.</p>
+            </dd>
+          </dl>
+          <p>SageMaker also offers support for A/B testing by enabling multiple ML models behind a single endpoint. A/B testing helps with figuring out how different models are performing and if they are working per expectations.</p>
+          <p>Depending on your use case, you can decide to use SageMaker for some or all these features when building and deploying your entire pipeline. For example, you can deploy on SageMaker a model that has already been trained on on-premises infrastructure.</p>
+          <p>SageMaker also offers the following key features:</p>
+          <dl>
+            <dt>Clarify</dt>
+            <dd>
+              <p>SageMaker includes multiple features that can help improve your ML models, such as <a href="https://oreil.ly/5CFmG">SageMaker Clarify</a>. As the name dictates, it detects any potential bias and helps clarify the predictions that the ML models make using a feature-attribution approach.</p>
+            </dd>
+            <dt>Debugger</dt>
+            <dd>
+              <p>Metrics are an important tool for visualizing performance. To visualize an ML model’s performance, you can use <a href="https://oreil.ly/G3b5_">SageMaker Debugger</a>. It also can identify system bottlenecks for EC2 instance jobs with metrics like CPU, GPU, GPU memory, network, and data I/O.</p>
+            </dd>
+            <dt>Pipelines</dt>
+            <dd>
+              <p>We mentioned that SageMaker helps with the entire cycle, from data preparation to model deployments. As you scale your systems, it’s very important that SageMaker is automatically managed to reduce operational overhead. <a href="https://oreil.ly/lgPN_">SageMaker Pipelines</a> helps with this automation and with building end-to-end CI/CD pipelines.</p>
+            </dd>
+            <dt>Automatic model tuning (AMT)</dt>
+            <dd>
+              <p>The ML model performance can vary based on hyperparameter values. SageMaker <a href="https://oreil.ly/mPD1Q">AMT</a> runs the training job multiple times and figures out the best version of the model. </p>
+            </dd>
+            <dt>Ground Truth</dt>
+            <dd>
+              <p>It’s important to train ML models on good-quality datasets to get the most out of them. <a href="https://oreil.ly/Azeul">SageMaker Ground Truth</a> helps automate this process by creating high-quality, labeled datasets. For data-labeling tasks, you can choose the workforce, such as independent contractors, your own private workforce, or vendor companies on AWS Marketplace.</p>
+            </dd>
+          </dl>
+          <p>SageMaker is a great tool for building ML solutions on the AWS cloud. Visit the <a href="https://oreil.ly/VFlK7">SageMaker documentation</a> for an even deeper dive into its capabilities as we couldn’t possibly fit everything into this chapter. </p>
+          <p>There may be use cases where you don’t have the expertise to build your own solutions. In these scenarios, you can leverage different services offered by AWS to solve <a contenteditable="false" data-type="indexterm" data-primary="SageMaker" data-startref="sagemaker">&nbsp;</a>specific use cases.</p>
+        </section>
+        <section data-type="sect2" id="ch13_aws_ml_application_services_1734552292003857">
+          <h2>AWS ML Application Services</h2>
+          <p>Building ML solutions on your own takes time as well as expertise in a field where you might not want to invest. If you have a general use case for ML, you can use fully managed services by AWS without the worry of building, deploying, and maintaining ML models. Some of these services include:</p>
+          <dl>
+            <dt>Amazon CodeWhisperer</dt>
+            <dd>
+              <p>You <a contenteditable="false" data-type="indexterm" data-primary="CodeWhisperer">&nbsp;</a>might be familiar with the concept of pair programming, where two people have a discussion and then code together. <a href="https://oreil.ly/EnFbX">Amazon CodeWhisperer</a> is your coding companion and helps you by generating code suggestions ranging from small code snippets to entire functions. It can also flag security issues in code, and it offers suggestions to remediate the raised concerns that can be easily integrated in your favorite code editor.</p>
+            </dd>
+            <dt>Amazon Comprehend</dt>
+            <dd>
+              <p>Amazon Comprehend <a contenteditable="false" data-type="indexterm" data-primary="Comprehend">&nbsp;</a>helps with gathering insights from a document or collection of documents. In our example of an online food-ordering application, customers write reviews about food they ordered. We can use Comprehend to decipher review behavior (positive/negative) or identify which food items are being talked about. Comprehend can identify insights such as entities (person names, places, items, etc.), PII, document languages, sentiment (positive, negative, neutral, or mixed), and more.</p>
+            </dd>
+            <dt>Amazon Kendra</dt>
+            <dd>
+              <p><a href="https://oreil.ly/wL4LK">Amazon Kendra</a> is an ML-powered search engine<a contenteditable="false" data-type="indexterm" data-primary="Kendra">&nbsp;</a> on top of structured or unstructured data repositories. It uses natural language processing to determine which document is most relevant to a user’s search queries. You use Kendra along with <a href="https://oreil.ly/9dBhV">Amazon Lex</a><a contenteditable="false" data-type="indexterm" data-primary="Lex">&nbsp;</a> to build <a href="https://oreil.ly/aGejD">AI chatbots</a> for use cases like customer support to resolve user queries on our online food-ordering application. </p>
+            </dd>
+            <dt>Amazon Forecast</dt>
+            <dd>
+              <p><a href="https://oreil.ly/pqJWg">Amazon Forecast</a> is helpful <a contenteditable="false" data-type="indexterm" data-primary="Forecast">&nbsp;</a>for accurate time-series forecasts. Consider an example of an online business: how do you predict traffic for an upcoming sale based on historical traffic or what growth looks like if you launch in a new region? Forecast automatically figures out combinations of ML algorithms suitable for your dataset and helps you with the forecasts.</p>
+            </dd>
+            <dt>Amazon Rekognition</dt>
+            <dd>
+              <p><a href="https://oreil.ly/bwstV">Amazon Rekognition</a> is a recognition service<a contenteditable="false" data-type="indexterm" data-primary="Rekognition">&nbsp;</a> for image and video analysis. This service can power use cases like search over image and video content, face identification and verification, adult content detection, and text extraction from images. </p>
+            </dd>
+            <dt>Amazon Transcribe</dt>
+            <dd>
+              <p><a href="https://oreil.ly/sWm_0">Amazon Transcribe</a> is a speech-to-text <a contenteditable="false" data-type="indexterm" data-primary="Transcribe">&nbsp;</a>conversion service. In our online food-ordering application example, we might offer a service where customers can submit their feedback via telephone for food items they ordered. Transcribe can help derive valuable <a href="https://oreil.ly/iwSIc">insights</a> from such calls. Some other use cases where it can help is converting voice input to text for processing in your systems, converting audio and video content to be searchable by text, and creating subtitles for videos.</p>
+            </dd>
+          </dl>
+          <p>These customized offerings provide direct integrations within our applications with minimal effort. As an example, assume that you own a blog-hosting service where users can manage their blogs and share content with their followers. To add text-to-audio functionality, you can either build your own solution or use Amazon Polly <a contenteditable="false" data-type="indexterm" data-primary="Polly">&nbsp;</a>for a much faster start. As we’ve mentioned before, you can always improve on the solutions if your use case changes later or you see any bottlenecks in existing solutions. The key point is time to market: if you start with a custom solution, it might take much more time to launch the service compared to direct integration with a service like Polly. </p>
+          <p>In the next section, we’ll discuss special infrastructure support provided by AWS to build ML workloads.</p>
+        </section>
+        <section data-type="sect2" id="ch13_aws_ml_infrastructure_1734552292003918">
+          <h2>AWS ML Infrastructure</h2>
+          <p>AWS offers <a contenteditable="false" data-type="indexterm" data-primary="EC2 (Elastic Compute Cloud)" data-secondary="for machine learning" data-secondary-sortas="machine learning">&nbsp;</a>EC2 instances that are specialized to handle ML workloads for both training and inference. These instances include hardware-based accelerators, also referred to<a contenteditable="false" data-type="indexterm" data-primary="coprocessors">&nbsp;</a> as <em>coprocessors</em>, to enhance the computing power and perform tasks like graphics processing, floating point number calculations, and data pattern matching in a much more efficient manner compared to software running on general-purpose CPUs. Some examples of accelerators include <a href="https://oreil.ly/gMe3N">GPUs</a>, <a href="https://oreil.ly/5ouKn">field-programmable gate arrays (FPGAs)</a>, <a href="https://oreil.ly/0f_9a">AWS Inferentia</a>, and <a href="https://oreil.ly/4Fr45">AWS Trainium</a>. Let’s talk about the custom solutions offered by AWS to accelerate our ML workloads:</p>
+          <dl>
+            <dt>AWS Trainium</dt>
+            <dd>
+              <p>The <a contenteditable="false" data-type="indexterm" data-primary="Trainium">&nbsp;</a>Amazon EC2 Trainium instances offer up to 50% cost-to-train savings over comparable EC2 instances. These instances are optimized to run <a href="https://oreil.ly/iPkt7">deep learning</a> training workloads with native support of different data types, such as FP32, TF32, BF16, FP16, UINT8, and configurable FP8. It supports AWS Neuron SDK, which is natively integrated with <a href="https://oreil.ly/WbC27">PyTorch</a> and <a href="https://oreil.ly/Tbypv">TensorFlow</a>, so existing framework applications can be used with minimal code changes.</p>
+            </dd>
+            <dt>AWS Inferentia</dt>
+            <dd>
+              <p>The <a contenteditable="false" data-type="indexterm" data-primary="Inferentia">&nbsp;</a>Amazon EC2 Inferentia instances are designed to run ML inference applications with high throughput and low latency while saving costs when compared to general-purpose EC2 instances. These types of instances offer high-speed connectivity between the accelerators, enabling deployment of billions of parameters across multiple accelerators on Inferentia EC2 instances.</p>
+            </dd>
+          </dl>
+          <div data-type="note">
+            <p><em>Inference</em> means reaching<a contenteditable="false" data-type="indexterm" data-primary="inference">&nbsp;</a> a conclusion based on logical reasoning and evidence, so <em>ML inference</em> essentially means running ML models on live data to get a final answer (or make a prediction). The training is a prephase to inference, where we train ML applications to learn from existing data and then use this intelligence at the time of inference.</p>
+          </div>
+          <p>The EC2 instances are purpose built to optimize compute-heavy tasks like running large-scale models, natural language processing, speech recognition, and computer vision. You might consider the cost here: if the accelerator in these EC2 instances makes processing so fast, then it would definitely be costly, and you should decide if you can afford such an expenditure. As these instances are specifically designed for ML workloads, they are cost-effective if you compare them to EC2 instances with similar capabilities. For example, <a href="https://oreil.ly/8J34f">Amazon EC2 Inf1 instances</a> provide 2.3 times higher throughput and up to 70% lower cost per inference than comparable EC2 instances. The <a href="https://oreil.ly/rtYkL">EC2 Inf2 instances</a> are cheaper than Inf1, with four times higher throughput and 10 times lower latency. A very good benefit of using the AWS cloud is that AWS innovates on the behalf of customers. We as customers might have been happy with the performance and cost benefits of Amazon EC2 Inf1 instances, but AWS has now launched a new version with improvements to the existing<a contenteditable="false" data-type="indexterm" data-primary="machine learning" data-startref="machine-learning">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ML (machine learning)" data-startref="ml">&nbsp;</a> options. </p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch13_conclusion_1734552292003976">
+        <h1>Conclusion</h1>
+        <p>This chapter introduced you to AWS services that are helpful when building and running big data analytics and ML workloads at any scale. You may often want to use a combination of multiple services to serve your use case best, such as Amazon EMR to process the live streaming data published to Amazon MSK or plotting Amazon Redshift data via Amazon QuickSight. Since AWS provides easy integration with all its services, it is a seamless experience to use any service and fit it into other service components to meet your requirements. </p>
+        <p>In the second part of this chapter, we looked into AWS ML offerings, which essentially run ML workloads with zero or minimal operational overhead. AWS offers multiple services to solve specific use cases, which help us utilize the capabilities of ML without having vast knowledge of the concepts. For example, imagine building a language translation tool on your own versus using <a href="https://aws.amazon.com/translate">Amazon Translate</a>. Amazon Translate will reduce the time to market of launching your application with translation capability. </p>
+        <p>We concluded with several infrastructure options that are specialized to run ML workloads at scale with higher throughput and lower cost when compared to general-purpose comparable hardware.</p>
+        <p>This is the final chapter in <a data-type="xref" href="part2">#part2</a>. We’re confident that now you can use your understanding of the material covered in Parts <a data-type="xref" href="part1" data-xrefstyle="select:labelnumber">#part1</a> and <a data-type="xref" href="part2" data-xrefstyle="select:labelnumber">#part2</a> to build real-time, large-scale systems. In <a data-type="xref" href="part3">#part3</a>, we’ll walk through use cases for building different systems on the AWS cloud, starting with a URL shortener service.</p>
+      </section>
+    </section>

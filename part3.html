@@ -1,0 +1,116 @@
+<div xmlns="http://www.w3.org/1999/xhtml" data-type="part" id="part3">
+      <h1>System Design Use Cases</h1>
+      <blockquote data-type="epigraph">
+        <p>Ninety percent of the functionality delivered now is better than 100% of it delivered never. </p>
+        <p data-type="attribution">Brian Kernighan and P. J. Plauger </p>
+      </blockquote>
+      <p>Part III of this book covers some common system design use cases and examples, which we will work through together to build and scale on top of AWS cloud computing services. For all the use cases, we’ll start with figuring out the system requirements, then move to a deep dive into system components, and finally close the chapter with a deployment view on AWS with Day 0 architecture (minimum viable product for a startup with, say, one thousand customers) and Day N architecture (scaling to millions of customers). Along the way, we’ll discuss the bottlenecks that might occur in design, best practices for designing large-scale systems, and comparisons of similar AWS services. </p>
+      <p>We <a contenteditable="false" data-type="indexterm" data-primary="Make it Work, Make it Right, Make it Fast principle">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scalability">&nbsp;</a>recommend following the <a href="https://oreil.ly/_J-U2">Make It Work, Make It Right, Make It Fast</a> principle, and all the chapters in Part III follow this philosophy. It’s good to be optimistic that one day our system will serve one billion active users, but you don’t have to build the system from day one to support this scale. The goal of huge scale should never hold you back from launching the product—just make sure the system is extensible enough so that if there is a need in the future, it can be evolved as new users are onboarded and new features are introduced. For example, the following <em>amazon.com </em>website screenshot shows the initial launch of the website—there was no point back then in thinking of how to make it work for a billion customers. </p>
+      <p>Other reasons for redesigning any system could be cost and operational maintenance, such as when Uber started with Amazon DynamoDB to build a ledger store but later moved to its custom-built storage solution, <a href="https://oreil.ly/KUvJ3">Docstore</a>. The same principle applies while we figure out components in any system: the <a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="goals of">&nbsp;</a>goal should always be to get the system out in the hands of the public and gather feedback. There is no win in overoptimizing the system if we never reach the goal of solving the customers’ problems and finally generating revenue from it; after all, everyone is in business to earn money from the designed system or help other people to do so (as with open source projects).</p>
+      <figure class="informal" id="part3_figure_1_1734552296194637">
+        <img src="images/sdoa_p3in01.png"/>
+        <figcaption/>
+      </figure>
+      <p>Every chapter in Part III will follow this general outline:</p>
+      <ol>
+        <li>
+          <p>Introduction</p>
+          <ol>
+            <li>
+              <p>Background</p>
+            </li>
+            <li>
+              <p>Business use case</p>
+            </li>
+          </ol>
+        </li>
+        <li>
+          <p>System requirements</p>
+          <ol>
+            <li>
+              <p>Functional and nonfunctional requirements</p>
+            </li>
+            <li>
+              <p>System scale</p>
+            </li>
+          </ol>
+        </li>
+        <li>
+          <p>Starting with the design</p>
+          <ol>
+            <li>
+              <p>Concepts and principles</p>
+            </li>
+            <li>
+              <p>System components</p>
+            </li>
+            <li>
+              <p>A rough system design</p>
+            </li>
+          </ol>
+        </li>
+        <li>
+          <p>Launching the system on AWS</p>
+          <ol>
+            <li>
+              <p>Day 0 architecture</p>
+            </li>
+            <li>
+              <p>Scaling to millions and beyond</p>
+            </li>
+            <li>
+              <p>Day N architecture</p>
+            </li>
+          </ol>
+        </li>
+        <li>
+          <p>Conclusion</p>
+        </li>
+      </ol>
+      <p>By the end of Part III, you will:</p>
+      <ul>
+        <li>
+          <p>Understand the business use case for each system-design problem and how to ask the right questions to evaluate the requirements</p>
+        </li>
+        <li>
+          <p>Know how to outline the functional and nonfunctional requirements for the use case and how to estimate the scale requirements for storage, throughput, and latency, which percolate to capacity and cost estimations</p>
+        </li>
+        <li>
+          <p>Know how to build the solution with the first principles using system-design basics and how to handle the edge cases and nuances around the design </p>
+        </li>
+        <li>
+          <p>Deploy initial solutions on AWS with Day 0 architecture for a minimum viable product and evolve it into a most valuable product</p>
+        </li>
+        <li>
+          <p>Scale the architecture to millions of users for Day 1 and beyond on AWS, making it secure, high-performing, resilient, and efficient</p>
+        </li>
+      </ul>
+      <p>We’ve chosen eight use cases to explore a wide range of problem statements in the industry:</p>
+      <ul>
+        <li>
+          <p>Imagine a tool that takes long web addresses and turns them into short ones. <a data-type="xref" href="#ch14_designing_a_url_shortener_service_1734552292687677">#ch14_designing_a_url_shortener_service_1734552292687677</a> will take you into the world of URL shorteners. We’ll learn why they’re important, what they need to do, and how to build them using AWS. We’ll start with a simple setup for a startup and then see how to make it work for millions of users.</p>
+        </li>
+        <li>
+          <p><a data-type="xref" href="#ch15_designing_a_web_crawler_and_search_engine_1734552293105400">#ch15_designing_a_web_crawler_and_search_engine_1734552293105400</a> is all about web crawlers and search engines like Google and Bing. We’ll explore how these systems work, what they need to do, and how to create them using AWS. We’ll start small and then figure out how to handle a massive amount of data.</p>
+        </li>
+        <li>
+          <p>Ever wonder how social networks like Facebook connect people from all over the world? <a data-type="xref" href="#ch16_designing_a_social_network_and_newsfeed_system_1734552293547861">#ch16_designing_a_social_network_and_newsfeed_system_1734552293547861</a> will cover how to design a social network like Facebook or Instagram and create a newsfeed system to connect people from all over the world. We’ll cover how to make sure people can share and see updates and how to build it all using AWS.</p>
+        </li>
+        <li>
+          <p>Online games are a blast, and real-time leaderboards are an important part of these games. <a data-type="xref" href="#ch17_designing_an_online_game_leaderboard_1734552294109327">#ch17_designing_an_online_game_leaderboard_1734552294109327</a> will show you how to design a system for tracking online game scores and ranking players. We’ll use AWS to make sure the leaderboards can handle lots of players and updates.</p>
+        </li>
+        <li>
+          <p>Planning a vacation and booking the perfect place to stay can feel thrilling, but have you ever thought about the complex system behind the scenes that makes it all work? <a data-type="xref" href="#ch18_designing_a_hotel_reservation_system_1734552294615548">#ch18_designing_a_hotel_reservation_system_1734552294615548</a> will delve into the architecture of an online hotel reservation system, addressing complex requirements like booking conflicts and transaction handling. We’ll break down the components and deploy a scalable solution on the AWS cloud.</p>
+        </li>
+        <li>
+          <p><a data-type="xref" href="#ch19_designing_a_chat_application_1734552294951889">#ch19_designing_a_chat_application_1734552294951889</a> is about designing a chat application that lets people send messages in real time. We’ll see how AWS can help us create a seamless, responsive chat experience.</p>
+        </li>
+        <li>
+          <p>Relaxing with Netflix is a favorite pastime for many, and <a data-type="xref" href="#ch20_designing_a_video_processing_pipeline_for_a_stream_1734552295245731">#ch20_designing_a_video_processing_pipeline_for_a_stream_1734552295245731</a> will teach you how to design a system that processes and streams videos smoothly. We’ll learn how to onboard video to the system and discover how the videos are streamed smoothly to a variety of devices all over the world without <span class='keep-together'>interruptions</span>.</p>
+        </li>
+        <li>
+          <p><a data-type="xref" href="#ch21_designing_an_online_stock_trading_platform_1734552295606829">#ch21_designing_an_online_stock_trading_platform_1734552295606829</a> looks into designing a system for buying and selling stocks: a stockbroker application. You’ll learn how to create a reliable, efficient stockbroker system and deploy it on AWS.</p>
+        </li>
+      </ul>
+      <p>By the end of the book, you’ll have a clear understanding of how to tackle different real-world challenges using AWS cloud computing services. You’ll know how to design systems that are efficient, reliable, and ready to handle millions of users. So let’s dive in and start designing some amazing systems!</p>
+    </div>

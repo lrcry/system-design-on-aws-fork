@@ -1,0 +1,750 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch14_designing_a_url_shortener_service_1734552292687677">
+  <h1>设计短网址服务</h1>
+  <p>我们<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="use cases" data-see="use cases">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" id="use-case-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" id="url-short">&nbsp;</a>在<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>中探讨了 DNS 的概念，指出记住网站的 URL 比记住其 IP 地址更容易——但对于那些很长的 URL 又该怎么办呢？记住 URL 的根部分很容易（例如 <a href="https://learning.oreilly.com/library/view/system-design-on/9781098146887"><em>https://learning.oreilly.com/library/view/system-design-on/9781098146887</em></a> 中的 <em>learning.oreilly.com</em>），但很难记住整个长 URL。我们经常<a href="https://oreil.ly/SystemDesignOnAWS">在文本中嵌入链接</a>，因为这样可以提高可读性。</p>
+  <p>分享长 URL 的另一种方式是将其缩短。例如，LinkedIn 会自动缩短帖子中包含的任何 URL，因为这有助于提升帖子的可读性和用户互动率。在 Twitter（现更名为 X）等微博客应用中，单条帖子有字符数限制，因此为了减少文本长度，您可以通过 <a href="https://tinyurl.com/app">TinyURL</a> 或 <a href="https://bitly.com">Bitly</a> 等短网址服务缩短 URL，然后将其附加到帖子中，而不是使用完整的长 URL。</p>
+  <p>本章将探讨短网址服务的设计，并讨论如何在 AWS 云上部署该系统。我们将从需求收集和系统预期开始，随后深入探讨系统的具体细节。</p>
+  <section data-type="sect1" id="ch14_system_requirements_1734552292687935">
+    <h1>系统需求</h1>
+    <p>您应该<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="system requirements" id="use-case-url-short-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="system requirements" id="url-short-require">&nbsp;</a>对需要解决的问题有一个明确的目标。在此基础上，设计任何系统（无论大小）的下一步就是收集需求。这些需求包括：</p>
+    <ul>
+      <li>
+        <p>为什么需要这个系统？它要解决的业务用例是什么？</p>
+      </li>
+      <li>
+        <p>该系统的用户是谁？有多少用户？</p>
+      </li>
+      <li>
+        <p>是否已经有可以直接使用的系统，而不必从头设计一个新系统？像 Bitly 这样的系统已向企业客户开放了短网址 API，那么我们为什么要自己构建系统，而不是使用 Bitly 的系统 API 呢？</p>
+      </li>
+      <li>
+        <p>系统的延迟是否至关重要？</p>
+      </li>
+    </ul>
+    <p>需求列表可能非常庞大，收集需求也可能耗费大量时间，但这是非常重要的一步。在第<a data-type="xref" href="#part1" data-xrefstyle="select:labelnumber">#part1</a>部分和第<a data-type="xref" href="#part2" data-xrefstyle="select:labelnumber">#part2</a>部分，我们多次讨论了如何比较两种技术并根据对业务用例的理解选出最优方案。如果需求不明确，就无法权衡各个选项的利弊。任何系统的需求通常分为两类：功能性需求和非功能性需求（NFR）。</p>
+    <section data-type="sect2" id="ch14_functional_and_nonfunctional_requirements_1734552292688021">
+      <h2>功能性需求与非功能性需求</h2>
+      <p><em>功能性需求</em>是<a contenteditable="false" data-type="indexterm" data-primary="functional requirements" data-secondary="URL shortener service">&nbsp;</a>系统向最终用户提供的功能或特性。对短网址服务的主要期望很简单：</p>
+      <ul>
+        <li>
+          <p>系统接受长 URL 作为输入，并返回一个缩短后的 URL。</p>
+        </li>
+        <li>
+          <p>任何用户访问短 URL 时，应能重定向到对应的长 URL。</p>
+        </li>
+      </ul>
+      <p>除了最核心的需求之外，还可以考虑一些增值需求——这些需求从客户角度看是锦上添花的功能，或者有助于实现业务价值。以下是一些示例：</p>
+      <ul>
+        <li>
+          <p>支持自定义 URL 创建</p>
+        </li>
+        <li>
+          <p>URL 访问模式分析，例如最热门的 URL</p>
+        </li>
+        <li>
+          <p>URL 过期功能，使 URL 在固定期限后自动失效，不再可访问</p>
+        </li>
+        <li>
+          <p>基于插件的架构，以确保可扩展性</p>
+        </li>
+        <li>
+          <p>向第三方客户端开放 API，使其能够将自己的应用与我们的系统集成</p>
+        </li>
+      </ul>
+      <p>我们应尽可能多地收集可能需要的需求，但不应因过度考虑未来的期望而忽视当前的期望。这些附加需求将帮助我们以可扩展的方式设计系统，使新功能可以在不重新架构的情况下被添加进来。</p>
+      <p>另一类需求是非功能性需求。<em>非功能性需求（NFR）</em>决定<a contenteditable="false" data-type="indexterm" data-primary="nonfunctional requirements" data-secondary="URL shortener service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="NFRs" data-see="nonfunctional requirements">&nbsp;</a>了系统运行所受的约束，不会直接影响用户功能，但对于保障系统运行质量至关重要。以下是一些示例：</p>
+      <dl>
+        <dt>安全性</dt>
+        <dd>
+          <p>确保系统不被恶意行为者利用</p>
+        </dd>
+        <dt>高可用性</dt>
+        <dd>
+          <p>确保全年正常运行时间百分比保持在较高水平</p>
+        </dd>
+        <dt>可观测性</dt>
+        <dd>
+          <p>确保建立适当的指标和告警，以持续监控系统健康状态</p>
+        </dd>
+        <dt>低延迟</dt>
+        <dd>
+          <p>适用于短 URL 的创建和重定向</p>
+        </dd>
+        <dt>数据存储</dt>
+        <dd>
+          <p>应具备持久性，并确保数据在 URL 所配置的过期时间内的正确性。数据应在系统中保留，直至过期时间届满或被用户显式删除。</p>
+        </dd>
+        <dt>容错性</dt>
+        <dd>
+          <p>通过重试处理等机制实现</p>
+        </dd>
+        <dt>系统架构的互操作性</dt>
+        <dd>
+          <p>系统在大规模下运行，可被拆分为多个子系统，那么不同子系统之间将如何相互交互？</p>
+        </dd>
+      </dl>
+      <p>这些需求将帮助我们在设计系统时做出更好的决策。需求收集步骤的另一个部分是确定系统将在什么规模下运行。</p>
+    </section>
+    <section data-type="sect2" id="ch14_system_scale_1734552292688092">
+      <h2>系统规模</h2>
+      <p><em>规模</em>是指<a contenteditable="false" data-type="indexterm" data-primary="scale (of system)" data-secondary="URL shortener service" id="scale-url-short">&nbsp;</a>我们预期系统承载的用户数量或流量。我们应该能够回答以下问题：</p>
+      <ul>
+        <li>
+          <p>生成短 URL 的潜在用户每秒请求数（RPS）或每秒查询数（QPS）是多少？</p>
+        </li>
+        <li>
+          <p>将短 URL 重定向到长 URL 的用户请求量（或系统负载）是多少？我们应对系统的平均负载和峰值负载都有清晰的认识。</p>
+        </li>
+        <li>
+          <p>我们是否对存储数据所需的存储空间大小有所了解？</p>
+        </li>
+      </ul>
+      <p>如果是从零开始，给出规模数字可能比较棘手，因为您可能没有 100% 准确的数据作为依据。在这种情况下，做出合理的假设是可以的——既不要过于保守，也不要过于激进。让我们基于以下假设来推进需求分析：</p>
+      <ul>
+        <li>
+          <p>从长 URL 生成短 URL：1,000 RPS</p>
+        </li>
+        <li>
+          <p>短 URL 到长 URL 的重定向：20,000 RPS</p>
+        </li>
+        <li>
+          <p>URL 在系统中的平均持久化时长：一年</p>
+        </li>
+      </ul>
+      <p>市场上有很多数据库解决方案。要决定哪一种最适合我们的用例，需要考虑另一个重要参数：所需的总存储空间。了解这一点有助于回答以下问题：</p>
+      <ul>
+        <li>
+          <p>如果使用 Amazon DynamoDB 或 Amazon Aurora，预期的费用是多少？</p>
+        </li>
+        <li>
+          <p>我们是否从一开始就需要进行数据分区？</p>
+        </li>
+      </ul>
+      <p>对于规模而言，其他重要的考虑因素还包括：为部署在 Amazon EC2 实例上的应用程序确定实例类型和实例数量，以及 AWS Lambda 的内存需求。在系统投入生产并承载真实用户流量之前，很难获得真实数字。先做出合理假设，再根据经验不断优化。</p>
+      <p>一个关键考虑因素是系统负载测试；负载测试有助于建立信心，确认系统在流量增长时能够按预期运行（即系统是可靠的）。接下来我们来讨论<a contenteditable="false" data-type="indexterm" data-primary="scale (of system)" data-secondary="URL shortener service" data-startref="scale-url-short">&nbsp;</a>存储空间需求。</p>
+    </section>
+    <section data-type="sect2" id="ch14_storage_space_1734552292688159">
+      <h2>存储空间</h2>
+      <p>实际所需的存储空间<a contenteditable="false" data-type="indexterm" data-primary="storage capacity" data-secondary="URL shortener service" id="store-cap-url-short">&nbsp;</a>会因所使用的数据存储方案类型而有所不同，因为每种数据库的数据存储和访问模式各不相同。存储空间的近似计算取决于 URL 的数量、短 URL 和长 URL 的长度、用户元数据，以及 URL 元数据（如过期时间和创建时间）。一年内生成的 URL 数量可以从假定流量 1,000 RPS 推算得出：</p>
+      <div data-type="equation">
+        <p>一年内的 URL 总量 = (1,000 请求/秒) × 60（每分钟）× 60（每小时）× 24（每天）× 365（每年）≈ 315.3 亿</p>
+      </div>
+      <p>在继续进行存储计算之前，我们需要确定短 URL 的理想长度。该长度应保证系统不会耗尽唯一短 URL 的供给，并能支持每年 315 亿个唯一 URL 的规模要求。在<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>中，我们讨论了用 IPv6 地址替代 IPv4 地址的问题，因为全球的唯一 IP 地址正在耗尽。我们绝对不希望短网址系统出现类似问题，因此从一开始就应经过充分考量来计算 URL 长度。您可能会建议取 12 或 15 的长度以保险，但这样做违背了缩短 URL 的初衷。</p>
+      <p>我们可以考虑用数字 0−9、字母 a−z 和 A−Z 来生成短 URL。对于给定长度，使用这 62 个唯一字符最多可以生成多少个唯一 URL？</p>
+      <div data-type="equation">
+        <p>长度(1) = 62<sup>1</sup> = 62</p>
+        <p>长度(6) = 62<sup>6</sup> = 568 亿</p>
+        <p>长度(7) = 62<sup>7</sup> = 3.5 万亿</p>
+        <p>长度(8) = 62<sup>8</sup> = 218.3 万亿</p>
+      </div>
+      <p>从这些计算可以看出，当 URL 长度大于等于 6 时，系统就能支持所需的规模。考虑到未来的扩展，我们可以将 URL 长度最终确定为 7。</p>
+      <p>现在，让我们回到最初的问题：所需的存储空间是多少？考虑一个简单的数据库模式（存储短 URL、长 URL、过期时间和元数据），我们可以如下计算存储需求：</p>
+      <div data-type="equation">
+        <p>短 URL（7 个字符）= 7 字节</p>
+        <p>平均长 URL（100 个字符）= 100 字节</p>
+        <p>过期日期（长整型）= 8 字节</p>
+        <p>平均元数据（用户 IP、用户偏好等）= 1 KB</p>
+        <p>合计 ≈ 1,150 字节</p>
+      </div>
+      <p>为简便起见，我们将单个 URL 的存储需求取为 1 KB：</p>
+      <div data-type="equation">
+        <p>一年的总存储量 = 315.3 亿 × 1 KB = 29.37 TB</p>
+      </div>
+      <p>系统还有其他存储需求，例如用于提升查询性能的缓存、分析数据，以及用户认证数据库（如果系统为已登录用户提供额外功能，例如自定义 URL 创建、查看分析报告等，则可能需要此数据库）。</p>
+      <p>有了上述所有需求，让我们继续设计<a contenteditable="false" data-type="indexterm" data-primary="storage capacity" data-secondary="URL shortener service" data-startref="store-cap-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="system requirements" data-startref="use-case-url-short-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="system requirements" data-startref="url-short-require">&nbsp;</a>短网址服务。</p>
+    </section>
+  </section>
+  <section data-type="sect1" id="ch14_starting_with_the_design_1734552292688238">
+    <h1>从设计开始</h1>
+    <p>我们<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="architecture design" id="use-case-url-short-architecture">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="architecture design" id="url-short-architecture">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="in URL shortener service" data-secondary-sortas="URL shortener service" id="schema-url-short">&nbsp;</a>在需求收集部分提到，我们不应想得太远，因为我们不知道系统未来会是什么样子，也不知道会引入哪些新功能来顺应市场变化。我们应努力保持系统的开放性，以便在真正需要时能够轻松引入新功能。<a data-type="xref" href="#ch14_figure_1_1734552292664156">#ch14_figure_1_1734552292664156</a>展示了短网址服务最基础的架构以及用户与之交互的方式，以满足已定义的功能性需求。用户通过短网址服务为长 URL 创建对应的短 URL，然后在浏览器（或终端）中使用该短 URL 访问目标页面。短网址服务会找到短 URL 对应的长 URL，并将请求重定向到该长 URL。</p>
+    <figure id="ch14_figure_1_1734552292664156">
+      <img src="images/sdoa_1401.png"/>
+      <figcaption>用户与短网址服务的交互</figcaption>
+    </figure>
+    <p>设计的首要任务是确定如何从长 URL 生成短 URL，以便进行最优存储，从而支持更快速的用户查询。</p>
+    <section data-type="sect2" id="ch14_url_shortening_algorithm_1734552292688331">
+      <h2>URL 缩短算法</h2>
+      <p>长 URL<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="algorithms for" id="use-case-url-short-algorithm">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="algorithms for" id="url-short-algorithm">&nbsp;</a>可以通过不同的算法缩短为短 URL。我们将讨论其中几种如何适用于我们的系统用例，首先从哈希开始。</p>
+      <section data-type="sect3" id="ch14_hashing_1734552292688407">
+        <h3>哈希</h3>
+        <p>哈希<a contenteditable="false" data-type="indexterm" data-primary="hashing" id="hashing-ch14">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="collisions" id="collision-ch14">&nbsp;</a>看起来是解决这个问题的可行方案：使用哈希函数（例如 <a class="orm:hideurl" href="https://oreil.ly/FfZ20">MD5</a>），以长 URL 作为输入，返回该长 URL 的哈希值作为输出。生成的哈希长度可能超过 7，因此系统需要将其截取到指定长度。这种方案易于实现，但存在一个问题：哈希碰撞。两个不同的长 URL 可能会生成相同的哈希值，即便哈希值不同，截取后的长度也可能相同。在大规模场景下，这会成为一个频繁发生的问题，使短 URL 的生成成为系统瓶颈。</p>
+        <p>处理哈希碰撞有不同的方法：一种可行方案是取其他字符集，而不是截取前 7 个字符。哈希生成方案还需要进行数据库查询（碰撞时需进行多次查询），这会给操作增加额外的延迟，如<a data-type="xref" href="#ch14_figure_2_1734552292664190">#ch14_figure_2_1734552292664190</a>所示。</p>
+        <figure id="ch14_figure_2_1734552292664190">
+          <img src="images/sdoa_1402.png"/>
+          <figcaption>通过哈希生成短 URL</figcaption>
+        </figure>
+        <p>简而言之，哈希方案对于我们的系统需求而言并不完美。让我们思考一种既能避免碰撞，又能避免数据库查询的方案，以使操作<a contenteditable="false" data-type="indexterm" data-primary="hashing" data-startref="hashing-ch14">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="collisions" data-startref="collision-ch14">&nbsp;</a>更快。</p>
+      </section>
+      <section data-type="sect3" id="ch14_unique_id_generation_1734552292688472">
+        <h3>唯一 ID 生成</h3>
+        <p>这里需要考虑的一个关键点<a contenteditable="false" data-type="indexterm" data-primary="unique ID generation" id="unique-id">&nbsp;</a>是：长 URL 和短 URL 之间不必存在关联——本质上这是一个唯一 ID 生成系统，可以将生成的 ID 映射到长 URL。</p>
+        <p>让我们来讨论几种生成唯一 ID 的方法。ID 可以像一个计数器一样简单，每次收到新的用户请求时递增，也可以使用数据库的<a href="https://oreil.ly/WtqwQ"><code>AUTO_INCREMENT</code></a>等功能。如果系统本身（无需数据库参与）处理 ID 生成，我们就能确保同时解决碰撞处理和避免数据库查询这两个问题。可以将其想象成：服务器将计数器初始化为"1"，然后每收到一个新请求就递增一次。映射关系存入数据库，然后将短 URL 返回给用户，如<a data-type="xref" href="#ch14_figure_3_1734552292664216">#ch14_figure_3_1734552292664216</a>所示。</p>
+        <figure id="ch14_figure_3_1734552292664216">
+          <img src="images/sdoa_1403.png"/>
+          <figcaption>通过维护计数器生成短 URL</figcaption>
+        </figure>
+        <p>由 0 到 9、a 到 z 以及 A 到 Z 组成的字母数字字符序列在用于编码时，被<a contenteditable="false" data-type="indexterm" data-primary="base62 encoding">&nbsp;</a>称为 <em>Base62 编码</em>。请注意，对计数器值（十进制数）进行 Base62 编码后，生成的短 URL 是唯一的，但长度不一定总是 7。例如：</p>
+        <div data-type="equation">
+          <p>Base62(1) = 1</p>
+          <p>Base62(10) = A</p>
+          <p>Base62(61) = z</p>
+          <p>Base62(62) = 10</p>
+          <p>Base62(63) = 11</p>
+          <p>Base62(1000001) = 4C93</p>
+        </div>
+        <p>为确保长度始终为 7，我们可以在生成的 Base62 值后面追加来自其他字符集的随机字符，该字符集与字母数字字符集互斥（例如 _、# 等）。</p>
+        <p>我们尚未决定如何维护计数器的值。最简单的方案是在应用程序中维护一个全局计数器变量，每生成一个新短 URL 后就更新它。但应用程序可能运行在多台机器上，这可能导致计数器值重复。即使只有一台机器，也存在宕机风险，导致计数器值重新从零开始。</p>
+        <p>为解决这个问题，可以考虑将全局计数器维护在数据库中。这样既解决了单台机器宕机的问题（计数器不会每次都从零初始化），也解决了多台机器负责 URL 生成的问题（避免各机器间计数器值重复）。然而，这同样会带来问题，因为我们不允许多个应用线程同时访问计数器以避免竞争条件，而如果加锁（即只有一台机器能读取并更新该值），则会增加操作延迟。</p>
+        <p>让我们进一步简化整个架构，以确保最佳的应用性能。我们可以赋予系统预生成短 URL 的额外职责，因为短 URL 的生成不依赖长 URL。这样，多台机器就可以利用预生成的 ID（短 URL），从而解决所有瓶颈问题。</p>
+        <p>我们的短网址服务包含一个额外的组件，负责预生成短 URL 并将其保存在内存中以便快速访问。这里有一个重要决策需要做出：是将这一额外职责赋予短网址服务本身，还是将其作为独立服务来承载？（我们在<a data-type="xref" href="#ch08_architectural_designs_and_patterns_1734552289324317">#ch08_architectural_designs_and_patterns_1734552289324317</a>中讨论了单体架构与微服务架构及其各自的优势。）</p>
+        <p>单一组件可以确保相对较低的硬件成本（至少在初期），并且由于服务间无需网络调用，延迟也较低。在此做出决策时，需要考虑的是：将其作为独立组件而非集成到主应用中，究竟能带来哪些价值。一个独立的 ID 生成或密钥生成服务（KGS）对其他用例也有价值，且这是一个独立的职责，不必与短网址服务绑定。基于此，我们选择将其作为一个独立服务来托管，专门负责生成唯一密钥，并在短网址服务请求时将其传递给它，如<a data-type="xref" href="#ch14_figure_4_1734552292664238">#ch14_figure_4_1734552292664238</a>所示。</p>
+        <figure id="ch14_figure_4_1734552292664238">
+          <img src="images/sdoa_1404.png"/>
+          <figcaption>短网址系统架构</figcaption>
+        </figure>
+        <p>架构中还包含了一个额外的数据分析流水线。短网址服务将用户活动事件发布到消息队列，由数据分析流水线负责分析并提供<a contenteditable="false" data-type="indexterm" data-primary="unique ID generation" data-startref="unique-id">&nbsp;</a>数据洞察。</p>
+        <p>现在，让我们更详细地了解 KGS。</p>
+      </section>
+      <section data-type="sect3" id="ch14_key_generation_service_1734552292688540">
+        <h3>密钥生成服务</h3>
+        <p>KGS<a contenteditable="false" data-type="indexterm" data-primary="key generation service" id="key-generation-service">&nbsp;</a>的职责很简单：当短网址服务请求时，提供唯一 ID。为了控制 KGS 的流量并提升短网址系统的效率，该操作可以一次性提供一批 ID（比如一千个），短网址服务在这批 ID 用尽后再重新请求。让我们深入了解一下 KGS 的工作原理：这些唯一 ID 应该如何生成？</p>
+        <p>我们可以<a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="auto-increment feature">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="auto-increment feature (databases)">&nbsp;</a>考虑使用数据库的自动递增功能，例如 MySQL 的 <code>AUTO_INCREMENT</code> 或 PostgreSQL 的 <a href="https://oreil.ly/nzd_o"><code>SERIAL</code></a> 或 <a href="https://oreil.ly/HnVc_"><code>SEQUENCE</code></a>。此功能适用于主节点实例（当存在多个数据库实例时），但可能成为 ID 维护的单点故障，影响整体系统可用性。此外，在多实例数据库（如水平可扩展的 NoSQL 数据库）中，此功能的实现将非常复杂。我们可以借鉴 <a href="https://oreil.ly/uwx2W">Flickr 的架构</a>，它使用 MySQL 的自动递增功能配合 <code>REPLACE INTO</code> 查询，在每次新查询时获取一个全局唯一的新 ID：</p>
+        <pre data-type="programlisting">CREATE TABLE `Tickets64` (
+  `id` bigint(20) unsigned NOT NULL auto_increment,
+  `stub` char(1) NOT NULL default '',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY `stub` (`stub`)
+) ENGINE=InnoDB
+
+
+REPLACE INTO Tickets64 (stub) VALUES ('a');
+SELECT LAST_INSERT_ID();</pre>
+        <p>为了提高系统可用性并避免单点故障，使用两台数据库服务器，分别以奇数和偶数起始，步长设为 2 以避免碰撞：</p>
+        <pre data-type="programlisting">TicketServer1:
+auto-increment-increment = 2
+auto-increment-offset = 1
+
+TicketServer2:
+auto-increment-increment = 2
+auto-increment-offset = 2</pre>
+        <p>此外，应定期对这两个数据库进行快照备份，以确保在发生任何严重故障时始终有备份可用。由于表中只维护一行数据，可以确保服务器不会耗尽存储空间。</p>
+        <p><a data-type="xref" href="#ch14_figure_5_1734552292664259">#ch14_figure_5_1734552292664259</a>展示了 KGS 与 Ticket 服务器进行 ID 生成的交互过程。</p>
+        <figure id="ch14_figure_5_1734552292664259">
+          <img src="images/sdoa_1405.png"/>
+          <figcaption>通过 Ticket 服务器生成唯一 ID</figcaption>
+        </figure>
+        <p>两台 Ticket 服务器分别生成偶数和奇数 ID，但如果 Ticket 服务器部署在多个区域而非单一区域，这种管理开销将会增加。一种确保跨区域唯一性的潜在解决方案是在短 URL 中添加数据中心前缀，例如 us-east-1 用 1 表示，eu-west-1 用 2 表示，以此类推，使 URL 长度从 7 个字符变为 8 个字符。</p>
+        <div data-type="note">
+          <p>2010 年，X<a contenteditable="false" data-type="indexterm" data-primary="Snowflake">&nbsp;</a>提出了另一种生成 64 位唯一 ID 的方法：Snowflake（雪花算法）。<a href="https://oreil.ly/ooF5v">Snowflake</a> 通过时间戳（41 位，表示 epoch 毫秒时间戳）、机器标识号（10 位，最多支持 1,024 台机器）和序列号（12 位，每台机器的本地计数器）的组合，每毫秒可生成 4,096 个唯一 ID。剩余的 1 位是符号位，始终设置为 0。这种方案不能直接用于我们的短网址系统，因为系统始终需要 7 个字符长度的字符串，但可以基于类似概念进行实现。X 使用 Snowflake 是因为有排序和保证顺序的需求。短网址系统不需要基于时间戳创建 ID，因此我们可以自由选择一种易于实现并能保持唯一性的方案。</p>
+        </div>
+        <p>KGS 可以扩展为根据 API 中的客户端输入或客户端接入配置，支持多种类型的密钥生成。这使 KGS 成为生成任意类型标识符的统一系统。接下来我们来讨论<a contenteditable="false" data-type="indexterm" data-primary="key generation service" data-startref="key-generation-service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="algorithms for" data-startref="use-case-url-short-algorithm">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="algorithms for" data-startref="url-short-algorithm">&nbsp;</a>短网址服务需要支持的 API。</p>
+      </section>
+    </section>
+    <section data-type="sect2" id="ch14_system_apis_1734552292688604">
+      <h2>系统 API</h2>
+      <p>API<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="APIs for" id="use-case-url-short-api">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="APIs for" id="url-short-api">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="api-url-short">&nbsp;</a>帮助客户端与系统集成，以使用所支持的功能。短网址服务应支持两个主要 API：创建短 URL 和通过短 URL 获取长 URL。以下代码片段展示了创建短 URL 的 API 签名：</p>
+      <pre data-type="programlisting">POST /v1/createShortUrl
+{
+    longUrl,
+    customUrl,
+    expiry,
+    userMetadata
+}</pre>
+      <p>在生成短 URL 的 API 请求中，<code>longUrl</code> 参数是必填项。其他属性用于支持应用程序的其他功能：</p>
+      <dl>
+        <dt>
+          <code>customUrl</code>
+        </dt>
+        <dd>
+          <p>如果用户希望生成自定义 URL 而非随机 7 字符字符串，则使用此参数。处理该参数时，短网址服务会直接检查数据库中该自定义 URL 是否已存在；若不存在，则将该自定义 URL 与长 URL 的映射关系存入数据库。</p>
+        </dd>
+        <dt>
+          <code>expiry</code>
+        </dt>
+        <dd>
+          <p>允许用户为 URL 指定自定义过期时间，而非使用系统默认值。</p>
+        </dd>
+        <dt>
+          <code>userMetadata</code>
+        </dt>
+        <dd>
+          <p>用于收集用户的额外信息，例如 IP 地址、地理位置和浏览器信息，这些信息有助于驱动数据分析。</p>
+        </dd>
+      </dl>
+      <div data-type="note">
+        <p>同一个自定义 URL 可能会被多个用户创建。Amazon DynamoDB 的默认 PutItem 行为是：如果主键已存在，则更新该条目，但这对短网址系统不适用。PutItem 请求应包含<a href="https://oreil.ly/wOVmO">条件表达式</a>，以在自定义 URL 已存在时使请求失败。</p>
+      </div>
+      <p>API 的响应可以是成功或失败。您可能记得我们在<a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a>中对<a contenteditable="false" data-type="indexterm" data-primary="HTTP response status codes">&nbsp;</a>HTTP 状态码的讨论——状态码有助于判断客户端从服务器收到的 HTTP 响应类型。我们应为成功和失败两种响应都定义合理的处理机制，以便客户端能够理解失败场景下的响应，并采取进一步行动（如重试）。失败可能源于客户端参数无效，也可能源于后端应用的某个问题。</p>
+      <p>以下是一个成功响应示例：</p>
+      <pre data-type="programlisting">HTTP/1.1 200 OK
+{
+    "shortUrl": "https://oreil.ly/SystemDesignOnAWS"
+}
+ </pre>
+      <p>以下是一个失败响应示例：</p>
+      <pre data-type="programlisting">HTTP/1.1 500 Internal Server Error
+{
+    "error": "An error occurred while processing your request"
+}</pre>
+      <p>当用户创建短 URL 并将其分享给他人或自己访问时，API 请求和响应可能如下所示：</p>
+      <pre data-type="programlisting">GET v1/getLongUrl
+{
+    shortUrl,
+    userMetadata
+}</pre>
+      <p>以下是成功响应：</p>
+      <pre data-type="programlisting">HTTP/1.1 302 Found
+Location: https://www.oreilly.com/library/view/system-design-on/9781098146887
+ </pre>
+      <p>以下是失败响应：</p>
+      <pre data-type="programlisting">HTTP/1.1 404 Not Found
+{
+    "error": "short url doesn't exist"
+}</pre>
+      <p>在继续讨论我们将使用哪些 AWS 组件来将系统<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="APIs for" data-startref="use-case-url-short-api">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="APIs for" data-startref="url-short-api">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="api-url-short">&nbsp;</a>部署到生产环境之前，让我们先讨论一些额外的注意事项。</p>
+    </section>
+    <section data-type="sect2" id="ch14_system_considerations_1734552292688664">
+      <h2>系统注意事项</h2>
+      <p>到目前为止，我们在架构中提出了两个服务：短网址服务和 KGS，以支持端到端功能。短网址服务负责短 URL 的生成以及重定向。这些 API 足够简单，一个系统即可支持，但两个 API 的流量模式差异很大：URL 重定向的流量远高于 URL 生成的流量。</p>
+      <p>设想某位名人生成了一个短 URL 并在社交媒体平台上与粉丝分享：所有粉丝都会尝试访问该 URL，从而增加整体系统流量。在这类场景中，我们建议从单一系统开始，如果流量处理成为问题，再进行演进。</p>
+      <p>将系统拆分为两个组件可能会带来额外的开销，例如两个独立服务共同访问同一个数据库。短网址服务既有读取也有写入用例，而 URL 重定向服务则只有读取用例。通常来说，两个服务直接访问同一个数据库并不是一个好主意；最稳健的方案是通过另一个服务来暴露数据库操作，由该服务统一负责处理所有数据库操作以及缓存维护。此外，我们还需要在市场上众多的数据库解决方案中确定最终的数据库选型。</p>
+    </section>
+    <section data-type="sect2" id="ch14_database_selection_1734552292688741">
+      <h2>数据库选型</h2>
+      <p>选择适合特定用例的理想数据库需要考虑多个因素<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="database selection" id="use-case-url-short-database">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="database selection" id="url-short-database">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="choosing" data-tertiary="for URL shortener service" data-tertiary-sortas="URL shortener service" id="database-choose-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="choosing" data-secondary="databases" data-tertiary="for URL shortener service" data-tertiary-sortas="URL shortener service" id="choose-database-url-short">&nbsp;</a>。我们在第<a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892" data-xrefstyle="select:labelnumber">#ch02_storage_types_and_relational_stores_1734552286519892</a>、第<a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587" data-xrefstyle="select:labelnumber">#ch03_nonrelational_stores_1734552286860587</a>和第<a data-type="xref" href="#ch10_aws_storage_services_1734552290474903" data-xrefstyle="select:labelnumber">#ch10_aws_storage_services_1734552290474903</a>章探讨了不同类型的数据库并进行了比较。<a data-type="xref" href="#ch03_figure_4_1734552286842595">#ch03_figure_4_1734552286842595</a>解释了如何在数据库选项中进行导航，并最终确定特定的数据库。先从数据类型出发，再考虑应用程序所需的查询模式。让我们先来看短网址服务。</p>
+      <section data-type="sect3" id="ch14_url_shortener_service_1734552292688800">
+        <h3>短网址服务</h3>
+        <p>对于短网址服务，数据是结构化的，预期的查询模式如下：</p>
+        <ul>
+          <li>
+            <p>根据特定短 URL 获取对应的长 URL。</p>
+          </li>
+          <li>
+            <p>获取某用户在特定时间段内创建的所有 URL。这是辅助查询模式，仅适用于已登录用户。</p>
+          </li>
+        </ul>
+        <p>这些查询模式既可以用关系型数据库，也可以用非关系型数据库来满足，您可以根据自身的技术积累来选择。如果选择关系型数据库进行部署，我们建议从一开始就采用逻辑分区策略。在本章的上下文中，我们将选择<a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service">&nbsp;</a>AWS 键值数据库：Amazon DynamoDB。DynamoDB 提供了很多开箱即用的优势，例如水平扩展、无需操心基础设施管理（无需手动扩缩读写副本）、TTL 配置，以及用于数据分析的 DynamoDB Streams。</p>
+        <div data-type="note">
+          <p>DynamoDB 根据客户配置的容量模式<a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-secondary="scaling">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scaling" data-secondary="in DynamoDB" data-secondary-sortas="DynamoDB">&nbsp;</a>进行水平扩展。初期可使用按需容量模式来了解流量模式，如果流量可预测，再迁移至预置模式。对于流量峰值突出的工作负载，按需和预置两种自动扩缩容量模式都可能出现限流问题。提前规划容量有助于<a href="https://oreil.ly/Z3Ait">解决预置模式下的限流问题</a>，而<a href="https://oreil.ly/8Jr1K">按需容量模式</a>的限流问题则会自动恢复。按需模式在账户级别还有 40,000 个 RCU 和 WCU 的配额限制，可通过<a href="https://oreil.ly/7cdFS">在 AWS 控制台提交配额提升申请</a>来增加。</p>
+        </div>
+        <p>我们可以将 DynamoDB 的分区键和排序键定义为：</p>
+        <div data-type="equation">
+          <p>分区键 = {短 URL}</p>
+          <p>排序键 = SU</p>
+        </div>
+        <p>在上述模式中，我们可以省略排序键的定义，因为排序键始终是一个常量字符串。建议使用常量是因为它有助于在 DynamoDB 中以短 URL 作为分区键存储其他条目（除长 URL 映射之外的数据）。我们需要 GSI 来检索某用户创建的所有 URL，可以使用以下模式：</p>
+        <div data-type="equation">
+          <p>分区键 = {userId}</p>
+          <p>排序键 = u#{timestamp}</p>
+        </div>
+        <p>排序键中包含时间戳，有助于检索特定时间段内的 URL。接下来，让我们讨论 KGS 的数据库选型。</p>
+      </section>
+      <section data-type="sect3" id="ch14_kgs_1734552292688858">
+        <h3>KGS</h3>
+        <p><a contenteditable="false" data-type="indexterm" data-primary="key generation service">&nbsp;</a>ID 生成逻辑依赖于 Ticket 服务器。此外，KGS 应在缓冲区中保留一些 ID，以便更快地响应查询——但缓冲区中应该保留多少个 ID？逻辑可以很简单，比如保留 10,000 个 ID，该数字可以根据应用流量进行调整。我们可以为此目的使用内存数据存储，例如 Amazon ElastiCache（Redis 或 Memcached 引擎）。<a href="https://oreil.ly/kBsUN">Redis 列表</a>是存储 ID 的一种方式。</p>
+        <p>KGS 不保留哪些 ID 在特定时间被返回给短网址服务的审计历史，我们也没有这个需求。如有必要，可以在此基础上构建该功能，并在已配置的持久化数据存储之上建立缓存层。</p>
+        <p>我们已经讨论了各个组件以及系统如何运作以满足需求。应用程序的商业层面同样重要；我们最终希望从系统中获得收益。变现途径的一些示例包括：向付费用户提供 URL 分析功能或自定义 URL 域名。分析本身是短网址系统的重要组成部分；完整的端到端分析流水线超出了本书的范围。但在下一节中，我们将简要介绍如何在<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="database selection" data-startref="use-case-url-short-database">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="database selection" data-startref="url-short-database">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="choosing" data-tertiary="for URL shortener service" data-tertiary-sortas="URL shortener service" data-startref="database-choose-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="choosing" data-secondary="databases" data-tertiary="for URL shortener service" data-tertiary-sortas="URL shortener service" data-startref="choose-database-url-short">&nbsp;</a>系统中构建自定义域名支持。</p>
+      </section>
+    </section>
+    <section data-type="sect2" id="ch14_custom_domain_support_1734552292688917">
+      <h2>自定义域名支持</h2>
+      <p>系统需求之一<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="custom domain support" id="use-case-url-short-domain">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="custom domain support" id="url-short-domain">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="custom domain support for URL shortener service" id="domain-support-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="multitenant systems for URL shortener service" id="multitenant-url-short">&nbsp;</a>是构建一个可扩展的系统，能够向第三方客户端开放 API——简而言之，即一个多租户系统。例如，假设 Google Drive 利用 Bitly 服务来缩短 URL，但 Google 希望向用户分享自定义的 Google 短链，而非 Bitly 短链。</p>
+      <p>在系统中启用自定义域名支持，在某种程度上类似于维护多个短网址系统，每个系统使用不同的域名。这里需要考虑的重点是：系统采用的是<a contenteditable="false" data-type="indexterm" data-primary="physical separation">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="virtual separation">&nbsp;</a>虚拟隔离（逻辑隔离）还是物理隔离。<em>物理隔离</em>意味着并行部署多个系统，每个系统服务于特定域名；<em>虚拟隔离</em>意味着同一套系统服务于所有客户端，通过内部代码分离或配置来区分。</p>
+      <div data-type="note">
+        <p>设计和构建多租户系统需要对系统预期进行深入的思考。本节展示的是一个简化版的思考过程。</p>
+      </div>
+      <p>让我们尝试用一张单一的 DynamoDB 表来解决这个问题，该表维护短 URL 到长 URL 的映射关系。DynamoDB 要求将分区键和排序键作为主键的一部分，因此系统定义如下：</p>
+      <div data-type="equation">
+        <p>分区键 = {短 URL}</p>
+        <p>排序键 = {租户 ID}</p>
+      </div>
+      <p><code>租户 ID</code> 是一个标识符，用于区分不同的租户（即接入短网址系统的系统）。<code>短 URL</code> 是由接入的系统通过 API 调用创建的，因此期望在请求中传入 <code>租户 ID</code>。<code>租户 ID</code> 可以在系统接入时创建，也可以根据 API 调用中使用的凭证来确定。在查询调用时，<code>租户 ID</code> 同样可以根据所访问的域名来推断。缓存中的键应由 <code>短 URL</code> 和 <code>租户 ID</code> 的组合构成，以便快速检索。</p>
+      <p>我们当然可以为每个租户创建独立的表，但应根据接入系统的数量及其运营规模做出慎重决策。我们可以采用混合方案，<a contenteditable="false" data-type="indexterm" data-primary="cell-based architecture">&nbsp;</a>通常称为<em>单元式架构</em>。每个单元负责服务一组已接入的租户，系统维护哪个单元服务哪个租户的映射关系。各单元可以独立运行，因为它们之间不共享数据。此架构中还需要考虑单元间的负载均衡问题：一个单元可能只接入了单个租户，而另一个单元可能包含 10 个租户，这取决于规模<span class='keep-together'>需求</span>。</p>
+      <p>我们已经讨论了短网址系统的多个组件和注意事项。现在让我们将各组件整合在一起，并讨论如何在<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="custom domain support" data-startref="use-case-url-short-domain">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="custom domain support" data-startref="url-short-domain">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="custom domain support for URL shortener service" data-startref="domain-support-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="multitenant systems for URL shortener service" data-startref="multitenant-url-short">&nbsp;</a> AWS 云上发布产品。</p>
+    </section>
+  </section>
+  <section data-type="sect1" id="ch14_launching_the_system_on_aws_1734552292689024">
+    <h1>在 AWS 上部署系统</h1>
+    <p>请参阅<a data-type="xref" href="#ch14_figure_4_1734552292664238">#ch14_figure_4_1734552292664238</a>以回顾整体系统设计。在本节中，我们将讨论如何在 AWS 云上部署这套系统架构。我们将从 Day 0 架构开始，使用易于部署且对专业知识要求较低的 AWS 服务，然后逐步演进到扩展后的架构。</p>
+    <div data-type="note">
+      <p>为简化图表，系统设计图中引入的服务可能不包含前置的负载均衡器或 API 网关。您可以始终假定该服务包含一个 LB 或类似组件，用于将流量分发到应用的多个实例。</p>
+    </div>
+    <section data-type="sect2" id="ch14_day_zero_architecture_1734552292689102">
+      <h2>Day 0 架构</h2>
+      <p>如前所述<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="Day 0 architecture" id="use-case-url-short-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="Day 0 architecture" id="url-short-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="dayzero-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Make it Work, Make it Right, Make it Fast principle">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scaling" data-secondary="Day 0 architecture" data-see="Day 0 architecture">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scaling" data-secondary="Day N architecture" data-see="Day N architecture">&nbsp;</a>，系统应遵循"先让它跑起来，再让它做对，最后让它快起来"的原则进行设计，从一开始就考虑潜在的 1,000 万用户是不值得的。Day 0 架构和 Day N 架构是<a href="#part3" data-type="xref">#part3</a>中遵循的通用范式。AWS 在 AWS re:Invent 上发表了一系列演讲（<a href="https://oreil.ly/youtube-2013">2013</a>、<a href="https://oreil.ly/youtube-2014">2014</a>、<a href="https://oreil.ly/youtube-2015">2015</a>、<a href="https://oreil.ly/youtube-2016">2016</a>、<a href="https://oreil.ly/youtube-2017">2017</a>、<a href="https://oreil.ly/youtube-2018">2018</a>、<a href="https://oreil.ly/youtube-2019">2019</a>、<a href="https://oreil.ly/youtube-2022">2022</a>、<a href="https://oreil.ly/youtube-2023">2023</a>），我们希望为您提炼其中推荐的指导方针和策略，帮助您从第一个用户扩展到超过 1,000 万用户。</p>
+      <p>总体思路<a contenteditable="false" data-type="indexterm" data-primary="EC2 (Elastic Compute Cloud)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="ecs-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic Compute Cloud" data-see="EC2">&nbsp;</a>是从在一台 EC2 机器上部署的单体应用开始，将 Web 服务器、应用执行逻辑和数据库等所有组件都集中在一台机器上，如<a data-type="xref" href="#ch14_figure_6_1734552292664278">#ch14_figure_6_1734552292664278</a>所示。</p>
+      <figure id="ch14_figure_6_1734552292664278">
+        <img src="images/sdoa_1406.png"/>
+        <figcaption>Day 0 架构</figcaption>
+      </figure>
+      <p>这种方式在用户量极少、处于试验阶段并收集反馈时效果不错。但随着系统流量增加，该架构存在以下几个需要解决的问题：</p>
+      <ul>
+        <li>
+          <p>这是一个负责所有事情的单一应用。为避免中断，建议不要把所有鸡蛋放在同一个篮子里。</p>
+        </li>
+        <li>
+          <p>这存在单点故障；一旦 EC2 实例宕机，应用就无法使用，存储在数据库中的用户状态也会丢失。</p>
+        </li>
+      </ul>
+      <p>改善架构的几点建议：将数据库独立出来（设置主实例和<a href="https://oreil.ly/4oh09">备用实例</a>），并在 ELB 后面部署至少两个 EC2 实例，跨可用区（AZ）分布，以处理故障转移，如<a data-type="xref" href="#ch14_figure_7_1734552292664298">#ch14_figure_7_1734552292664298</a>所示。</p>
+      <figure id="ch14_figure_7_1734552292664298">
+        <img src="images/sdoa_1407.png"/>
+        <figcaption>具备改进可用性的 Day 0 架构</figcaption>
+      </figure>
+      <p>将 EC2 实例和数据库实例分布在多个可用区，使架构更具弹性，防止数据丢失和服务中断。随着用户群进一步增长（比如超过 10,000 名客户定期访问平台），EC2 实例和数据库的负载也会随之增加，使其性能下降。我们可以采用以下建议进一步横向扩展架构：</p>
+      <dl>
+        <dt>自动扩缩</dt>
+        <dd>
+          <p>为 EC2 实例引入自动扩缩。自动扩缩可确保根据流量自动添加或移除实例，无需人工<span class='keep-together'>干预</span>。</p>
+        </dd>
+        <dt>数据库只读副本</dt>
+        <dd>
+          <p>读请求数量（获取短 URL 对应的长 URL）远多于写请求数量（创建短 URL）。为数据库添加只读副本可以减轻主数据库实例的压力并分散负载。主实例专注于写操作，所有读流量由集群中的只读副本承担。</p>
+        </dd>
+        <dt>缓存</dt>
+        <dd>
+          <p>有些 URL 被大量访问，对同一查询反复访问数据库没有意义。可以在只读副本前面引入缓存层，进一步优化系统。系统首先在缓存中查找短 URL 映射，如果未命中则再去数据库中查找。合理的过期策略和缓存失效策略（参见<a data-type="xref" href="#ch04_caching_policies_and_strategies_1734552287178593">#ch04_caching_policies_and_strategies_1734552287178593</a>）应确保：不常访问的 URL 从缓存中移除，同时缓存中的数据保持新鲜且相关。</p>
+        </dd>
+      </dl>
+      <p>通过整合上述建议，可以改善<a data-type="xref" href="#ch14_figure_7_1734552292664298">#ch14_figure_7_1734552292664298</a>中的架构，如<a data-type="xref" href="#ch14_figure_8_1734552292664318">#ch14_figure_8_1734552292664318</a>所示。</p>
+      <figure id="ch14_figure_8_1734552292664318">
+        <img src="images/sdoa_1408.png"/>
+        <figcaption>面向超过 10,000 用户的架构扩展</figcaption>
+      </figure>
+      <p>我们应该<a contenteditable="false" data-type="indexterm" data-primary="EC2 (Elastic Compute Cloud)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="ecs-url-short">&nbsp;</a>持续评估所使用服务的特性。AWS 云中提供了多种全托管解决方案（如 Amazon RDS 或 Amazon Aurora），我们可以根据自身的技术储备和组织能承受的运维负担来选择合适的方案。</p>
+      <p>在系统进一步增长的预期下，我们可以通过引入 CDN（如 Amazon CloudFront）将缓存层移近用户。访问频率较高的短 URL 可以直接从 CloudFront 提供服务，而无需将请求发送到后端服务器。CloudFront 还可用于为前端网站组件（如图片、CSS 和 JavaScript）等静态内容提供更快的加载速度。</p>
+      <p>AWS 云多年来持续演进，大幅简化了开发者体验，使产品无需太多专业知识即可发布。凭借众多的托管服务和无服务器产品，应用部署变得更加便捷，运维开销极低甚至为零。</p>
+      <p>一个简单的软件应用通常包含三个组件（或层）：前端、后端和数据库。在前端层，AWS 提供了 Amplify<a contenteditable="false" data-type="indexterm" data-primary="Amplify">&nbsp;</a>，用于构建 Web 和移动应用程序。AWS Amplify 通过提供身份验证、分析、推送通知等内置功能，大幅降低了运维开销，显著缩短了产品上市时间。完整的功能列表请参见 <a href="https://oreil.ly/YoGVL">AWS 文档</a>。</p>
+      <p>AWS 上提供了多种计算选项，如第<a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a>章所述，我们将为 Day 0 架构选择最简单的部署选项。其中一个选项是使用 AWS Lambda 来托管应用逻辑，无需担心基础设施管理，如<a data-type="xref" href="#ch14_figure_9_1734552292664338">#ch14_figure_9_1734552292664338</a>所示。</p>
+      <figure id="ch14_figure_9_1734552292664338">
+        <img src="images/sdoa_1409.png"/>
+        <figcaption>Day 0 阶段的短网址服务</figcaption>
+      </figure>
+      <p>由于我们提议使用 Lambda 来<a contenteditable="false" data-type="indexterm" data-primary="Lambda" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener">&nbsp;</a>处理 URL 相关操作，可以选择为每个 API 部署独立的 Lambda，也可以用单个 Lambda 处理所有操作。建议为不同 API 使用独立的 Lambda，以实现应用逻辑的清晰隔离。这也有助于在未来需要时将这些 API 函数迁移到不同的计算选项。图中还包含了一些附加服务：用于监控的 Amazon CloudWatch、用于身份验证和授权的 Amazon Cognito 和 AWS IAM、用于启动资源的 Amazon VPC，以及用于 SSL/TLS 证书管理的 AWS Certificate Manager。</p>
+      <p>另一种应用部署方式<a contenteditable="false" data-type="indexterm" data-primary="App Runner">&nbsp;</a>是使用 <a href="https://oreil.ly/JaRfp">AWS App Runner 服务</a>，它可以全面托管容器化 Web 应用或后端 API 服务的部署，如<a data-type="xref" href="#ch14_figure_10_1734552292664358">#ch14_figure_10_1734552292664358</a>所示。App Runner 会在 AWS 自身管理的 VPC 中启动所有资源。</p>
+      <figure id="ch14_figure_10_1734552292664358">
+        <img src="images/sdoa_1410.png"/>
+        <figcaption>使用 AWS App Runner 的 Day 0 架构</figcaption>
+      </figure>
+      <p>AWS App Runner 对所有组件进行了抽象，客户只需专注于应用开发。它基于 ECS Fargate、自动扩缩、ELB 和 ECR 的组合构建而成，支持 Python、Node.js、Java、Go、Rails、PHP 和 .Net 作为语言运行时。客户只需指定 GitHub 源代码仓库或 ECR 镜像，App Runner 将以 ECS Fargate 任务的形式全权负责应用部署。App Runner 的 <a href="https://oreil.ly/EN17q">CreateService API</a> 会返回一个安全 URL，可用于访问服务 API。</p>
+      <p>从整体架构来看，用户请求在经 Route 53 域名解析后被路由到 NLB，再转发至应用层（L7）请求路由器，进而重定向到 ECS Fargate 任务。我们还在图中添加了<a contenteditable="false" data-type="indexterm" data-primary="ElastiCache">&nbsp;</a>Amazon <span class='keep-together'>ElastiCache</span>，以展示 <a href="https://oreil.ly/xCOGs">AWS App Runner VPC 与客户自管 VPC 之间的连接</a>。ElastiCache 有助于缓存最频繁的短 URL 到长 URL 映射查询，减少对持久化数据库的压力，并提升查询性能。App Runner 还可以通过 AWS PrivateLink 端点配置为接受来自客户自管私有 VPC（AWS 账户中的私有 VPC）的流量。</p>
+      <p>Day 0 架构的系统在服务更多用户流量和功能时，总有可能遇到瓶颈，因此我们现在来思考如何进行扩展。</p>
+    </section>
+    <section data-type="sect2" id="ch14_scaling_to_millions_and_beyond_1734552292689173">
+      <h2>扩展至百万级及以上</h2>
+      <p>在 Day 0 架构中，我们尽量以最短时间将产品推向市场，选择最熟悉的技术，而非尝试需要学习曲线的全新技术。简而言之，上市时间应尽可能短。以计算平台为例，有 AWS Lambda、Amazon EC2、Amazon ECS 和 Amazon EKS 等多种选项。如果您最熟悉 Amazon EKS 且有相关经验，那么就选择它作为起点。</p>
+      <p>我们现在将深入分析图<a data-xrefstyle="select:labelnumber" data-type="xref" href="#ch14_figure_9_1734552292664338">#ch14_figure_9_1734552292664338</a>和图<a data-xrefstyle="select:labelnumber" data-type="xref" href="#ch14_figure_10_1734552292664358">#ch14_figure_10_1734552292664358</a>所示的架构，找出存在的问题并加以解决，以确保系统的高可用性。让我们从可观测性开始，然后依次讨论存储层和计算层。</p>
+      <section data-type="sect3" id="ch14_observability_1734552292689236">
+        <h3>可观测性</h3>
+        <p>我们在<a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a>中讨论了<a contenteditable="false" data-type="indexterm" data-primary="observability">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="X-Ray">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="monitoring" data-secondary="URL shortener service">&nbsp;</a>指标和告警的重要性。为了识别瓶颈，我们建议通过 Amazon CloudWatch 和 AWS X-Ray 等工具设置合理的指标和告警。AWS X-Ray 服务有助于在分布式系统架构中进行请求追踪，同时帮助识别哪个组件在处理过程中耗时较长。随着我们识别出导致整体系统问题的具体组件，可以深入分析以找到解决方案。告警在发现关键问题方面发挥着重要作用；告警示例包括：LONG_URL_REDIRECTION_ERRORS（若每分钟错误数连续五分钟超过 10 次则触发告警）或 SHORT_URL_CREATION_FAILURE（若短 URL 创建 API 失败率超过预定阈值则触发告警）。</p>
+      </section>
+      <section data-type="sect3" id="ch14_storage_layer_1734552292689294">
+        <h3>存储层</h3>
+        <p>系统<a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="dynamodb-url-short">&nbsp;</a>使用 Amazon DynamoDB 作为数据存储来维护 URL 映射关系。由于 DynamoDB 完全由 AWS 托管，我们无需担心其扩展能力。初期可以使用按需容量模式，待掌握流量模式后，可切换至带自动扩缩的预置模式以降低成本。应用可以在多个 AWS 区域部署，并通过 DynamoDB 全局表确保数据在各区域间进行复制。关于全局表，需要注意的是：两个或多个区域之间约有<a href="https://oreil.ly/v1dCW">一秒的复制延迟</a>，因此一个短 URL 在创建后可能不会立即在其他区域可用。</p>
+        <div data-type="note">
+          <p>在 2024 年 re:Invent 大会上，<a href="https://oreil.ly/29MT2">Amazon DynamoDB 宣布</a>将在多区域全局表中支持强一致性读取。与最终一致性相比，强一致性的读写延迟更高，但在强一致性是业务需求的场景下非常有用。</p>
+        </div>
+        <p>对于热门用户生成的 URL，读流量可能非常巨大，因此没有必要将所有读查询直接路由到数据库。DynamoDB 保证直接键操作的个位数毫秒级延迟，但为了进一步提升体验、将延迟降至微秒级，可以在 DynamoDB 上层添加缓存层（如 Amazon ElastiCache 或 Amazon DAX）以改善读取性能。延迟的改善程度还取决于网络延迟。实际上，加入缓存解决方案后，延迟可能在 5–10 毫秒左右。数据库上层的缓存层还有助于降低数据库负载，优化成本。</p>
+        <p>在设计以 DynamoDB 为存储方案的系统时，一个关键考虑因素是：如何证明使用 DAX 或 ElastiCache 进行缓存的合理性——应该选哪个？理想选择可能是 DAX，因为它专为 DynamoDB 而生，能够改善查询读取性能；但如果某个用例已经在使用 ElastiCache，或者您对 ElastiCache 更为熟悉，那么它可能是更好的选择。这样可以减少对新技术的集成成本，节省实施资源。进行基准测试以比较两种技术始终是一个好主意，因为最终我们需要一个兼顾低延迟和高性价比的方案。对于流量较大的场景，我们建议使用分布式缓存（如 Redis 集群模式）来分散缓存的工作负载，提升响应速度。</p>
+        <div data-type="note">
+          <p>缓存的理念适用于任何数据库类型，用于处理频繁查询。除此之外，还应重新评估数据访问模式，以及是否存在改善空间（例如优化慢查询或 API 请求，处理查询超时）。对于关系型数据库，在规模不断增大时，数据库联邦和分片也变得越来越重要。</p>
+        </div>
+      </section>
+      <section data-type="sect3" id="ch14_compute_layer_1734552292689359">
+        <h3>计算层</h3>
+        <p>对于<a contenteditable="false" data-type="indexterm" data-primary="compute services (AWS)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="compute-url-short">&nbsp;</a>计算层，我们在图<a data-type="xref" href="#ch14_figure_9_1734552292664338">#ch14_figure_9_1734552292664338</a>中选择了 AWS Lambda，在图<a data-type="xref" href="#ch14_figure_10_1734552292664358">#ch14_figure_10_1734552292664358</a>中选择了 AWS App Runner，以避免搭建 Amazon EC2 并降低运维负担——但 Lambda 或 App Runner 能否扩展到百万用户规模呢？Lambda<a contenteditable="false" data-type="indexterm" data-primary="Lambda" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener">&nbsp;</a>可以根据流量需求自动扩缩，无需任何人工干预。然而，我们可能面临的问题是 P100 延迟会不时升高，这是由于冷启动问题导致的。我们在<a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a>中讨论了解决冷启动问题的几种方案，例如预置并发，有助于解决延迟瓶颈。</p>
+        <p>App Runner<a contenteditable="false" data-type="indexterm" data-primary="App Runner">&nbsp;</a>每个服务最多支持 25 个实例，每个实例最多支持 200 个并发请求，因此每个服务最多支持 5,000 个并发请求。有关服务配额的最新信息，请参阅 <a href="https://oreil.ly/08gMc">AWS 限制文档</a>。按照我们在<a data-type="xref" href="#ch14_system_scale_1734552292688092">#ch14_system_scale_1734552292688092</a>中的规模考量，请求数量限制可能成为瓶颈。</p>
+        <div data-type="note">
+          <p>每个实例的并发请求数不同于每秒请求数。本质上，如果一个 API 的执行时间为 100 毫秒，那么一个实例每秒可以处理 10 个请求。我们建议在关注托管服务配额的同时，也对应用代码进行优化。</p>
+        </div>
+        <p>这里需要考虑的一点是：AWS 未来可能会提升这些限制，这不应阻止我们发布产品的第一个版本。AWS 云服务和开源解决方案在不断演进，云服务商会代表客户持续创新，因此 App Runner 未来有可能以更低的成本支持更大的规模。记住，没有任何架构是最终定论，一旦发现瓶颈，我们随时可以重新评估并迭代，如<a data-type="xref" href="#ch14_figure_11_1734552292664379">#ch14_figure_11_1734552292664379</a>中的软件生命周期所示。</p>
+        <figure id="ch14_figure_11_1734552292664379">
+          <img src="images/sdoa_1411.png"/>
+          <figcaption>软件生命周期</figcaption>
+        </figure>
+        <p>以下是扩展系统计算部分时需要考虑的几点：</p>
+        <ul>
+          <li>
+            <p>考虑迁移至非托管版本的服务，例如从 Amazon ECS Fargate 迁移至 Amazon ECS EC2，以对硬件配置拥有更多控制权。在大规模运营时，这从长远来看可能是更经济的选择。</p>
+          </li>
+          <li>
+            <p>系统将部署自动扩缩，以应对峰值时期的流量增加。自动扩缩组（ASG）应分布在不同的可用区，以应对可用区故障。对于 ECS Fargate 等托管系统，AWS 会负责将系统部署到多个可用区以确保可用性。如果您自行管理系统，请将此纳入考量。</p>
+          </li>
+        </ul>
+        <p>现在，让我们整合所有这些概念，呈现<a contenteditable="false" data-type="indexterm" data-primary="compute services (AWS)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="compute-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="Day 0 architecture" data-startref="use-case-url-short-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="Day 0 architecture" data-startref="url-short-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="dayzero-url-short">&nbsp;</a>AWS 上的最终架构。</p>
+      </section>
+    </section>
+    <section data-type="sect2" id="ch14_day_n_architecture_1734552292689422">
+      <h2>Day N 架构</h2>
+      <p>我们目前<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="Day N architecture" id="use-case-url-short-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="Day N architecture" id="url-short-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="dayn-url-short">&nbsp;</a>使用单个 AWS 账户来托管架构中的所有服务——这可以根据需要进一步演进，将服务托管在不同的 AWS 账户中，或采用我们在<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>的<a data-type="xref" href="#ch09_getting_started_with_aws_1734552289953522">#ch09_getting_started_with_aws_1734552289953522</a>节中讨论的其他账户隔离方式。需要注意的是，使用多个 AWS 账户会增加服务间数据流转的成本，共享数据库也会变得难以管理，尽管这可以使每个账户的职责更清晰，边界更明确。</p>
+      <p>延伸<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>中的讨论，另一个隔离维度是在<a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service">&nbsp;</a>VPC 层面。如果所有应用都创建在同一个 AWS 账户中，它们是位于同一个 VPC 还是不同的 VPC？如果在同一个 VPC 中，是在同一个子网还是不同的子网？即使对于单个应用，也应将资源部署在不同的子网中（跨可用区），以确保高可用性。将所有应用放在同一个 VPC 中有助于降低网络成本，但需要更加谨慎地管理应用间通信的安全性。安全规则可以通过网络 ACL 来管理，建议将规则数量保持在较少范围内。规则是逐条评估的，规则数量过多会因评估耗时增加而影响网络效率（相比所有规则并行评估而言）。</p>
+      <p>我们的短网址系统架构可以包含五个微服务，以满足基本的功能需求：</p>
+      <dl>
+        <dt>前端服务</dt>
+        <dd>
+          <p>接收客户流量，并根据操作类型将其重定向到相应的服务 VPC</p>
+        </dd>
+        <dt>URL 创建服务</dt>
+        <dd>
+          <p>负责创建 URL</p>
+        </dd>
+        <dt>URL 读取服务</dt>
+        <dd>
+          <p>负责从短 URL 重定向到长 URL</p>
+        </dd>
+        <dt>KGS</dt>
+        <dd>
+          <p>生成用作短 URL 的唯一密钥</p>
+        </dd>
+        <dt>数据管理服务</dt>
+        <dd>
+          <p>位于数据库与架构中各服务之间的薄 CRUD API 层。引入此服务是因为 DynamoDB 和 ElastiCache 会被两个系统访问。</p>
+        </dd>
+      </dl>
+      <p>应定期评估架构，判断是否应进一步拆分应用（采用微服务架构）以应对不断增长的规模。</p>
+      <p>回到短网址系统设计，我们面对的是大规模场景，因此将应用部署在独立的 VPC 中有助于实现适当的隔离。组织中还有一种常见的架构模式：将多个微服务部署在同一个 EKS 集群中（同一 VPC 内）。这在规模有限时是合理的，但在 Day N 架构的背景下，我们建议使用<a href="https://oreil.ly/c9XMm">独立的 EKS 集群</a>部署各服务，以实现完整的资源隔离（回顾第<a data-type="xref" href="#ch07_containerization_orchestration_and_deployments_1734552288630240">#ch07_containerization_orchestration_and_deployments_1734552288630240</a>章了解 Kubernetes 架构）。</p>
+      <div data-type="note">
+        <p>造成系统瓶颈的不一定是 AWS 云组件——也有可能是应用代码本身引入的 bug 和瓶颈。例如，某个 DynamoDB 键模式在 Day 0 时运行良好，但随着流量增加而表现不佳。我们可以使用 <a href="https://oreil.ly/-sTwn">Amazon CodeGuru Reviewer</a> 和 <a href="https://oreil.ly/kbPpu">Amazon DevOps Guru</a> 等工具来识别潜在瓶颈，并着手解决。</p>
+      </div>
+      <p><a data-type="xref" href="#ch14_figure_12_1734552292664404">#ch14_figure_12_1734552292664404</a>展示了短网址系统架构的最终全貌。</p>
+      <figure id="ch14_figure_12_1734552292664404">
+        <img src="images/sdoa_1412.png"/>
+        <figcaption>短网址系统</figcaption>
+      </figure>
+      <p>以下是一些额外的注意事项，为保持图表简洁，我们将其省略：</p>
+      <ul>
+        <li>
+          <p>前端服务需要公有子网，以便通过互联网网关（IGW）实现互联网连通性，或放置堡垒机等资源。</p>
+        </li>
+        <li>
+          <p>位于不同 VPC 中的服务需要一种机制来相互连接。AWS Transit Gateway 提供 VPC 间的双向通信；AWS PrivateLink 提供单向通信。使用 Transit Gateway 时，各 VPC 的 CIDR 块不能重叠，而 PrivateLink 则不受此限制。</p>
+        </li>
+        <li>
+          <p>微服务还需要与位于我们 VPC 中的 AWS 服务进行交互。这些服务应通过 <a href="https://oreil.ly/ha5qp">PrivateLink</a> 访问，而非通过 NAT 网关。这确保了流量不经过互联网，从而提升应用安全性并降低操作延迟。只有在需要显式连接互联网时，才应使用 NAT 网关。</p>
+        </li>
+        <li>
+          <p>运行在 Amazon ECS 上的微服务相互通信的其他方式包括：<a href="https://oreil.ly/F3hRO">ECS 服务发现</a>、<a href="https://oreil.ly/wa8D5">AWS App Mesh</a> 和 <a href="https://oreil.ly/dg7Iz">ECS 服务连接</a>。</p>
+        </li>
+        <li>
+          <p>Amazon ElastiCache 作为 DynamoDB 上层的缓存层，用于更快地响应读查询。ElastiCache 将根据缓存驱逐策略移除最少使用的数据。我们可以引入一个额外的 AWS Lambda 函数（在 DynamoDB 数据删除事件触发时调用），以确保数据从 DynamoDB 中删除时，也同步从缓存中移除。这种情况可能发生在用户为短 URL 设置了自定义过期时间时。除 Lambda 函数外，我们也可以在数据管理服务中实现一个消费者来承担这一职责。</p>
+          <div data-type="note">
+            <p>DDB 条目可能不会在 <a href="https://oreil.ly/p23Xd">TTL</a> 中指定的确切时间被删除。如果需要在指定时间精确删除，请考虑其他替代方案。</p>
+          </div>
+        </li>
+        <li>
+          <p>该架构展示的是在单个 AWS 区域中的部署。我们建议通过代码创建所有基础设施，以便在需要时轻松复制到其他区域。系统资源部署在多个可用区，以确保在某个可用区发生故障时提高冗余度。</p>
+        </li>
+        <li>
+          <p>将 URL 创建服务和 URL 读取服务分开的主要原因是两者流量模式差异悬殊。独立服务确保了各自的独立扩缩和清晰的职责分离。</p>
+        </li>
+        <li>
+          <p>系统架构应确保增加的流量来自真实用户，并通过 AWS 服务（如 <a href="https://oreil.ly/zz2xp">AWS WAF</a> 和 <a href="https://oreil.ly/mqEJ8">AWS Shield</a>）或自定义解决方案，在 API Gateway 或 ELB 层面对非预期流量进行限流。这可以在前端服务中处理。</p>
+        </li>
+      </ul>
+      <p>这并不是服务客户时需要关注的全部问题。我们将在<a data-type="xref" href="#part3">#part3</a>的其余部分涵盖更多主题。在将系统部署到生产环境时，请从<a data-type="xref" href="#part3">#part3</a>中汲取全面的经验教训，以确保<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="Day N architecture" data-startref="use-case-url-short-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="Day N architecture" data-startref="url-short-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="dayn-url-short">&nbsp;</a>高标准。</p>
+    </section>
+  </section>
+  <section data-type="sect1" id="ch14_conclusion_1734552292689496">
+    <h1>总结</h1>
+    <p>我们以短网址系统开启了<a href="#part3" data-type="xref">#part3</a>的旅程，这是面试中的经典题目，也是我们日常生活中频繁使用的系统。任何新系统设计的核心要义在于：从需求澄清和系统边界划定入手。您应该清晰地知道一个系统应该做什么，以及永远不会做什么——这有助于做出更好的设计决策。</p>
+    <p>一旦明确了需求和系统范围，我们就进入高层组件的识别阶段。系统所需承载的规模是识别这些组件的重要因素，业务用例同样如此。一个<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="scaling overview" id="use-case-url-short-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="scaling overview" id="url-short-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scaling" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="scale-url-short2">&nbsp;</a>承载 10,000 用户的系统，在面对 100,000 用户时可能无法以同样的方式运行。<a data-type="xref" href="#ch14_table_1_1734552292671860">#ch14_table_1_1734552292671860</a>总结了将应用架构从零用户扩展到数百万用户的演进过程。</p>
+    <p>我们经历了构建短网址服务的多种可能方案，讨论了每种方案的优缺点，以及可以使用的潜在 AWS 云组件。我们引入了许多在<a href="#part2" data-type="xref">#part2</a>中讨论过的 AWS 服务，并意识到在特定用例中判断该选择哪个可能并不容易。我们建议选择理解和部署所需时间最短的技术——日后如有需要，它可以被修改或替换为其他技术<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-startref="use-case-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-startref="url-short">&nbsp;</a>。</p>
+    <p>系统设计是一个迭代过程，要从小处着手，随需求演进持续完善。不要想得太远——5 年或 10 年后，您的优先级可能已截然不同。在下一章，我们将使用 AWS 组件设计类似 Google 搜索的网络爬虫和搜索引擎系统。</p>
+    <table class="pagebreak-before less_space" id="ch14_table_1_1734552292671860">
+      <caption>从零用户扩展到数百万用户</caption>
+      <thead>
+        <tr>
+          <th>步骤</th>
+          <th>原因</th>
+          <th>方法</th>
+          <th>收益</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <p>基础单体架构</p>
+          </td>
+          <td>
+            <p>这是最简单的起始架构，将所有应用组件整合在单个实例中。</p>
+          </td>
+          <td>
+            <p>将完整的应用栈（Web 服务器、应用服务器和数据库）部署在单台服务器或实例上。</p>
+          </td>
+          <td>
+            <p>初始复杂度和成本低，便于小规模应用的开发和部署</p>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <p>搭建多可用区数据库以实现高可用性</p>
+          </td>
+          <td>
+            <p>确保数据库跨多个可用区可用，可防范数据丢失和服务中断。</p>
+          </td>
+          <td>
+            <p>在 AWS 中，例如可以使用 Amazon RDS 搭建多可用区数据库，它会自动将数据复制到另一个可用区的备用实例。</p>
+          </td>
+          <td>
+            <p>在数据库或可用区故障时实现高可用性并将停机时间降至最低</p>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <p>添加只读副本以处理增长的读流量</p>
+          </td>
+          <td>
+            <p>随着应用增长，读请求可能使主数据库过载。只读副本可以分流这些请求并分散负载。</p>
+          </td>
+          <td>
+            <p>在同一区域或不同区域设置只读副本，以提升不同地理位置用户的读取性能。</p>
+          </td>
+          <td>
+            <p>通过将读请求与写操作分离处理，提升读取可扩展性和数据库性能</p>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <p>在数据库前添加缓存</p>
+          </td>
+          <td>
+            <p>高流量或频繁请求的数据直接查询数据库会导致延迟和性能下降。缓存可为重复查询提供更快的数据访问，并减轻数据库压力。</p>
+          </td>
+          <td>
+            <p>选择缓存解决方案：实现 Redis 或 Memcached 等分布式缓存。</p>
+            <p>与应用集成：添加逻辑，在查询数据库前先检查缓存中是否有数据。</p>
+            <p>管理缓存：使用过期策略确保数据的新鲜度。</p>
+          </td>
+          <td>
+            <p>更快的响应时间、降低数据库负载，以及通过高效提供数据实现可扩展性</p>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <p>添加多个 EC2 实例和 LB 以实现冗余和扩展</p>
+          </td>
+          <td>
+            <p>将应用负载分散到多个实例，可防止单点故障并提升可扩展性。</p>
+          </td>
+          <td>
+            <p>部署多个 EC2 实例，将其置于 LB 后方，由 LB 将流量均匀分发到各实例。</p>
+          </td>
+          <td>
+            <p>提高容错性、改善冗余性，以及处理更大入站流量的能力</p>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <p>实现 ASG 以提供弹性</p>
+          </td>
+          <td>
+            <p>自动扩缩根据需求调整运行实例的数量，优化资源使用和成本。</p>
+          </td>
+          <td>
+            <p>根据 CPU 利用率、流量或自定义应用指标等指标定义扩缩策略。</p>
+          </td>
+          <td>
+            <p>响应式扩缩以满足流量需求，同时将基础设施成本控制在合理范围内</p>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <p>切换至托管数据库服务以简化管理</p>
+          </td>
+          <td>
+            <p>数据库管理耗时耗力，Amazon RDS 或 Amazon Aurora 等托管服务可自动执行备份和扩展等常规任务。</p>
+          </td>
+          <td>
+            <p>迁移至与您的数据库引擎兼容的托管数据库服务（例如 MySQL 或 PostgreSQL）。</p>
+          </td>
+          <td>
+            <p>降低运维负担、实现自动化维护，以及简化扩展选项</p>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <p>将静态内容迁移至 Amazon S3 以降低服务器负载</p>
+          </td>
+          <td>
+            <p>将静态资源（如图片、CSS、JavaScript）迁移至 Amazon S3，可释放应用服务器资源并降低带宽成本。</p>
+          </td>
+          <td>
+            <p>将静态文件存储在 S3 存储桶中并从中提供服务，并将应用中的 URL 更新为指向静态内容的 S3 路径。</p>
+          </td>
+          <td>
+            <p>降低应用服务器负载、高可用性，以及优化静态文件存储和分发的成本</p>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <p>使用 CDN 加速内容分发</p>
+          </td>
+          <td>
+            <p>CDN 通过在靠近最终用户的边缘节点缓存和分发静态资源，改善内容加载时间。</p>
+          </td>
+          <td>
+            <p>使用 Amazon CloudFront 或其他 CDN，将 S3 托管的内容缓存并分发至全球边缘节点网络。</p>
+          </td>
+          <td>
+            <p>降低延迟、改善加载时间，以及为全球用户提供更好的体验</p>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <p>实施 IaC 以实现一致性和自动化</p>
+          </td>
+          <td>
+            <p>Terraform 或 CloudFormation 等 IaC 工具有助于以版本可控、可重复的方式管理基础设施。</p>
+          </td>
+          <td>
+            <p>通过代码定义基础设施组件（如 EC2 实例、数据库和网络），实现自动化部署和一致性。</p>
+          </td>
+          <td>
+            <p>简化且可重复的基础设施搭建，以及跨开发、预发和生产环境部署一致环境的能力</p>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <p>搭建集中式日志和监控</p>
+          </td>
+          <td>
+            <p>集中式日志和监控可实现对应用性能的主动管理，并快速定位问题。</p>
+          </td>
+          <td>
+            <p>使用 Amazon CloudWatch、ELK Stack 或 Datadog 等工具，将所有组件的日志集中管理并监控指标。</p>
+          </td>
+          <td>
+            <p>提升可见性、关键问题实时告警，以及为优化故障排查和调试提供详细的性能洞察</p>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <p>使用分布式缓存处理高频数据访问</p>
+          </td>
+          <td>
+            <p>对于高流量应用，缓存频繁访问但更新不频繁的数据可降低数据库负载和响应时间。</p>
+          </td>
+          <td>
+            <p>实现分布式缓存（如 Redis 或 Memcached），并调整应用逻辑，在查询数据库前先检查缓存。</p>
+          </td>
+          <td>
+            <p>更快的响应时间、降低数据库负载，以及通过将高频访问数据迁移至专用缓存实现可扩展性</p>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <p>重构为微服务（长期步骤）</p>
+          </td>
+          <td>
+            <p>将单体应用拆分为微服务，可提升灵活性、可扩展性和敏捷性。</p>
+          </td>
+          <td>
+            <p>识别可重构为独立服务的具体组件或功能（如用户管理或账单），并独立部署。</p>
+          </td>
+          <td>
+            <p>更强的可扩展性、更高效的资源利用，以及通过模块化、可独立部署的服务实现更快的开发周期</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</section>
