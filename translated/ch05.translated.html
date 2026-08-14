@@ -2,10 +2,10 @@
   <h1>负载均衡方法与技术</h1>
   <p>为了实现可扩展性并确保服务持续可用，各组织采用了水平扩展与垂直扩展技术，如<a data-type="xref" href="#ch01_system_design_trade_offs_and_guidelines_1734552285979675">#ch01_system_design_trade_offs_and_guidelines_1734552285979675</a>所述。这些方法在一定程度上解决了可扩展性的挑战，但无法保证服务的持续可用性。随着互联网的快速发展，现代高流量网站需要处理数十万个并发请求，这迫切要求采用更为强健的解决方案。</p>
   <p>当单台服务器负责处理所有传入请求时，它将面临过载风险，进而导致系统故障。为了克服这一局限，我们对系统进行水平扩展。此时，负载均衡便发挥作用——将传入的网络流量高效地分发到一组后端服务器（通常称为<a contenteditable="false" data-type="indexterm" data-primary="server pools">&nbsp;</a><em>服务器池</em>）中。这就好比一个人创业，后来雇用了更多员工（并在他们之间分配任务）以实现业务扩展。</p>
-  <p>在本章中，我们将首先了解用于管理流量和提升性能的各种网络组件，然后重点介绍负载均衡器（LB）的概念——它在实现高效负载分配和确保服务高可用性方面发挥着关键作用。我们将深入探讨负载均衡的机制，以及各种负载均衡算法及其各自的优缺点。理解 LB 及其功能，有助于组织提升应对不断增加的负载、扩展基础设施以及为用户或客户提供无缝体验的能力。最后，您将了解一种流行的开源负载均衡解决方案。现在让我们从各种网络组件开始。</p>
+  <p>在本章中，我们将首先了解用于管理流量和提升性能的各种网络组件，然后重点介绍负载均衡器（Load Balancer, LB）的概念——它在实现高效负载分配和确保服务高可用性方面发挥着关键作用。我们将深入探讨负载均衡的机制，以及各种负载均衡算法及其各自的优缺点。理解 LB 及其功能，有助于组织提升应对不断增加的负载、扩展基础设施以及为用户或客户提供无缝体验的能力。最后，您将了解一种流行的开源负载均衡解决方案。现在让我们从各种网络组件开始。</p>
   <section data-type="sect1" id="ch05_networking_components_1734552287463195">
     <h1>网络组件</h1>
-    <p>在<a contenteditable="false" data-type="indexterm" data-primary="networking components" id="network-component">&nbsp;</a>网络和 Web 服务领域，若干组件在管理和优化流量流转、扩展、增强安全性及提升性能方面发挥着关键作用。其中四个核心组件为：正向代理、反向代理、LB 和 API 网关，如<a data-type="xref" href="#ch05_figure_1_1734552287453572">#ch05_figure_1_1734552287453572</a>所示。</p>
+    <p>在<a contenteditable="false" data-type="indexterm" data-primary="networking components" id="network-component">&nbsp;</a>网络和 Web 服务领域，若干组件在管理和优化流量流、扩展、增强安全性及提升性能方面发挥着关键作用。其中四个核心组件为：正向代理、反向代理、LB 和 API 网关，如<a data-type="xref" href="#ch05_figure_1_1734552287453572">#ch05_figure_1_1734552287453572</a>所示。</p>
     <figure id="ch05_figure_1_1734552287453572">
       <img src="images/sdoa_0501.png"/>
       <figcaption>负载均衡器、反向代理、正向代理与 API 网关</figcaption>
@@ -14,18 +14,18 @@
     <dl>
       <dt>负载均衡器</dt>
       <dd>
-        <p>LB<a contenteditable="false" data-type="indexterm" data-primary="load balancers (LBs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)">&nbsp;</a>是网络架构中的关键组件，用于将传入的网络流量分发到多台服务器，以提升应用程序、网站或数据库的性能和可访问性。它承担双重职责：监控资源状态的同时协调请求的流转。当某台服务器无响应、无法处理新请求或错误率升高时，LB 会停止向该服务器发送流量，并将其路由到另一台可用服务器。LB 可以在开放系统互联（OSI）模型的不同层工作，包括 L4（传输层）和 L7（应用层），并使用不同的算法根据服务器负载、响应时间乃至地理位置等因素来分发流量。</p>
+        <p>LB<a contenteditable="false" data-type="indexterm" data-primary="load balancers (LBs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)">&nbsp;</a>是网络架构中的关键组件，用于将传入的网络流量分发到多台服务器，以提升应用程序、网站或数据库的性能和可访问性。它承担双重职责：监控资源状态的同时协调请求流。当某台服务器无响应、无法处理新请求或错误率升高时，LB 会停止向该服务器发送流量，并将其路由到另一台可用服务器。LB 可以在开放系统互联（OSI）模型的不同层工作，包括 L4（传输层）和 L7（应用层），并使用不同的算法根据服务器负载、响应时间乃至地理位置等因素来分发流量。</p>
         <div data-type="note">
           <p><em>OSI 模型</em>描述了计算机系统通过网络进行通信所使用的七个层次<a contenteditable="false" data-type="indexterm" data-primary="OSI model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Open Systems Interconnection" data-see="OSI model">&nbsp;</a>，我们将在<a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a>中进行更详细的介绍。AWS 提供<a contenteditable="false" data-type="indexterm" data-primary="Elastic Load Balancers (ELBs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ELBs (Elastic Load Balancers)">&nbsp;</a>弹性负载均衡（ELB），包括应用程序、网络和网关等不同类型的 LB，我们将在<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>中进行更详细的介绍。</p>
         </div>
       </dd>
       <dt>反向代理</dt>
       <dd>
-        <p><a contenteditable="false" data-type="indexterm" data-primary="reverse proxies">&nbsp;</a>反向代理作为互联网与 Web 服务器之间的网关，拦截来自客户端的传入请求并将其路由到合适的后端服务器。反向代理通常通过向客户端隐藏后端服务器详情来提升安全性，同时通过将安全套接字层（SSL）终止、内容缓存、压缩和负载均衡等任务从后端服务器卸载，改善可扩展性和性能。</p>
+        <p><a contenteditable="false" data-type="indexterm" data-primary="reverse proxies">&nbsp;</a>反向代理作为互联网与 Web 服务器之间的网关，拦截来自客户端的传入请求并将其路由到合适的后端服务器。反向代理通常通过向客户端隐藏后端服务器详情来提升安全性，此外，通过将 SSL（安全套接字层）终止、内容缓存、数据压缩和负载均衡等任务从后端服务器中剥离，能够进一步提升系统的可扩展性与性能。</p>
       </dd>
       <dt>正向代理</dt>
       <dd>
-        <p>与反向代理相反，<a contenteditable="false" data-type="indexterm" data-primary="forward proxies">&nbsp;</a>正向代理充当客户端设备与互联网之间的中间人，对两者之间的流量进行中介。当客户端发送请求以访问 Web 资源时，该请求首先被正向代理拦截，然后由代理代表客户端将请求转发到互联网。正向代理通常用于执行企业访问控制策略、过滤 Web 内容、通过屏蔽客户端 IP 地址来提升隐私和安全性，以及缓存频繁访问的内容。因此，它们通常部署在企业网络内，用于管理对外的 Web 流量。</p>
+        <p>与反向代理不同，<a contenteditable="false" data-type="indexterm" data-primary="forward proxies">&nbsp;</a>正向代理充当客户端设备与互联网之间的中介，负责代理与调度两者之间的流量。当客户端发送请求以访问 Web 资源时，该请求首先被正向代理拦截，然后由代理代表客户端将请求转发到互联网。正向代理通常用于执行企业访问控制策略、过滤 Web 内容、通过屏蔽客户端 IP 地址来提升隐私和安全性，以及缓存频繁访问的内容。因此，它们通常部署在企业网络内，用于管理对外的 Web 流量。</p>
       </dd>
       <dt>API 网关</dt>
       <dd>
@@ -62,11 +62,11 @@
         <p>负载均衡通过在服务器之间均匀分配工作负载，确保资源得到高效利用，防止任何服务器出现利用率不足或过载的情况。均匀的负载分配取决于所选算法，但 LB 的核心理念是在所有服务器之间平衡负载，确保其最优利用。</p>
       </dd>
     </dl>
-    <p>高级 LB 甚至能够根据用户的地理位置路由流量，从而优化性能并遵守当地法规。此外，作为反向代理运行的 LB 还可以扩展为防御特定网络威胁的保护屏障，通过审查传入流量来检测并拦截潜在的有害请求。随着时间的推移，LB 与 API 网关等服务之间的功能差距已逐渐缩小，功能集也会因具体的 LB 或 API 网关解决方案而有所不同。我们建议在 LB 后端使用无状态服务器，以确保从池中移除现有服务器时不会造成数据丢失。LB 的部署策略在复杂<a contenteditable="false" data-type="indexterm" data-primary="load balancing" data-secondary="benefits of" data-startref="load-balance-benefits">&nbsp;</a>网络架构中确保最优性能、高可用性和高效资源利用方面也发挥着举足轻重的作用。</p>
+    <p>更先进的 LB 甚至能够根据用户的地理位置进行流量调度，从而优化性能并满足本地合规要求。此外，兼具反向代理功能的 LB 还能扩展为一道安全屏障——通过深入检查入站流量，精准检测并拦截潜在的有害请求，以防御特定的网络威胁。近年来，LB 与 API 网关等服务之间的功能界限已日益模糊，具体的功能特性很大程度上取决于所选的具体方案。我们建议在 LB 后端采用无状态服务器，以确保将节点从服务器池中移除时不会发生数据丢失。在复杂的网络架构中，LB 的部署策略<a contenteditable="false" data-type="indexterm" data-primary="load balancing" data-secondary="benefits of" data-startref="load-balance-benefits">&nbsp;</a>对于保障最佳性能、高可用性以及高效的资源利用率起着至关重要作用。</p>
   </section>
   <section data-type="sect1" id="ch05_lb_deployment_and_placement_strategies_1734552287463333">
-    <h1>LB 部署与放置策略</h1>
-    <p>负载均衡<a contenteditable="false" data-type="indexterm" data-primary="load balancers (LBs)" data-secondary="deployment and placement strategies" id="load-balancer-lb-deployplace">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)" data-secondary="deployment and placement strategies" id="lb-load-balancer-deployplace">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="load balancing" data-secondary="deployment and placement strategies" id="load-balance-deploy-place">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment strategies" data-secondary="for load balancers" data-secondary-sortas="load balancers" id="deploy-load-balance">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="placement strategies for load balancers" id="place-load-balance">&nbsp;</a>不仅在数据中心网络内部需要，还可以在全局和本地两个层面进行部署。全局与本地负载均衡之间的选择，以及 LB 在 Web 服务器、应用服务器和数据库服务器之间的战略性放置，对分布式系统的可靠性和响应能力都有重大影响。</p>
+    <h1>LB 部署与布局策略</h1>
+    <p>负载均衡<a contenteditable="false" data-type="indexterm" data-primary="load balancers (LBs)" data-secondary="deployment and placement strategies" id="load-balancer-lb-deployplace">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)" data-secondary="deployment and placement strategies" id="lb-load-balancer-deployplace">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="load balancing" data-secondary="deployment and placement strategies" id="load-balance-deploy-place">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment strategies" data-secondary="for load balancers" data-secondary-sortas="load balancers" id="deploy-load-balance">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="placement strategies for load balancers" id="place-load-balance">&nbsp;</a>不仅适用于数据中心内部网络，还可以在全局和本地两个维度上进行部署。无论是在全局与本地负载均衡之间做出权衡，还是在 Web 服务器、应用服务器与数据库服务器之间合理规划 LB 的部署位置，都会对分布式系统的可靠性与响应速度产生深远影响。</p>
     <section data-type="sect2" id="ch05_global_server_load_balancing_1734552287463395">
       <h2>全局服务器负载均衡</h2>
       <p>全局服务器负载均衡（GSLB）<a contenteditable="false" data-type="indexterm" data-primary="global server load balancing (GSLB)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="GSLB (global server load balancing)">&nbsp;</a>在更大的范围内运作，通常通过将流量分配到不同的数据中心或地理区域来实现。它通过将请求定向到距离用户最近或可用性最高的数据中心，优化用户体验。这一策略对于向全球用户提供内容、提升性能以及确保遵守区域法规至关重要。</p>
@@ -92,15 +92,15 @@
       <div data-type="note">
         <p><em>VIP</em> 是<a contenteditable="false" data-type="indexterm" data-primary="VIP (virtual IP) addresses">&nbsp;</a>一种不直接绑定到某台物理机器的地址；多台机器共享同一个 VIP。如果某个网络接口发生故障，发往该接口的数据包通常会丢失。但借助 VIP，数据包会自动重定向到故障转移机器。从外部看，VIP 表现为单台机器，而内部则是一组机器共享同一地址。通常，DNS 查询会返回 VIP，从而实现流量的无缝重路由并确保强健的故障转移能力。</p>
       </div>
-      <p>通常，LB 位于客户端与服务器之间，接收传入的网络和应用程序流量，然后使用不同的算法将其分发到多台后端服务器。在三层架构中，LB 可以放置在三个层次的服务器实例之间，如<a data-type="xref" href="#ch05_figure_2_1734552287453606">#ch05_figure_2_1734552287453606</a>所示。</p>
+      <p>通常，LB 位于客户端与服务器之间，接收传入的网络和应用程序流量，然后使用不同的算法将其分发到多台后端服务器。在三层架构中，LB 可以部署在各层级的服务器实例之间，如<a data-type="xref" href="#ch05_figure_2_1734552287453606">#ch05_figure_2_1734552287453606</a>所示。</p>
       <figure id="ch05_figure_2_1734552287453606">
         <img src="images/sdoa_0502.png"/>
-        <figcaption>三层架构中的负载均衡器放置位置</figcaption>
+        <figcaption>三层架构中的负载均衡器布局</figcaption>
       </figure>
-      <p>放置在客户端与 Web 服务器之间的 LB 充当传入用户请求的入口点。它们将 Web 流量分发到多台 Web 服务器，优化响应时间，防止任何单台服务器过载，从而确保用户请求得到高效处理，提升基于 Web 的服务的整体性能和可靠性。</p>
-      <p>放置在 Web 服务器与应用服务器之间的 LB 管理应用层内的请求流转。它们将请求均匀分发到多台应用服务器，确保没有单台服务器过载。这一部署方式提升了应用程序的可扩展性、容错性和性能，有效处理用户交互和功能请求。</p>
-      <p>虽然不太常见，但将 LB 放置在应用服务器与数据库服务器之间对于读密集型工作负载是有益的。它们可以将读取查询分发到多台数据库服务器，优化读取性能并扩展数据库操作。在应用层 LB（L7）中，可以通过 URL 路径来区分读操作和写操作，并据此进行路由；也可以根据 HTTP 方法进行路由，例如将 <code>GET /path</code> 路由到服务器 A，将 <code>POST /path</code> 路由到服务 B。我们将在<a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a>中进一步讨论 HTTP 方法。数据库服务器之间的负载均衡需要慎重考量，因为涉及数据一致性和同步方面的问题。</p>
-      <p>在不同基础设施层之间战略性地放置 LB，对于保持均衡、优化资源利用率和确保高可用性至关重要。在确定 LB 最有效的部署策略和放置位置时，必须仔细考虑流量模式、应用程序需求和系统架构。</p>
+      <p>部署在客户端与 Web 服务器之间的 LB 充当传入用户请求的入口点。它们将 Web 流量分发到多台 Web 服务器，优化响应时间，防止任何单台服务器过载，从而确保用户请求得到高效处理，提升基于 Web 的服务的整体性能和可靠性。</p>
+      <p>部署在 Web 服务器与应用服务器之间的 LB 管理应用层内的请求流。它们将请求均匀分发到多台应用服务器，确保没有单台服务器过载。这一部署方式提升了应用程序的可扩展性、容错性和性能，有效处理用户交互和功能请求。</p>
+      <p>虽然不太常见，但将 LB 部署在应用服务器与数据库服务器之间对于读密集型工作负载是有益的。它们可以将读取查询分发到多台数据库服务器，优化读取性能并扩展数据库操作。在应用层 LB（L7）中，可以通过 URL 路径来区分读操作和写操作，并据此进行路由；也可以根据 HTTP 方法进行路由，例如将 <code>GET /path</code> 路由到服务器 A，将 <code>POST /path</code> 路由到服务 B。我们将在<a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a>中进一步讨论 HTTP 方法。数据库服务器之间的负载均衡需要慎重考量，因为涉及数据一致性和同步方面的问题。</p>
+      <p>在不同基础设施层之间合理规划LB的布局，对于保持均衡、优化资源利用率和确保高可用性至关重要。在确定 LB 最有效的策略和布局 时，必须仔细考虑流量模式、应用程序需求和系统架构。</p>
       <p>负载均衡的概念围绕着在可用工作节点之间分配任务展开，没有唯一规定的分配方法。因此，存在多种负载均衡算法，每种算法都提供不同的<a contenteditable="false" data-type="indexterm" data-primary="local load balancing" data-startref="local-load-balance">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="load balancers (LBs)" data-secondary="deployment and placement strategies" data-startref="load-balancer-lb-deployplace">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)" data-secondary="deployment and placement strategies" data-startref="lb-load-balancer-deployplace">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="load balancing" data-secondary="deployment and placement strategies" data-startref="load-balance-deploy-place">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment strategies" data-secondary="for load balancers" data-secondary-sortas="load balancers" data-startref="deploy-load-balance">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="placement strategies for load balancers" data-startref="place-load-balance">&nbsp;</a>工作负载分配方式。</p>
     </section>
   </section>
@@ -144,7 +144,7 @@
       </dl>
       <p>静态算法采用预定义规则分发流量，简单易用，但可能导致服务器负载不均。动态算法根据实时服务器状况调整流量分配，负载均衡效果更好，但可能产生较高的处理开销。</p>
       <p>选择合适的负载均衡算法取决于应用程序或系统的具体需求。某些应用程序因静态算法的简单性而更适合使用，而另一些——尤其是服务器负载变化较大的应用程序——则可能更适合动态算法。</p>
-      <p>理解这些负载均衡算法，对于优化系统性能和确保在多样化网络环境中高效使用资源至关重要。不同的场景可能需要使用特定算法或多种算法的组合，以实现所需的工作负载<a contenteditable="false" data-type="indexterm" data-primary="dynamic load balancing algorithms" data-startref="dynamic-load-algorithm">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="load balancing" data-secondary="algorithms" data-startref="load-balance-algorithm">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="algorithms for load balancing" data-startref="algorithm-load-balance">&nbsp;</a>分配目标。</p>
+      <p>理解这些负载均衡算法，对于优化系统性能和确保在多样化网络环境中高效使用资源至关重要。不同的场景可能需要使用特定算法或多种算法的组合，以达到理想的工作负载均衡效果。</p>
     </section>
   </section>
   <section data-type="sect1" id="ch05_session_persistence_in_lbs_1734552287463710">
@@ -157,7 +157,7 @@
     <section data-type="sect2" id="ch05_stateful_load_balancers_1734552287463773">
       <h2>有状态负载均衡器</h2>
       <p>有状态 LB<a contenteditable="false" data-type="indexterm" data-primary="stateful load balancers" id="stateful-load-balance">&nbsp;</a>（如<a data-type="xref" href="#ch05_figure_3_1734552287453630">#ch05_figure_3_1734552287453630</a>左侧所示）维护会话信息，追踪每个客户端-服务器交互的状态，存储与进行中的会话相关的数据（如会话 Cookie 或其他会话标识符）。这使 LB 能够将来自同一客户端的后续请求始终定向到最初处理该请求的服务器，从而确保会话持久性。</p>
-      <p><em>粘性会话</em>，也<a contenteditable="false" data-type="indexterm" data-primary="sticky sessions">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="session affinity">&nbsp;</a>称为<em>会话持久性</em>或<em>会话亲和性</em>，是负载均衡中使用的一种机制，用于确保用户的请求在有状态负载均衡的服务器群组或服务器集中始终被定向到同一台服务器。粘性会话通过在用户会话持续期间将其"绑定"到特定服务器来实现这一目标。初始连接建立后，LB 会将该用户的后续请求路由到同一台服务器。这可以通过多种技术来实现：</p>
+      <p><em>粘性会话</em>，也<a contenteditable="false" data-type="indexterm" data-primary="sticky sessions">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="session affinity">&nbsp;</a>称为<em>会话持久性</em>或<em>会话亲和性</em>，是负载均衡中使用的一种机制，用于确保用户的请求在有状态负载均衡的服务器集群或服务器集中始终被定向到同一台服务器。粘性会话通过在用户会话持续期间将其"绑定"到特定服务器来实现这一目标。初始连接建立后，LB 会将该用户的后续请求路由到同一台服务器。这可以通过多种技术来实现：</p>
       <dl>
         <dt>基于 Cookie 的会话亲和性</dt>
         <dd>
@@ -184,11 +184,11 @@
       <dl>
         <dt>资源开销</dt>
         <dd>
-          <p>维护会话信息需要额外的内存和处理资源，可能影响 LB 的性能。这需要额外的资源，但也节省了外部资源（如数据库），并减少了对数据库的网络调用，从而降低网络延迟。</p>
+          <p>维护会话信息需要消耗额外的内存与计算资源，这可能会对 LB 的性能产生影响。虽然这占用了 LB 本身的资源，但它能够节省数据库等外部资源的开销，并省去针对数据库的网络调用，从而降低网络延迟。</p>
         </dd>
         <dt>可扩展性挑战</dt>
         <dd>
-          <p>需要跨多台服务器维护会话状态，可能导致<a contenteditable="false" data-type="indexterm" data-primary="stateful load balancers" data-startref="stateful-load-balance">&nbsp;</a>扩展方面的限制。</p>
+          <p>跨多台服务器维护会话状态的需求，可能会限制系统的可扩展性。</p>
         </dd>
       </dl>
     </section>
@@ -208,7 +208,7 @@
       </dl>
       <p>有状态与无状态负载均衡的选择取决于应用程序或系统的需求。需要会话连续性的应用程序更适合有状态 LB，而强调可扩展性和简单性的应用程序则更适合无状态 LB。在复杂的网络架构中，通常会同时采用这两种类型以满足多样化需求。</p>
       <div data-type="note">
-        <p>在确定最终方案之前，请评估您的业务用例，但一个简单且推荐的方案是使用无状态 LB，并借助 Redis 或类似数据存储来进行会话管理。我们将在<a data-type="xref" href="#ch19_designing_a_chat_application_1734552294951889">#ch19_designing_a_chat_application_1734552294951889</a>中讨论为 WhatsApp<a contenteditable="false" data-type="indexterm" data-primary="stateless load balancers" data-startref="stateless-load-balance">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="load balancers (LBs)" data-secondary="session persistence" data-startref="load-balancer-lb-persist">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)" data-secondary="session persistence" data-startref="lb-load-balance-persist">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="session persistence in load balancers" data-startref="session-persist-lb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="persistence" data-secondary="in load balancers" data-secondary-sortas="load balancers" data-startref="persist-lb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="load balancing" data-secondary="session persistence" data-startref="load-balance-session-persist">&nbsp;</a>规模构建有状态服务器的用例。</p>
+        <p>在确定最终方案之前，请评估您的业务场景。不过，一个简单且推荐的方案是使用无状态 LB，并借助 Redis 或类似数据存储来进行会话管理。我们将在第19章中，以 WhatsApp 级别的海量规模为例，探讨如何构建有状态服务器。</p>
       </div>
     </section>
   </section>
@@ -284,7 +284,7 @@
       </section>
       <section data-type="sect3" id="ch05_software_lbs_1734552287464460">
         <h3>软件负载均衡器</h3>
-        <p>软件负载均衡器<a contenteditable="false" data-type="indexterm" data-primary="software load balancers">&nbsp;</a>以软件应用程序的形式在标准服务器硬件或虚拟机上运行。它们能够随着需求的增加而有效扩展，并通过以极低的额外成本实现影子 LB 来确保可用性。与硬件 LB 相比，软件 LB 可以部署在通用硬件或云环境中，因而具有更高的灵活性、可扩展性和适应性。软件负载均衡器是硬件方案的经济高效替代品，非常适合动态或基于云的基础设施。此外，这些解决方案还提供预测性分析，以支持对未来流量模式的规划。软件负载均衡器的典型例子包括 HAProxy 和 nginx。</p>
+        <p>软件负载均衡器<a contenteditable="false" data-type="indexterm" data-primary="software load balancers">&nbsp;</a>以软件应用程序的形式在标准服务器硬件或虚拟机上运行。它们能够随着需求的增加而有效扩展，并通过以极低的额外成本实现热备 LB 来确保可用性。与硬件 LB 相比，软件 LB 可以部署在通用硬件或云环境中，因而具有更高的灵活性、可扩展性和适应性。软件负载均衡器是硬件方案的经济高效替代品，非常适合动态或基于云的基础设施。此外，这些解决方案还提供预测性分析，以支持对未来流量模式的规划。软件负载均衡器的典型例子包括 HAProxy 和 nginx。</p>
         <div data-type="note">
           <p>在云计算领域，<a contenteditable="false" data-type="indexterm" data-primary="load balancer as a service (LBaaS)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBaaS (load balancer as a service)">&nbsp;</a>负载均衡即服务（LBaaS）应运而生——云服务提供商提供负载均衡服务，用户按使用量或服务级别协议（SLA）付费。LBaaS 的主要优势在于易用性、灵活性、计量计费以及强健的审计和监控服务，有助于提升业务决策能力。</p>
         </div>
@@ -322,7 +322,7 @@
       </dd>
       <dt>HTTP 负载均衡</dt>
       <dd>
-        <p>凭借对基于 HTTP 负载均衡的全面支持，nginx 可以根据 URL 路径、HTTP 头和 Cookie 等多种标准智能分发 HTTP 请求，实现高级路由和流量整形，提升应用程序性能和用户体验。</p>
+        <p>得益于对 HTTP 负载均衡的全面支持，NGINX 能够根据 URL 路径、HTTP 报头（Headers）以及 Cookie 等多个维度智能分发 HTTP 请求。这使得实现高级路由策略与流量整形成为可能，进而显著提升应用性能与用户体验。</p>
       </dd>
       <dt>TCP 与 UDP 负载均衡</dt>
       <dd>
@@ -358,7 +358,7 @@
   </section>
   <section data-type="sect1" id="ch05_conclusion_1734552287464579">
     <h1>总结</h1>
-    <p>本章全面概述了负载均衡，涵盖其优势、部署策略、放置技术、算法、会话持久性机制，以及按功能和配置区分的各类 LB。我们已经了解到负载均衡在提升系统性能、可扩展性和容错性方面发挥着举足轻重的作用，是现代系统设计的重要组成部分。掌握负载均衡的复杂性，使您具备了构建强健、高弹性系统所必需的知识，这些系统能够高效地在资源之间分配工作负载。</p>
+    <p>本章全面概述了负载均衡，涵盖其优势、部署策略、布局技术、算法、会话持久性机制，以及按功能和配置区分的各类 LB。我们已经了解到负载均衡在提升系统性能、可扩展性和容错性方面发挥着举足轻重的作用，是现代系统设计的重要组成部分。掌握负载均衡的复杂性，使您具备了构建强健、高弹性系统所必需的知识，这些系统能够高效地在资源之间分配工作负载。</p>
     <p>在过渡到下一章关于通信网络与协议的内容时，我们将深入探索分布式系统中数据交换的底层机制。通过对 OSI 模型以及同步与异步通信类型的研究，以及对 RPC、REST、GraphQL、WebRTC 等协议的分析，您将全面了解通信技术的多样化格局。这一理解对于设计和实现有效的通信策略至关重要，而这些策略正是大规模系统设计中互联系统无缝运行的基石。</p>
   </section>
 </section>
