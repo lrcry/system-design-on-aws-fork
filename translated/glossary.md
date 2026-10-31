@@ -1036,3 +1036,18 @@ All AWS terminology and technical glossary terms newly identified from `part1.ht
 | 805 | reliability | — | "Grasp the system trade-offs inherent in large-scale distributed systems and know how to balance conflicting demands like scalability, reliability, and maintainability" / "We'll explore essential concepts like reliability, scalability, and maintainability" | https://docs.aws.amazon.com/wellarchitected/latest/reliability-pillar/welcome.html | official | 可靠性 | https://docs.amazonaws.cn/wellarchitected/latest/reliability-pillar/welcome.html | AWS official |
 | 806 | maintainability | — | "know how to balance conflicting demands like scalability, reliability, and maintainability" / "We'll explore essential concepts like reliability, scalability, and maintainability" | https://en.wikipedia.org/wiki/Maintainability | non-official | 可维护性 | https://blog.csdn.net/qq_34417408/article/details/107029418 | non-official |
 | 807 | minimum viable product | MVP | "Day 0 (minimum viable product) to Day N (most valuable product)" / "Deploy initial solutions on AWS with Day 0 architecture for a minimum viable product and evolve it into a most valuable product" | https://en.wikipedia.org/wiki/Minimum_viable_product | non-official | 最小可行产品（MVP） | https://zh.wikipedia.org/wiki/%E6%9C%80%E7%B0%A1%E5%8F%AF%E8%A1%8C%E7%94%A2%E5%93%81 | official (other source) |
+
+
+## Chapter 04 translation-review clarifications (2026-10-31)
+
+These notes supplement the shared glossary; existing canonical entries above remain unchanged pending verification.
+
+| Term (EN) | Approved Chinese | Note |
+|---|---|---|
+| most recently used (MRU) | 最近使用（MRU） | Chapter 04 editorial decision; reconcile with earlier glossary entries if needed. |
+| least frequently recently used (LFRU) | 最近最不经常使用（LFRU） | Chapter 04 editorial decision; author/terminology check may still be useful. |
+| HTTP headers | HTTP 头部 | Chapter 04 P89. |
+| on-the-fly | 按需处理 | Chapter 04 P82, not 实时处理. |
+| write-around | 绕写（Write-Around，即绕过缓存写入） | Explicit descriptive explanation at first mention. |
+| slab class | slab 类别 | P103–P104 terminology pending author technical confirmation. |
+| append-only file (AOF) | 仅追加文件（AOF） | Distinguish from generic write-ahead logging (WAL). |
