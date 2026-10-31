@@ -360,9 +360,9 @@
               </dd>
             </dl>
             <div data-type="note">
-              <p>AWS 提供了 Amazon CloudFront，这是一项内容分发网络（CDN）服务。我们将在 <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a> 中进一步介绍。<a contenteditable="false" data-type="indexterm" data-primary="CloudFront">&nbsp;</a></p>
+              <p>AWS 提供了<a contenteditable="false" data-type="indexterm" data-primary="CloudFront">&nbsp;</a>Amazon CloudFront——一款面向高性能、安全性和开发者便捷性构建的拉取型 CDN，我们将在 <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a> 中详细介绍。</p>
             </div>
-            <p>使用 CDN 可能存在一些缺点。CDN 可能根据流量产生较高费用，但重要的是将这些费用与不使用 CDN 时的开销进行比较。如果在 TTL 到期前进行了更新，内容可能在 CDN 上刷新之前处于过期状态。CDN 还需要修改静态内容的 URL 以指向 CDN，这可能是额外的管理工作。总体而言，CDN 在性能和可扩展性方面提供了优势，但需要仔细考虑这些因素以及<a contenteditable="false" data-type="indexterm" data-primary="CDNs (content delivery networks)" data-startref="cdn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="CDNs (content delivery networks)" data-startref="cache-cdn">&nbsp;</a>网站的具体需求。</p>
+            <p>使用 CDN 也存在一些局限性。根据流量大小，CDN 的使用成本可能相当可观，但仍需将其与不使用 CDN 时的成本进行比较。如果源服务器上的内容在 TTL 到期前发生更新，那么在 CDN 缓存刷新之前，用户仍可能获取到旧版本的内容。此外，使用 CDN 还需要修改静态资源的 URL，使其指向 CDN，这可能带来额外的管理工作。总体而言，CDN 能够提升性能和可扩展性，但在决定是否使用时，仍需综合考虑这些因素以及网站自身的需求。<a contenteditable="false" data-type="indexterm" data-primary="CDNs (content delivery networks)" data-startref="cdn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="CDNs (content delivery networks)" data-startref="cache-cdn">&nbsp;</a></p>
             <p>接下来，我们将介绍两种流行的开源缓存解决方案，了解它们的架构以及如何实现本章讨论的缓存概念。</p>
           </section>
         </section>
