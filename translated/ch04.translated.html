@@ -360,7 +360,7 @@
               </dd>
             </dl>
             <div data-type="note">
-              <p>AWS 提供了<a contenteditable="false" data-type="indexterm" data-primary="CloudFront">&nbsp;</a>亚马逊 CloudFront——一款面向高性能、安全性和开发者便捷性构建的拉取型 CDN，我们将在 <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a> 中详细介绍。</p>
+              <p>AWS 提供 Amazon ElastiCache，这是一项兼容 Redis 和 Memcached 的服务，适用于缓存、会话存储、游戏、地理空间服务、分析和队列处理等实时应用场景。我们将在 <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a> 中进一步介绍这项服务<a contenteditable="false" data-type="indexterm" data-primary="CloudFront">&nbsp;</a>。</p>
             </div>
             <p>使用 CDN 可能存在一些缺点。CDN 可能根据流量产生较高费用，但重要的是将这些费用与不使用 CDN 时的开销进行比较。如果在 TTL 到期前进行了更新，内容可能在 CDN 上刷新之前处于过期状态。CDN 还需要修改静态内容的 URL 以指向 CDN，这可能是额外的管理工作。总体而言，CDN 在性能和可扩展性方面提供了优势，但需要仔细考虑这些因素以及<a contenteditable="false" data-type="indexterm" data-primary="CDNs (content delivery networks)" data-startref="cdn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="CDNs (content delivery networks)" data-startref="cache-cdn">&nbsp;</a>网站的具体需求。</p>
             <p>接下来，我们将介绍两种流行的开源缓存解决方案，了解它们的架构以及如何实现本章讨论的缓存概念。</p>
@@ -376,27 +376,27 @@
           <dl>
             <dt>简单轻量</dt>
             <dd>
-              <p>Memcached 设计简洁、轻量且易于部署，专注于缓存功能，提供简单直接的键值接口用于数据存储和检索。</p>
+              <p>Memcached 的设计简洁轻量，易于部署。它专注于缓存功能，并提供简单的键值接口，用于存储和读取数据。</p>
             </dd>
             <dt>水平可扩展性</dt>
             <dd>
-              <p>Memcached 采用分布式架构，通过向缓存集群添加更多服务器实现水平扩展。这种分布式方式确保了高可用性、容错性，并在工作负载增长时提升性能。</p>
+              <p>Memcached 采用分布式架构，可以通过向缓存集群增加服务器来实现水平扩展。这种架构有助于提高缓存系统的可用性和容错能力，并在工作负载增长时改善性能。</p>
             </dd>
             <dt>协议兼容性</dt>
             <dd>
-              <p>Memcached 遵循简单协议，与多种编程语言兼容，使其易于集成到用不同语言开发的应用程序中。</p>
+              <p>Memcached 使用一种简单的通信协议，可供多种编程语言使用。因此，无论应用程序采用哪种受支持的语言开发，都可以方便地集成 Memcached。</p>
             </dd>
             <dt>透明缓存层</dt>
             <dd>
-              <p>Memcached 作为透明缓存层运行，位于应用程序与数据源之间，通过缓存频繁访问的数据来减轻数据库或 API 负载，降低重复查询的需求。</p>
+              <p>Memcached 可以作为应用程序与数据源之间的透明缓存层，通过缓存频繁访问的数据，减少重复查询，从而减轻数据库或 API 的负载。</p>
             </dd>
           </dl>
-          <p>旁路缓存（Cache-Aside）是 Memcached 最常用的策略，允许应用程序根据使用模式管理缓存行为。最近最少使用（LRU）淘汰策略通过淘汰最久未被访问的数据项来有效维护相关缓存数据，确保频繁访问的数据始终可用，因而受到青睐。</p>
-          <p>Memcached 的架构由一台协调缓存数据存储和检索的中央服务器组成。当客户端发送存储或检索数据的请求时，服务器处理请求并与底层内存分配策略交互。</p>
-          <p>Memcached 采用多线程架构，能够高效处理并发请求并跨多个 CPU 核心扩展。在该架构中，Memcached 利用一个工作线程池同时处理客户端请求，每个工作线程负责处理一部分传入请求，从而实现并行执行并提升吞吐量。这种多线程方式确保 Memcached 能有效处理高流量负载，并将处理工作负载分布于可用的 CPU 资源上。通过利用多个线程，Memcached 可以实现更好的性能和响应能力，使其适用于对高并发有要求的高需求缓存场景。</p>
-          <p>在内存分配方面，Memcached 采用 slab 分配策略。它将分配的内存划分为固定大小的块，称为 <em>slab</em>。每个 slab 进一步分为称为<em>页</em>（page）的更小单元，<a contenteditable="false" data-type="indexterm" data-primary="slabs (in Memcached)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="pages (in Memcached)">&nbsp;</a>这些页用于存储单个缓存数据项。slab 分配策略通过将大小相似的数据项分组在一起，使 Memcached 能够高效管理内存，减少内存碎片并提升内存利用率。</p>
+          <p>旁路缓存（Cache-Aside）是 Memcached 最常采用的缓存策略，应用程序可以根据数据的访问模式自行管理缓存。最近最少使用（LRU）淘汰策略则通过淘汰最久未被访问的数据项，尽可能保留仍有访问需求的数据，因此也被广泛采用，有助于让频繁访问的数据继续保留在缓存中。</p>
+          <p>Memcached 的架构由一台负责协调缓存数据存储和读取的中央服务器组成。当客户端发起数据存储或读取请求时，该服务器会处理请求，并与底层内存分配机制交互。</p>
+          <p>Memcached 采用多线程架构，能够高效处理并发请求，并充分利用多个 CPU 核心。在这种架构下，Memcached 使用工作线程池并发处理客户端请求，每个工作线程负责处理一部分请求，从而实现并行处理并提高吞吐量。这种方式能够将处理任务分配到可用的 CPU 资源上，使 Memcached 更有效地应对高流量负载。通过利用多个线程，Memcached 可以提升性能和响应速度，因此适用于并发量较高、对缓存性能要求严格的场景。</p>
+          <p>在内存分配方面，Memcached 采用 slab 分配策略，将已分配的内存划分为固定大小的块，称为 slab。每个 slab 又被划分为更小的单元，称为页（page），这些页随后被分配用于存储各个缓存数据项。通过将大小相近的数据项集中存放，slab 分配策略使 Memcached 能够更高效地管理内存，减少内存碎片并提高内存利用率<a contenteditable="false" data-type="indexterm" data-primary="slabs (in Memcached)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="pages (in Memcached)">&nbsp;</a>。</p>
           <p>向缓存添加新数据项时，Memcached 根据数据项的大小确定合适的 slab 尺寸。如果存在具有足够空闲空间的 slab，数据项将存储在该 slab 中；否则，Memcached 从可用内存池中分配新的 slab 并将数据项添加至其中。slab 分配策略使 Memcached 能够在保持最优性能的同时在内存中存储大量数据项。</p>
-          <p>Memcached 的架构和内存分配策略协同工作，提供了一种轻量、高效的缓存解决方案，能够处理高流量负载并提供快速的数据访问时间。Memcached 有效利用内存并采用可扩展架构，使应用程序能够通过将频繁访问的数据缓存在内存中来显著<a contenteditable="false" data-type="indexterm" data-primary="Memcached" data-startref="memcached">&nbsp;</a>提升性能。</p>
+          <p>Memcached 通过架构设计与内存分配策略的配合，提供了一种轻量、高效的缓存解决方案，既能应对高流量负载，又能实现快速的数据访问。Memcached 能够高效利用内存，并通过可扩展的架构，使应用程序可以将频繁访问的数据缓存在内存中，从而显著提升性能<a contenteditable="false" data-type="indexterm" data-primary="Memcached" data-startref="memcached">&nbsp;</a>。</p>
         </section>
         <section data-type="sect2" id="ch04_redis_1734552287180570">
           <h2>Redis</h2>
@@ -404,23 +404,23 @@
           <dl>
             <dt>高性能</dt>
             <dd>
-              <p>Redis 专为速度而设计，利用内存存储模型实现极快的数据检索和更新。它每秒可处理海量操作，适用于高需求应用程序。</p>
+              <p>Redis 以高性能为设计目标，通过内存存储模型实现极快的数据读取和更新。它每秒能够处理大量操作，因此适用于性能要求较高的应用程序。</p>
             </dd>
             <dt>持久化选项</dt>
             <dd>
-              <p>Redis 提供持久化选项，允许将数据存储在磁盘上，即使在系统重启的情况下也能确保数据持久性。这一特性使 Redis 适用于需要在系统重启或缓存失效后仍保留数据的场景。</p>
+              <p>Redis 提供多种持久化选项，可以将数据保存到磁盘中，使数据在系统重启后仍能保留。这一特性适用于需要在系统重启或缓存失效后继续保留数据的场景。</p>
             </dd>
             <dt>高级缓存功能</dt>
             <dd>
-              <p>Redis 提供高级缓存功能，如过期时间、淘汰策略以及基于 TTL 值的自动缓存失效。它还支持数据分区和复制以实现可扩展性和容错性。旁路缓存（Cache-Aside）是 Redis 最常用的策略，Redis 支持多种淘汰策略，如 LRU、LFU、随机和 TTL。</p>
+              <p>Redis 提供多种高级缓存功能，包括设置过期时间、配置缓存淘汰策略，以及根据 TTL 自动使缓存数据失效。它还支持数据分区和复制，以提高可扩展性和容错能力。旁路缓存（Cache-Aside）是 Redis 最常用的缓存策略。此外，Redis 支持多种淘汰策略，包括 LRU、LFU、随机淘汰和基于 TTL 的淘汰方式。</p>
             </dd>
             <dt>发布/订阅与消息传递</dt>
             <dd>
-              <p>Redis 包含发布/订阅（Pub/Sub）消息传递功能，支持实时消息传递和事件驱动架构，使其适用于涉及实时数据更新和通知的场景。</p>
+              <p>Redis 支持发布/订阅（Pub/Sub）消息机制，可用于实时消息传递和事件驱动架构，因此适用于需要实时更新数据或发送通知的场景。</p>
             </dd>
           </dl>
-          <p>Redis 作为内存数据库，主要用作其他数据库（如 MySQL 或 PostgreSQL）的前置缓存。通过利用内存的速度，Redis 提升了应用程序性能并减轻了主数据库的负载。它对于存储不经常变化但频繁被请求的数据以及不太关键但频繁更新的数据尤为有用。此类数据的例子包括会话或数据缓存、排行榜信息以及仪表板的汇总分析数据。</p>
-          <p>Redis 的架构设计追求高性能、低延迟和简洁性，提供多种部署选项以根据需求和成本约束确保高可用性。</p>
+          <p>Redis 是一种内存数据库，通常作为 MySQL 或 PostgreSQL 等数据库的前置缓存。凭借内存访问速度快的优势，Redis 可以提升应用程序性能，并减轻主数据库的负载。它尤其适合缓存两类数据：一类是变化较少但经常被访问的数据，另一类是重要性相对较低但更新频繁的数据。常见的缓存内容包括会话缓存或数据缓存、排行榜信息，以及用于仪表板的汇总分析结果。</p>
+          <p>Redis 的架构设计注重高性能、低延迟和简洁性，并提供多种部署方式，以便根据系统需求和成本限制实现高可用性。</p>
           <section data-type="sect3" id="ch04_availability_in_redis_deployments_1734552287180633">
             <h3>Redis 部署中的高可用性</h3>
             <p>如<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="availability in" id="redis-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="in Redis" data-secondary-sortas="Redis" id="available-redis">&nbsp;</a> <a data-type="xref" href="#ch04_figure_3_1734552287163614">#ch04_figure_3_1734552287163614</a> 所示，Redis 支持多种部署架构，包括单 Redis 实例、Redis 高可用（HA）、Redis 哨兵（Redis Sentinel）和 Redis 集群（Redis Cluster）。每种架构都有其权衡，适用于不同的使用场景和可扩展性需求。</p>
@@ -428,35 +428,35 @@
               <img src="images/sdoa_0403.png"/>
               <figcaption>Redis 部署架构</figcaption>
             </figure>
-            <p>在单 Redis 实例配置中，Redis 作为独立服务器部署。虽然这种方式简单直接，适合小型实例，但缺乏容错性。若实例发生故障或变为不可用，所有对 Redis 的客户端调用都将失败，影响整体系统性能。</p>
-            <p>Redis 高可用（HA）涉及部署一个主 Redis 实例和一个或多个通过复制同步的从实例。从实例可以帮助扩展读操作，或在主实例失效时提供故障转移。复制 ID 和偏移量在同步过程中起着至关重要的作用，使从实例能够追赶上主实例的数据。</p>
-            <p>Redis 哨兵（Redis Sentinel）是一种确保 Redis 高可用性的分布式系统。哨兵进程协调状态并监控主实例和从实例的可用性，同时充当客户端查询主节点信息的入口，告知其当前主实例。若主实例变为不可用，哨兵进程可启动故障转移流程。</p>
-            <p>Redis 集群（Redis Cluster）通过在多台机器或分片之间分发数据来实现水平扩展。算法分片用于确定哪个 Redis 实例（分片）持有特定键。Redis 集群采用哈希槽分区机制将数据映射到分片，并在向集群添加新实例时支持无缝重新分片。Gossip 协议用于 Redis 集群中维护集群健康状态。节点不断通信以确定分片的可用性，并在需要时将从实例提升为主实例。<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="availability in" data-startref="redis-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="in Redis" data-secondary-sortas="Redis" data-startref="available-redis">&nbsp;</a></p>
+            <p>在单实例部署模式下，Redis 以独立服务器的形式运行。这种方式简单，适合规模较小的应用，但缺乏容错能力。一旦该实例发生故障或无法访问，客户端对 Redis 的所有请求都将失败，从而影响整个系统的性能。</p>
+            <p>Redis 高可用（HA）部署通常包含一个主实例和一个或多个通过复制机制与主实例保持同步的从实例。从实例可以分担读取请求，提升读取能力，也可以在主实例故障时用于故障转移。复制 ID 和复制偏移量在数据同步过程中发挥着重要作用，帮助从实例追赶主实例的数据进度。</p>
+            <p>Redis Sentinel（哨兵）是一套用于保障 Redis 高可用性的分布式系统。各哨兵进程协同工作，监控主实例和从实例的运行状态与可用性，同时为客户端提供服务发现功能，帮助客户端找到当前的主实例。当主实例不可用时，哨兵进程可以启动故障转移流程。</p>
+            <p>Redis 集群（Redis Cluster）通过将数据分布到多台机器或多个分片上，实现水平扩展。系统通过分片算法确定某个键应由哪个 Redis 实例（分片）存储。Redis 集群采用哈希槽机制将数据映射到不同分片，并支持在向集群添加新实例时进行平滑的重新分片。集群使用 Gossip 协议维护集群健康状态，各节点持续通信，以判断分片的可用性，并在必要时将从实例提升为主实例<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="availability in" data-startref="redis-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="in Redis" data-secondary-sortas="Redis" data-startref="available-redis">&nbsp;</a>。</p>
           </section>
           <section data-type="sect3" id="ch04_durability_in_redis_deployment_1734552287180692">
             <h3>Redis 部署中的持久性</h3>
             <p>Redis<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="durability in" id="redis-durable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="durability" data-secondary="in Redis" data-secondary-sortas="Redis" id="durable-redis">&nbsp;</a>提供两种持久化模型：RDB 文件（Redis 数据库文件）和仅追加文件（AOF）。这些<a contenteditable="false" data-type="indexterm" data-primary="persistence" data-secondary="in Redis" data-secondary-sortas="Redis" id="persist-redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RDB (Redis database) files" id="rdb-file">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AOFs (append-only files)" id="aof">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="append-only files (AOFs)" id="append-only">&nbsp;</a>持久化机制确保数据在系统重启或崩溃时不会丢失。</p>
-            <p>RDB 是 Redis 默认的持久化模型，它定期创建数据集的快照并将其保存为二进制 RDB 文件。这些文件捕获特定时间点的 Redis 数据库状态。以下是 RDB 持久化的主要特性：</p>
+            <p>RDB 是 Redis 默认的持久化方式。它会定期为数据集创建快照，并将快照保存为二进制格式的 RDB 文件。这些文件记录了 Redis 数据库在某个特定时间点的状态。RDB 持久化具有以下主要特点：</p>
             <dl>
               <dt>基于快照的持久化</dt>
               <dd>
-                <p>RDB 持久化通过定期对整个数据集进行快照并将其存储在文件中来实现持久化。快照的频率可以配置。</p>
+                <p>RDB 持久化通过定期生成整个数据集的快照文件来实现。快照的生成频率可以配置。</p>
               </dd>
               <dt>高效与快速</dt>
               <dd>
-                <p>RDB 文件在磁盘空间使用和数据加载速度方面非常高效，体积紧凑且可以快速重新加载到 Redis 中，适用于快速恢复至关重要的场景。</p>
+                <p>RDB 文件在磁盘空间占用和数据加载速度方面表现出色。文件体积紧凑，并且可以快速重新加载到 Redis 中，因此适用于需要快速恢复的场景。</p>
               </dd>
               <dt>完整数据恢复</dt>
               <dd>
-                <p>RDB 文件包含完整数据集，提供完整数据恢复能力。发生系统故障时，Redis 可通过加载最近可用的 RDB 文件来恢复数据。</p>
+                <p>RDB 文件包含快照生成时的完整数据集，因此可以用于恢复整个数据集。当系统发生故障时，Redis 可以通过加载最新的可用 RDB 文件来恢复数据。</p>
               </dd>
             </dl>
-            <p>值得注意的是，RDB 文件存在一些局限性。由于它们是快照，不提供实时持久性，若崩溃发生在两个快照点之间，可能导致数据丢失。此外，恢复大型 RDB 文件可能需要一定时间，影响恢复过程中的系统性能。</p>
-            <p>AOF 持久化是 RDB 文件的替代持久化模型，它将每次写操作记录到仅追加文件中。AOF 捕获写操作的顺序日志，使 Redis 能够通过重放日志来重建数据集。以下是 AOF 持久化的主要特性：</p>
+            <p>需要注意的是，RDB 文件也存在一定的局限性。由于 RDB 采用快照方式，因此无法提供实时的数据持久化保障。如果系统在两次快照之间发生崩溃，可能会丢失部分数据。此外，加载大型 RDB 文件进行数据恢复可能需要较长时间，并影响恢复期间的系统性能。</p>
+            <p>与 RDB 不同，AOF 是另一种持久化方式，它将每次写操作记录在仅追加文件中。AOF 按顺序记录写操作，使 Redis 能够通过重放日志来重建数据集。AOF 持久化具有以下主要特点：</p>
             <dl>
               <dt>预写日志</dt>
               <dd>
-                <p>AOF 将每次写操作以一系列命令或原始数据的形式持久化到仅追加文件中，该日志可用于从头重建数据集。</p>
+                <p>AOF 将每次写操作以一系列命令或原始数据的形式记录到仅追加文件中。Redis 可以利用这份日志从头重建数据集。</p>
               </dd>
               <dt>持久性与灵活性</dt>
               <dd>
@@ -467,10 +467,10 @@
                 <p>AOF 将新的写操作追加到文件末尾，确保原始数据集永不被修改。这种方式防止了因崩溃或断电造成的数据损坏。</p>
               </dd>
             </dl>
-            <p>AOF 持久化有其自身的注意事项。仅追加文件可能随时间推移不断增大，占用大量磁盘空间。Redis 提供 AOF 文件重写选项，以压缩日志并减小其大小。此外，由于需要将每条命令写入磁盘，AOF 持久化通常比 RDB 文件具有略高的性能开销。</p>
-            <p>在实践中，Redis 用户通常根据其具体需求以及性能、持久性和恢复时间目标之间的权衡，同时采用 RDB 和 AOF 持久化。值得注意的是，如果持久性不是主要关注点，或者数据在重启或崩溃时可以从外部来源重新生成，Redis 还提供了不使用持久化（易失模式）的选项，<a contenteditable="false" data-type="indexterm" data-primary="persistence" data-secondary="in Redis" data-secondary-sortas="Redis" data-startref="persist-redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RDB (Redis database) files" data-startref="rdb-file">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AOFs (append-only files)" data-startref="aof">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="append-only files (AOFs)" data-startref="append-only">&nbsp;</a>供参考。</p>
+            <p>AOF 持久化也有一些需要权衡的因素。随着时间推移，仅追加文件可能不断增大，占用可观的磁盘空间。Redis 支持通过 AOF 重写来压缩日志、减小文件体积。此外，由于需要将每条命令写入磁盘，与 RDB 相比，AOF 持久化通常会带来略高的性能开销。</p>
+            <p>在实际应用中，Redis 用户通常会根据具体需求，权衡性能、数据持久性和恢复时间目标，选择结合使用 RDB 和 AOF 持久化机制。需要注意的是，如果数据持久性并非首要考虑因素，或者系统重启或崩溃后可以从外部数据源重新生成数据，也可以选择不启用持久化（易失模式）<a contenteditable="false" data-type="indexterm" data-primary="persistence" data-secondary="in Redis" data-secondary-sortas="Redis" data-startref="persist-redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RDB (Redis database) files" data-startref="rdb-file">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AOFs (append-only files)" data-startref="aof">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="append-only files (AOFs)" data-startref="append-only">&nbsp;</a>。</p>
             <div data-type="note">
-              <p>Redis 主要用于易失性缓存，但 AWS 推出了<a contenteditable="false" data-type="indexterm" data-primary="MemoryDB">&nbsp;</a>亚马逊 MemoryDB——一种与 Redis 兼容的、持久化的内存数据库服务，专为需要微秒级读取和个位数毫秒级写入性能的应用程序设计。以数据持久性和高可用性为核心，亚马逊 MemoryDB 非常适合缓存、会话管理和实时分析等使用场景。我们建议您<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="durability in" data-startref="redis-durable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="durability" data-secondary="in Redis" data-secondary-sortas="Redis" data-startref="durable-redis">&nbsp;</a>自行探索其功能和应用。</p>
+              <p>Redis 主要用于易失性缓存，而 AWS 推出了 Amazon MemoryDB，这是一项兼容 Redis、具备数据持久性的内存数据库服务，专为需要微秒级读取性能和个位数毫秒级写入性能的应用程序设计。MemoryDB 注重数据持久性和高可用性，适用于缓存、会话管理和实时分析等场景。关于它的其他功能和应用，读者可以进一步自行探索<a contenteditable="false" data-type="indexterm" data-primary="MemoryDB">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="durability in" data-startref="redis-durable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="durability" data-secondary="in Redis" data-secondary-sortas="Redis" data-startref="durable-redis">&nbsp;</a>。</p>
             </div>
           </section>
           <section data-type="sect3" id="ch04_memory_management_in_redis_1734552287180753">
@@ -478,31 +478,31 @@
             <p>Redis<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="memory management in" id="redis-memory-mgmt">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="memory management in Redis" id="memory-mgmt-redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="forking" id="forking">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="copy-on-write (CoW)" id="copy-on-write">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CoW (copy-on-write)" id="cow">&nbsp;</a>利用进程分叉（fork）和写时复制（CoW）技术，在其单线程架构中高效实现数据持久化。当 Redis 执行快照（RDB）或后台保存操作时，遵循以下步骤：</p>
             <ol>
               <li>
-                <p>Redis 使用 <code>fork()</code> 系统调用创建子进程，子进程是父进程的完整副本。进程分叉是一种轻量级操作，因为它创建了父进程内存的写时复制（CoW）克隆。</p>
+                <p>Redis 使用 <code>fork()</code> 系统调用创建子进程，该子进程是父进程的完整副本。进程分叉是一种轻量级操作，因为它采用写时复制（CoW）机制创建父进程内存的副本。</p>
               </li>
               <li>
-                <p>子进程最初与父进程共享相同的内存页。但当父进程或子进程任意一方修改内存页时，写时复制（CoW）机制启动——操作系统不会立即复制被修改的页，而仅在必要时创建新副本。</p>
+                <p>子进程最初与父进程共享相同的内存页。然而，当父进程或子进程修改某个内存页时，写时复制（CoW）机制便会发挥作用。操作系统不会立即复制被修改的内存页，而是仅在必要时创建新的副本。</p>
               </li>
             </ol>
-            <p>通过采用写时复制（CoW），Redis 实现了以下优势：</p>
+            <p>通过采用写时复制（CoW）机制，Redis 获得了以下优势：</p>
             <dl>
               <dt>内存效率</dt>
               <dd>
-                <p>子进程最初创建时与父进程共享相同的内存页，这种共享内存方式消耗的额外内存极少。仅在必要时复制已修改的页，从而节省内存资源。</p>
+                <p>子进程刚创建时，会与父进程共享相同的内存页。这种共享内存的方式只需要很少的额外内存。只有在必要时才会复制被修改的内存页，从而节省内存资源。</p>
               </dd>
               <dt>性能</dt>
               <dd>
-                <p>由于仅复制已修改的页，Redis 可以利用写时复制机制执行持久化操作，而不会产生显著的性能开销。这对大型数据集尤为有益，因为复制整个数据集进行持久化将非常耗时。</p>
+                <p>由于只需复制被修改的内存页，Redis 可以利用写时复制（CoW）机制执行持久化操作，而不会产生显著的性能开销。这对于大型数据集尤其有利，因为如果为了持久化而复制整个数据集，将会非常耗时。</p>
               </dd>
               <dt>fork 安全性</dt>
               <dd>
-                <p>Redis 使用基于 fork 的持久化来避免在快照过程中阻塞主事件循环。通过分叉子进程，父进程可以继续响应客户端请求，而子进程独立执行持久化操作，从而确保高响应能力和不间断服务。</p>
+                <p>Redis 采用基于 fork 的持久化方式，避免在创建快照的过程中阻塞主事件循环。通过创建子进程，父进程可以继续处理客户端请求，而子进程则独立执行持久化操作。这确保了系统能够保持较高的响应能力，并持续提供服务。</p>
               </dd>
             </dl>
-            <p>虽然进程分叉和写时复制提供了内存效率和性能优势，但也有一些缺点需要考虑。如果需要复制大量修改页，进程分叉在写时复制过程中可能导致内存使用量增加。在内存占用较大的系统上，fork 操作也可能较慢。</p>
-            <p>总体而言，Redis 在其单线程架构中有效利用进程分叉和写时复制机制实现高效数据持久化。通过采用这些技术，Redis 可以在不显著影响性能或内存使用的情况下执行快照和后台保存操作。</p>
-            <p>综上所述，Redis 为开发人员提供了一种功能强大、灵活的数据存储解决方案，具备多种部署选项和功能。</p>
-            <p>Redis 和 Memcached 都是优秀的开源缓存解决方案，各有其优势。选择哪个取决于具体需求和使用场景。Redis 适用于需要多样化数据结构、持久化、发布/订阅消息传递和高级缓存功能的场景。Memcached 在注重可扩展性和易集成性的简单、轻量级缓存使用场景中表现突出。<a contenteditable="false" data-type="indexterm" data-primary="forking" data-startref="forking">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="copy-on-write (CoW)" data-startref="copy-on-write">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CoW (copy-on-write)" data-startref="cow">&nbsp;</a></p>
+            <p>尽管进程分叉和写时复制（CoW）能够提高内存使用效率并改善性能，但也存在一些需要考虑的局限性。如果在写时复制过程中需要复制大量被修改的内存页，内存使用量就可能增加。此外，在内存占用较大的系统上，fork 操作也可能需要更长的时间。</p>
+            <p>总体而言，Redis 在单线程架构下有效利用进程分叉和写时复制（CoW）机制，实现高效的数据持久化。借助这些技术，Redis 可以执行快照和后台保存操作，而不会对性能或内存使用量产生显著影响。</p>
+            <p>总体而言，Redis 为开发人员提供了一种强大而灵活的数据存储解决方案，具有多种部署选项和功能。</p>
+            <p>Redis 和 Memcached 都是优秀的开源缓存解决方案，各有优势。如何选择取决于具体需求和应用场景。Redis 适用于需要多种数据结构、持久化、发布/订阅消息机制以及高级缓存功能的场景。Memcached 则在注重可扩展性和易于集成的简单、轻量级缓存场景中表现出色<a contenteditable="false" data-type="indexterm" data-primary="forking" data-startref="forking">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="copy-on-write (CoW)" data-startref="copy-on-write">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CoW (copy-on-write)" data-startref="cow">&nbsp;</a>。</p>
             <div data-type="note">
               <p>AWS 提供了<a contenteditable="false" data-type="indexterm" data-primary="ElastiCache">&nbsp;</a>亚马逊 ElastiCache，与 Redis 和 Memcached 兼容，适用于缓存、会话存储、游戏、地理空间服务、分析和排队等实时使用场景。我们将在<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="memory management in" data-startref="redis-memory-mgmt">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="memory management in Redis" data-startref="memory-mgmt-redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Redis" data-startref="redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="open source solutions" data-startref="cache-opensource">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="open source caching solutions" data-startref="opensource-cache">&nbsp;</a> <a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a> 中详细介绍。</p>
             </div>
@@ -511,7 +511,7 @@
       </section>
       <section data-type="sect1" id="ch04_conclusion_1734552287180808">
         <h1>小结</h1>
-        <p>本章对支撑高效数据缓存的基本概念和策略进行了全面探讨。我们介绍了缓存淘汰策略、缓存失效机制以及多种缓存策略，将为您优化数据访问和存储提供必要知识。我们深入研究了缓存部署，了解了战略性部署如何最大化效果，并探索了各种可用的缓存机制。此外，我们还介绍了 CDN 以及 Redis 和 Memcached 这两种为提升性能提供强大选项的开源缓存解决方案。在架构中引入 Redis 或 Memcached，可以通过利用内存缓存的强大功能，显著提升应用程序性能、缩短响应时间并改善整体用户体验。</p>
-        <p>下一章将介绍扩展与负载均衡策略。扩展是现代计算的核心环节，使系统能够从容应对增加的负载。我们还将深入探讨负载均衡策略，以高效分发传入流量。这些策略将共同助力您设计和维护能够应对当今动态数字环境需求的高性能系统。</p>
+        <p>本章全面探讨了实现高效数据缓存的基本概念和策略。我们介绍了缓存淘汰策略、缓存失效机制以及多种缓存策略，帮助读者掌握优化数据访问和存储所需的知识。我们还深入讨论了缓存的部署方式，了解如何通过合理部署最大限度地发挥缓存的作用，并探索了各种缓存机制。此外，本章还介绍了 CDN，以及 Redis 和 Memcached 这两种开源缓存解决方案，它们为提升系统性能提供了有力的选择。在系统架构中引入 Redis 或 Memcached，可以充分发挥内存缓存的优势，显著提升应用程序性能、缩短响应时间，并改善整体用户体验。</p>
+        <p>下一章将介绍扩展与负载均衡策略。扩展是现代计算中的关键环节，使系统能够从容应对不断增长的负载。我们还将深入探讨如何通过负载均衡策略高效分配传入的流量。这些策略将帮助读者设计和维护高性能系统，以应对当今不断变化的数字环境所带来的需求。</p>
       </section>
     </section>
