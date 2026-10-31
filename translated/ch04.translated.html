@@ -360,7 +360,7 @@
               </dd>
             </dl>
             <div data-type="note">
-              <p>AWS 提供 Amazon ElastiCache，这是一项兼容 Redis 和 Memcached 的服务，适用于缓存、会话存储、游戏、地理空间服务、分析和队列处理等实时应用场景。我们将在 <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a> 中进一步介绍这项服务<a contenteditable="false" data-type="indexterm" data-primary="CloudFront">&nbsp;</a>。</p>
+              <p>AWS 提供了 Amazon CloudFront，这是一项内容分发网络（CDN）服务。我们将在 <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a> 中进一步介绍。<a contenteditable="false" data-type="indexterm" data-primary="CloudFront">&nbsp;</a></p>
             </div>
             <p>使用 CDN 可能存在一些缺点。CDN 可能根据流量产生较高费用，但重要的是将这些费用与不使用 CDN 时的开销进行比较。如果在 TTL 到期前进行了更新，内容可能在 CDN 上刷新之前处于过期状态。CDN 还需要修改静态内容的 URL 以指向 CDN，这可能是额外的管理工作。总体而言，CDN 在性能和可扩展性方面提供了优势，但需要仔细考虑这些因素以及<a contenteditable="false" data-type="indexterm" data-primary="CDNs (content delivery networks)" data-startref="cdn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="CDNs (content delivery networks)" data-startref="cache-cdn">&nbsp;</a>网站的具体需求。</p>
             <p>接下来，我们将介绍两种流行的开源缓存解决方案，了解它们的架构以及如何实现本章讨论的缓存概念。</p>
@@ -369,10 +369,10 @@
       </section>
       <section data-type="sect1" id="ch04_open_source_caching_solutions_1734552287180444">
         <h1>开源缓存解决方案</h1>
-        <p>开源缓存解决方案<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="open source solutions" id="cache-opensource">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="open source caching solutions" id="opensource-cache">&nbsp;</a>因其高效性、可扩展性和易用性而广受欢迎。下面我们来深入了解 Memcached 和 Redis——两种被广泛采用的开源缓存解决方案。</p>
+        <p>开源缓存解决方案因其高效性、可扩展性和易用性而广受欢迎。接下来，我们将详细介绍 Memcached 和 Redis 这两种被广泛采用的开源缓存解决方案<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="open source solutions" id="cache-opensource">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="open source caching solutions" id="opensource-cache">&nbsp;</a>。</p>
         <section data-type="sect2" id="ch04_memcached_1734552287180509">
           <h2>Memcached</h2>
-          <p>Memcached<a contenteditable="false" data-type="indexterm" data-primary="Memcached" id="memcached">&nbsp;</a>是一种开源、高性能的缓存解决方案，被广泛用于 Web 应用程序。它作为分布式内存对象缓存系统运行，将数据存储在多台服务器的内存中。以下是 Memcached 的主要功能和优势：</p>
+          <p>Memcached 是一种开源的高性能缓存解决方案，广泛应用于 Web 应用程序。它是一种分布式内存对象缓存系统，可以将数据存储在多台服务器的内存中。Memcached 具有以下主要特点和优势<a contenteditable="false" data-type="indexterm" data-primary="Memcached" id="memcached">&nbsp;</a>：</p>
           <dl>
             <dt>简单轻量</dt>
             <dd>
@@ -400,7 +400,7 @@
         </section>
         <section data-type="sect2" id="ch04_redis_1734552287180570">
           <h2>Redis</h2>
-          <p>Redis，<a contenteditable="false" data-type="indexterm" data-primary="Redis" id="redis">&nbsp;</a>即 Remote Dictionary Server（远程字典服务器）的缩写，是一种基于服务器的内存数据结构存储，可用作高性能缓存。与依赖行的遍历、排序和排列的传统数据库不同，Redis 从底层开始以可定制的数据结构组织数据，支持多种数据类型，如字符串（string）、位图（bitmap）、位域（bitfield）、列表（list）、集合（set）、哈希（hash）、地理空间（geospatial）和 HyperLogLog。这种多功能性使其适用于各种缓存使用场景。以下是 Redis 的主要<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="benefits of" id="redis-benefit">&nbsp;</a>功能和优势：</p>
+          <p>Redis 是 Remote Dictionary Server（远程字典服务器）的缩写，是一种基于服务器的内存数据结构存储系统，可以用作高性能缓存。与依赖对数据行进行遍历、排序和排列的传统数据库不同，Redis 从底层就采用可定制的数据结构来组织数据，支持字符串、位图、位域、列表、集合、哈希、地理空间数据和 HyperLogLog 等多种数据类型。这种灵活性使 Redis 能够适用于多种缓存场景。以下是 Redis 的主要特点和优势<a contenteditable="false" data-type="indexterm" data-primary="Redis" id="redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="benefits of" id="redis-benefit">&nbsp;</a>：</p>
           <dl>
             <dt>高性能</dt>
             <dd>
@@ -423,7 +423,7 @@
           <p>Redis 的架构设计注重高性能、低延迟和简洁性，并提供多种部署方式，以便根据系统需求和成本限制实现高可用性。</p>
           <section data-type="sect3" id="ch04_availability_in_redis_deployments_1734552287180633">
             <h3>Redis 部署中的高可用性</h3>
-            <p>如<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="availability in" id="redis-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="in Redis" data-secondary-sortas="Redis" id="available-redis">&nbsp;</a> <a data-type="xref" href="#ch04_figure_3_1734552287163614">#ch04_figure_3_1734552287163614</a> 所示，Redis 支持多种部署架构，包括单 Redis 实例、Redis 高可用（HA）、Redis 哨兵（Redis Sentinel）和 Redis 集群（Redis Cluster）。每种架构都有其权衡，适用于不同的使用场景和可扩展性需求。</p>
+            <p>如图 <a data-type="xref" href="#ch04_figure_3_1734552287163614">#ch04_figure_3_1734552287163614</a> 所示，Redis 支持多种部署架构，包括单实例部署、Redis 高可用（HA）部署、Redis Sentinel（哨兵）和 Redis Cluster（集群）。不同架构各有需要权衡的因素，适用于不同的使用场景和扩展需求<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="availability in" id="redis-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="in Redis" data-secondary-sortas="Redis" id="available-redis">&nbsp;</a>。</p>
             <figure id="ch04_figure_3_1734552287163614">
               <img src="images/sdoa_0403.png"/>
               <figcaption>Redis 部署架构</figcaption>
@@ -435,7 +435,7 @@
           </section>
           <section data-type="sect3" id="ch04_durability_in_redis_deployment_1734552287180692">
             <h3>Redis 部署中的持久性</h3>
-            <p>Redis<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="durability in" id="redis-durable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="durability" data-secondary="in Redis" data-secondary-sortas="Redis" id="durable-redis">&nbsp;</a>提供两种持久化模型：RDB 文件（Redis 数据库文件）和仅追加文件（AOF）。这些<a contenteditable="false" data-type="indexterm" data-primary="persistence" data-secondary="in Redis" data-secondary-sortas="Redis" id="persist-redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RDB (Redis database) files" id="rdb-file">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AOFs (append-only files)" id="aof">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="append-only files (AOFs)" id="append-only">&nbsp;</a>持久化机制确保数据在系统重启或崩溃时不会丢失。</p>
+            <p>为了保障数据的持久性，Redis 提供两种持久化方式：Redis 数据库文件（RDB）和仅追加文件（AOF）。这些持久化机制确保数据在系统重启或崩溃时不会丢失<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="durability in" id="redis-durable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="durability" data-secondary="in Redis" data-secondary-sortas="Redis" id="durable-redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="persistence" data-secondary="in Redis" data-secondary-sortas="Redis" id="persist-redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RDB (Redis database) files" id="rdb-file">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AOFs (append-only files)" id="aof">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="append-only files (AOFs)" id="append-only">&nbsp;</a>。</p>
             <p>RDB 是 Redis 默认的持久化方式。它会定期为数据集创建快照，并将快照保存为二进制格式的 RDB 文件。这些文件记录了 Redis 数据库在某个特定时间点的状态。RDB 持久化具有以下主要特点：</p>
             <dl>
               <dt>基于快照的持久化</dt>
@@ -475,7 +475,7 @@
           </section>
           <section data-type="sect3" id="ch04_memory_management_in_redis_1734552287180753">
             <h3>Redis 的内存管理</h3>
-            <p>Redis<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="memory management in" id="redis-memory-mgmt">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="memory management in Redis" id="memory-mgmt-redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="forking" id="forking">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="copy-on-write (CoW)" id="copy-on-write">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CoW (copy-on-write)" id="cow">&nbsp;</a>利用进程分叉（fork）和写时复制（CoW）技术，在其单线程架构中高效实现数据持久化。当 Redis 执行快照（RDB）或后台保存操作时，遵循以下步骤：</p>
+            <p>Redis 利用进程分叉（fork）和写时复制（Copy-on-Write，CoW）技术，在单线程架构下高效实现数据持久化。当 Redis 执行 RDB 快照或后台保存操作时，会经历以下步骤<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="memory management in" id="redis-memory-mgmt">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="memory management in Redis" id="memory-mgmt-redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="forking" id="forking">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="copy-on-write (CoW)" id="copy-on-write">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CoW (copy-on-write)" id="cow">&nbsp;</a>：</p>
             <ol>
               <li>
                 <p>Redis 使用 <code>fork()</code> 系统调用创建子进程，该子进程是父进程的完整副本。进程分叉是一种轻量级操作，因为它采用写时复制（CoW）机制创建父进程内存的副本。</p>
@@ -504,7 +504,7 @@
             <p>总体而言，Redis 为开发人员提供了一种强大而灵活的数据存储解决方案，具有多种部署选项和功能。</p>
             <p>Redis 和 Memcached 都是优秀的开源缓存解决方案，各有优势。如何选择取决于具体需求和应用场景。Redis 适用于需要多种数据结构、持久化、发布/订阅消息机制以及高级缓存功能的场景。Memcached 则在注重可扩展性和易于集成的简单、轻量级缓存场景中表现出色<a contenteditable="false" data-type="indexterm" data-primary="forking" data-startref="forking">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="copy-on-write (CoW)" data-startref="copy-on-write">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CoW (copy-on-write)" data-startref="cow">&nbsp;</a>。</p>
             <div data-type="note">
-              <p>AWS 提供了<a contenteditable="false" data-type="indexterm" data-primary="ElastiCache">&nbsp;</a>亚马逊 ElastiCache，与 Redis 和 Memcached 兼容，适用于缓存、会话存储、游戏、地理空间服务、分析和排队等实时使用场景。我们将在<a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="memory management in" data-startref="redis-memory-mgmt">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="memory management in Redis" data-startref="memory-mgmt-redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Redis" data-startref="redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="open source solutions" data-startref="cache-opensource">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="open source caching solutions" data-startref="opensource-cache">&nbsp;</a> <a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a> 中详细介绍。</p>
+              <p>AWS 提供 Amazon ElastiCache，这是一项兼容 Redis 和 Memcached 的服务，适用于缓存、会话存储、游戏、地理空间服务、分析和队列处理等实时应用场景。我们将在 <a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a> 中进一步介绍这项服务。<a contenteditable="false" data-type="indexterm" data-primary="ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Redis" data-secondary="memory management in" data-startref="redis-memory-mgmt">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="memory management in Redis" data-startref="memory-mgmt-redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Redis" data-startref="redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="open source solutions" data-startref="cache-opensource">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="open source caching solutions" data-startref="opensource-cache">&nbsp;</a></p>
             </div>
           </section>
         </section>
