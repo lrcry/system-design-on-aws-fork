@@ -2,7 +2,7 @@
       <h1>容器化、编排与部署</h1>
       <p>近年来，容器化（containerization）已成为软件开发和部署领域的变革性技术。传统的应用程序构建和部署方式往往面临一致性不足、可移植性差以及资源利用率低等挑战。容器化以一种全新而有效的方式为这些问题提供了解决方案。</p>
       <p>那么，什么是<em>容器化</em>呢？简单来说，它是一种将应用程序及其运行所需的一切——如库和依赖项——打包成一个轻量级、可移植单元（称为<em>容器</em>）的方式。这些<a contenteditable="false" data-type="indexterm" data-primary="containers">&nbsp;</a>容器确保应用程序无论部署在何处——无论是开发人员的笔记本电脑、测试服务器还是生产环境——都能以相同的方式运行。这种一致性使开发人员能够专注于编写代码，而无需担心兼容性问题或部署的复杂性。<a href="https://docker.com">Docker</a> 是最流行的容器化工具之一，<a contenteditable="false" data-type="indexterm" data-primary="Docker">&nbsp;</a>它让创建、共享和运行容器变得简单，从而简化了开发流程，帮助团队更快地工作，并将应用程序更快速地推向市场。</p>
-      <p>在本章中，我们将首先介绍容器化的基本概念，重点关注 Docker。您将了解容器的工作原理、如何创建容器以及如何大规模管理容器。我们还将涉及更高级的主题，例如管理容器镜像、使用 <a href="https://kubernetes.io">Kubernetes</a> 等工具编排容器，以及使用现代策略部署应用程序。在本章结束时，您将对容器化有深入的理解，并了解它如何改善您的系统设计和软件开发方法。让我们深入探讨，了解容器化如何使您的开发运维工作更轻松、更高效！</p>
+      <p>在本章中，我们将首先介绍容器化的基本概念，重点关注 Docker。您将了解容器的工作原理、如何创建容器以及如何大规模管理容器。我们还将涉及更高级的主题，例如管理容器镜像、使用 <a href="https://kubernetes.io">Kubernetes</a> 等工具编排容器，以及使用现代策略部署应用程序。在本章结束时，您将对容器化有深入的理解，并了解它如何改善您的系统设计和软件开发方法。让我们深入探讨，了解容器化如何使您的开发与运维工作更轻松、更高效！</p>
       <section data-type="sect1" id="ch07_evolution_of_application_deployment_1734552288630437">
         <h1>应用程序部署的演进</h1>
         <p>在<a contenteditable="false" data-type="indexterm" data-primary="application deployment" data-secondary="evolution of" id="app-deploy-evolution">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment" data-secondary="evolution of" id="deploy-evolution">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="VMs versus" id="container-vms-compare">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VMs (virtual machines), containers versus" id="vm-container-compare">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="virtual machines (VMs), containers versus" id="virtual-machine-container-compare">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="software deployment" data-see="application deployment">&nbsp;</a>软件部署的早期阶段，企业依赖物理服务器来运行其应用程序。每个应用程序通常托管在一台独立的物理服务器上，导致资源分配和利用率不足的问题。例如，如果多个应用程序共享同一台服务器，一个应用程序可能会独占资源，导致其他应用程序的性能下降。随着企业努力维护众多物理服务器，这种方式被证明既低效又昂贵。为了解决传统部署的局限性，虚拟化（virtualization）应运而生，成为了一项改变游戏规则的技术。</p>
@@ -110,7 +110,7 @@
         <section data-type="sect2" id="ch07_docker_1734552288630633">
           <h2>Docker</h2>
           <p>Docker<a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" id="containerization-docker">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" id="docker">&nbsp;</a>是容器化的事实标准。它提供了一个用于构建、分发和运行容器的综合平台。借助 Docker，开发人员可以使用 <a href="https://oreil.ly/w_NP0">Dockerfile</a> 定义应用程序环境，构建容器镜像，并将应用程序无缝部署到任何环境。Docker 提供了丰富的工具集和 API，用于管理容器、编排分布式应用程序，以及与现有的 DevOps 工作流集成。</p>
-          <p>以下是一个简单 <a contenteditable="false" data-type="indexterm" data-primary="Dockerfiles">&nbsp;</a>Dockerfile 的示例，用于使用 Flask 框架创建一个基本的 Python Web 应用程序，该文件被转换为由多个层组成的 Docker 镜像，如<a data-type="xref" href="#ch07_figure_2_1734552288616314">#ch07_figure_2_1734552288616314</a>所示：</p>
+          <p>以下是一个简单 <a contenteditable="false" data-type="indexterm" data-primary="Dockerfiles">&nbsp;</a>Dockerfile 的示例，用于使用 Flask 框架创建一个基本的 Python Web 应用程序，Dockerfile 用于构建由多个层组成的 Docker 镜像，如<a data-type="xref" href="#ch07_figure_2_1734552288616314">#ch07_figure_2_1734552288616314</a>所示：</p>
           <pre data-type="programlisting"># Use the official Python image from Docker Hub
 FROM python:3.9-slim
 
@@ -217,7 +217,7 @@ CMD ["python", "app.py"]</pre>
           </section>
           <section data-type="sect3" id="ch07_containers_1734552288630817">
             <h3>容器</h3>
-            <p>在<a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-tertiary="container lifecycle" id="containerization-docker-lifecycle">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" data-secondary="container lifecycle" id="docker-lifecycle">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="lifecycle" id="container-lifecycle">&nbsp;</a>容器化领域，理解容器的生命周期、底层进程以及 Docker 等容器引擎的角色，对于高效部署和管理容器化应用程序至关重要。如<a data-type="xref" href="#ch07_figure_4_1734552288616355">#ch07_figure_4_1734552288616355</a>所示，容器的生命周期涵盖从创建到终止的几个阶段，每个阶段在部署和执行容器化应用程序中都起着至关重要的作用。</p>
+            <p>在<a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="Docker" data-tertiary="container lifecycle" id="containerization-docker-lifecycle">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Docker" data-secondary="container lifecycle" id="docker-lifecycle">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="lifecycle" id="container-lifecycle">&nbsp;</a>容器化领域，理解容器的生命周期、底层进程以及 Docker 等容器引擎的作用，对于高效部署和管理容器化应用程序至关重要。如<a data-type="xref" href="#ch07_figure_4_1734552288616355">#ch07_figure_4_1734552288616355</a>所示，容器的生命周期涵盖从创建到终止的几个阶段，每个阶段在部署和执行容器化应用程序中都起着至关重要的作用。</p>
             <figure id="ch07_figure_4_1734552288616355">
               <img src="images/sdoa_0704.png"/>
               <figcaption>Docker 容器生命周期</figcaption>
@@ -242,14 +242,14 @@ CMD ["python", "app.py"]</pre>
               </dd>
               <dt>容器终止</dt>
               <dd>
-                <p>当不再需要容器时，使用 <code>docker rm</code> 命令终止容器。容器终止会释放分配的资源并从主机系统中删除容器，确保资源的高效利用。</p>
+                <p>当不再需要容器时，使用 <code>docker rm</code> 命令终止容器。删除容器会移除容器实例及其可写层；停止容器则会释放其运行时资源，确保资源的高效利用。</p>
               </dd>
             </dl>
             <p>在容器化环境中，容器作为隔离进程运行，每个进程都有自己的命名空间、文件系统和网络栈。容器执行中涉及的关键进程包括：</p>
             <dl>
               <dt>初始化进程</dt>
               <dd>
-                <p><a contenteditable="false" data-type="indexterm" data-primary="init process">&nbsp;</a>每个容器都以初始化进程（init process）启动，该进程作为容器化应用程序的入口点。初始化进程通常在容器内以进程 ID（PID）1 运行，负责管理其他进程和处理信号。</p>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="init process">&nbsp;</a>每个容器都以初始化进程（init process）启动，该进程作为容器化应用程序的入口点。容器的主进程通常以进程 ID（PID）1 运行，负责管理其他进程和处理信号。</p>
               </dd>
               <dt>应用程序进程</dt>
               <dd>
@@ -320,11 +320,11 @@ CMD ["python", "app.py"]</pre>
               </dd>
               <dt>调度程序</dt>
               <dd>
-                <p><a contenteditable="false" data-type="indexterm" data-primary="schedulers">&nbsp;</a>调度程序将新创建的 Pod（容器组）放置到集群中的可用节点上。它考虑资源需求、硬件和软件约束、亲和性、反亲和性以及用户定义的其他策略等因素。</p>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="schedulers">&nbsp;</a>调度程序将新创建的 Pod（容器组）调度到集群中的可用节点上。它考虑资源需求、硬件和软件约束、亲和性、反亲和性以及用户定义的其他策略等因素。</p>
               </dd>
               <dt>控制器管理器</dt>
               <dd>
-                <p><a contenteditable="false" data-type="indexterm" data-primary="controller managers">&nbsp;</a>控制器管理器是一个守护进程，内嵌了 Kubernetes 附带的核心控制循环。这些控制循环通过 API 服务器监视集群状态，并朝向期望状态努力。控制器示例包括节点控制器（Node Controller）、副本集控制器（ReplicaSet Controller）和部署控制器（Deployment Controller）。</p>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="controller managers">&nbsp;</a>控制器管理器是一个守护进程，内嵌了 Kubernetes 附带的核心控制循环。这些控制循环通过 API 服务器监视集群状态，并持续推动集群状态向期望状态收敛。控制器示例包括节点控制器（Node Controller）、副本集控制器（ReplicaSet Controller）和部署控制器（Deployment Controller）。</p>
               </dd>
               <dt>Etcd</dt>
               <dd>
@@ -339,7 +339,7 @@ CMD ["python", "app.py"]</pre>
               </dd>
               <dt>kube-proxy</dt>
               <dd>
-                <p><a contenteditable="false" data-type="indexterm" data-primary="kube-proxy">&nbsp;</a>kube-proxy 是在每个 Worker 节点上运行的网络代理。它维护主机上的网络规则，并将连接转发到<span class='keep-together'>适当的</span>后端服务。它通过管理 TCP 和 UDP 数据包的网络路由来实现 Kubernetes 服务抽象。</p>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="kube-proxy">&nbsp;</a>kube-proxy 是在每个 Worker 节点上运行的网络代理。它维护主机上的网络规则，并将连接转发到适当的后端服务。它通过管理 TCP 和 UDP 数据包的网络路由来实现 Kubernetes 服务抽象。</p>
               </dd>
             </dl>
             <p>Kubernetes 架构围绕管理集群状态的控制平面和执行工作负载的一组 Worker 节点构建。这些组件之间的交互确保了大规模容器化应用程序的高效部署和管理。</p>
@@ -350,7 +350,7 @@ CMD ["python", "app.py"]</pre>
             <dl>
               <dt>Pod（容器组）</dt>
               <dd>
-                <p><a contenteditable="false" data-type="indexterm" data-primary="Pods">&nbsp;</a>Pod 是 Kubernetes 中最小的可部署单元，表示一个或多个共享网络和存储资源的容器。Pod 封装应用程序组件，并确保它们被共同定位和调度。Pod 是短暂的，可以根据需求动态扩缩或替换。</p>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="Pods">&nbsp;</a>Pod 是 Kubernetes 中最小的可部署单元，表示一个或多个共享网络和存储资源的容器。Pod 封装应用程序组件，并确保这些容器共同部署、协同调度。Pod 是短暂的，可以根据需求动态扩缩或替换。</p>
               </dd>
               <dt>集群</dt>
               <dd>
@@ -362,7 +362,7 @@ CMD ["python", "app.py"]</pre>
               </dd>
               <dt>服务</dt>
               <dd>
-                <p><a contenteditable="false" data-type="indexterm" data-primary="services (Kubernetes)">&nbsp;</a>服务（Service）为访问 Kubernetes 集群内的 Pod 提供网络抽象。它们支持负载均衡、服务发现以及基于标签和选择器自动路由流量到 Pod。服务可以在集群内部暴露，也可以向互联网外部暴露。</p>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="services (Kubernetes)">&nbsp;</a>服务（Service）为访问 Kubernetes 集群内的 Pod 提供网络抽象。它们支持负载均衡、服务发现以及基于标签和选择器自动路由流量到 Pod。服务既可以仅在集群内部开放，也可以向集群外部或互联网公开。</p>
               </dd>
               <dt>部署</dt>
               <dd>
@@ -399,7 +399,7 @@ CMD ["python", "app.py"]</pre>
           <dl>
             <dt>重建部署</dt>
             <dd>
-              <p><a contenteditable="false" data-type="indexterm" data-primary="re-creating deployments">&nbsp;</a>在 Kubernetes 中更新部署时，会涉及 Pod 的重建——现有实例被终止，然后被新版本替换。当旧版本和新版本的应用程序无法共存时，这种方法非常有益。所经历的停机时间取决于应用程序停止和重新启动所需的时长。</p>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="re-creating deployments">&nbsp;</a>在 Kubernetes 中更新部署时，会涉及 Pod 的重建——现有实例被终止，然后被新版本替换。当旧版本和新版本的应用程序无法共存时，这种方法非常有益。停机时长取决于应用程序停止和重新启动所需的时间。</p>
             </dd>
             <dt>滚动部署</dt>
             <dd>
@@ -418,7 +418,7 @@ CMD ["python", "app.py"]</pre>
             </dd>
             <dt>无服务器部署</dt>
             <dd>
-              <p><a contenteditable="false" data-type="indexterm" data-primary="serverless deployments">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="function as a service (FaaS)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="FaaS (function as a service)">&nbsp;</a>无服务器部署也称为<em>函数即服务（FaaS）</em>，它抽象了基础设施层，使开发人员可以专注于编写代码。Kubernetes 通过 Knative 或 AWS Lambda on Kubernetes 等平台提供无服务器功能，使开发人员能够部署事件驱动、自动扩展的应用程序，而无需管理底层基础设施。</p>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="serverless deployments">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="function as a service (FaaS)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="FaaS (function as a service)">&nbsp;</a>函数即服务（FaaS）是一种无服务器计算模式，它抽象了基础设施层，使开发人员可以专注于编写代码。Kubernetes 通过 Knative 或 AWS Lambda on Kubernetes 等平台提供无服务器功能，使开发人员能够部署事件驱动、自动扩展的应用程序，而无需管理底层基础设施。</p>
             </dd>
             <dt>金丝雀部署</dt>
             <dd>
@@ -429,13 +429,13 @@ CMD ["python", "app.py"]</pre>
           <div data-type="note">
             <p><em>基础设施即代码（IaC）</em>是<a contenteditable="false" data-type="indexterm" data-primary="infrastructure-as-code (IaC)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IaC (infrastructure-as-code)">&nbsp;</a>一种通过代码管理 IT 基础设施的现代方法，能够在预置和配置方面实现自动化和一致性。IaC 允许团队使用声明式配置文件定义其基础设施，这些文件可以进行版本控制和轻松复制，从而促进协作和可追溯性。支持 IaC 的一些常见工具包括 <a href="https://terraform.io">Terraform</a>、<a href="https://aws.amazon.com/cloudformation">AWS CloudFormation</a>、<a href="https://ansible.com">Ansible</a>、<a href="https://pulumi.com">Pulumi</a>、<a href="https://chef.io">Chef</a>、<a href="https://puppet.com">Puppet</a> 和 <a href="https://oreil.ly/NCJvE">AWS CDK</a>。</p>
           </div>
-          <p>Kubernetes 通过实现大规模容器化应用程序的编排，融入了 IaC 范式。使用 Kubernetes，您可以使用声明式 YAML 文件定义整个应用程序环境——容器、网络、存储和配置。这允许团队对基础设施配置进行版本控制，轻松复制环境，并自动化部署流程。Kubernetes 提供了一个强大的平台来实施这些策略，使团队能够充满信心和效率地部署、扩展和管理应用程序。</p>
+          <p>Kubernetes 通过大规模编排容器化应用程序，融入了 IaC 范式。使用 Kubernetes，您可以使用声明式 YAML 文件定义整个应用程序环境——容器、网络、存储和配置。这允许团队对基础设施配置进行版本控制，轻松复制环境，并自动化部署流程。Kubernetes 提供了一个强大的平台来实施这些策略，使团队能够充满信心和效率地部署、扩展和管理应用程序。</p>
           <p>更改应部署到测试（或预发布）环境。一旦通过手动测试（或自动集成测试）在测试环境中得到确认，就可以将其传播到为真实用户流量提供服务的生产环境。让我们在下一节中更详细地讨论这个过程。<a contenteditable="false" data-type="indexterm" data-primary="containers" data-secondary="deployment strategies" data-startref="container-deploy-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment strategies" data-secondary="Kubernetes" data-startref="deploy-kubernetes-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Kubernetes" data-secondary="deployment strategies" data-startref="kubernetes-deploy-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="containerization" data-secondary="deployment strategies" data-startref="containerization-deploy-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="application deployment" data-secondary="container deployment strategies" data-startref="app-deploy-container-strategy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment" data-secondary="container deployment strategies" data-startref="deploy-container-strategy">&nbsp;</a></p>
         </section>
       </section>
       <section data-type="sect1" id="ch07_ci_cd_pipeline_with_gitflow_and_automated_deployme_1734552288631183">
         <h1>使用 Gitflow 和自动化部署策略的 CI/CD 流水线</h1>
-        <p>随着企业内软件项目数量的增加，<a contenteditable="false" data-type="indexterm" data-primary="application deployment" data-secondary="CI/CD pipeline" id="app-deploy-cicd">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment" data-secondary="CI/CD pipeline" id="deploy-cicd">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CI/CD pipeline" id="cicd">&nbsp;</a>管理部署的复杂性也随之增加。手动部署容易出错，需要大量工程资源来管理，最终会减缓开发生命周期。为了解决这个问题，CI/CD 提供了一个自动化流程，可以降低运营成本，并加速从代码审查到生产的部署。让我们深入探讨 CI/CD 的关键概念，从使用 Gitflow 进行代码开发开始，并探索有效实施这些概念的步骤。</p>
+        <p>随着企业内软件项目数量的增加，<a contenteditable="false" data-type="indexterm" data-primary="application deployment" data-secondary="CI/CD pipeline" id="app-deploy-cicd">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="deployment" data-secondary="CI/CD pipeline" id="deploy-cicd">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CI/CD pipeline" id="cicd">&nbsp;</a>部署管理的复杂性也随之增加。手动部署容易出错，需要大量工程资源来管理，最终会减缓开发生命周期。为了解决这个问题，CI/CD 提供了一个自动化流程，可以降低运营成本，并加速从代码审查到生产的部署。让我们深入探讨 CI/CD 的关键概念，从使用 Gitflow 进行代码开发开始，并探索有效实施这些概念的步骤。</p>
         <section data-type="sect2" id="ch07_gitflow_workflow_for_branch_management_1734552288631246">
           <h2>用于分支管理的 Gitflow 工作流</h2>
           <p>Gitflow 是一种<a href="https://oreil.ly/hQ8Pl">分支策略</a>，<a contenteditable="false" data-type="indexterm" data-primary="Gitflow">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="branch management">&nbsp;</a>通过清晰、结构化的分支来组织开发、测试和发布流程。这确保了顺畅的集成、计划良好的发布以及快速的 bug 修复发布。</p>
