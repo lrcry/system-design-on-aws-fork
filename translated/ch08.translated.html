@@ -517,131 +517,131 @@
 <dl>
 	<dt>防腐层</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="anticorruption layer" data-type="indexterm">&nbsp;</a>防腐层（ACL）作为保护屏障，防止潜在的破坏性数据或请求进入系统的某个部分，从而保护应用核心业务模型的完整性。它充当不同子系统或外部应用之间的翻译器，确保数据交换不会破坏领域模型。</p>
+	<p><a contenteditable="false" data-primary="anticorruption layer" data-type="indexterm">&nbsp;</a>防腐层（ACL）充当一道保护屏障，防止可能造成干扰的数据或请求影响系统内部组件，从而维护应用程序核心业务模型的完整性。它在不同子系统或外部应用程序之间发挥转换和适配作用，避免数据交换破坏领域模型。</p>
 	</dd>
 	<dt>绞杀者模式</dt>
 	<dd>
-	<p>该模式<a contenteditable="false" data-primary="strangler fig pattern" data-type="indexterm">&nbsp;</a>用于通过将特定功能逐步替换为新应用和服务来渐进式改造遗留系统。随着时间推移，这些新组件"绞杀"旧系统，最终完全取而代之。</p>
+	<p><a contenteditable="false" data-primary="strangler fig pattern" data-type="indexterm">&nbsp;</a>这种模式通过使用新的应用程序或服务逐步替换遗留系统中的部分功能，实现对旧系统的渐进式改造。随着越来越多的功能被新组件接管，旧系统会逐步被取代，最终实现完全替换。</p>
 	</dd>
 	<dt>事务性发件箱</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="transactional outbox pattern" data-type="indexterm">&nbsp;</a>事务性发件箱模式用于确保服务间的可靠消息传递。当数据库发生变更时，记录同样会在同一事务内被添加到"发件箱"表中。随后，一个独立的进程将这些消息发送至消息队列或其他目标，确保跨服务边界的数据一致性。</p>
+	<p><a contenteditable="false" data-primary="transactional outbox pattern" data-type="indexterm">&nbsp;</a>事务性发件箱模式用于保障服务之间的可靠消息传递。当应用程序在数据库中进行数据变更时，会在同一个数据库事务中将相应的消息记录写入“发件箱”表。随后，由一个独立的进程将这些消息发送到消息队列或其他目标系统，从而帮助维护跨服务的数据一致性。</p>
 	</dd>
 	<dt>边车模式</dt>
 	<dd>
-	<p>边车模式<a contenteditable="false" data-primary="sidecar pattern" data-type="indexterm">&nbsp;</a>常用于微服务架构。它涉及在服务容器旁部署额外的容器或进程，<span class="keep-together">提供</span>监控、日志记录、配置和网络能力等平台连接服务。边车可以用任何语言编写，与主容器之间没有强依赖性，从而实现解耦。这种模式将基础设施关注点与应用隔离，使应用更简洁、更模块化。</p>
+	<p><a contenteditable="false" data-primary="sidecar pattern" data-type="indexterm">&nbsp;</a>边车模式常用于微服务架构。它通过在主服务容器旁部署额外的容器或进程，为应用程序<span class="keep-together">提供</span>监控、日志记录、配置管理和网络通信等基础设施能力。边车组件可以使用不同的编程语言实现，而不必与主服务在实现技术上紧密耦合。这种模式有助于将基础设施相关的职责与应用程序本身分离，使应用程序的结构更加清晰、模块化程度更高。</p>
 	</dd>
 	<dt>前端专属后端（BFF）</dt>
 	<dd>
-	<p>该模式<a contenteditable="false" data-primary="backend for frontend (BFF)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="BFF (backend for frontend)" data-type="indexterm">&nbsp;</a>涉及为不同类型的客户端（如桌面浏览器和移动设备）创建专属的后端服务。它允许开发者针对特定用户界面优化这些后端服务，通过减少数据过度获取或获取不足来提升用户体验。</p>
+	<p><a contenteditable="false" data-primary="backend for frontend (BFF)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="BFF (backend for frontend)" data-type="indexterm">&nbsp;</a>这种模式为不同类型的客户端（例如桌面浏览器和移动设备）分别构建专用的后端服务。开发人员可以根据不同用户界面的需求优化相应的后端服务，减少数据获取过多或不足的情况，从而改善用户体验。</p>
 	</dd>
 	<dt>单元式架构</dt>
 	<dd>
-	<p>单元式架构<a contenteditable="false" data-primary="cellular architecture" data-type="indexterm">&nbsp;</a>涉及将系统设计为单元（cell）的集合，每个单元独立运行但可以与其他单元通信。每个单元都是自包含的，拥有自己的数据存储和逻辑，能够自主扩展。这种方式具有高度弹性，因为一个单元的故障不会影响其他单元；同时它支持演进式架构，允许每个单元独立演进。</p>
+	<p><a contenteditable="false" data-primary="cellular architecture" data-type="indexterm">&nbsp;</a>单元式架构将系统划分为多个独立的单元（cell）。各单元可以独立运行，同时又能够与其他单元通信。每个单元都是自包含的，拥有独立的数据存储和业务逻辑，并且可以单独扩展。这种架构具有较强的弹性，因为某个单元发生故障时，其他单元仍可继续运行。此外，各单元还可以独立演进，从而支持系统架构的持续演化。</p>
 	</dd>
 </dl>
 
-<p>这些模式分别针对开发和管理云原生应用中的常见问题提供定向解决方案，为构建更具弹性、灵活性和可扩展性的架构提供路径。请记住，这并非架构模式的详尽列表，该列表会随着系统设计的最新发展而持续演进。然而，这些模式共同为您在设计<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="cloud" data-startref="arch-design-cloud" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="cloud architecture patterns" data-startref="cloud-pattern" data-type="indexterm">&nbsp;</a>复杂系统时可能面临的各类架构挑战提供了健壮的解决方案。</p>
+<p>这些模式分别为开发和管理云原生应用时遇到的常见问题提供有针对性的解决方案，有助于构建更具弹性、灵活性和可扩展性的系统架构。需要注意的是，这里列出的架构模式并不全面；随着系统设计技术不断发展，新的模式也会持续涌现。尽管如此，这些模式仍能为你在设计复杂系统时面临的各种架构挑战提供可靠的解决方案。<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="cloud" data-startref="arch-design-cloud" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="cloud architecture patterns" data-startref="cloud-pattern" data-type="indexterm">&nbsp;</a></p>
 </section>
 </section>
 
 <section data-type="sect1" id="ch08_open_source_distributed_systems_architecture_1734552289326718">
 <h1>开源分布式系统架构</h1>
 
-<p><em>分布式系统架构</em>涉及将职责<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-type="indexterm" id="arch-design-distributed">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-type="indexterm" id="distributed-system-arch">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-type="indexterm" id="open-source-distributed-system-arch">&nbsp;</a>分散到多个计算节点，以确保系统具备可扩展性、容错性和高效性。在本节中，我们将探讨两个核心组件：分布式文件系统和分布式消息队列，重点关注开源实现——文件系统领域的 HDFS 和消息队列领域的 Kafka。</p>
+<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-type="indexterm" id="arch-design-distributed">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-type="indexterm" id="distributed-system-arch">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-type="indexterm" id="open-source-distributed-system-arch">&nbsp;</a><em>分布式系统架构</em>将系统的不同职责分配给多个计算节点，以提升系统的可扩展性、容错能力和运行效率。本节将介绍两类核心组件：分布式文件系统和分布式消息队列，重点讨论它们的开源实现，分别以 HDFS 和 Kafka 为代表。</p>
 
 <section data-type="sect2" id="ch08_hdfs_1734552289326806">
 <h2>HDFS</h2>
 
-<p>HDFS 是<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="HDFS" data-type="indexterm" id="arch-design-distributed-hdfs">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-type="indexterm" id="distributed-system-arch-hdfs">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-type="indexterm" id="open-source-distributed-system-arch-hdfs">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-type="indexterm" id="hdfs">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-type="indexterm" id="hadoop-dist-filesystem">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-type="indexterm" id="filesystem-hdfs">&nbsp;</a>一个设计在商用硬件上运行的开源文件系统。它具有高度容错性，专为部署在低成本硬件上而设计。HDFS 为应用数据提供高吞吐量访问，适用于需要处理大型数据集的应用。以下是 HDFS 的主要特性：</p>
+<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="HDFS" data-type="indexterm" id="arch-design-distributed-hdfs">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-type="indexterm" id="distributed-system-arch-hdfs">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-type="indexterm" id="open-source-distributed-system-arch-hdfs">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-type="indexterm" id="hdfs">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-type="indexterm" id="hadoop-dist-filesystem">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-type="indexterm" id="filesystem-hdfs">&nbsp;</a>HDFS 是一种面向通用商用硬件设计的开源文件系统，能够在成本较低的硬件设备上运行，并具有较强的容错能力。它支持以高吞吐量访问应用程序数据，适用于需要处理大规模数据集的应用。HDFS 的主要特性包括：</p>
 
 <dl class="pagebreak-before less_space">
 	<dt>分布式存储</dt>
 	<dd>
-	<p>HDFS 为可扩展性而设计，将数据分布在集群中的多个节点上。它将大文件分割成数据块，并在不同机器上进行复制，确保即使在硬件故障的情况下也能实现数据冗余和可用性。</p>
+	<p>HDFS 在设计上注重可扩展性，通过将数据分布到集群中的多个节点来实现分布式存储。它把大文件拆分为多个数据块，并在不同机器上保存这些数据块的副本，从而提供数据冗余，并在发生硬件故障时维持数据的可用性。</p>
 	</dd>
 	<dt>容错性</dt>
 	<dd>
-	<p>HDFS 的关键特性之一是其内置的容错性。数据会自动跨三个不同节点进行复制，确保即使一个节点故障，数据仍可从其他节点访问。这种复制机制提供了可靠性和高可用性，使 HDFS 非常适合大规模数据存储。</p>
+	<p>HDFS 的一项关键特性是其内置的容错能力。系统会自动复制数据，通常将副本存储在三个不同的节点上。这样，即使其中一个节点发生故障，仍可通过其他节点访问数据。这种副本机制提高了系统的可靠性和可用性，使 HDFS 非常适合大规模数据存储。</p>
 	</dd>
 	<dt>可扩展性与灵活性</dt>
 	<dd>
-	<p>HDFS 可以通过向集群添加更多节点来横向扩展，从而在无需对基础设施进行重大变更的情况下管理不断增长的数据量。这种可扩展性，加上其存储多种格式数据的能力，使 HDFS 成为满足广泛数据处理需求的灵活解决方案。</p>
+	<p>HDFS 可以通过向集群添加节点来实现横向扩展，从而在无需大幅调整现有基础设施的情况下，存储和管理不断增长的数据量。这种可扩展性，加上对多种数据格式的支持，使 HDFS 能够灵活地满足不同的数据处理需求。</p>
 	</dd>
 	<dt>高吞吐量</dt>
 	<dd>
-	<p>HDFS 针对高吞吐量进行了优化，优先考虑数据访问速度而非低延迟。它专为处理大型数据集并侧重于批处理而设计，非常适合涉及读写大量数据的大数据应用。</p>
+	<p>HDFS 针对高吞吐量进行了优化，更注重大规模数据读写的整体处理效率，而不是单次访问的低延迟。它面向大型数据集设计，尤其适合批处理场景，因此非常适用于需要读写海量数据的大数据应用。</p>
 	</dd>
 	<dt>成本效益</dt>
 	<dd>
-	<p>通过使用商用硬件，HDFS 为存储和处理大量数据提供了具有成本效益的解决方案。</p>
+	<p>通过使用通用商用硬件，HDFS 能够以较低的成本存储和处理海量数据。</p>
 	</dd>
 	<dt>与 Hadoop 生态系统的集成</dt>
 	<dd>
-	<p>HDFS 与<a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="HDFS integration" data-type="indexterm">&nbsp;</a>更广泛的 Hadoop 生态系统深度集成，支持 MapReduce、Apache Hive 和 Apache Spark 等各类处理框架。这种集成实现了无缝的数据处理和分析，借助 HDFS 的分布式架构在靠近数据的地方执行计算，可以减少网络瓶颈并提升效率。</p>
+	<p><a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="HDFS integration" data-type="indexterm">&nbsp;</a>HDFS 与 Hadoop 生态系统紧密集成，支持 MapReduce、Hive 和 Spark 等多种数据处理框架。借助这种集成，系统可以利用 HDFS 的分布式架构，尽可能在靠近数据存储位置的节点上执行计算，从而减少网络传输瓶颈，提高数据处理和分析的效率。</p>
 	</dd>
 </dl>
 
 <div data-type="note">
-<p>AWS 提供了<a contenteditable="false" data-primary="Elastic MapReduce (EMR)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EMR (Elastic MapReduce)" data-type="indexterm">&nbsp;</a> Amazon EMR（亚马逊弹性 MapReduce），这是一项托管服务，简化了在 AWS 云上运行 Hadoop（包括 HDFS）等大数据框架的工作。我们将在 <a data-type="xref" href="#ch13_big_data_analytics_and_machine_learning_services_1734552292002899">#ch13_big_data_analytics_and_machine_learning_services_1734552292002899</a> 中进一步探讨。Amazon EMR 支持使用 HDFS（或 EMRFS）处理大量数据，充分利用其可扩展性、容错性以及与更广泛 Hadoop 生态系统的集成能力。</p>
+<p><a contenteditable="false" data-primary="Elastic MapReduce (EMR)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EMR (Elastic MapReduce)" data-type="indexterm">&nbsp;</a>AWS 提供 Amazon EMR（Amazon Elastic MapReduce）托管服务，帮助用户更便捷地在 AWS 云上运行 Hadoop 等大数据框架，包括使用 HDFS 进行存储。我们将在 <a data-type="xref" href="#ch13_big_data_analytics_and_machine_learning_services_1734552292002899">#ch13_big_data_analytics_and_machine_learning_services_1734552292002899</a> 中进一步介绍。Amazon EMR 支持使用 HDFS 或 EMRFS 处理海量数据，并利用其可扩展性、容错能力以及与 Hadoop 生态系统的集成优势。</p>
 </div>
 
 <section data-type="sect3" id="ch08_hdfs_architecture_1734552289326874">
 <h3>HDFS 架构</h3>
 
-<p>HDFS 架构如图 <a data-type="xref" href="#ch08_figure_8_1734552289299761">#ch08_figure_8_1734552289299761</a> 所示，由若干关键组件协同工作，共同构成一个分布式、容错、可扩展的文件系统。</p>
+<p>如图 <a data-type="xref" href="#ch08_figure_8_1734552289299761">#ch08_figure_8_1734552289299761</a> 所示，HDFS 由多个关键组件构成。这些组件相互协作，共同实现文件系统的分布式存储、容错和可扩展能力。</p>
 
 <figure id="ch08_figure_8_1734552289299761"><img src="images/sdoa_0808.png" />
 <figcaption>HDFS 架构</figcaption>
 </figure>
 
-<p>HDFS 架构的组成部分如下：</p>
+<p>HDFS 架构主要包含以下组件：</p>
 
 <dl>
 	<dt>NameNode（名称节点）</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="NameNodes" data-type="indexterm">&nbsp;</a>NameNode 是 HDFS 的核心组件，负责管理文件系统的元数据和命名空间。它追踪文件位置，并通过协调跨 DataNode 的存储来管理文件访问。NameNode 对 HDFS 的运行至关重要；如果它发生故障，文件系统将无法访问。</p>
+	<p><a contenteditable="false" data-primary="NameNodes" data-type="indexterm">&nbsp;</a>NameNode 是 HDFS 的核心组件，负责管理文件系统的元数据和命名空间。它记录文件的存储位置，并通过协调各个 DataNode 上的数据存储来管理文件访问。NameNode 对 HDFS 的正常运行至关重要；如果 NameNode 发生故障，文件系统可能无法访问。</p>
 	</dd>
 	<dt>DataNode（数据节点）</dt>
 	<dd>
-	<p>DataNode <a contenteditable="false" data-primary="DataNodes" data-type="indexterm">&nbsp;</a>是 HDFS 架构中的工作节点。它们存储构成 HDFS 文件的实际数据块。每个 DataNode 定期向 NameNode 发送心跳和块报告，确保系统拥有关于存储健康状况和可用性的最新视图。</p>
+	<p><a contenteditable="false" data-primary="DataNodes" data-type="indexterm">&nbsp;</a>DataNode 是 HDFS 中负责存储数据的工作节点，保存组成文件的实际数据块。每个 DataNode 都会定期向 NameNode 发送心跳信号和数据块报告，使 NameNode 能够及时了解各节点的运行状态、数据块信息以及数据的可用情况。</p>
 	</dd>
 	<dt>辅助 NameNode</dt>
 	<dd>
-	<p>尽管名称如此，<a contenteditable="false" data-primary="secondary NameNodes" data-type="indexterm">&nbsp;</a>辅助 NameNode 并不是 NameNode 的备份。它与 NameNode 协同工作，共同管理文件系统的元数据。它定期对元数据进行快照并应用编辑日志，有助于在 NameNode 发生故障时缩短恢复时间。</p>
+	<p><a contenteditable="false" data-primary="secondary NameNodes" data-type="indexterm">&nbsp;</a>尽管名称中带有“Secondary”，但辅助 NameNode 并不是 NameNode 的备用节点。它与 NameNode 协同工作，主要负责定期将文件系统的元数据镜像与编辑日志合并，生成新的检查点。这有助于减少 NameNode 故障恢复时需要处理的编辑日志数量，从而缩短恢复时间。</p>
 	</dd>
 	<dt>数据块</dt>
 	<dd>
-	<p>HDFS <a contenteditable="false" data-primary="blocks (HDFS)" data-type="indexterm">&nbsp;</a>以数据块的形式存储数据，通常每块大小为 128 MB，并在多个 DataNode（通常为三个）间进行复制以实现冗余。这种基于块的存储系统使 HDFS 能够高效处理大文件，确保即使 DataNode 发生故障，数据仍可从其他副本中获取。</p>
+	<p><a contenteditable="false" data-primary="blocks (HDFS)" data-type="indexterm">&nbsp;</a>HDFS 将文件划分为多个数据块进行存储，每个数据块的大小通常为 128 MB。为实现数据冗余，系统通常会将每个数据块的副本分布在三个不同的 DataNode 上。这种基于数据块的存储方式使 HDFS 能够高效处理大文件，并在某个 DataNode 发生故障时，通过其他副本继续提供数据访问。</p>
 	</dd>
 </dl>
 
-<p>当客户端想要读取或写入文件时，它与 NameNode 通信以定位存储数据块的 DataNode。对于写操作，NameNode 提供客户端应写入数据块的 DataNode 列表。写入完成后，DataNode 根据 NameNode 的指示将数据块复制到其他节点。</p>
+<p>当客户端需要读取或写入文件时，会先与 NameNode 通信，以确定相关数据块的存储位置或目标 DataNode。对于写操作，NameNode 会向客户端返回用于存储数据块的 DataNode 列表。随后，客户端将数据写入指定的 DataNode，数据块再按照 NameNode 确定的副本放置策略复制到其他节点。</p>
 
-<p>HDFS 具有机架感知能力，即它了解数据中心不同机架上各节点的物理布局。NameNode 利用这一信息对数据块放置做出智能决策，确保副本分布在不同机架上，从而提升容错性，确保机架故障不会导致数据丢失。</p>
+<p>HDFS 具备机架感知能力，能够识别数据中心中各节点所属的机架。NameNode 利用这些信息制定数据块的副本放置策略，将副本分布在不同机架上，以提高系统的容错能力。这样，即使某个机架发生故障，系统仍有机会通过其他机架上的副本访问数据，从而降低数据丢失的风险。</p>
 
-<p>HDFS 通过数据复制和 NameNode 的定期检查来实现容错性。如果 DataNode 发生故障，NameNode 将启动对受影响数据块的复制，将其复制到其他节点以确保数据可用性。</p>
+<p>HDFS 通过数据块复制以及 NameNode 对节点状态的定期监测来实现容错。如果某个 DataNode 发生故障，NameNode 会协调将受影响的数据块重新复制到其他节点，以恢复所需的副本数量并维持数据可用性。</p>
 
-<p>这些组件和特性共同构成了一个高度可靠、可扩展的分布式文件系统，是 Hadoop 生态系统的核心。HDFS 的架构旨在跨数千个节点处理大规模数据的存储和检索，非常适合大数据应用。</p>
+<p>这些组件和特性共同构成了一个高度可靠且可扩展的分布式文件系统，使 HDFS 成为 Hadoop 生态系统的核心组成部分。HDFS 的架构能够支持在数千个节点组成的集群中存储和读取海量数据，因此非常适合大数据应用。</p>
 
-<p>HDFS 在更广泛的 Hadoop 生态系统中发挥着关键作用，为大数据处理提供了必不可少的存储能力。然而，在评估大数据解决方案时，也应考虑其他平台。尽管 Hadoop 生态系统提供了一套全面的开源工具来管理和处理大型数据集，但 AWS 等云平台提供的托管服务可以简化部署和<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed-hdfs" data-tertiary="HDFS" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-startref="distributed-system-arch-hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-startref="open-source-distributed-system-arch-hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-startref="hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-startref="hadoop-dist-filesystem" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-startref="filesystem-hdfs" data-type="indexterm">&nbsp;</a>扩展工作。接下来，我们将比较 Hadoop 生态系统与 AWS，重点介绍它们的差异、优势和使用场景。</p>
+<p>HDFS 是 Hadoop 生态系统的重要组成部分，为大数据处理提供关键的存储能力。不过，在评估大数据解决方案时，也应考虑其他平台。Hadoop 生态系统提供了用于管理和处理大型数据集的丰富开源工具，而 AWS 等云平台则提供托管服务，有助于简化系统部署和扩展。接下来，我们将对比 Hadoop 生态系统与 AWS，重点介绍二者的区别、优势及适用场景。<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed-hdfs" data-tertiary="HDFS" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-startref="distributed-system-arch-hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-startref="open-source-distributed-system-arch-hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-startref="hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-startref="hadoop-dist-filesystem" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-startref="filesystem-hdfs" data-type="indexterm">&nbsp;</a></p>
 </section>
 
 <section data-type="sect3" id="ch08_hadoop_ecosystem_versus_aws_1734552289326940">
 <h3>Hadoop 生态系统与 AWS 的对比</h3>
 
-<p>Hadoop 生态系统<a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="AWS versus" data-type="indexterm" id="hadoop-aws-compare">&nbsp;</a><a contenteditable="false" data-primary="AWS (Amazon Web Services)" data-secondary="Hadoop ecosystem versus" data-type="indexterm" id="aws-hadoop-compare">&nbsp;</a>是一套专为跨大型计算机集群进行分布式数据存储和处理而设计的综合工具套件。Hadoop 的核心包括用于可扩展存储的 HDFS 和用于并行处理大型数据集的 MapReduce。然而，生态系统远不止这两个组件，还包括 Apache Hive（用于对大型数据集进行 SQL 式查询）、Apache Pig（用于数据分析的高级脚本语言）、Apache HBase（用于实时数据的 NoSQL 数据库）以及 YARN（用于资源管理）等工具。此外还包括用于内存数据处理的 Apache Spark、用于工作流调度的 Apache Oozie 以及用于分布式协调的 ZooKeeper。</p>
+<p><a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="AWS versus" data-type="indexterm" id="hadoop-aws-compare">&nbsp;</a><a contenteditable="false" data-primary="AWS (Amazon Web Services)" data-secondary="Hadoop ecosystem versus" data-type="indexterm" id="aws-hadoop-compare">&nbsp;</a>Hadoop 生态系统包含一系列工具，用于在大规模计算机集群中进行分布式数据存储和处理。Hadoop 的核心组件包括提供可扩展存储的 HDFS，以及用于大规模数据并行处理的 MapReduce。除此之外，Hadoop 生态系统还涵盖 Hive（用于对大型数据集执行类似 SQL 的查询）、Pig（提供用于数据分析的高级脚本语言）、HBase（用于处理实时数据的 NoSQL 数据库）和 YARN（用于资源管理）等工具。此外，还有用于内存数据处理的 Apache Spark、用于工作流调度的 Oozie，以及用于分布式协调的 ZooKeeper。</p>
 
-<p>AWS 为大多数 Hadoop 服务提供了完全托管的等效产品，大幅减少了运营开销。Amazon S3（用于可扩展的对象存储）、Amazon EMR（用于运行 Hadoop 和 Spark 集群）、Amazon Athena（用于交互式查询服务）以及 AWS Glue（用于 ETL 操作）等 AWS 服务，在扩展、成本管理和安全功能方面都提供了更集成的解决方案。表 <a data-type="xref" href="#ch08_table_1_1734552289307598">#ch08_table_1_1734552289307598</a> 对 Hadoop 服务及其对应的 AWS 服务进行了比较。</p>
+<p>AWS 为 Hadoop 生态系统中的许多功能提供了相应的托管服务，有助于减少系统部署和运维工作。例如，Amazon S3 提供可扩展的对象存储，Amazon EMR 支持运行 Hadoop 和 Spark 集群，Amazon Athena 提供交互式查询服务，AWS Glue 则用于数据提取、转换和加载（ETL）。这些服务还提供扩展、成本管理和安全方面的相关能力。表 <a data-type="xref" href="#ch08_table_1_1734552289307598">#ch08_table_1_1734552289307598</a> 对 Hadoop 生态系统中的工具与相关 AWS 服务进行了比较。</p>
 
 <table id="ch08_table_1_1734552289307598">
 	<caption>Hadoop 生态系统与 AWS 服务对比</caption>
 	<thead>
 		<tr>
-			<th>Hadoop 生态系统服务</th>
-			<th>描述</th>
-			<th>对应的 AWS 服务</th>
-			<th>比较</th>
+			<th>Hadoop 生态系统组件</th>
+			<th>说明</th>
+			<th>相关 AWS 服务</th>
+			<th>对比</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -650,13 +650,13 @@
 			<p>HDFS</p>
 			</td>
 			<td>
-			<p>用于大规模数据的分布式文件系统</p>
+			<p>用于存储大规模数据的分布式文件系统</p>
 			</td>
 			<td>
-			<p>Amazon S3/EMRFS（构建在 S3 之上）</p>
+			<p>Amazon S3／EMRFS（基于 S3）</p>
 			</td>
 			<td>
-			<p>S3 是可扩展的对象存储，比 HDFS 更易于管理，采用按用量付费的定价模式。</p>
+			<p>S3 是一种可扩展的对象存储服务，管理起来通常比 HDFS 更简便，并采用按使用量付费的计费方式。</p>
 			</td>
 		</tr>
 		<tr>
@@ -664,13 +664,13 @@
 			<p>MapReduce</p>
 			</td>
 			<td>
-			<p>并行数据处理</p>
+			<p>并行处理数据</p>
 			</td>
 			<td>
 			<p>Amazon EMR</p>
 			</td>
 			<td>
-			<p>EMR 支持 MapReduce 并自动化集群管理，在实例类型选择上提供了灵活性。</p>
+			<p>EMR 支持运行 MapReduce，并提供自动化集群管理功能，同时支持灵活选择实例类型。</p>
 			</td>
 		</tr>
 		<tr>
@@ -678,13 +678,13 @@
 			<p>Hive</p>
 			</td>
 			<td>
-			<p>用于联机分析处理（OLAP）的分布式数据仓库</p>
+			<p>支持联机分析处理（OLAP）的分布式数据仓库工具</p>
 			</td>
 			<td>
 			<p>Amazon Redshift</p>
 			</td>
 			<td>
-			<p>Redshift 提供完全托管的 PB 级数据仓库，针对 OLAP 进行了优化，且更易于扩展。</p>
+			<p>Redshift 提供完全托管的 PB 级数据仓库服务，针对 OLAP 工作负载进行了优化，并且更易于扩展。</p>
 			</td>
 		</tr>
 		<tr>
@@ -692,13 +692,13 @@
 			<p>Pig</p>
 			</td>
 			<td>
-			<p>高级数据分析语言</p>
+			<p>用于数据分析的高级语言</p>
 			</td>
 			<td>
 			<p>AWS Glue</p>
 			</td>
 			<td>
-			<p>Glue 提供具有集成工作流能力的无服务器 ETL，替代了手动配置 Pig 的繁琐工作。</p>
+			<p>Glue 提供无服务器 ETL 服务及集成的工作流功能，可减少使用 Pig 时所需的手动配置工作。</p>
 			</td>
 		</tr>
 		<tr>
@@ -706,13 +706,13 @@
 			<p>Presto</p>
 			</td>
 			<td>
-			<p>对大型数据集的 SQL 式查询</p>
+			<p>使用类似 SQL 的语法查询大型数据集</p>
 			</td>
 			<td>
 			<p>Amazon Athena</p>
 			</td>
 			<td>
-			<p>Athena 是无服务器查询服务，无需预置基础设施即可对 S3 中的数据执行 SQL 查询。</p>
+			<p>Athena 是一种无服务器查询服务，用户无需自行预置基础设施，即可使用 SQL 查询 Amazon S3 中的数据。</p>
 			</td>
 		</tr>
 		<tr>
@@ -720,13 +720,13 @@
 			<p>HBase</p>
 			</td>
 			<td>
-			<p>用于实时分析的 NoSQL 数据库</p>
+			<p>用于实时数据分析的 NoSQL 数据库</p>
 			</td>
 			<td>
 			<p>HBase on EMR</p>
 			</td>
 			<td>
-			<p>HBase on EMR 提供与自管 HBase 类似的托管 Hadoop 框架，后者需要手动扩展。</p>
+			<p>在 Amazon EMR 上运行 HBase，可以利用托管集群服务简化部署和管理工作；相比之下，自行管理 HBase 通常需要承担更多扩展和运维任务。</p>
 			</td>
 		</tr>
 		<tr>
@@ -734,13 +734,13 @@
 			<p>YARN</p>
 			</td>
 			<td>
-			<p>集群计算资源管理器</p>
+			<p>集群计算资源管理组件</p>
 			</td>
 			<td>
-			<p>Amazon EMR/ECS</p>
+			<p>Amazon EMR／Amazon ECS</p>
 			</td>
 			<td>
-			<p>EMR 简化了 YARN 管理；ECS 提供容器编排，将集群管理抽象化。</p>
+			<p>EMR 可以简化 YARN 的部署与管理；ECS 则提供容器编排能力，将部分集群管理工作抽象化。</p>
 			</td>
 		</tr>
 		<tr>
@@ -748,13 +748,13 @@
 			<p>ZooKeeper</p>
 			</td>
 			<td>
-			<p>分布式应用的协调服务</p>
+			<p>用于分布式应用协调的服务</p>
 			</td>
 			<td>
 			<p>AWS AppConfig</p>
 			</td>
 			<td>
-			<p>ZooKeeper 用于 Hadoop 和 Kafka 中的元数据管理；AppConfig 用于 AWS 上的配置管理。</p>
+			<p>ZooKeeper 可用于分布式系统中的协调和元数据管理；AWS AppConfig 则主要用于管理和部署应用程序配置。</p>
 			</td>
 		</tr>
 		<tr>
@@ -768,7 +768,7 @@
 			<p>AWS Step Functions</p>
 			</td>
 			<td>
-			<p>Step Functions 提供无服务器编排，与 Oozie 的工作流管理相比，对 AWS 服务的 ETL 和工作流有更好的集成。</p>
+			<p>Step Functions 提供无服务器工作流编排能力，在 ETL 和工作流场景中与 AWS 服务集成得更加紧密。</p>
 			</td>
 		</tr>
 		<tr>
@@ -776,13 +776,13 @@
 			<p>Sqoop</p>
 			</td>
 			<td>
-			<p>Hadoop 与关系数据库之间的结构化数据传输</p>
+			<p>在 Hadoop 与关系数据库之间传输结构化数据</p>
 			</td>
 			<td>
-			<p>AWS Database Migration Service（亚马逊数据库迁移服务，DMS）</p>
+			<p>AWS Database Migration Service（DMS）</p>
 			</td>
 			<td>
-			<p>DMS 提供完全托管的服务，用于将各类数据库（关系型和非关系型）的数据迁移至云端，支持实时迁移或批量迁移（类似 Sqoop），并提供额外的云集成功能。</p>
+			<p>DMS 是一项完全托管的数据迁移服务，可将关系型和非关系型数据库中的数据迁移到云端。它支持持续迁移和批量迁移，并提供额外的云服务集成功能。</p>
 			</td>
 		</tr>
 		<tr>
@@ -790,13 +790,13 @@
 			<p>Flume</p>
 			</td>
 			<td>
-			<p>从各种来源向 Hadoop 持续、实时地流传输非结构化数据</p>
+			<p>持续、实时地将不同来源的非结构化数据传输到 Hadoop</p>
 			</td>
 			<td>
 			<p>Amazon Kinesis</p>
 			</td>
 			<td>
-			<p>Kinesis 为分析和流处理应用提供实时数据摄取和处理，相比 Flume 手动配置的流处理方式，提供了完全托管的服务。</p>
+			<p>Kinesis 为数据分析和流处理应用提供实时数据摄取与处理能力。与需要自行配置和管理的 Flume 相比，Kinesis 提供托管式服务。</p>
 			</td>
 		</tr>
 		<tr>
@@ -810,140 +810,140 @@
 			<p>Spark on Amazon EMR</p>
 			</td>
 			<td>
-			<p>EMR 支持运行 Spark 作业，相比 Hadoop 原生 Spark 配置，提供了更大的灵活性和更多的管理选项。</p>
+			<p>EMR 支持运行 Spark 作业，并提供多种集群配置与管理选项，相比自行部署 Spark 更便于运维。</p>
 			</td>
 		</tr>
 	</tbody>
 </table>
 
-<p>这一比较突显了 AWS 如何提供比传统 Hadoop 服务更集成、更可扩展的替代方案，并且通常具有更低的运营开销。我们将在 <a data-type="xref" href="#part2">#part2</a> 中进一步讨论这些相关<a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="AWS versus" data-startref="hadoop-aws-compare" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="AWS (Amazon Web Services)" data-secondary="Hadoop ecosystem versus" data-startref="aws-hadoop-compare" data-type="indexterm">&nbsp;</a> AWS 服务。</p>
+<p>通过上述比较可以看出，与传统 Hadoop 服务相比，AWS 提供了集成度更高、扩展更便捷的相关解决方案，通常还能减少运维工作。我们将在 <a data-type="xref" href="#part2">#part2</a> 中进一步介绍这些 AWS 服务。<a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="AWS versus" data-startref="hadoop-aws-compare" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="AWS (Amazon Web Services)" data-secondary="Hadoop ecosystem versus" data-startref="aws-hadoop-compare" data-type="indexterm">&nbsp;</a></p>
 </section>
 </section>
 
 <section data-type="sect2" id="ch08_apache_kafka_s_distributed_message_queue_1734552289327017">
 <h2>Apache Kafka：分布式消息队列</h2>
 
-<p>Apache Kafka <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="Kafka" data-type="indexterm" id="arch-design-distributed-kafka">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="Kafka" data-type="indexterm" id="distributed-system-arch-kafka">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="Kafka" data-type="indexterm" id="open-source-distributed-system-arch-kafka">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-type="indexterm" id="kafka">&nbsp;</a><a contenteditable="false" data-primary="message queues" data-secondary="Kafka" data-type="indexterm" id="message-queue-kafka">&nbsp;</a><a contenteditable="false" data-primary="Apache Kafka" data-see="Kafka" data-type="indexterm">&nbsp;</a>是一个开源的分布式事件流处理平台，能够实时处理每天数万亿个事件。作为一个高度可靠、可扩展的消息系统，Kafka 每秒可处理数百万条记录，非常适合事件驱动架构、实时分析和复杂数据管道。以下是 Kafka 的主要特性：</p>
+<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="Kafka" data-type="indexterm" id="arch-design-distributed-kafka">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="Kafka" data-type="indexterm" id="distributed-system-arch-kafka">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="Kafka" data-type="indexterm" id="open-source-distributed-system-arch-kafka">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-type="indexterm" id="kafka">&nbsp;</a><a contenteditable="false" data-primary="message queues" data-secondary="Kafka" data-type="indexterm" id="message-queue-kafka">&nbsp;</a><a contenteditable="false" data-primary="Apache Kafka" data-see="Kafka" data-type="indexterm">&nbsp;</a>Apache Kafka 是一个开源的分布式事件流平台，能够实时处理海量事件，处理规模可达每天数万亿个事件。作为一种可靠且可扩展的消息系统，Kafka 的处理吞吐量可达到每秒数百万条记录，因此适用于事件驱动架构、实时分析以及复杂的数据管道。Kafka 的主要特性包括：</p>
 
 <dl>
 	<dt>可扩展性</dt>
 	<dd>
-	<p>Kafka 的分区机制允许其通过在多个节点间分布数据来实现横向扩展。这种架构支持高吞吐量，并能处理大量数据。</p>
+	<p>Kafka 通过分区机制将数据分布到多个节点上，从而实现横向扩展。这种架构支持高吞吐量，能够处理大规模数据。</p>
 	</dd>
 	<dt>持久性与可靠性</dt>
 	<dd>
-	<p>Kafka 通过将消息持久化到磁盘并跨多个 Broker 进行复制来确保数据持久性。这种复制机制保证了即使某个 Broker 发生故障，数据也不会丢失。</p>
+	<p>Kafka 通过将消息持久化存储到磁盘，并在多个 Broker 之间保存副本，来提高数据的持久性和可靠性。这种复制机制有助于降低单个 Broker 故障导致数据丢失的风险。</p>
 	</dd>
 	<dt>容错性</dt>
 	<dd>
-	<p>Kafka 设计为能够优雅地处理故障。当某个 Broker 发生故障时，Kafka 的复制机制确保另一个 Broker 能够接管故障 Broker 的职责而不会造成数据丢失。</p>
+	<p>Kafka 在设计上具备容错能力。当某个 Broker 发生故障时，Kafka 可以利用数据复制机制，由其他 Broker 接管受影响分区的服务，以尽可能维持数据可用性并降低数据丢失的风险。</p>
 	</dd>
 	<dt>高吞吐量</dt>
 	<dd>
-	<p>Kafka 的设计针对高吞吐量进行了优化，能够每秒处理数百万条记录。这使得 Kafka 非常适合实时数据管道和事件驱动架构。</p>
+	<p>Kafka 针对高吞吐量进行了优化，处理能力可达到每秒数百万条记录。因此，它非常适合构建实时数据管道和事件驱动架构。</p>
 	</dd>
 </dl>
 
 <section data-type="sect3" id="ch08_kafka_architecture_1734552289327085">
 <h3>Kafka 架构</h3>
 
-<p>图 <a data-type="xref" href="#ch08_figure_9_1734552289299781">#ch08_figure_9_1734552289299781</a> 展示了 Kafka 的组件和架构。</p>
+<p>图 <a data-type="xref" href="#ch08_figure_9_1734552289299781">#ch08_figure_9_1734552289299781</a> 展示了 Kafka 的架构及其主要组件。</p>
 
 <figure id="ch08_figure_9_1734552289299781"><img src="images/sdoa_0809.png" />
 <figcaption>Kafka 架构</figcaption>
 </figure>
 
-<p>让我们详细了解这些组件：</p>
+<p>下面进一步介绍这些组件：</p>
 
 <dl>
 	<dt>生产者</dt>
 	<dd>
-	<p>生产者<a contenteditable="false" data-primary="producers" data-type="indexterm">&nbsp;</a>负责将数据（记录）推送到 Kafka 主题中。它们将数据发送至 Kafka Broker，Broker 负责对数据进行分区和跨集群复制。</p>
+	<p><a contenteditable="false" data-primary="producers" data-type="indexterm">&nbsp;</a>生产者负责将数据（记录）发布到 Kafka 主题中。生产者将记录发送给 Kafka Broker，由 Broker 在集群内存储数据，并按照复制机制维护数据副本。</p>
 	</dd>
 	<dt>消费者</dt>
 	<dd>
-	<p>消费者<a contenteditable="false" data-primary="consumers" data-type="indexterm">&nbsp;</a>从 Kafka 主题中读取数据。它们订阅一个或多个主题，并按照记录在分区中存储的顺序消费记录。</p>
+	<p><a contenteditable="false" data-primary="consumers" data-type="indexterm">&nbsp;</a>消费者负责从 Kafka 主题中读取记录。它们可以订阅一个或多个主题，并按照各个分区内记录的存储顺序进行消费。</p>
 	</dd>
 	<dt>Schema Registry</dt>
 	<dd>
-	<p>Schema Registry <a contenteditable="false" data-primary="Schema Registry" data-type="indexterm">&nbsp;</a>是一项管理和执行 Kafka 生产者和消费者所使用 Schema 的服务。它确保数据以一致的格式写入，防止数据结构随时间演进时不同版本之间出现兼容性问题。</p>
+	<p><a contenteditable="false" data-primary="Schema Registry" data-type="indexterm">&nbsp;</a>Schema Registry 是一项用于管理 Kafka 生产者和消费者所使用的数据模式（Schema），并根据配置执行模式兼容性检查的服务。它有助于规范数据格式，并在数据结构不断演进的过程中，减少不同版本之间的兼容性问题。</p>
 	</dd>
 	<dt>Broker</dt>
 	<dd>
-	<p>Kafka Broker <a contenteditable="false" data-primary="brokers" data-type="indexterm">&nbsp;</a>是管理数据持久化和复制的服务器。每个 Broker 以<em>分区</em>的形式存储数据，分区是 Kafka 可扩展性的基本单位。分区允许 Kafka 通过在多个节点间分布数据来实现横向扩展。</p>
+	<p><a contenteditable="false" data-primary="brokers" data-type="indexterm">&nbsp;</a>Kafka Broker 是负责数据持久化存储和副本管理的服务器。每个 Broker 都会存储一个或多个<em>分区</em>的数据。分区是 Kafka 实现横向扩展的基本单位，通过将不同分区分布到多个 Broker 上，Kafka 可以扩展数据存储和处理能力。</p>
 	</dd>
 	<dt>协调器</dt>
 	<dd>
-	<p>ZooKeeper 曾用于<a contenteditable="false" data-primary="ZooKeeper" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="KRaft (Apache Kafka Raft)" data-type="indexterm">&nbsp;</a>管理集群中 Kafka Broker 的协调工作，处理分区的 Leader 选举、集群配置和元数据管理等任务。Kafka 的最新版本已将 ZooKeeper 替换为 <a href="https://oreil.ly/BBg6D">Apache Kafka Raft（KRaft）</a>，用于共识协议和元数据管理。</p>
+	<p><a contenteditable="false" data-primary="ZooKeeper" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="KRaft (Apache Kafka Raft)" data-type="indexterm">&nbsp;</a>过去，Kafka 使用 ZooKeeper 协调集群中的 Broker，负责分区 Leader 选举、集群配置及元数据管理等工作。此后，Kafka 引入了 <a href="https://oreil.ly/BBg6D">Apache Kafka Raft（KRaft）</a> 机制，取代 ZooKeeper 承担集群元数据管理和一致性协调职责。</p>
 	</dd>
 	<dt>主题</dt>
 	<dd>
-	<p>Kafka 主题<a contenteditable="false" data-primary="topics (Kafka)" data-type="indexterm">&nbsp;</a>是记录存储和发布的类别或订阅源名称。Kafka 中的主题经过分区处理，允许数据分布在多个 Broker 上。每个分区是一个有序的、不可变的记录序列，持续追加到日志中。</p>
+	<p><a contenteditable="false" data-primary="topics (Kafka)" data-type="indexterm">&nbsp;</a>Kafka 主题（Topic）是用于组织和发布记录的逻辑类别。一个主题可以划分为多个分区，使数据能够分布在不同的 Broker 上。每个分区都包含按顺序排列、写入后不可修改的记录，这些记录会持续追加到分区日志中。</p>
 	</dd>
 	<dt>分区</dt>
 	<dd>
-	<p>Kafka 分区实现<a contenteditable="false" data-primary="partitions (Kafka)" data-type="indexterm">&nbsp;</a>了主题内记录的并行处理。每个分区可以托管在不同的 Broker 上，允许 Kafka 横向扩展并处理海量数据。分区也是 Kafka 中复制的基本单位，确保数据持久性和容错性。</p>
+	<p><a contenteditable="false" data-primary="partitions (Kafka)" data-type="indexterm">&nbsp;</a>Kafka 通过将主题划分为多个分区，支持对主题中的记录进行并行处理。不同分区可以分布在不同的 Broker 上，使 Kafka 能够横向扩展并处理海量数据。分区也是 Kafka 进行数据复制的基本单位，有助于提高数据的持久性和容错能力。</p>
 	</dd>
 	<dt>键</dt>
 	<dd>
-	<p>在 Kafka 中，<a contenteditable="false" data-primary="keys" data-secondary="Kafka" data-type="indexterm">&nbsp;</a>键在决定记录发送到主题中的哪个分区方面发挥着关键作用。当生产者发送记录时，可以指定一个键。Kafka 使用该键结合哈希函数将记录映射到特定分区。这确保了具有相同键的记录始终进入同一分区，从而保证了该键对应记录的顺序。</p>
+	<p><a contenteditable="false" data-primary="keys" data-secondary="Kafka" data-type="indexterm">&nbsp;</a>在 Kafka 中，记录的键（Key）是决定其目标分区的重要依据。生产者发送记录时，可以为其指定一个键。Kafka 通常使用该键及哈希函数，将记录映射到特定分区。这样，具有相同键的记录通常会被发送到同一分区，从而有助于保持这些记录的顺序。</p>
 	</dd>
 </dl>
 
 <div data-type="note">
-<p>Kafka 按照生产者发送消息的确切顺序将消息追加到分区中。如果生产者先发送消息 M1，再发送 M2 到同一分区，M1 将获得比 M2 更小的偏移量，从而确保它在日志中出现得更早。需要注意的是，这种顺序保证仅适用于各个分区内部。用户可以管理分区策略，以便在不同数据段之间利用这种有序投递。</p>
+<p>Kafka 将消息按顺序追加到各个分区的日志中。如果生产者先向同一分区发送消息 M1，再发送 M2，那么在顺序得到正确保障的情况下，M1 的偏移量将小于 M2，因此会在日志中排在 M2 之前。需要注意的是，这种顺序保证仅适用于单个分区内部。用户可以根据数据的分区方式，利用分区内的顺序保证来处理不同的数据集合。</p>
 </div>
 </section>
 
 <section data-type="sect3" id="ch08_kafka_s_configuration_levels_1734552289327148">
-<h3>Kafka 的配置级别</h3>
+<h3>Kafka 的主要配置参数</h3>
 
-<p>Kafka <a contenteditable="false" data-primary="configuration levels (Kafka)" data-type="indexterm">&nbsp;</a>提供多个配置级别，用于精细调整系统以满足特定需求：</p>
+<p><a contenteditable="false" data-primary="configuration levels (Kafka)" data-type="indexterm">&nbsp;</a>Kafka 提供多种配置参数，可根据具体需求对系统进行调整和优化：</p>
 
 <dl>
 	<dt>复制因子</dt>
 	<dd>
-	<p>该级别决定 Kafka 将在不同 Broker 间维护的分区副本数量。更高的复制因子可提升容错性，但同时需要更多的存储和网络资源。</p>
+	<p>复制因子决定 Kafka 为每个分区维护多少个副本，并将这些副本分布在不同的 Broker 上。较高的复制因子能够增强容错能力，但也会占用更多的存储空间和网络资源。</p>
 	</dd>
-	<dt>确认</dt>
+	<dt>确认机制</dt>
 	<dd>
-	<p>生产者可以配置需要从 Broker 获取的确认级别。例如，设置 <code>acks=all</code> 可确保只有当所有同步副本都确认后，消息才被视为成功写入，以更高的延迟为代价换取更高的可靠性。</p>
+	<p>生产者可以配置 Broker 在何种条件下确认消息已成功写入。例如，设置 <code>acks=all</code> 时，需要满足同步副本（in-sync replicas）的确认要求，Broker 才会向生产者返回成功响应。这种设置通常可以提高消息写入的可靠性，但也可能增加写入延迟。</p>
 	</dd>
 	<dt>保留策略</dt>
 	<dd>
-	<p>Kafka 允许配置记录在主题中的保留时长。保留策略可以基于时间（如七天）或大小（如 100 GB），确保只保留相关数据，实现更有效的存储管理。</p>
+	<p>Kafka 支持配置主题中记录的保留策略，例如按时间（如七天）或按数据量（如 100 GB）设置保留限制。这些策略有助于控制历史数据占用的存储空间，提高存储资源的管理效率。</p>
 	</dd>
 	<dt>压缩</dt>
 	<dd>
-	<p>Kafka 中的消息压缩减少了网络传输和磁盘存储的数据量。可根据使用场景配置不同的压缩算法，如 gzip、snappy 和 lz4。</p>
+	<p>Kafka 通过消息压缩减少网络传输的数据量以及磁盘空间占用。用户可以根据具体场景选择不同的压缩算法，例如 gzip、snappy 和 lz4。</p>
 	</dd>
 </dl>
 
-<p>Kafka 提供强大的<a contenteditable="false" data-primary="messaging guarantees (Kafka)" data-type="indexterm" id="message-guarantee">&nbsp;</a>消息投递保证，确保分布式系统中消息的可靠传递。这些保证对于维护复杂数据管道中的数据一致性和完整性至关重要：</p>
+<p><a contenteditable="false" data-primary="messaging guarantees (Kafka)" data-type="indexterm" id="message-guarantee">&nbsp;</a>Kafka 提供多种消息投递语义，用于控制消息在分布式系统中的传递方式及其可靠性。这些机制对于维护复杂数据管道中的数据一致性和完整性具有重要意义：</p>
 
 <dl>
 	<dt>最多一次投递</dt>
 	<dd>
-	<p>消息<a contenteditable="false" data-primary="at-most-once delivery" data-type="indexterm">&nbsp;</a>最多投递给消费者一次，这意味着消息可能丢失，但绝不会重复投递。这是未配置重试或确认时的默认设置。</p>
+	<p><a contenteditable="false" data-primary="at-most-once delivery" data-type="indexterm">&nbsp;</a>在最多一次投递语义下，每条消息最多投递给消费者一次。消息可能丢失，但不会因失败而重新投递。通常需要通过相应的重试、确认和消费位置管理方式来实现这种语义。</p>
 	</dd>
 	<dt>至少一次投递</dt>
 	<dd>
-	<p>每条消息<a contenteditable="false" data-primary="at-least-once delivery" data-type="indexterm">&nbsp;</a>至少投递一次。这意味着即使发生故障，消息最终也会到达消费者，但可能出现重复。这种保证常用于不允许数据丢失的场景，且应用逻辑可以处理重复消息。为了管理潜在的重复消息，在至少一次投递设置下消费消息的应用应在处理逻辑中实现幂等性。</p>
+	<p><a contenteditable="false" data-primary="at-least-once delivery" data-type="indexterm">&nbsp;</a>在至少一次投递语义下，系统会尝试确保每条消息至少到达消费者一次。即使发生故障，也可以通过重试等机制完成投递，但同一条消息可能被重复投递。这种语义适用于需要尽量避免消息丢失、且应用程序能够处理重复消息的场景。为避免重复消息产生不必要的影响，消费者应在消息处理逻辑中实现幂等性。</p>
 
 	<div data-type="note">
-	<p><a contenteditable="false" data-primary="idempotence" data-type="indexterm">&nbsp;</a>如果一个操作多次应用的效果与应用一次相同，则称该操作是<em>幂等的</em>。例如，消费者可以追踪已处理的消息 ID 以防止重复处理。这种方式确保重复消息不会产生意外的副作用，从而在需要精确处理的应用中维护数据完整性。</p>
+	<p><a contenteditable="false" data-primary="idempotence" data-type="indexterm">&nbsp;</a>如果某个操作执行多次与执行一次产生的结果相同，就称该操作具有<em>幂等性</em>。例如，消费者可以记录已处理的消息 ID，以识别重复消息并避免再次处理。这样可以降低重复消息造成意外副作用的风险，帮助应用程序保持数据完整性。</p>
 	</div>
 	</dd>
 	<dt>精确一次投递</dt>
 	<dd>
-	<p>Kafka 中的精确一次语义（EOS）确保每条消息<a contenteditable="false" data-primary="exactly-once semantics (EOS)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EOS (exactly-once semantics)" data-type="indexterm">&nbsp;</a>仅被精确地投递给消费者一次，即使在发生故障的情况下也不会出现重复。这是通过 Kafka 的幂等生产者和事务 API 实现的，它们在多个分区和主题间维护原子性。EOS 在数据完整性至关重要的系统中尤为有价值，例如金融交易场景。</p>
+	<p><a contenteditable="false" data-primary="exactly-once semantics (EOS)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EOS (exactly-once semantics)" data-type="indexterm">&nbsp;</a>Kafka 的精确一次语义（EOS）旨在使每条消息的处理结果只生效一次，即使发生故障，也能够在支持的处理流程中避免重复结果。这一机制依赖幂等生产者和事务 API，使跨多个分区和主题的相关操作能够以原子方式提交。对于金融交易等高度重视数据完整性的应用场景，EOS 尤其有价值。</p>
 	</dd>
 </dl>
 
-<p>这些消息投递保证，加上 Kafka 强大的容错性和可扩展性，使其成为构建分布式数据流和处理系统的可靠选择。Kafka 以低延迟处理大规模数据流的能力，使其成为现代分布式系统中的基石技术。</p>
+<p>Kafka 支持多种消息投递语义，并具备较强的容错能力和可扩展性，因此是构建分布式数据流处理系统的可靠选择。凭借低延迟处理大规模数据流的能力，Kafka 已成为现代分布式系统中的一项基础技术。</p>
 
 <div data-type="note">
-<p>AWS 提供了<a contenteditable="false" data-primary="Managed Streaming for Apache Kafka (MSK)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="MSK (Managed Streaming for Apache Kafka)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kinesis" data-type="indexterm">&nbsp;</a> Amazon MSK（Amazon Managed Streaming for Apache Kafka）和 Amazon Kinesis，这两项托管服务专为实时数据流处理而设计。MSK 简化了在 AWS 上运行 Apache Kafka 的工作，而 Kinesis 则提供了用于收集、处理和分析流数据的工具。两项服务均支持可扩展、可靠的数据处理。我们将在 <a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a> 中进一步探讨。</p>
+<p><a contenteditable="false" data-primary="Managed Streaming for Apache Kafka (MSK)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="MSK (Managed Streaming for Apache Kafka)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kinesis" data-type="indexterm">&nbsp;</a>AWS 提供 Amazon Managed Streaming for Apache Kafka（Amazon MSK）和 Amazon Kinesis 等用于实时数据流处理的托管服务。Amazon MSK 简化了在 AWS 上部署和运行 Apache Kafka 的工作，而 Amazon Kinesis 则提供用于采集、处理和分析流数据的服务。这两类服务都有助于构建可扩展、可靠的数据流处理系统。我们将在 <a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a> 中进一步介绍。</p>
 </div>
 </section>
 </section>
@@ -951,7 +951,7 @@
 <section data-type="sect2" id="ch08_comparing_hdfs_and_kafka_1734552289327212">
 <h2>HDFS 与 Kafka 的比较</h2>
 
-<p>HDFS 和 Kafka <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="HDFS" data-type="indexterm" id="arch-design-distributed-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-type="indexterm" id="distributed-system-arch-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-type="indexterm" id="open-source-distributed-system-arch-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-type="indexterm" id="hdfs2">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-type="indexterm" id="hadoop-dist-filesystem2">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-type="indexterm" id="filesystem-hdfs2">&nbsp;</a>都旨在高效处理大量数据。表 <a data-type="xref" href="#ch08_table_2_1734552289307636">#ch08_table_2_1734552289307636</a> 对两者的特性进行了比较。</p>
+<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="HDFS" data-type="indexterm" id="arch-design-distributed-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-type="indexterm" id="distributed-system-arch-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-type="indexterm" id="open-source-distributed-system-arch-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-type="indexterm" id="hdfs2">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-type="indexterm" id="hadoop-dist-filesystem2">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-type="indexterm" id="filesystem-hdfs2">&nbsp;</a>HDFS 和 Kafka 都能够高效处理大规模数据，但两者的设计目标和用途有所不同。表 <a data-type="xref" href="#ch08_table_2_1734552289307636">#ch08_table_2_1734552289307636</a> 对它们的主要特性进行了比较。</p>
 
 <table id="ch08_table_2_1734552289307636">
 	<caption>HDFS 与 Kafka 对比</caption>
@@ -971,15 +971,15 @@
 			<p>分布式文件存储</p>
 			</td>
 			<td>
-			<p>消息队列/事件流处理平台</p>
+			<p>消息队列／事件流平台</p>
 			</td>
 		</tr>
 		<tr>
 			<td>
-			<p>使用场景</p>
+			<p>适用场景</p>
 			</td>
 			<td>
-			<p>大数据存储、大规模处理</p>
+			<p>大规模数据存储与批量处理</p>
 			</td>
 			<td>
 			<p>实时消息传递、事件溯源</p>
@@ -1001,10 +1001,10 @@
 			<p>性能</p>
 			</td>
 			<td>
-			<p>高吞吐量，针对大文件优化</p>
+			<p>高吞吐量，针对大文件读写进行优化</p>
 			</td>
 			<td>
-			<p>高吞吐量，针对消息传递优化</p>
+			<p>高吞吐量，针对消息传递进行优化</p>
 			</td>
 		</tr>
 		<tr>
@@ -1012,10 +1012,10 @@
 			<p>可扩展性</p>
 			</td>
 			<td>
-			<p>随节点增加线性扩展</p>
+			<p>通过增加节点实现横向扩展</p>
 			</td>
 			<td>
-			<p>通过主题和分区横向扩展</p>
+			<p>通过增加分区并将其分布到多个 Broker 上实现横向扩展</p>
 			</td>
 		</tr>
 		<tr>
@@ -1023,26 +1023,26 @@
 			<p>容错性</p>
 			</td>
 			<td>
-			<p>跨节点复制</p>
+			<p>在多个节点之间复制数据块</p>
 			</td>
 			<td>
-			<p>集群内及跨集群复制</p>
+			<p>在集群内的多个 Broker 之间维护分区副本；也可通过额外机制实现跨集群复制</p>
 			</td>
 		</tr>
 	</tbody>
 </table>
 
-<p>HDFS 和 Kafka 都是强大的开源技术，各自满足分布式系统中的特定需求。HDFS 非常适合需要大规模数据存储和处理的应用，而 Kafka 则适用于需要健壮的实时数据处理和消息传递能力的应用。在 HDFS 和 Kafka 之间做出选择，取决于您组织的具体数据管理和<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed-kafka" data-tertiary="Kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="Kafka" data-startref="distributed-system-arch-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="Kafka" data-startref="open-source-distributed-system-arch-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-startref="kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="message queues" data-secondary="Kafka" data-startref="message-queue-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-startref="distributed-system-arch" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-startref="open-source-distributed-system-arch" data-type="indexterm">&nbsp;</a>处理需求。</p>
+<p>HDFS 和 Kafka 都是分布式系统中重要的开源技术，但各自适用于不同的需求。HDFS 更适合需要大规模数据存储和批量处理的应用，而 Kafka 则适合需要实时数据流处理和消息传递能力的应用。选择 HDFS 还是 Kafka，应根据组织在数据存储、管理和处理方面的具体需求来决定。<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed-kafka" data-tertiary="Kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="Kafka" data-startref="distributed-system-arch-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="Kafka" data-startref="open-source-distributed-system-arch-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-startref="kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="message queues" data-secondary="Kafka" data-startref="message-queue-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-startref="distributed-system-arch" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-startref="open-source-distributed-system-arch" data-type="indexterm">&nbsp;</a></p>
 </section>
 </section>
 
 <section data-type="sect1" id="ch08_conclusion_1734552289327271">
 <h1>结语</h1>
 
-<p>本章所讨论的架构设计与模式为构建可扩展、可维护、高效的系统提供了一套全面的工具箱。变更数据捕获（CDC）提供了一种在分布式环境中确保数据始终保持最新的机制，而发布-订阅架构则促进了系统组件之间的解耦通信。Lambda、Kappa 和数据湖等大数据架构为处理和分析海量数据提供了健壮的解决方案。与此同时，Kafka 和 HDFS 作为分布式系统中的基础技术，各自在其领域中表现卓越：实时事件流处理和大规模数据存储。</p>
+<p>本章介绍的架构设计与模式为构建可扩展、易于维护且高效的系统提供了丰富的思路和方法。变更数据捕获（CDC）有助于在分布式环境中同步数据变更，使不同系统中的数据保持更新；发布—订阅架构则支持系统组件之间的解耦通信。Lambda 架构、Kappa 架构和数据湖等大数据架构与技术，为处理和分析海量数据提供了有效的方法。此外，Kafka 和 HDFS 也是分布式系统中的重要基础技术，分别擅长实时事件流处理和大规模数据存储。</p>
 
-<p>通过理解和利用本章最后几节中讨论的架构模式和技术，组织不仅能够构建满足当前需求的系统，还能适应未来的挑战。这些设计模式所提供的灵活性、可扩展性和容错性，确保您的系统架构能够随着不断增长的业务需求和技术进步而同步演进。请记住，设计模式在不断演变，没有任何一份清单能够穷尽所有模式——我们在这里只是触及了冰山一角。这些架构模式犹如指导方针，您可以遵循，但无需完全照搬。根据您的业务需求灵活运用，不要强行将设计模式套用于您的需求之上。随着技术的进步，新的模式和策略将持续涌现，塑造系统架构与设计的未来。</p>
+<p>通过理解和运用本章后面几节介绍的架构模式与技术，组织可以构建既能满足当前需求、又能适应未来挑战的系统。这些设计模式有助于提升系统的灵活性、可扩展性和容错能力，使架构更容易随着业务需求和技术的发展而调整。需要注意的是，架构模式在不断演进，不可能用一份清单涵盖所有模式，本章介绍的也只是其中一小部分。这些模式更像是可供参考的设计指导原则，而不是必须严格遵守的规则。应根据实际业务需求选择合适的模式，而不是为了使用某种模式而勉强将其套用到系统中。随着技术不断进步，新的架构模式和设计策略也将持续涌现，推动系统架构与设计的发展。</p>
 
-<p>至此，<a data-type="xref" href="#part1">#part1</a> 告一段落。<a data-type="xref" href="#part2">#part2</a> 将深入介绍众多 AWS 服务，您将开始理解本部分所涵盖的概念与 AWS 服务设计和选型之间的内在联系。</p>
+<p>至此，<a data-type="xref" href="#part1">#part1</a> 的内容告一段落。在 <a data-type="xref" href="#part2">#part2</a> 中，我们将深入介绍各类 AWS 服务，并探讨如何将本部分介绍的概念应用于 AWS 服务的架构设计与选型。</p>
 </section>
 </section>
