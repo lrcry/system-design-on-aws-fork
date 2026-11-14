@@ -517,27 +517,27 @@
 <dl>
 	<dt>防腐层</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="anticorruption layer" data-type="indexterm">&nbsp;</a>防腐层（ACL）作为保护屏障，防止潜在的破坏性数据或请求进入系统的某个部分，从而保护应用核心业务模型的完整性。它充当不同子系统或外部应用之间的翻译器，确保数据交换不会破坏领域模型。</p>
+	<p><a contenteditable="false" data-primary="anticorruption layer" data-type="indexterm">&nbsp;</a>防腐层（ACL）充当一道保护屏障，防止可能造成干扰的数据或请求影响系统内部组件，从而维护应用程序核心业务模型的完整性。它在不同子系统或外部应用程序之间发挥转换和适配作用，避免数据交换破坏领域模型。</p>
 	</dd>
 	<dt>绞杀者模式</dt>
 	<dd>
-	<p>该模式<a contenteditable="false" data-primary="strangler fig pattern" data-type="indexterm">&nbsp;</a>用于通过将特定功能逐步替换为新应用和服务来渐进式改造遗留系统。随着时间推移，这些新组件"绞杀"旧系统，最终完全取而代之。</p>
+	<p><a contenteditable="false" data-primary="strangler fig pattern" data-type="indexterm">&nbsp;</a>这种模式通过使用新的应用程序或服务逐步替换遗留系统中的部分功能，实现对旧系统的渐进式改造。随着越来越多的功能被新组件接管，旧系统会逐步被取代，最终实现完全替换。</p>
 	</dd>
 	<dt>事务性发件箱</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="transactional outbox pattern" data-type="indexterm">&nbsp;</a>事务性发件箱模式用于确保服务间的可靠消息传递。当数据库发生变更时，记录同样会在同一事务内被添加到"发件箱"表中。随后，一个独立的进程将这些消息发送至消息队列或其他目标，确保跨服务边界的数据一致性。</p>
+	<p><a contenteditable="false" data-primary="transactional outbox pattern" data-type="indexterm">&nbsp;</a>事务性发件箱模式用于保障服务之间的可靠消息传递。当应用程序在数据库中进行数据变更时，会在同一个数据库事务中将相应的消息记录写入“发件箱”表。随后，由一个独立的进程将这些消息发送到消息队列或其他目标系统，从而帮助维护跨服务的数据一致性。</p>
 	</dd>
 	<dt>边车模式</dt>
 	<dd>
-	<p>边车模式<a contenteditable="false" data-primary="sidecar pattern" data-type="indexterm">&nbsp;</a>常用于微服务架构。它涉及在服务容器旁部署额外的容器或进程，<span class="keep-together">提供</span>监控、日志记录、配置和网络能力等平台连接服务。边车可以用任何语言编写，与主容器之间没有强依赖性，从而实现解耦。这种模式将基础设施关注点与应用隔离，使应用更简洁、更模块化。</p>
+	<p><a contenteditable="false" data-primary="sidecar pattern" data-type="indexterm">&nbsp;</a>边车模式常用于微服务架构。它通过在主服务容器旁部署额外的容器或进程，为应用程序<span class="keep-together">提供</span>监控、日志记录、配置管理和网络通信等基础设施能力。边车组件可以使用不同的编程语言实现，而不必与主服务在实现技术上紧密耦合。这种模式有助于将基础设施相关的职责与应用程序本身分离，使应用程序的结构更加清晰、模块化程度更高。</p>
 	</dd>
 	<dt>前端专属后端（BFF）</dt>
 	<dd>
-	<p>该模式<a contenteditable="false" data-primary="backend for frontend (BFF)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="BFF (backend for frontend)" data-type="indexterm">&nbsp;</a>涉及为不同类型的客户端（如桌面浏览器和移动设备）创建专属的后端服务。它允许开发者针对特定用户界面优化这些后端服务，通过减少数据过度获取或获取不足来提升用户体验。</p>
+	<p><a contenteditable="false" data-primary="backend for frontend (BFF)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="BFF (backend for frontend)" data-type="indexterm">&nbsp;</a>这种模式为不同类型的客户端（例如桌面浏览器和移动设备）分别构建专用的后端服务。开发人员可以根据不同用户界面的需求优化相应的后端服务，减少数据获取过多或不足的情况，从而改善用户体验。</p>
 	</dd>
 	<dt>单元式架构</dt>
 	<dd>
-	<p>单元式架构<a contenteditable="false" data-primary="cellular architecture" data-type="indexterm">&nbsp;</a>涉及将系统设计为单元（cell）的集合，每个单元独立运行但可以与其他单元通信。每个单元都是自包含的，拥有自己的数据存储和逻辑，能够自主扩展。这种方式具有高度弹性，因为一个单元的故障不会影响其他单元；同时它支持演进式架构，允许每个单元独立演进。</p>
+	<p><a contenteditable="false" data-primary="cellular architecture" data-type="indexterm">&nbsp;</a>单元式架构将系统划分为多个独立的单元（cell）。各单元可以独立运行，同时又能够与其他单元通信。每个单元都是自包含的，拥有独立的数据存储和业务逻辑，并且可以单独扩展。这种架构具有较强的弹性，因为某个单元发生故障时，其他单元仍可继续运行。此外，各单元还可以独立演进，从而支持系统架构的持续演化。</p>
 	</dd>
 </dl>
 
