@@ -823,120 +823,120 @@
 <section data-type="sect2" id="ch08_apache_kafka_s_distributed_message_queue_1734552289327017">
 <h2>Apache Kafka：分布式消息队列</h2>
 
-<p>Apache Kafka <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="Kafka" data-type="indexterm" id="arch-design-distributed-kafka">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="Kafka" data-type="indexterm" id="distributed-system-arch-kafka">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="Kafka" data-type="indexterm" id="open-source-distributed-system-arch-kafka">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-type="indexterm" id="kafka">&nbsp;</a><a contenteditable="false" data-primary="message queues" data-secondary="Kafka" data-type="indexterm" id="message-queue-kafka">&nbsp;</a><a contenteditable="false" data-primary="Apache Kafka" data-see="Kafka" data-type="indexterm">&nbsp;</a>是一个开源的分布式事件流处理平台，能够实时处理每天数万亿个事件。作为一个高度可靠、可扩展的消息系统，Kafka 每秒可处理数百万条记录，非常适合事件驱动架构、实时分析和复杂数据管道。以下是 Kafka 的主要特性：</p>
+<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="Kafka" data-type="indexterm" id="arch-design-distributed-kafka">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="Kafka" data-type="indexterm" id="distributed-system-arch-kafka">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="Kafka" data-type="indexterm" id="open-source-distributed-system-arch-kafka">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-type="indexterm" id="kafka">&nbsp;</a><a contenteditable="false" data-primary="message queues" data-secondary="Kafka" data-type="indexterm" id="message-queue-kafka">&nbsp;</a><a contenteditable="false" data-primary="Apache Kafka" data-see="Kafka" data-type="indexterm">&nbsp;</a>Apache Kafka 是一个开源的分布式事件流平台，能够实时处理海量事件，处理规模可达每天数万亿个事件。作为一种可靠且可扩展的消息系统，Kafka 的处理吞吐量可达到每秒数百万条记录，因此适用于事件驱动架构、实时分析以及复杂的数据管道。Kafka 的主要特性包括：</p>
 
 <dl>
 	<dt>可扩展性</dt>
 	<dd>
-	<p>Kafka 的分区机制允许其通过在多个节点间分布数据来实现横向扩展。这种架构支持高吞吐量，并能处理大量数据。</p>
+	<p>Kafka 通过分区机制将数据分布到多个节点上，从而实现横向扩展。这种架构支持高吞吐量，能够处理大规模数据。</p>
 	</dd>
 	<dt>持久性与可靠性</dt>
 	<dd>
-	<p>Kafka 通过将消息持久化到磁盘并跨多个 Broker 进行复制来确保数据持久性。这种复制机制保证了即使某个 Broker 发生故障，数据也不会丢失。</p>
+	<p>Kafka 通过将消息持久化存储到磁盘，并在多个 Broker 之间保存副本，来提高数据的持久性和可靠性。这种复制机制有助于降低单个 Broker 故障导致数据丢失的风险。</p>
 	</dd>
 	<dt>容错性</dt>
 	<dd>
-	<p>Kafka 设计为能够优雅地处理故障。当某个 Broker 发生故障时，Kafka 的复制机制确保另一个 Broker 能够接管故障 Broker 的职责而不会造成数据丢失。</p>
+	<p>Kafka 在设计上具备容错能力。当某个 Broker 发生故障时，Kafka 可以利用数据复制机制，由其他 Broker 接管受影响分区的服务，以尽可能维持数据可用性并降低数据丢失的风险。</p>
 	</dd>
 	<dt>高吞吐量</dt>
 	<dd>
-	<p>Kafka 的设计针对高吞吐量进行了优化，能够每秒处理数百万条记录。这使得 Kafka 非常适合实时数据管道和事件驱动架构。</p>
+	<p>Kafka 针对高吞吐量进行了优化，处理能力可达到每秒数百万条记录。因此，它非常适合构建实时数据管道和事件驱动架构。</p>
 	</dd>
 </dl>
 
 <section data-type="sect3" id="ch08_kafka_architecture_1734552289327085">
 <h3>Kafka 架构</h3>
 
-<p>图 <a data-type="xref" href="#ch08_figure_9_1734552289299781">#ch08_figure_9_1734552289299781</a> 展示了 Kafka 的组件和架构。</p>
+<p>图 <a data-type="xref" href="#ch08_figure_9_1734552289299781">#ch08_figure_9_1734552289299781</a> 展示了 Kafka 的架构及其主要组件。</p>
 
 <figure id="ch08_figure_9_1734552289299781"><img src="images/sdoa_0809.png" />
 <figcaption>Kafka 架构</figcaption>
 </figure>
 
-<p>让我们详细了解这些组件：</p>
+<p>下面进一步介绍这些组件：</p>
 
 <dl>
 	<dt>生产者</dt>
 	<dd>
-	<p>生产者<a contenteditable="false" data-primary="producers" data-type="indexterm">&nbsp;</a>负责将数据（记录）推送到 Kafka 主题中。它们将数据发送至 Kafka Broker，Broker 负责对数据进行分区和跨集群复制。</p>
+	<p><a contenteditable="false" data-primary="producers" data-type="indexterm">&nbsp;</a>生产者负责将数据（记录）发布到 Kafka 主题中。生产者将记录发送给 Kafka Broker，由 Broker 在集群内存储数据，并按照复制机制维护数据副本。</p>
 	</dd>
 	<dt>消费者</dt>
 	<dd>
-	<p>消费者<a contenteditable="false" data-primary="consumers" data-type="indexterm">&nbsp;</a>从 Kafka 主题中读取数据。它们订阅一个或多个主题，并按照记录在分区中存储的顺序消费记录。</p>
+	<p><a contenteditable="false" data-primary="consumers" data-type="indexterm">&nbsp;</a>消费者负责从 Kafka 主题中读取记录。它们可以订阅一个或多个主题，并按照各个分区内记录的存储顺序进行消费。</p>
 	</dd>
 	<dt>Schema Registry</dt>
 	<dd>
-	<p>Schema Registry <a contenteditable="false" data-primary="Schema Registry" data-type="indexterm">&nbsp;</a>是一项管理和执行 Kafka 生产者和消费者所使用 Schema 的服务。它确保数据以一致的格式写入，防止数据结构随时间演进时不同版本之间出现兼容性问题。</p>
+	<p><a contenteditable="false" data-primary="Schema Registry" data-type="indexterm">&nbsp;</a>Schema Registry 是一项用于管理 Kafka 生产者和消费者所使用的数据模式（Schema），并根据配置执行模式兼容性检查的服务。它有助于规范数据格式，并在数据结构不断演进的过程中，减少不同版本之间的兼容性问题。</p>
 	</dd>
 	<dt>Broker</dt>
 	<dd>
-	<p>Kafka Broker <a contenteditable="false" data-primary="brokers" data-type="indexterm">&nbsp;</a>是管理数据持久化和复制的服务器。每个 Broker 以<em>分区</em>的形式存储数据，分区是 Kafka 可扩展性的基本单位。分区允许 Kafka 通过在多个节点间分布数据来实现横向扩展。</p>
+	<p><a contenteditable="false" data-primary="brokers" data-type="indexterm">&nbsp;</a>Kafka Broker 是负责数据持久化存储和副本管理的服务器。每个 Broker 都会存储一个或多个<em>分区</em>的数据。分区是 Kafka 实现横向扩展的基本单位，通过将不同分区分布到多个 Broker 上，Kafka 可以扩展数据存储和处理能力。</p>
 	</dd>
 	<dt>协调器</dt>
 	<dd>
-	<p>ZooKeeper 曾用于<a contenteditable="false" data-primary="ZooKeeper" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="KRaft (Apache Kafka Raft)" data-type="indexterm">&nbsp;</a>管理集群中 Kafka Broker 的协调工作，处理分区的 Leader 选举、集群配置和元数据管理等任务。Kafka 的最新版本已将 ZooKeeper 替换为 <a href="https://oreil.ly/BBg6D">Apache Kafka Raft（KRaft）</a>，用于共识协议和元数据管理。</p>
+	<p><a contenteditable="false" data-primary="ZooKeeper" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="KRaft (Apache Kafka Raft)" data-type="indexterm">&nbsp;</a>过去，Kafka 使用 ZooKeeper 协调集群中的 Broker，负责分区 Leader 选举、集群配置及元数据管理等工作。此后，Kafka 引入了 <a href="https://oreil.ly/BBg6D">Apache Kafka Raft（KRaft）</a> 机制，取代 ZooKeeper 承担集群元数据管理和一致性协调职责。</p>
 	</dd>
 	<dt>主题</dt>
 	<dd>
-	<p>Kafka 主题<a contenteditable="false" data-primary="topics (Kafka)" data-type="indexterm">&nbsp;</a>是记录存储和发布的类别或订阅源名称。Kafka 中的主题经过分区处理，允许数据分布在多个 Broker 上。每个分区是一个有序的、不可变的记录序列，持续追加到日志中。</p>
+	<p><a contenteditable="false" data-primary="topics (Kafka)" data-type="indexterm">&nbsp;</a>Kafka 主题（Topic）是用于组织和发布记录的逻辑类别。一个主题可以划分为多个分区，使数据能够分布在不同的 Broker 上。每个分区都包含按顺序排列、写入后不可修改的记录，这些记录会持续追加到分区日志中。</p>
 	</dd>
 	<dt>分区</dt>
 	<dd>
-	<p>Kafka 分区实现<a contenteditable="false" data-primary="partitions (Kafka)" data-type="indexterm">&nbsp;</a>了主题内记录的并行处理。每个分区可以托管在不同的 Broker 上，允许 Kafka 横向扩展并处理海量数据。分区也是 Kafka 中复制的基本单位，确保数据持久性和容错性。</p>
+	<p><a contenteditable="false" data-primary="partitions (Kafka)" data-type="indexterm">&nbsp;</a>Kafka 通过将主题划分为多个分区，支持对主题中的记录进行并行处理。不同分区可以分布在不同的 Broker 上，使 Kafka 能够横向扩展并处理海量数据。分区也是 Kafka 进行数据复制的基本单位，有助于提高数据的持久性和容错能力。</p>
 	</dd>
 	<dt>键</dt>
 	<dd>
-	<p>在 Kafka 中，<a contenteditable="false" data-primary="keys" data-secondary="Kafka" data-type="indexterm">&nbsp;</a>键在决定记录发送到主题中的哪个分区方面发挥着关键作用。当生产者发送记录时，可以指定一个键。Kafka 使用该键结合哈希函数将记录映射到特定分区。这确保了具有相同键的记录始终进入同一分区，从而保证了该键对应记录的顺序。</p>
+	<p><a contenteditable="false" data-primary="keys" data-secondary="Kafka" data-type="indexterm">&nbsp;</a>在 Kafka 中，记录的键（Key）是决定其目标分区的重要依据。生产者发送记录时，可以为其指定一个键。Kafka 通常使用该键及哈希函数，将记录映射到特定分区。这样，具有相同键的记录通常会被发送到同一分区，从而有助于保持这些记录的顺序。</p>
 	</dd>
 </dl>
 
 <div data-type="note">
-<p>Kafka 按照生产者发送消息的确切顺序将消息追加到分区中。如果生产者先发送消息 M1，再发送 M2 到同一分区，M1 将获得比 M2 更小的偏移量，从而确保它在日志中出现得更早。需要注意的是，这种顺序保证仅适用于各个分区内部。用户可以管理分区策略，以便在不同数据段之间利用这种有序投递。</p>
+<p>Kafka 将消息按顺序追加到各个分区的日志中。如果生产者先向同一分区发送消息 M1，再发送 M2，那么在顺序得到正确保障的情况下，M1 的偏移量将小于 M2，因此会在日志中排在 M2 之前。需要注意的是，这种顺序保证仅适用于单个分区内部。用户可以根据数据的分区方式，利用分区内的顺序保证来处理不同的数据集合。</p>
 </div>
 </section>
 
 <section data-type="sect3" id="ch08_kafka_s_configuration_levels_1734552289327148">
-<h3>Kafka 的配置级别</h3>
+<h3>Kafka 的主要配置参数</h3>
 
-<p>Kafka <a contenteditable="false" data-primary="configuration levels (Kafka)" data-type="indexterm">&nbsp;</a>提供多个配置级别，用于精细调整系统以满足特定需求：</p>
+<p><a contenteditable="false" data-primary="configuration levels (Kafka)" data-type="indexterm">&nbsp;</a>Kafka 提供多种配置参数，可根据具体需求对系统进行调整和优化：</p>
 
 <dl>
 	<dt>复制因子</dt>
 	<dd>
-	<p>该级别决定 Kafka 将在不同 Broker 间维护的分区副本数量。更高的复制因子可提升容错性，但同时需要更多的存储和网络资源。</p>
+	<p>复制因子决定 Kafka 为每个分区维护多少个副本，并将这些副本分布在不同的 Broker 上。较高的复制因子能够增强容错能力，但也会占用更多的存储空间和网络资源。</p>
 	</dd>
-	<dt>确认</dt>
+	<dt>确认机制</dt>
 	<dd>
-	<p>生产者可以配置需要从 Broker 获取的确认级别。例如，设置 <code>acks=all</code> 可确保只有当所有同步副本都确认后，消息才被视为成功写入，以更高的延迟为代价换取更高的可靠性。</p>
+	<p>生产者可以配置 Broker 在何种条件下确认消息已成功写入。例如，设置 <code>acks=all</code> 时，需要满足同步副本（in-sync replicas）的确认要求，Broker 才会向生产者返回成功响应。这种设置通常可以提高消息写入的可靠性，但也可能增加写入延迟。</p>
 	</dd>
 	<dt>保留策略</dt>
 	<dd>
-	<p>Kafka 允许配置记录在主题中的保留时长。保留策略可以基于时间（如七天）或大小（如 100 GB），确保只保留相关数据，实现更有效的存储管理。</p>
+	<p>Kafka 支持配置主题中记录的保留策略，例如按时间（如七天）或按数据量（如 100 GB）设置保留限制。这些策略有助于控制历史数据占用的存储空间，提高存储资源的管理效率。</p>
 	</dd>
 	<dt>压缩</dt>
 	<dd>
-	<p>Kafka 中的消息压缩减少了网络传输和磁盘存储的数据量。可根据使用场景配置不同的压缩算法，如 gzip、snappy 和 lz4。</p>
+	<p>Kafka 通过消息压缩减少网络传输的数据量以及磁盘空间占用。用户可以根据具体场景选择不同的压缩算法，例如 gzip、snappy 和 lz4。</p>
 	</dd>
 </dl>
 
-<p>Kafka 提供强大的<a contenteditable="false" data-primary="messaging guarantees (Kafka)" data-type="indexterm" id="message-guarantee">&nbsp;</a>消息投递保证，确保分布式系统中消息的可靠传递。这些保证对于维护复杂数据管道中的数据一致性和完整性至关重要：</p>
+<p><a contenteditable="false" data-primary="messaging guarantees (Kafka)" data-type="indexterm" id="message-guarantee">&nbsp;</a>Kafka 提供多种消息投递语义，用于控制消息在分布式系统中的传递方式及其可靠性。这些机制对于维护复杂数据管道中的数据一致性和完整性具有重要意义：</p>
 
 <dl>
 	<dt>最多一次投递</dt>
 	<dd>
-	<p>消息<a contenteditable="false" data-primary="at-most-once delivery" data-type="indexterm">&nbsp;</a>最多投递给消费者一次，这意味着消息可能丢失，但绝不会重复投递。这是未配置重试或确认时的默认设置。</p>
+	<p><a contenteditable="false" data-primary="at-most-once delivery" data-type="indexterm">&nbsp;</a>在最多一次投递语义下，每条消息最多投递给消费者一次。消息可能丢失，但不会因失败而重新投递。通常需要通过相应的重试、确认和消费位置管理方式来实现这种语义。</p>
 	</dd>
 	<dt>至少一次投递</dt>
 	<dd>
-	<p>每条消息<a contenteditable="false" data-primary="at-least-once delivery" data-type="indexterm">&nbsp;</a>至少投递一次。这意味着即使发生故障，消息最终也会到达消费者，但可能出现重复。这种保证常用于不允许数据丢失的场景，且应用逻辑可以处理重复消息。为了管理潜在的重复消息，在至少一次投递设置下消费消息的应用应在处理逻辑中实现幂等性。</p>
+	<p><a contenteditable="false" data-primary="at-least-once delivery" data-type="indexterm">&nbsp;</a>在至少一次投递语义下，系统会尝试确保每条消息至少到达消费者一次。即使发生故障，也可以通过重试等机制完成投递，但同一条消息可能被重复投递。这种语义适用于需要尽量避免消息丢失、且应用程序能够处理重复消息的场景。为避免重复消息产生不必要的影响，消费者应在消息处理逻辑中实现幂等性。</p>
 
 	<div data-type="note">
-	<p><a contenteditable="false" data-primary="idempotence" data-type="indexterm">&nbsp;</a>如果一个操作多次应用的效果与应用一次相同，则称该操作是<em>幂等的</em>。例如，消费者可以追踪已处理的消息 ID 以防止重复处理。这种方式确保重复消息不会产生意外的副作用，从而在需要精确处理的应用中维护数据完整性。</p>
+	<p><a contenteditable="false" data-primary="idempotence" data-type="indexterm">&nbsp;</a>如果某个操作执行多次与执行一次产生的结果相同，就称该操作具有<em>幂等性</em>。例如，消费者可以记录已处理的消息 ID，以识别重复消息并避免再次处理。这样可以降低重复消息造成意外副作用的风险，帮助应用程序保持数据完整性。</p>
 	</div>
 	</dd>
 	<dt>精确一次投递</dt>
 	<dd>
-	<p>Kafka 中的精确一次语义（EOS）确保每条消息<a contenteditable="false" data-primary="exactly-once semantics (EOS)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EOS (exactly-once semantics)" data-type="indexterm">&nbsp;</a>仅被精确地投递给消费者一次，即使在发生故障的情况下也不会出现重复。这是通过 Kafka 的幂等生产者和事务 API 实现的，它们在多个分区和主题间维护原子性。EOS 在数据完整性至关重要的系统中尤为有价值，例如金融交易场景。</p>
+	<p><a contenteditable="false" data-primary="exactly-once semantics (EOS)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EOS (exactly-once semantics)" data-type="indexterm">&nbsp;</a>Kafka 的精确一次语义（EOS）旨在使每条消息的处理结果只生效一次，即使发生故障，也能够在支持的处理流程中避免重复结果。这一机制依赖幂等生产者和事务 API，使跨多个分区和主题的相关操作能够以原子方式提交。对于金融交易等高度重视数据完整性的应用场景，EOS 尤其有价值。</p>
 	</dd>
 </dl>
 
