@@ -638,10 +638,10 @@
 	<caption>Hadoop 生态系统与 AWS 服务对比</caption>
 	<thead>
 		<tr>
-			<th>Hadoop 生态系统服务</th>
-			<th>描述</th>
-			<th>对应的 AWS 服务</th>
-			<th>比较</th>
+			<th>Hadoop 生态系统组件</th>
+			<th>说明</th>
+			<th>相关 AWS 服务</th>
+			<th>对比</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -650,13 +650,13 @@
 			<p>HDFS</p>
 			</td>
 			<td>
-			<p>用于大规模数据的分布式文件系统</p>
+			<p>用于存储大规模数据的分布式文件系统</p>
 			</td>
 			<td>
-			<p>Amazon S3/EMRFS（构建在 S3 之上）</p>
+			<p>Amazon S3／EMRFS（基于 S3）</p>
 			</td>
 			<td>
-			<p>S3 是可扩展的对象存储，比 HDFS 更易于管理，采用按用量付费的定价模式。</p>
+			<p>S3 是一种可扩展的对象存储服务，管理起来通常比 HDFS 更简便，并采用按使用量付费的计费方式。</p>
 			</td>
 		</tr>
 		<tr>
@@ -664,13 +664,13 @@
 			<p>MapReduce</p>
 			</td>
 			<td>
-			<p>并行数据处理</p>
+			<p>并行处理数据</p>
 			</td>
 			<td>
 			<p>Amazon EMR</p>
 			</td>
 			<td>
-			<p>EMR 支持 MapReduce 并自动化集群管理，在实例类型选择上提供了灵活性。</p>
+			<p>EMR 支持运行 MapReduce，并提供自动化集群管理功能，同时支持灵活选择实例类型。</p>
 			</td>
 		</tr>
 		<tr>
@@ -678,13 +678,13 @@
 			<p>Hive</p>
 			</td>
 			<td>
-			<p>用于联机分析处理（OLAP）的分布式数据仓库</p>
+			<p>支持联机分析处理（OLAP）的分布式数据仓库工具</p>
 			</td>
 			<td>
 			<p>Amazon Redshift</p>
 			</td>
 			<td>
-			<p>Redshift 提供完全托管的 PB 级数据仓库，针对 OLAP 进行了优化，且更易于扩展。</p>
+			<p>Redshift 提供完全托管的 PB 级数据仓库服务，针对 OLAP 工作负载进行了优化，并且更易于扩展。</p>
 			</td>
 		</tr>
 		<tr>
@@ -692,13 +692,13 @@
 			<p>Pig</p>
 			</td>
 			<td>
-			<p>高级数据分析语言</p>
+			<p>用于数据分析的高级语言</p>
 			</td>
 			<td>
 			<p>AWS Glue</p>
 			</td>
 			<td>
-			<p>Glue 提供具有集成工作流能力的无服务器 ETL，替代了手动配置 Pig 的繁琐工作。</p>
+			<p>Glue 提供无服务器 ETL 服务及集成的工作流功能，可减少使用 Pig 时所需的手动配置工作。</p>
 			</td>
 		</tr>
 		<tr>
@@ -706,13 +706,13 @@
 			<p>Presto</p>
 			</td>
 			<td>
-			<p>对大型数据集的 SQL 式查询</p>
+			<p>使用类似 SQL 的语法查询大型数据集</p>
 			</td>
 			<td>
 			<p>Amazon Athena</p>
 			</td>
 			<td>
-			<p>Athena 是无服务器查询服务，无需预置基础设施即可对 S3 中的数据执行 SQL 查询。</p>
+			<p>Athena 是一种无服务器查询服务，用户无需自行预置基础设施，即可使用 SQL 查询 Amazon S3 中的数据。</p>
 			</td>
 		</tr>
 		<tr>
@@ -720,13 +720,13 @@
 			<p>HBase</p>
 			</td>
 			<td>
-			<p>用于实时分析的 NoSQL 数据库</p>
+			<p>用于实时数据分析的 NoSQL 数据库</p>
 			</td>
 			<td>
 			<p>HBase on EMR</p>
 			</td>
 			<td>
-			<p>HBase on EMR 提供与自管 HBase 类似的托管 Hadoop 框架，后者需要手动扩展。</p>
+			<p>在 Amazon EMR 上运行 HBase，可以利用托管集群服务简化部署和管理工作；相比之下，自行管理 HBase 通常需要承担更多扩展和运维任务。</p>
 			</td>
 		</tr>
 		<tr>
@@ -734,13 +734,13 @@
 			<p>YARN</p>
 			</td>
 			<td>
-			<p>集群计算资源管理器</p>
+			<p>集群计算资源管理组件</p>
 			</td>
 			<td>
-			<p>Amazon EMR/ECS</p>
+			<p>Amazon EMR／Amazon ECS</p>
 			</td>
 			<td>
-			<p>EMR 简化了 YARN 管理；ECS 提供容器编排，将集群管理抽象化。</p>
+			<p>EMR 可以简化 YARN 的部署与管理；ECS 则提供容器编排能力，将部分集群管理工作抽象化。</p>
 			</td>
 		</tr>
 		<tr>
@@ -748,13 +748,13 @@
 			<p>ZooKeeper</p>
 			</td>
 			<td>
-			<p>分布式应用的协调服务</p>
+			<p>用于分布式应用协调的服务</p>
 			</td>
 			<td>
 			<p>AWS AppConfig</p>
 			</td>
 			<td>
-			<p>ZooKeeper 用于 Hadoop 和 Kafka 中的元数据管理；AppConfig 用于 AWS 上的配置管理。</p>
+			<p>ZooKeeper 可用于分布式系统中的协调和元数据管理；AWS AppConfig 则主要用于管理和部署应用程序配置。</p>
 			</td>
 		</tr>
 		<tr>
@@ -768,7 +768,7 @@
 			<p>AWS Step Functions</p>
 			</td>
 			<td>
-			<p>Step Functions 提供无服务器编排，与 Oozie 的工作流管理相比，对 AWS 服务的 ETL 和工作流有更好的集成。</p>
+			<p>Step Functions 提供无服务器工作流编排能力，在 ETL 和工作流场景中与 AWS 服务集成得更加紧密。</p>
 			</td>
 		</tr>
 		<tr>
@@ -776,13 +776,13 @@
 			<p>Sqoop</p>
 			</td>
 			<td>
-			<p>Hadoop 与关系数据库之间的结构化数据传输</p>
+			<p>在 Hadoop 与关系数据库之间传输结构化数据</p>
 			</td>
 			<td>
-			<p>AWS Database Migration Service（亚马逊数据库迁移服务，DMS）</p>
+			<p>AWS Database Migration Service（DMS）</p>
 			</td>
 			<td>
-			<p>DMS 提供完全托管的服务，用于将各类数据库（关系型和非关系型）的数据迁移至云端，支持实时迁移或批量迁移（类似 Sqoop），并提供额外的云集成功能。</p>
+			<p>DMS 是一项完全托管的数据迁移服务，可将关系型和非关系型数据库中的数据迁移到云端。它支持持续迁移和批量迁移，并提供额外的云服务集成功能。</p>
 			</td>
 		</tr>
 		<tr>
@@ -790,13 +790,13 @@
 			<p>Flume</p>
 			</td>
 			<td>
-			<p>从各种来源向 Hadoop 持续、实时地流传输非结构化数据</p>
+			<p>持续、实时地将不同来源的非结构化数据传输到 Hadoop</p>
 			</td>
 			<td>
 			<p>Amazon Kinesis</p>
 			</td>
 			<td>
-			<p>Kinesis 为分析和流处理应用提供实时数据摄取和处理，相比 Flume 手动配置的流处理方式，提供了完全托管的服务。</p>
+			<p>Kinesis 为数据分析和流处理应用提供实时数据摄取与处理能力。与需要自行配置和管理的 Flume 相比，Kinesis 提供托管式服务。</p>
 			</td>
 		</tr>
 		<tr>
@@ -810,7 +810,7 @@
 			<p>Spark on Amazon EMR</p>
 			</td>
 			<td>
-			<p>EMR 支持运行 Spark 作业，相比 Hadoop 原生 Spark 配置，提供了更大的灵活性和更多的管理选项。</p>
+			<p>EMR 支持运行 Spark 作业，并提供多种集群配置与管理选项，相比自行部署 Spark 更便于运维。</p>
 			</td>
 		</tr>
 	</tbody>
