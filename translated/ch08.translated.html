@@ -940,10 +940,10 @@
 	</dd>
 </dl>
 
-<p>这些消息投递保证，加上 Kafka 强大的容错性和可扩展性，使其成为构建分布式数据流和处理系统的可靠选择。Kafka 以低延迟处理大规模数据流的能力，使其成为现代分布式系统中的基石技术。</p>
+<p>Kafka 支持多种消息投递语义，并具备较强的容错能力和可扩展性，因此是构建分布式数据流处理系统的可靠选择。凭借低延迟处理大规模数据流的能力，Kafka 已成为现代分布式系统中的一项基础技术。</p>
 
 <div data-type="note">
-<p>AWS 提供了<a contenteditable="false" data-primary="Managed Streaming for Apache Kafka (MSK)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="MSK (Managed Streaming for Apache Kafka)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kinesis" data-type="indexterm">&nbsp;</a> Amazon MSK（Amazon Managed Streaming for Apache Kafka）和 Amazon Kinesis，这两项托管服务专为实时数据流处理而设计。MSK 简化了在 AWS 上运行 Apache Kafka 的工作，而 Kinesis 则提供了用于收集、处理和分析流数据的工具。两项服务均支持可扩展、可靠的数据处理。我们将在 <a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a> 中进一步探讨。</p>
+<p><a contenteditable="false" data-primary="Managed Streaming for Apache Kafka (MSK)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="MSK (Managed Streaming for Apache Kafka)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kinesis" data-type="indexterm">&nbsp;</a>AWS 提供 Amazon Managed Streaming for Apache Kafka（Amazon MSK）和 Amazon Kinesis 等用于实时数据流处理的托管服务。Amazon MSK 简化了在 AWS 上部署和运行 Apache Kafka 的工作，而 Amazon Kinesis 则提供用于采集、处理和分析流数据的服务。这两类服务都有助于构建可扩展、可靠的数据流处理系统。我们将在 <a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a> 中进一步介绍。</p>
 </div>
 </section>
 </section>
@@ -951,7 +951,7 @@
 <section data-type="sect2" id="ch08_comparing_hdfs_and_kafka_1734552289327212">
 <h2>HDFS 与 Kafka 的比较</h2>
 
-<p>HDFS 和 Kafka <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="HDFS" data-type="indexterm" id="arch-design-distributed-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-type="indexterm" id="distributed-system-arch-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-type="indexterm" id="open-source-distributed-system-arch-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-type="indexterm" id="hdfs2">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-type="indexterm" id="hadoop-dist-filesystem2">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-type="indexterm" id="filesystem-hdfs2">&nbsp;</a>都旨在高效处理大量数据。表 <a data-type="xref" href="#ch08_table_2_1734552289307636">#ch08_table_2_1734552289307636</a> 对两者的特性进行了比较。</p>
+<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="HDFS" data-type="indexterm" id="arch-design-distributed-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-type="indexterm" id="distributed-system-arch-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-type="indexterm" id="open-source-distributed-system-arch-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-type="indexterm" id="hdfs2">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-type="indexterm" id="hadoop-dist-filesystem2">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-type="indexterm" id="filesystem-hdfs2">&nbsp;</a>HDFS 和 Kafka 都能够高效处理大规模数据，但两者的设计目标和用途有所不同。表 <a data-type="xref" href="#ch08_table_2_1734552289307636">#ch08_table_2_1734552289307636</a> 对它们的主要特性进行了比较。</p>
 
 <table id="ch08_table_2_1734552289307636">
 	<caption>HDFS 与 Kafka 对比</caption>
@@ -1032,17 +1032,17 @@
 	</tbody>
 </table>
 
-<p>HDFS 和 Kafka 都是强大的开源技术，各自满足分布式系统中的特定需求。HDFS 非常适合需要大规模数据存储和处理的应用，而 Kafka 则适用于需要健壮的实时数据处理和消息传递能力的应用。在 HDFS 和 Kafka 之间做出选择，取决于您组织的具体数据管理和<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed-kafka" data-tertiary="Kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="Kafka" data-startref="distributed-system-arch-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="Kafka" data-startref="open-source-distributed-system-arch-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-startref="kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="message queues" data-secondary="Kafka" data-startref="message-queue-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-startref="distributed-system-arch" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-startref="open-source-distributed-system-arch" data-type="indexterm">&nbsp;</a>处理需求。</p>
+<p>HDFS 和 Kafka 都是分布式系统中重要的开源技术，但各自适用于不同的需求。HDFS 更适合需要大规模数据存储和批量处理的应用，而 Kafka 则适合需要实时数据流处理和消息传递能力的应用。选择 HDFS 还是 Kafka，应根据组织在数据存储、管理和处理方面的具体需求来决定。<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed-kafka" data-tertiary="Kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="Kafka" data-startref="distributed-system-arch-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="Kafka" data-startref="open-source-distributed-system-arch-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-startref="kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="message queues" data-secondary="Kafka" data-startref="message-queue-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-startref="distributed-system-arch" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-startref="open-source-distributed-system-arch" data-type="indexterm">&nbsp;</a></p>
 </section>
 </section>
 
 <section data-type="sect1" id="ch08_conclusion_1734552289327271">
 <h1>结语</h1>
 
-<p>本章所讨论的架构设计与模式为构建可扩展、可维护、高效的系统提供了一套全面的工具箱。变更数据捕获（CDC）提供了一种在分布式环境中确保数据始终保持最新的机制，而发布-订阅架构则促进了系统组件之间的解耦通信。Lambda、Kappa 和数据湖等大数据架构为处理和分析海量数据提供了健壮的解决方案。与此同时，Kafka 和 HDFS 作为分布式系统中的基础技术，各自在其领域中表现卓越：实时事件流处理和大规模数据存储。</p>
+<p>本章介绍的架构设计与模式为构建可扩展、易于维护且高效的系统提供了丰富的思路和方法。变更数据捕获（CDC）有助于在分布式环境中同步数据变更，使不同系统中的数据保持更新；发布—订阅架构则支持系统组件之间的解耦通信。Lambda 架构、Kappa 架构和数据湖等大数据架构与技术，为处理和分析海量数据提供了有效的方法。此外，Kafka 和 HDFS 也是分布式系统中的重要基础技术，分别擅长实时事件流处理和大规模数据存储。</p>
 
-<p>通过理解和利用本章最后几节中讨论的架构模式和技术，组织不仅能够构建满足当前需求的系统，还能适应未来的挑战。这些设计模式所提供的灵活性、可扩展性和容错性，确保您的系统架构能够随着不断增长的业务需求和技术进步而同步演进。请记住，设计模式在不断演变，没有任何一份清单能够穷尽所有模式——我们在这里只是触及了冰山一角。这些架构模式犹如指导方针，您可以遵循，但无需完全照搬。根据您的业务需求灵活运用，不要强行将设计模式套用于您的需求之上。随着技术的进步，新的模式和策略将持续涌现，塑造系统架构与设计的未来。</p>
+<p>通过理解和运用本章后面几节介绍的架构模式与技术，组织可以构建既能满足当前需求、又能适应未来挑战的系统。这些设计模式有助于提升系统的灵活性、可扩展性和容错能力，使架构更容易随着业务需求和技术的发展而调整。需要注意的是，架构模式在不断演进，不可能用一份清单涵盖所有模式，本章介绍的也只是其中一小部分。这些模式更像是可供参考的设计指导原则，而不是必须严格遵守的规则。应根据实际业务需求选择合适的模式，而不是为了使用某种模式而勉强将其套用到系统中。随着技术不断进步，新的架构模式和设计策略也将持续涌现，推动系统架构与设计的发展。</p>
 
-<p>至此，<a data-type="xref" href="#part1">#part1</a> 告一段落。<a data-type="xref" href="#part2">#part2</a> 将深入介绍众多 AWS 服务，您将开始理解本部分所涵盖的概念与 AWS 服务设计和选型之间的内在联系。</p>
+<p>至此，<a data-type="xref" href="#part1">#part1</a> 的内容告一段落。在 <a data-type="xref" href="#part2">#part2</a> 中，我们将深入介绍各类 AWS 服务，并探讨如何将本部分介绍的概念应用于 AWS 服务的架构设计与选型。</p>
 </section>
 </section>
