@@ -541,98 +541,98 @@
 	</dd>
 </dl>
 
-<p>这些模式分别针对开发和管理云原生应用中的常见问题提供定向解决方案，为构建更具弹性、灵活性和可扩展性的架构提供路径。请记住，这并非架构模式的详尽列表，该列表会随着系统设计的最新发展而持续演进。然而，这些模式共同为您在设计<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="cloud" data-startref="arch-design-cloud" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="cloud architecture patterns" data-startref="cloud-pattern" data-type="indexterm">&nbsp;</a>复杂系统时可能面临的各类架构挑战提供了健壮的解决方案。</p>
+<p>这些模式分别为开发和管理云原生应用时遇到的常见问题提供有针对性的解决方案，有助于构建更具弹性、灵活性和可扩展性的系统架构。需要注意的是，这里列出的架构模式并不全面；随着系统设计技术不断发展，新的模式也会持续涌现。尽管如此，这些模式仍能为你在设计复杂系统时面临的各种架构挑战提供可靠的解决方案。<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="cloud" data-startref="arch-design-cloud" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="cloud architecture patterns" data-startref="cloud-pattern" data-type="indexterm">&nbsp;</a></p>
 </section>
 </section>
 
 <section data-type="sect1" id="ch08_open_source_distributed_systems_architecture_1734552289326718">
 <h1>开源分布式系统架构</h1>
 
-<p><em>分布式系统架构</em>涉及将职责<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-type="indexterm" id="arch-design-distributed">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-type="indexterm" id="distributed-system-arch">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-type="indexterm" id="open-source-distributed-system-arch">&nbsp;</a>分散到多个计算节点，以确保系统具备可扩展性、容错性和高效性。在本节中，我们将探讨两个核心组件：分布式文件系统和分布式消息队列，重点关注开源实现——文件系统领域的 HDFS 和消息队列领域的 Kafka。</p>
+<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-type="indexterm" id="arch-design-distributed">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-type="indexterm" id="distributed-system-arch">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-type="indexterm" id="open-source-distributed-system-arch">&nbsp;</a><em>分布式系统架构</em>将系统的不同职责分配给多个计算节点，以提升系统的可扩展性、容错能力和运行效率。本节将介绍两类核心组件：分布式文件系统和分布式消息队列，重点讨论它们的开源实现，分别以 HDFS 和 Kafka 为代表。</p>
 
 <section data-type="sect2" id="ch08_hdfs_1734552289326806">
 <h2>HDFS</h2>
 
-<p>HDFS 是<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="HDFS" data-type="indexterm" id="arch-design-distributed-hdfs">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-type="indexterm" id="distributed-system-arch-hdfs">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-type="indexterm" id="open-source-distributed-system-arch-hdfs">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-type="indexterm" id="hdfs">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-type="indexterm" id="hadoop-dist-filesystem">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-type="indexterm" id="filesystem-hdfs">&nbsp;</a>一个设计在商用硬件上运行的开源文件系统。它具有高度容错性，专为部署在低成本硬件上而设计。HDFS 为应用数据提供高吞吐量访问，适用于需要处理大型数据集的应用。以下是 HDFS 的主要特性：</p>
+<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="HDFS" data-type="indexterm" id="arch-design-distributed-hdfs">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-type="indexterm" id="distributed-system-arch-hdfs">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-type="indexterm" id="open-source-distributed-system-arch-hdfs">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-type="indexterm" id="hdfs">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-type="indexterm" id="hadoop-dist-filesystem">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-type="indexterm" id="filesystem-hdfs">&nbsp;</a>HDFS 是一种面向通用商用硬件设计的开源文件系统，能够在成本较低的硬件设备上运行，并具有较强的容错能力。它支持以高吞吐量访问应用程序数据，适用于需要处理大规模数据集的应用。HDFS 的主要特性包括：</p>
 
 <dl class="pagebreak-before less_space">
 	<dt>分布式存储</dt>
 	<dd>
-	<p>HDFS 为可扩展性而设计，将数据分布在集群中的多个节点上。它将大文件分割成数据块，并在不同机器上进行复制，确保即使在硬件故障的情况下也能实现数据冗余和可用性。</p>
+	<p>HDFS 在设计上注重可扩展性，通过将数据分布到集群中的多个节点来实现分布式存储。它把大文件拆分为多个数据块，并在不同机器上保存这些数据块的副本，从而提供数据冗余，并在发生硬件故障时维持数据的可用性。</p>
 	</dd>
 	<dt>容错性</dt>
 	<dd>
-	<p>HDFS 的关键特性之一是其内置的容错性。数据会自动跨三个不同节点进行复制，确保即使一个节点故障，数据仍可从其他节点访问。这种复制机制提供了可靠性和高可用性，使 HDFS 非常适合大规模数据存储。</p>
+	<p>HDFS 的一项关键特性是其内置的容错能力。系统会自动复制数据，通常将副本存储在三个不同的节点上。这样，即使其中一个节点发生故障，仍可通过其他节点访问数据。这种副本机制提高了系统的可靠性和可用性，使 HDFS 非常适合大规模数据存储。</p>
 	</dd>
 	<dt>可扩展性与灵活性</dt>
 	<dd>
-	<p>HDFS 可以通过向集群添加更多节点来横向扩展，从而在无需对基础设施进行重大变更的情况下管理不断增长的数据量。这种可扩展性，加上其存储多种格式数据的能力，使 HDFS 成为满足广泛数据处理需求的灵活解决方案。</p>
+	<p>HDFS 可以通过向集群添加节点来实现横向扩展，从而在无需大幅调整现有基础设施的情况下，存储和管理不断增长的数据量。这种可扩展性，加上对多种数据格式的支持，使 HDFS 能够灵活地满足不同的数据处理需求。</p>
 	</dd>
 	<dt>高吞吐量</dt>
 	<dd>
-	<p>HDFS 针对高吞吐量进行了优化，优先考虑数据访问速度而非低延迟。它专为处理大型数据集并侧重于批处理而设计，非常适合涉及读写大量数据的大数据应用。</p>
+	<p>HDFS 针对高吞吐量进行了优化，更注重大规模数据读写的整体处理效率，而不是单次访问的低延迟。它面向大型数据集设计，尤其适合批处理场景，因此非常适用于需要读写海量数据的大数据应用。</p>
 	</dd>
 	<dt>成本效益</dt>
 	<dd>
-	<p>通过使用商用硬件，HDFS 为存储和处理大量数据提供了具有成本效益的解决方案。</p>
+	<p>通过使用通用商用硬件，HDFS 能够以较低的成本存储和处理海量数据。</p>
 	</dd>
 	<dt>与 Hadoop 生态系统的集成</dt>
 	<dd>
-	<p>HDFS 与<a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="HDFS integration" data-type="indexterm">&nbsp;</a>更广泛的 Hadoop 生态系统深度集成，支持 MapReduce、Apache Hive 和 Apache Spark 等各类处理框架。这种集成实现了无缝的数据处理和分析，借助 HDFS 的分布式架构在靠近数据的地方执行计算，可以减少网络瓶颈并提升效率。</p>
+	<p><a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="HDFS integration" data-type="indexterm">&nbsp;</a>HDFS 与 Hadoop 生态系统紧密集成，支持 MapReduce、Hive 和 Spark 等多种数据处理框架。借助这种集成，系统可以利用 HDFS 的分布式架构，尽可能在靠近数据存储位置的节点上执行计算，从而减少网络传输瓶颈，提高数据处理和分析的效率。</p>
 	</dd>
 </dl>
 
 <div data-type="note">
-<p>AWS 提供了<a contenteditable="false" data-primary="Elastic MapReduce (EMR)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EMR (Elastic MapReduce)" data-type="indexterm">&nbsp;</a> Amazon EMR（亚马逊弹性 MapReduce），这是一项托管服务，简化了在 AWS 云上运行 Hadoop（包括 HDFS）等大数据框架的工作。我们将在 <a data-type="xref" href="#ch13_big_data_analytics_and_machine_learning_services_1734552292002899">#ch13_big_data_analytics_and_machine_learning_services_1734552292002899</a> 中进一步探讨。Amazon EMR 支持使用 HDFS（或 EMRFS）处理大量数据，充分利用其可扩展性、容错性以及与更广泛 Hadoop 生态系统的集成能力。</p>
+<p><a contenteditable="false" data-primary="Elastic MapReduce (EMR)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EMR (Elastic MapReduce)" data-type="indexterm">&nbsp;</a>AWS 提供 Amazon EMR（Amazon Elastic MapReduce）托管服务，帮助用户更便捷地在 AWS 云上运行 Hadoop 等大数据框架，包括使用 HDFS 进行存储。我们将在 <a data-type="xref" href="#ch13_big_data_analytics_and_machine_learning_services_1734552292002899">#ch13_big_data_analytics_and_machine_learning_services_1734552292002899</a> 中进一步介绍。Amazon EMR 支持使用 HDFS 或 EMRFS 处理海量数据，并利用其可扩展性、容错能力以及与 Hadoop 生态系统的集成优势。</p>
 </div>
 
 <section data-type="sect3" id="ch08_hdfs_architecture_1734552289326874">
 <h3>HDFS 架构</h3>
 
-<p>HDFS 架构如图 <a data-type="xref" href="#ch08_figure_8_1734552289299761">#ch08_figure_8_1734552289299761</a> 所示，由若干关键组件协同工作，共同构成一个分布式、容错、可扩展的文件系统。</p>
+<p>如图 <a data-type="xref" href="#ch08_figure_8_1734552289299761">#ch08_figure_8_1734552289299761</a> 所示，HDFS 由多个关键组件构成。这些组件相互协作，共同实现文件系统的分布式存储、容错和可扩展能力。</p>
 
 <figure id="ch08_figure_8_1734552289299761"><img src="images/sdoa_0808.png" />
 <figcaption>HDFS 架构</figcaption>
 </figure>
 
-<p>HDFS 架构的组成部分如下：</p>
+<p>HDFS 架构主要包含以下组件：</p>
 
 <dl>
 	<dt>NameNode（名称节点）</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="NameNodes" data-type="indexterm">&nbsp;</a>NameNode 是 HDFS 的核心组件，负责管理文件系统的元数据和命名空间。它追踪文件位置，并通过协调跨 DataNode 的存储来管理文件访问。NameNode 对 HDFS 的运行至关重要；如果它发生故障，文件系统将无法访问。</p>
+	<p><a contenteditable="false" data-primary="NameNodes" data-type="indexterm">&nbsp;</a>NameNode 是 HDFS 的核心组件，负责管理文件系统的元数据和命名空间。它记录文件的存储位置，并通过协调各个 DataNode 上的数据存储来管理文件访问。NameNode 对 HDFS 的正常运行至关重要；如果 NameNode 发生故障，文件系统可能无法访问。</p>
 	</dd>
 	<dt>DataNode（数据节点）</dt>
 	<dd>
-	<p>DataNode <a contenteditable="false" data-primary="DataNodes" data-type="indexterm">&nbsp;</a>是 HDFS 架构中的工作节点。它们存储构成 HDFS 文件的实际数据块。每个 DataNode 定期向 NameNode 发送心跳和块报告，确保系统拥有关于存储健康状况和可用性的最新视图。</p>
+	<p><a contenteditable="false" data-primary="DataNodes" data-type="indexterm">&nbsp;</a>DataNode 是 HDFS 中负责存储数据的工作节点，保存组成文件的实际数据块。每个 DataNode 都会定期向 NameNode 发送心跳信号和数据块报告，使 NameNode 能够及时了解各节点的运行状态、数据块信息以及数据的可用情况。</p>
 	</dd>
 	<dt>辅助 NameNode</dt>
 	<dd>
-	<p>尽管名称如此，<a contenteditable="false" data-primary="secondary NameNodes" data-type="indexterm">&nbsp;</a>辅助 NameNode 并不是 NameNode 的备份。它与 NameNode 协同工作，共同管理文件系统的元数据。它定期对元数据进行快照并应用编辑日志，有助于在 NameNode 发生故障时缩短恢复时间。</p>
+	<p><a contenteditable="false" data-primary="secondary NameNodes" data-type="indexterm">&nbsp;</a>尽管名称中带有“Secondary”，但辅助 NameNode 并不是 NameNode 的备用节点。它与 NameNode 协同工作，主要负责定期将文件系统的元数据镜像与编辑日志合并，生成新的检查点。这有助于减少 NameNode 故障恢复时需要处理的编辑日志数量，从而缩短恢复时间。</p>
 	</dd>
 	<dt>数据块</dt>
 	<dd>
-	<p>HDFS <a contenteditable="false" data-primary="blocks (HDFS)" data-type="indexterm">&nbsp;</a>以数据块的形式存储数据，通常每块大小为 128 MB，并在多个 DataNode（通常为三个）间进行复制以实现冗余。这种基于块的存储系统使 HDFS 能够高效处理大文件，确保即使 DataNode 发生故障，数据仍可从其他副本中获取。</p>
+	<p><a contenteditable="false" data-primary="blocks (HDFS)" data-type="indexterm">&nbsp;</a>HDFS 将文件划分为多个数据块进行存储，每个数据块的大小通常为 128 MB。为实现数据冗余，系统通常会将每个数据块的副本分布在三个不同的 DataNode 上。这种基于数据块的存储方式使 HDFS 能够高效处理大文件，并在某个 DataNode 发生故障时，通过其他副本继续提供数据访问。</p>
 	</dd>
 </dl>
 
-<p>当客户端想要读取或写入文件时，它与 NameNode 通信以定位存储数据块的 DataNode。对于写操作，NameNode 提供客户端应写入数据块的 DataNode 列表。写入完成后，DataNode 根据 NameNode 的指示将数据块复制到其他节点。</p>
+<p>当客户端需要读取或写入文件时，会先与 NameNode 通信，以确定相关数据块的存储位置或目标 DataNode。对于写操作，NameNode 会向客户端返回用于存储数据块的 DataNode 列表。随后，客户端将数据写入指定的 DataNode，数据块再按照 NameNode 确定的副本放置策略复制到其他节点。</p>
 
-<p>HDFS 具有机架感知能力，即它了解数据中心不同机架上各节点的物理布局。NameNode 利用这一信息对数据块放置做出智能决策，确保副本分布在不同机架上，从而提升容错性，确保机架故障不会导致数据丢失。</p>
+<p>HDFS 具备机架感知能力，能够识别数据中心中各节点所属的机架。NameNode 利用这些信息制定数据块的副本放置策略，将副本分布在不同机架上，以提高系统的容错能力。这样，即使某个机架发生故障，系统仍有机会通过其他机架上的副本访问数据，从而降低数据丢失的风险。</p>
 
-<p>HDFS 通过数据复制和 NameNode 的定期检查来实现容错性。如果 DataNode 发生故障，NameNode 将启动对受影响数据块的复制，将其复制到其他节点以确保数据可用性。</p>
+<p>HDFS 通过数据块复制以及 NameNode 对节点状态的定期监测来实现容错。如果某个 DataNode 发生故障，NameNode 会协调将受影响的数据块重新复制到其他节点，以恢复所需的副本数量并维持数据可用性。</p>
 
-<p>这些组件和特性共同构成了一个高度可靠、可扩展的分布式文件系统，是 Hadoop 生态系统的核心。HDFS 的架构旨在跨数千个节点处理大规模数据的存储和检索，非常适合大数据应用。</p>
+<p>这些组件和特性共同构成了一个高度可靠且可扩展的分布式文件系统，使 HDFS 成为 Hadoop 生态系统的核心组成部分。HDFS 的架构能够支持在数千个节点组成的集群中存储和读取海量数据，因此非常适合大数据应用。</p>
 
-<p>HDFS 在更广泛的 Hadoop 生态系统中发挥着关键作用，为大数据处理提供了必不可少的存储能力。然而，在评估大数据解决方案时，也应考虑其他平台。尽管 Hadoop 生态系统提供了一套全面的开源工具来管理和处理大型数据集，但 AWS 等云平台提供的托管服务可以简化部署和<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed-hdfs" data-tertiary="HDFS" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-startref="distributed-system-arch-hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-startref="open-source-distributed-system-arch-hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-startref="hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-startref="hadoop-dist-filesystem" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-startref="filesystem-hdfs" data-type="indexterm">&nbsp;</a>扩展工作。接下来，我们将比较 Hadoop 生态系统与 AWS，重点介绍它们的差异、优势和使用场景。</p>
+<p>HDFS 是 Hadoop 生态系统的重要组成部分，为大数据处理提供关键的存储能力。不过，在评估大数据解决方案时，也应考虑其他平台。Hadoop 生态系统提供了用于管理和处理大型数据集的丰富开源工具，而 AWS 等云平台则提供托管服务，有助于简化系统部署和扩展。接下来，我们将对比 Hadoop 生态系统与 AWS，重点介绍二者的区别、优势及适用场景。<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed-hdfs" data-tertiary="HDFS" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-startref="distributed-system-arch-hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-startref="open-source-distributed-system-arch-hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-startref="hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-startref="hadoop-dist-filesystem" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-startref="filesystem-hdfs" data-type="indexterm">&nbsp;</a></p>
 </section>
 
 <section data-type="sect3" id="ch08_hadoop_ecosystem_versus_aws_1734552289326940">
 <h3>Hadoop 生态系统与 AWS 的对比</h3>
 
-<p>Hadoop 生态系统<a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="AWS versus" data-type="indexterm" id="hadoop-aws-compare">&nbsp;</a><a contenteditable="false" data-primary="AWS (Amazon Web Services)" data-secondary="Hadoop ecosystem versus" data-type="indexterm" id="aws-hadoop-compare">&nbsp;</a>是一套专为跨大型计算机集群进行分布式数据存储和处理而设计的综合工具套件。Hadoop 的核心包括用于可扩展存储的 HDFS 和用于并行处理大型数据集的 MapReduce。然而，生态系统远不止这两个组件，还包括 Apache Hive（用于对大型数据集进行 SQL 式查询）、Apache Pig（用于数据分析的高级脚本语言）、Apache HBase（用于实时数据的 NoSQL 数据库）以及 YARN（用于资源管理）等工具。此外还包括用于内存数据处理的 Apache Spark、用于工作流调度的 Apache Oozie 以及用于分布式协调的 ZooKeeper。</p>
+<p><a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="AWS versus" data-type="indexterm" id="hadoop-aws-compare">&nbsp;</a><a contenteditable="false" data-primary="AWS (Amazon Web Services)" data-secondary="Hadoop ecosystem versus" data-type="indexterm" id="aws-hadoop-compare">&nbsp;</a>Hadoop 生态系统包含一系列工具，用于在大规模计算机集群中进行分布式数据存储和处理。Hadoop 的核心组件包括提供可扩展存储的 HDFS，以及用于大规模数据并行处理的 MapReduce。除此之外，Hadoop 生态系统还涵盖 Hive（用于对大型数据集执行类似 SQL 的查询）、Pig（提供用于数据分析的高级脚本语言）、HBase（用于处理实时数据的 NoSQL 数据库）和 YARN（用于资源管理）等工具。此外，还有用于内存数据处理的 Apache Spark、用于工作流调度的 Oozie，以及用于分布式协调的 ZooKeeper。</p>
 
-<p>AWS 为大多数 Hadoop 服务提供了完全托管的等效产品，大幅减少了运营开销。Amazon S3（用于可扩展的对象存储）、Amazon EMR（用于运行 Hadoop 和 Spark 集群）、Amazon Athena（用于交互式查询服务）以及 AWS Glue（用于 ETL 操作）等 AWS 服务，在扩展、成本管理和安全功能方面都提供了更集成的解决方案。表 <a data-type="xref" href="#ch08_table_1_1734552289307598">#ch08_table_1_1734552289307598</a> 对 Hadoop 服务及其对应的 AWS 服务进行了比较。</p>
+<p>AWS 为 Hadoop 生态系统中的许多功能提供了相应的托管服务，有助于减少系统部署和运维工作。例如，Amazon S3 提供可扩展的对象存储，Amazon EMR 支持运行 Hadoop 和 Spark 集群，Amazon Athena 提供交互式查询服务，AWS Glue 则用于数据提取、转换和加载（ETL）。这些服务还提供扩展、成本管理和安全方面的相关能力。表 <a data-type="xref" href="#ch08_table_1_1734552289307598">#ch08_table_1_1734552289307598</a> 对 Hadoop 生态系统中的工具与相关 AWS 服务进行了比较。</p>
 
 <table id="ch08_table_1_1734552289307598">
 	<caption>Hadoop 生态系统与 AWS 服务对比</caption>
@@ -816,7 +816,7 @@
 	</tbody>
 </table>
 
-<p>这一比较突显了 AWS 如何提供比传统 Hadoop 服务更集成、更可扩展的替代方案，并且通常具有更低的运营开销。我们将在 <a data-type="xref" href="#part2">#part2</a> 中进一步讨论这些相关<a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="AWS versus" data-startref="hadoop-aws-compare" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="AWS (Amazon Web Services)" data-secondary="Hadoop ecosystem versus" data-startref="aws-hadoop-compare" data-type="indexterm">&nbsp;</a> AWS 服务。</p>
+<p>通过上述比较可以看出，与传统 Hadoop 服务相比，AWS 提供了集成度更高、扩展更便捷的相关解决方案，通常还能减少运维工作。我们将在 <a data-type="xref" href="#part2">#part2</a> 中进一步介绍这些 AWS 服务。<a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="AWS versus" data-startref="hadoop-aws-compare" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="AWS (Amazon Web Services)" data-secondary="Hadoop ecosystem versus" data-startref="aws-hadoop-compare" data-type="indexterm">&nbsp;</a></p>
 </section>
 </section>
 
