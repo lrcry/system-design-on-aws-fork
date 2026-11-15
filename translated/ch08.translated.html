@@ -1,7 +1,7 @@
 <section data-type="chapter" id="ch08_architectural_designs_and_patterns_1734552289324317" xmlns="http://www.w3.org/1999/xhtml">
 <h1>架构设计与模式</h1>
 
-<p><a contenteditable="false" data-primary="patterns" data-see="architectural designs and patterns" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="designs" data-see="architectural designs and patterns" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="system design" data-seealso="architectural designs and patterns" data-type="indexterm">&nbsp;</a>本章将深入探讨架构设计与模式。这些架构模型和设计模式构成了现代软件系统的基础。我们将介绍它们如何帮助不同类型的应用实现可扩展性、可维护性和高效的数据处理。本章不仅将帮助你掌握相关理论基础，也将启发你在系统设计实践中运用这些知识并探索创新方案。</p>
+<p>本章<a contenteditable="false" data-primary="patterns" data-see="architectural designs and patterns" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="designs" data-see="architectural designs and patterns" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="system design" data-seealso="architectural designs and patterns" data-type="indexterm">&nbsp;</a>将深入探讨架构设计与模式。这些架构模型和设计模式构成了现代软件系统的基础。我们将介绍它们如何帮助不同类型的应用实现可扩展性、可维护性和高效的数据处理。本章不仅将帮助你掌握相关理论基础，也将启发你在系统设计实践中运用这些知识并探索创新方案。</p>
 
 <p>本章首先介绍<em>变更数据捕获（CDC）</em>，这是一项用于捕获数据库中数据变更的关键数据架构技术。接下来，我们将讨论异步通信模式中的发布—订阅架构。在这种架构中，发布者无需知道订阅者的身份，就可以发布事件。我们还将介绍消息代理和消息队列如何管理不同系统之间的数据流，并重点探讨 Apache Kafka 这一高吞吐量的分布式消息系统，说明其架构以及处理大规模数据流的应用场景。</p>
 
@@ -12,7 +12,7 @@
 <section data-type="sect1" id="ch08_change_data_capture_1734552289324609">
 <h1>变更数据捕获</h1>
 
-<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="CDC (change data capture)" data-type="indexterm" id="arch-design-cdc">&nbsp;</a><a contenteditable="false" data-primary="CDC (change data capture)" data-type="indexterm" id="cdc">&nbsp;</a><a contenteditable="false" data-primary="change data capture (CDC)" data-type="indexterm" id="change-data-capture">&nbsp;</a>CDC 是一种数据集成技术，通过实时跟踪和捕获源数据库中的数据变更，并将这些变更推送到不同的目标系统，例如其他数据库、数据仓库或实时处理引擎。CDC 的核心价值在于能够为组织的不同部门提供最新数据，从而确保各个系统反映最新的信息。</p>
+<p>CDC 是<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="CDC (change data capture)" data-type="indexterm" id="arch-design-cdc">&nbsp;</a><a contenteditable="false" data-primary="CDC (change data capture)" data-type="indexterm" id="cdc">&nbsp;</a><a contenteditable="false" data-primary="change data capture (CDC)" data-type="indexterm" id="change-data-capture">&nbsp;</a>一种数据集成技术，通过实时跟踪和捕获源数据库中的数据变更，并将这些变更推送到不同的目标系统，例如其他数据库、数据仓库或实时处理引擎。CDC 的核心价值在于能够为组织的不同部门提供最新数据，从而确保各个系统反映最新的信息。</p>
 
 <p>实时数据处理的需求推动了 CDC 的应用。在数据价值堪比石油的时代，及时获取最新数据能够显著提高运营效率和决策能力。传统的批处理方式虽然可靠，却难以满足当今快节奏业务环境对数据时效性的要求。批处理通常需要安排停机时间，而且在提取数据时可能影响系统性能，因此不利于实现实时响应。</p>
 
@@ -40,33 +40,33 @@
 <dl>
 	<dt>基于审计列的 CDC</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="audit-column-based CDC" data-type="indexterm">&nbsp;</a>使用时间戳审计列是一种简单而有效的 CDC 实现方式。在数据库表中添加 `<code>created_at</code>` 和 `<code>updated_at</code>` 等时间戳列后，便可以追踪每条记录的创建时间和最近一次修改时间。这种方式特别适用于需要保留历史变更审计记录的应用场景。它的主要优势是实现简单、开销较低，因为可以利用大多数关系型数据库管理系统（RDBMS）自身提供的功能。</p>
+	<p>使用时间戳审计列<a contenteditable="false" data-primary="audit-column-based CDC" data-type="indexterm">&nbsp;</a>是一种简单而有效的 CDC 实现方式。在数据库表中添加 `<code>created_at</code>` 和 `<code>updated_at</code>` 等时间戳列后，便可以追踪每条记录的创建时间和最近一次修改时间。这种方式特别适用于需要保留历史变更审计记录的应用场景。它的主要优势是实现简单、开销较低，因为可以利用大多数关系型数据库管理系统（RDBMS）自身提供的功能。</p>
 	</dd>
 	<dt>基于日志的 CDC</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="log-based CDC" data-type="indexterm">&nbsp;</a>基于日志的 CDC 通过读取数据库维护的事务日志来捕获数据变更。这些日志原本用于记录数据变化，以支持数据恢复并保障数据完整性，因此可以作为可靠的变更数据来源，而无需给数据库本身带来额外开销。这种方式支持近实时数据集成，适用于高可用系统，以及需要跨平台即时保持数据一致性的场景。Debezium 等工具可以直接对接这些日志，将数据变更持续传输到 Kafka、数据库等不同类型的数据接收端。</p>
+	<p>基于日志的 CDC <a contenteditable="false" data-primary="log-based CDC" data-type="indexterm">&nbsp;</a>通过读取数据库维护的事务日志来捕获数据变更。这些日志原本用于记录数据变化，以支持数据恢复并保障数据完整性，因此可以作为可靠的变更数据来源，而无需给数据库本身带来额外开销。这种方式支持近实时数据集成，适用于高可用系统，以及需要跨平台即时保持数据一致性的场景。Debezium 等工具可以直接对接这些日志，将数据变更持续传输到 Kafka、数据库等不同类型的数据接收端。</p>
 
 	<div data-type="note">
-	<p><a contenteditable="false" data-primary="stream-based CDC" data-type="indexterm">&nbsp;</a>基于流的 CDC 是基于日志的 CDC 的一种扩展方式，它将日志数据转换为更便于消费的数据流，使应用程序能够更轻松地实时处理数据变更。Amazon DynamoDB Streams 就是一个例子，它可以将 DynamoDB 表中的数据更新发布到不同的目标系统。</p>
+	<p>基于流的 CDC <a contenteditable="false" data-primary="stream-based CDC" data-type="indexterm">&nbsp;</a>是基于日志的 CDC 的一种扩展方式，它将日志数据转换为更便于消费的数据流，使应用程序能够更轻松地实时处理数据变更。Amazon DynamoDB Streams 就是一个例子，它可以将 DynamoDB 表中的数据更新发布到不同的目标系统。</p>
 	</div>
 	</dd>
 	<dt>表快照比对法</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="table deltas" data-type="indexterm">&nbsp;</a>表快照比对法通过比较数据库表在不同时间点的快照，识别其中的数据变更。其原理很简单：定期获取整张表的完整快照，再比较不同快照之间的差异，就可以推导出发生了哪些变更。不过，这种方式可能带来较高的延迟和资源开销，因此更适合事务量较低，或对实时同步要求不高的系统。尽管存在这些局限，只要合理规划系统资源和处理时间窗口，它仍然适用于批处理场景。</p>
+	<p>表快照比对法<a contenteditable="false" data-primary="table deltas" data-type="indexterm">&nbsp;</a>通过比较数据库表在不同时间点的快照，识别其中的数据变更。其原理很简单：定期获取整张表的完整快照，再比较不同快照之间的差异，就可以推导出发生了哪些变更。不过，这种方式可能带来较高的延迟和资源开销，因此更适合事务量较低，或对实时同步要求不高的系统。尽管存在这些局限，只要合理规划系统资源和处理时间窗口，它仍然适用于批处理场景。</p>
 	</dd>
 	<dt>基于触发器的 CDC</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="trigger-based CDC" data-type="indexterm">&nbsp;</a>基于触发器的 CDC 利用数据库触发器捕获数据变更。当数据库表发生 `<code>INSERT</code>`、`<code>UPDATE</code>` 或 `<code>DELETE</code>` 操作时，触发器会自动执行预先定义的存储过程或 SQL 命令。这种方式能够即时捕获和处理数据变更，并支持在数据捕获阶段进行复杂的数据转换或即时校验。虽然这种方式灵活性较高，能够实时捕获变更，但管理数据库触发器可能增加系统负载和复杂性，尤其是在大规模系统中。</p>
+	<p>基于触发器的 CDC <a contenteditable="false" data-primary="trigger-based CDC" data-type="indexterm">&nbsp;</a>利用数据库触发器捕获数据变更。当数据库表发生 `<code>INSERT</code>`、`<code>UPDATE</code>` 或 `<code>DELETE</code>` 操作时，触发器会自动执行预先定义的存储过程或 SQL 命令。这种方式能够即时捕获和处理数据变更，并支持在数据捕获阶段进行复杂的数据转换或即时校验。虽然这种方式灵活性较高，能够实时捕获变更，但管理数据库触发器可能增加系统负载和复杂性，尤其是在大规模系统中。</p>
 	</dd>
 </dl>
 
-<p>在实际应用中，CDC 不仅是一种数据集成工具，也是企业提升数据敏捷性和可访问性的整体战略的一部分。随着越来越多的云平台提供内置的 CDC 支持，采用这项技术也变得更加简单便捷。组织可以利用 CDC，使分布式环境中的数据保持更新，从而在不增加大量额外开销或复杂性的情况下提升数据分析能力。<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="CDC (change data capture)" data-startref="arch-design-cdc" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="CDC (change data capture)" data-startref="cdc" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="change data capture (CDC)" data-startref="change-data-capture" data-type="indexterm">&nbsp;</a></p>
+<p>在实际应用中，CDC 不仅是一种数据集成工具，也是企业提升数据敏捷性和可访问性的整体战略的一部分。随着越来越多的云平台提供内置的 CDC 支持，采用这项技术也变得更加简单便捷。组织可以利用 CDC，使分布式环境中的数据保持更新，从而在不<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="CDC (change data capture)" data-startref="arch-design-cdc" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="CDC (change data capture)" data-startref="cdc" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="change data capture (CDC)" data-startref="change-data-capture" data-type="indexterm">&nbsp;</a>增加大量额外开销或复杂性的情况下提升数据分析能力。</p>
 </section>
 
 <section data-type="sect1" id="ch08_publisher_subscriber_architecture_1734552289324689">
 <h1>发布—订阅架构</h1>
 
-<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="pub/sub model" data-type="indexterm" id="arch-design-pubsub">&nbsp;</a><a contenteditable="false" data-primary="pub/sub (publisher-subscriber) architecture" data-type="indexterm" id="pubsub">&nbsp;</a><a contenteditable="false" data-primary="communication" data-secondary="pub/sub model" data-type="indexterm" id="comms-pubsub">&nbsp;</a>发布—订阅架构是事件驱动编程中的一种基础模型，用于实现系统不同组件之间的异步通信。这种模式使组件无需直接建立联系，也能高效地交换信息，从而实现松耦合、易于扩展的系统设计。</p>
+<p>发布—订阅架构<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="pub/sub model" data-type="indexterm" id="arch-design-pubsub">&nbsp;</a><a contenteditable="false" data-primary="pub/sub (publisher-subscriber) architecture" data-type="indexterm" id="pubsub">&nbsp;</a><a contenteditable="false" data-primary="communication" data-secondary="pub/sub model" data-type="indexterm" id="comms-pubsub">&nbsp;</a>是事件驱动编程中的一种基础模型，用于实现系统不同组件之间的异步通信。这种模式使组件无需直接建立联系，也能高效地交换信息，从而实现松耦合、易于扩展的系统设计。</p>
 
 <p>发布—订阅架构经常与观察者模式混为一谈，但两者在设计理念和运行机制上有所不同。它们的核心区别在于消息的路由方式。在观察者模式中，观察者知道被观察对象是谁，并可以直接向该对象注册，以便接收更新通知。通信通常是同步的，所有观察者都会通过直接的方法调用同时收到通知。</p>
 
@@ -77,7 +77,7 @@
 <section data-type="sect2" id="ch08_message_brokers_1734552289324756">
 <h2>消息代理</h2>
 
-<p><a contenteditable="false" data-primary="message brokers" data-type="indexterm" id="message-broker">&nbsp;</a><em>消息代理</em>是发布—订阅架构中的关键组件，负责管理生产者（发布者）与消费者（订阅者）之间的消息传递。即使在复杂的分布式系统中，消息代理也能确保消息得到妥善路由、管理和投递。</p>
+<p><em>消息代理</em>是发布—订阅架构中的关键组件，<a contenteditable="false" data-primary="message brokers" data-type="indexterm" id="message-broker">&nbsp;</a>负责管理生产者（发布者）与消费者（订阅者）之间的消息传递。即使在复杂的分布式系统中，消息代理也能确保消息得到妥善路由、管理和投递。</p>
 
 <p>如图 <a data-type="xref" href="#ch08_figure_1_1734552289299606">#ch08_figure_1_1734552289299606</a> 所示，典型的消息代理架构包括用于临时存储消息的队列，以及用于对消息进行分类的主题。发布者向特定主题发送消息，订阅者则订阅自己感兴趣的一个或多个主题。随后，消息代理负责将相关主题中的消息投递给相应的订阅者。</p>
 
@@ -85,17 +85,17 @@
 <figcaption>消息代理与消息队列</figcaption>
 </figure>
 
-<p><a contenteditable="false" data-primary="Advanced Message Queuing Protocol (AMQP)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="AMQP (Advanced Message Queuing Protocol)" data-type="indexterm">&nbsp;</a>高级消息队列协议（AMQP）是一项用于应用程序或组织之间交换消息的开放标准，强调互操作性和可靠性。AMQP 对消息提供方和消息代理的行为作出了规范，以确保消息投递的一致性，因此受到重视系统健壮性和行为可预测性的应用的青睐。<a contenteditable="false" data-primary="message brokers" data-startref="message-broker" data-type="indexterm">&nbsp;</a></p>
+<p>高级消息队列协议（AMQP）<a contenteditable="false" data-primary="Advanced Message Queuing Protocol (AMQP)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="AMQP (Advanced Message Queuing Protocol)" data-type="indexterm">&nbsp;</a>是一项用于应用程序或组织之间交换消息的开放标准，强调互操作性和可靠性。AMQP 对消息提供方和消息代理的行为作出了规范，以确保消息投递的一致性，因此受到重视系统健壮性和行为可预测性的应用的青睐。<a contenteditable="false" data-primary="message brokers" data-startref="message-broker" data-type="indexterm">&nbsp;</a></p>
 </section>
 
 <section data-type="sect2" id="ch08_message_queues_1734552289324820">
 <h2>消息队列</h2>
 
-<p><a contenteditable="false" data-primary="message queues" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-type="indexterm">&nbsp;</a><em>消息队列</em>是消息传递基础设施的重要组成部分。如图 <a data-type="xref" href="#ch08_figure_1_1734552289299606">#ch08_figure_1_1734552289299606</a> 所示，它用于临时存放等待从发布者传递给订阅者的消息。</p>
+<p><em>消息队列</em>是消息传递基础设施的重要组成部分。<a contenteditable="false" data-primary="message queues" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-type="indexterm">&nbsp;</a>如图 <a data-type="xref" href="#ch08_figure_1_1734552289299606">#ch08_figure_1_1734552289299606</a> 所示，它用于临时存放等待从发布者传递给订阅者的消息。</p>
 
 <p>Apache Kafka 是消息队列系统的一个典型代表，我们将在本章最后一节详细介绍。它专为处理海量数据而设计，能够支持高吞吐量的应用。Kafka 及类似技术展示了消息队列在现代系统架构中不断发展的能力，尤其是在高效处理大规模实时数据流方面。</p>
 
-<p>借助 Kafka 等先进的消息代理和队列系统，发布—订阅架构为构建松耦合、可扩展且高效的应用程序提供了一种有效的模式。这种架构不仅有助于实现关注点分离，还能改善软件系统中不同组件之间的异步通信能力。在现代分布式系统中，这种方式变得越来越重要，因为高效、可靠地管理数据流比以往任何时候都更加关键。<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="pub/sub model" data-startref="arch-design-pubsub" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="pub/sub (publisher-subscriber) architecture" data-startref="pubsub" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="communication" data-secondary="pub/sub model" data-startref="comms-pubsub" data-type="indexterm">&nbsp;</a></p>
+<p>借助 Kafka 等先进的消息代理和队列系统，发布—订阅架构为构建松耦合、可扩展且高效的应用程序提供了一种有效的模式。这种架构不仅有助于实现关注点分离，还能改善软件系统中不同组件之间的异步通信能力。在现代分布式系统中，这种方式变得越来越重要，因为高效、可靠地管理数据流比以往任何时候都更加<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="pub/sub model" data-startref="arch-design-pubsub" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="pub/sub (publisher-subscriber) architecture" data-startref="pubsub" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="communication" data-secondary="pub/sub model" data-startref="comms-pubsub" data-type="indexterm">&nbsp;</a>关键。</p>
 </section>
 </section>
 
@@ -107,11 +107,11 @@
 <section data-type="sect2" id="ch08_choreography_1734552289324947">
 <h2>编配</h2>
 
-<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="choreography" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="choreography" data-type="indexterm">&nbsp;</a><em>编配</em>采用去中心化的工作流管理方式。在这种模式下，每个服务根据自己接收到的事件，决定需要执行什么操作以及何时执行。系统中没有中央协调器，各个服务根据收到的事件通知独立完成各自的任务。由于服务响应的是事件，而不是来自中央协调器的直接命令，这种方式有助于实现松耦合。服务的独立运行也提升了系统的可扩展性和弹性。</p>
+<p><em>编配</em>采用<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="choreography" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="choreography" data-type="indexterm">&nbsp;</a>去中心化的工作流管理方式。在这种模式下，每个服务根据自己接收到的事件，决定需要执行什么操作以及何时执行。系统中没有中央协调器，各个服务根据收到的事件通知独立完成各自的任务。由于服务响应的是事件，而不是来自中央协调器的直接命令，这种方式有助于实现松耦合。服务的独立运行也提升了系统的可扩展性和弹性。</p>
 
 <p>由于缺少中央控制器，某些业务规则可能难以统一执行，整个工作流也更难监控。此外，由于这种架构具有分布式特性，日志记录和错误报告分散在不同的服务中，使错误处理和问题排查也可能变得更加复杂。</p>
 
-<p><a contenteditable="false" data-primary="choreographed asynchronous events" data-type="indexterm">&nbsp;</a>编配的一种子模式是<em>编配异步事件</em>。在这种模式下，各个服务通过中央消息总线发布和消费事件，从而实现松耦合。服务之间无需了解彼此的具体操作，也能够独立运行。这种模式特别适用于写入操作量较大的系统，例如物联网（IoT）数据处理系统或实时通知系统。</p>
+<p>编配的一种子模式是<em><a contenteditable="false" data-primary="choreographed asynchronous events" data-type="indexterm">&nbsp;</a>编配异步事件</em>。在这种模式下，各个服务通过中央消息总线发布和消费事件，从而实现松耦合。服务之间无需了解彼此的具体操作，也能够独立运行。这种模式特别适用于写入操作量较大的系统，例如物联网（IoT）数据处理系统或实时通知系统。</p>
 
 <p>编配的优势在于，服务之间的解耦有助于提高系统的可扩展性，而各个服务能够独立运行，也使系统在面对服务故障时更具弹性。不过，这种方式也带来了挑战。由于工作流分布在多个服务中，整体系统状态更难管理，工作流的追踪和问题排查也更加复杂。编排模式可以解决这些问题。</p>
 
@@ -123,7 +123,7 @@
 <section data-type="sect2" id="ch08_orchestration_1734552289325025">
 <h2>编排</h2>
 
-<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="orchestration" data-type="indexterm" id="arch-design-orchestration">&nbsp;</a><a contenteditable="false" data-primary="orchestration" data-type="indexterm" id="orchestration-ch8">&nbsp;</a><a contenteditable="false" data-primary="orchestrators" data-type="indexterm">&nbsp;</a>与编配不同，<em>编排</em>依赖中央协调器，也就是<em>编排器</em>，来管理服务之间的交互。编排器负责决定工作流的执行顺序，并指示不同服务何时执行相应操作。这种方式简化了业务逻辑的监控和管理，尤其适用于需要精确协调、严格遵循工作流的复杂业务流程。此外，编排器可以跟踪流程状态并据此作出决策，因此也使错误处理和故障恢复变得更加容易。</p>
+<p>与编配不同，<em>编排</em><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="orchestration" data-type="indexterm" id="arch-design-orchestration">&nbsp;</a><a contenteditable="false" data-primary="orchestration" data-type="indexterm" id="orchestration-ch8">&nbsp;</a>依赖中央协调器，也就是<em>编排器</em>，来管<a contenteditable="false" data-primary="orchestrators" data-type="indexterm">&nbsp;</a>理服务之间的交互。编排器负责决定工作流的执行顺序，并指示不同服务何时执行相应操作。这种方式简化了业务逻辑的监控和管理，尤其适用于需要精确协调、严格遵循工作流的复杂业务流程。此外，编排器可以跟踪流程状态并据此作出决策，因此也使错误处理和故障恢复变得更加容易。</p>
 
 <div data-type="note">
 <p>编排解决方案有很多，包括开源软件以及云服务提供商推出的托管服务。例如，Netflix 设计的 <a href="https://oreil.ly/50w9A">Conductor</a> 和 <a href="https://oreil.ly/KW-dX">Maestro</a>、<a href="https://oreil.ly/2eulB">Temporal 工作流编排器</a>、AWS Step Functions 和 Apache Airflow。我们将在<a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">第 12 章</a>进一步介绍 Step Functions 和 Airflow。</p>
@@ -138,7 +138,7 @@
 <section data-type="sect3" id="ch08_orchestrated_synchronous_and_sequential_pattern_1734552289325087">
 <h3>编排式同步顺序执行模式</h3>
 
-<p><a contenteditable="false" data-primary="synchronous orchestration patterns" data-type="indexterm" id="sync-orchestration">&nbsp;</a>在这种模式下，编排器按顺序向各个服务发送同步请求，等待当前请求的响应后，再进入下一步。这种方式适用于包含多个步骤、且必须按照特定顺序执行的复杂工作流，例如电商平台的结账流程。</p>
+<p>在这种<a contenteditable="false" data-primary="synchronous orchestration patterns" data-type="indexterm" id="sync-orchestration">&nbsp;</a>模式下，编排器按顺序向各个服务发送同步请求，等待当前请求的响应后，再进入下一步。这种方式适用于包含多个步骤、且必须按照特定顺序执行的复杂工作流，例如电商平台的结账流程。</p>
 
 <p>这种模式的优势在于集中式控制使复杂工作流更易于管理，而编排器中明确的工作流定义也有助于调试。不过，这种模式也存在一定挑战，例如编排器可能成为单点故障，以及任务顺序执行可能造成性能瓶颈。</p>
 </section>
@@ -148,13 +148,13 @@
 
 <p>这种模式与顺序执行模式相似，但会并行执行彼此独立的任务，从而提高性能并降低延迟。它适用于能够同时调用多个服务的场景，例如数据聚合服务。</p>
 
-<p>这种模式通过缩短工作流的整体执行时间来提升性能，同时也能灵活管理包含并行和顺序步骤的工作流。不过，并行操作的管理更加复杂，如果服务没有针对并行执行进行优化，还可能出现资源争用的问题。<a contenteditable="false" data-primary="synchronous orchestration patterns" data-startref="sync-orchestration" data-type="indexterm">&nbsp;</a></p>
+<p>这种模式通过缩短工作流的整体执行时间来提升性能，同时也能灵活管理包含并行和顺序步骤的工作流。不过，并行操作的管理更加复杂，如果服务没有针对并行<a contenteditable="false" data-primary="synchronous orchestration patterns" data-startref="sync-orchestration" data-type="indexterm">&nbsp;</a>执行进行优化，还可能出现资源争用的问题。</p>
 </section>
 
 <section data-type="sect3" id="ch08_orchestrated_asynchronous_and_sequential_pattern_1734552289325207">
 <h3>编排式异步顺序执行模式</h3>
 
-<p><a contenteditable="false" data-primary="asynchronous orchestration patterns" data-type="indexterm">&nbsp;</a>在这种模式下，编排器向各个服务发送异步请求，使服务能够独立处理任务，并通过回调或消息队列返回结果。这种方式特别适用于包含长时间运行任务的系统，例如批处理系统。在这类系统中，服务无需等待响应便可以继续处理任务。</p>
+<p>在这种<a contenteditable="false" data-primary="asynchronous orchestration patterns" data-type="indexterm">&nbsp;</a>模式下，编排器向各个服务发送异步请求，使服务能够独立处理任务，并通过回调或消息队列返回结果。这种方式特别适用于包含长时间运行任务的系统，例如批处理系统。在这类系统中，服务无需等待响应便可以继续处理任务。</p>
 
 <p>这种模式能够更好地处理长时间运行的工作流，避免阻塞资源。同时，由于服务可以在操作失败后进行重试，系统的弹性也得到提升。不过，管理异步响应会更加复杂，而且还需要额外的机制来处理最终一致性和故障恢复。</p>
 </section>
@@ -162,7 +162,7 @@
 <section data-type="sect3" id="ch08_hybrid_orchestration_and_choreography_pattern_1734552289325271">
 <h3>混合编排与编配模式</h3>
 
-<p><a contenteditable="false" data-primary="hybrid orchestration and choreography pattern" data-type="indexterm">&nbsp;</a>这种模式结合了编配与编排各自的优势：对于明确规定的工作流，采用编排方式；对于隐式的事件驱动操作，则采用编配方式。当复杂系统中的部分工作流需要严格控制，而其他工作流更适合去中心化执行时，这种模式就非常适用，例如在大规模分布式应用中。</p>
+<p>这种模式<a contenteditable="false" data-primary="hybrid orchestration and choreography pattern" data-type="indexterm">&nbsp;</a>结合了编配与编排各自的优势：对于明确规定的工作流，采用编排方式；对于隐式的事件驱动操作，则采用编配方式。当复杂系统中的部分工作流需要严格控制，而其他工作流更适合去中心化执行时，这种模式就非常适用，例如在大规模分布式应用中。</p>
 
 <p>在大型电商平台中，订单处理服务充当编排器，负责控制工作流的主要步骤，包括验证支付、预留库存、确认订单和发起配送。这种明确的编排方式确保核心订单处理流程受到严格控制，各个步骤按照特定顺序执行，从而保障事务的完整性和可靠性。与此同时，各类辅助服务采用去中心化的事件驱动方式。例如，当订单发货时，系统会发布一个事件。通知服务和分析服务等独立服务监听该事件，并分别执行各自的任务，例如向客户发送通知、更新配送统计数据。这些服务无需直接协调，从而提高了系统的灵活性和可扩展性。</p>
 
@@ -173,7 +173,7 @@
 <section data-type="sect2" id="ch08_deciding_between_choreography_and_orchestration_1734552289325331">
 <h2>在编配与编排之间做出选择</h2>
 
-<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="choreography" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="choreography" data-type="indexterm">&nbsp;</a>选择编配还是编排，很大程度上取决于项目的具体需求。对于需要较高可扩展性和弹性，且业务流程能够通过去中心化方式有效管理的系统，编配通常更为合适。对于需要跨多个服务进行严格控制与协调、业务逻辑又过于复杂而难以通过去中心化方式有效管理的流程，编排则是更好的选择。这两种方式在系统设计中各有其适用场景。架构师只有充分理解它们各自的优势和局限性，才能设计出既满足当前需求，又能够适应未来业务需求和流程变化的解决方案。<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="orchestration" data-startref="arch-design-orchestration" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="orchestration" data-startref="orchestration-ch8" data-type="indexterm">&nbsp;</a></p>
+<p>选择<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="choreography" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="choreography" data-type="indexterm">&nbsp;</a>编配还是编排，很大程度上取决于项目的具体需求。对于需要较高可扩展性和弹性，且业务流程能够通过去中心化方式有效管理的系统，编配通常更为合适。对于需要跨多个服务进行严格控制与协调、业务逻辑又过于复杂而难以通过去中心化方式有效管理的流程，编排则是更好的选择。这两种方式在系统设计中各有其适用场景。架构师只有充分理解它们各自的优势和局限性，才能设计出既满足当前需求，又能够适应未来业务需求和流程变化的解决方案<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="orchestration" data-startref="arch-design-orchestration" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="orchestration" data-startref="orchestration-ch8" data-type="indexterm">&nbsp;</a>。</p>
 
 <p>随着企业产生的数据量持续呈指数级增长，如何通过大数据架构来存储、处理和分析这些海量数据，变得越来越重要。下一节将进一步介绍相关架构策略。</p>
 </section>
@@ -182,12 +182,12 @@
 <section data-type="sect1" id="ch08_big_data_architecture_1734552289325392">
 <h1>大数据架构</h1>
 
-<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="big data" data-type="indexterm" id="arch-design-bigdata">&nbsp;</a><a contenteditable="false" data-primary="big data architectures" data-type="indexterm" id="bigdata">&nbsp;</a>大数据架构旨在有效应对数据的五个 V 所代表的挑战：数据量（Volume）、速度（Velocity）、多样性（Variety）、真实性（Veracity）和价值（Value），帮助组织从数据中获得可付诸行动的洞察，同时保持系统的性能和可扩展性。大数据架构从传统数据库逐步演进，发展出大型数据仓库和数据湖等形式。接下来，我们将结合这一演进过程，介绍三种现代大数据架构模型。</p>
+<p>大数据架构<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="big data" data-type="indexterm" id="arch-design-bigdata">&nbsp;</a><a contenteditable="false" data-primary="big data architectures" data-type="indexterm" id="bigdata">&nbsp;</a>旨在有效应对数据的五个 V 所代表的挑战：数据量（Volume）、速度（Velocity）、多样性（Variety）、真实性（Veracity）和价值（Value），帮助组织从数据中获得可付诸行动的洞察，同时保持系统的性能和可扩展性。大数据架构从传统数据库逐步演进，发展出大型数据仓库和数据湖等形式。接下来，我们将结合这一演进过程，介绍三种现代大数据架构模型。</p>
 
 <section data-type="sect2" id="ch08_lambda_architecture_1734552289325452">
 <h2>Lambda 架构</h2>
 
-<p><a contenteditable="false" data-primary="lambda architecture" data-type="indexterm" id="lambda">&nbsp;</a>如图 <a data-type="xref" href="#ch08_figure_2_1734552289299641">#ch08_figure_2_1734552289299641</a> 所示，<em>Lambda 架构</em>是一种结合了批处理与实时处理的混合数据处理模型。</p>
+<p>如图 <a data-type="xref" href="#ch08_figure_2_1734552289299641">#ch08_figure_2_1734552289299641</a> 所示，<em><a contenteditable="false" data-primary="lambda architecture" data-type="indexterm" id="lambda">&nbsp;</a>Lambda 架构</em>是一种结合了批处理与实时处理的混合数据处理模型。</p>
 
 <p>该架构通过以下三个层次来处理和呈现数据，从而在延迟、吞吐量和容错性之间取得平衡：</p>
 
@@ -210,13 +210,13 @@
 <figcaption>Lambda 架构</figcaption>
 </figure>
 
-<p>Lambda 架构适用于既需要近实时数据视图，又需要处理无法在短时间内完成处理的海量数据集的场景。不过，同时维护批处理层和加速层会增加运营管理的复杂性。Kappa 架构可以解决这一局限，它将两者合并为一个统一的系统。<a contenteditable="false" data-primary="lambda architecture" data-startref="lambda" data-type="indexterm">&nbsp;</a></p>
+<p>Lambda 架构适用于既需要近实时数据视图，又需要处理无法在短时间内完成处理的海量数据集的场景。不过，同时维护批处理层和加速层会增加运营管理的复杂性。Kappa 架构可以解决这一局限，它将两者<a contenteditable="false" data-primary="lambda architecture" data-startref="lambda" data-type="indexterm">&nbsp;</a>合并为一个统一的系统。</p>
 </section>
 
 <section data-type="sect2" id="ch08_kappa_architecture_1734552289325509">
 <h2>Kappa 架构</h2>
 
-<p><a contenteditable="false" data-primary="kappa architecture" data-type="indexterm" id="kappa">&nbsp;</a><em>Kappa 架构</em>是在 Lambda 架构基础上发展而来的一种架构，通过将所有传入的数据作为数据流处理，降低运营管理的复杂性。如图 <a data-type="xref" href="#ch08_figure_3_1734552289299664">#ch08_figure_3_1734552289299664</a> 所示，该架构使用单一的流处理层，同时处理实时数据和历史数据。由于所有数据都通过流处理方式进行处理，因此无需分别维护批处理和实时处理两套独立的代码库及系统，从而简化了开发和维护工作。</p>
+<p><em><a contenteditable="false" data-primary="kappa architecture" data-type="indexterm" id="kappa">&nbsp;</a>Kappa 架构</em>是在 Lambda 架构基础上发展而来的一种架构，通过将所有传入的数据作为数据流处理，降低运营管理的复杂性。如图 <a data-type="xref" href="#ch08_figure_3_1734552289299664">#ch08_figure_3_1734552289299664</a> 所示，该架构使用单一的流处理层，同时处理实时数据和历史数据。由于所有数据都通过流处理方式进行处理，因此无需分别维护批处理和实时处理两套独立的代码库及系统，从而简化了开发和维护工作。</p>
 
 <p>Kappa 架构利用先进的流处理工具，能够在可能无限增长的数据集上处理时间窗口、事件顺序和状态管理等问题。对于输入数据本身就是流式数据的应用，或者数据时效性比复杂、计算密集型的批量分析更为重要的场景，Kappa 架构尤其适用。</p>
 
@@ -232,7 +232,7 @@
 <section data-type="sect2" id="ch08_data_lake_architecture_1734552289325635">
 <h2>数据湖架构</h2>
 
-<p><a contenteditable="false" data-primary="data lakes" data-type="indexterm" id="data-lake">&nbsp;</a><em>数据湖</em>是一种集中式数据存储库，用于存储、处理和保护海量结构化与非结构化数据。传统数据仓库通常以经过处理的结构化格式存储数据，而数据湖则以原生格式保留大量原始数据。如图 <a data-type="xref" href="#ch08_figure_4_1734552289299685">#ch08_figure_4_1734552289299685</a> 所示，这种架构具有多项优势：可以利用低成本硬件实现横向扩展，灵活配置数据湖的组织方式、索引和处理逻辑，并支持存储和分析多种类型的数据，包括日志、XML、JSON 和二进制格式。数据湖架构不仅能够存储海量数据，还可以与各种大数据处理框架集成，直接对所存储的数据进行全面分析和机器学习。</p>
+<p><em>数据湖</em>是一种集中式数据存储库，<a contenteditable="false" data-primary="data lakes" data-type="indexterm" id="data-lake">&nbsp;</a>用于存储、处理和保护海量结构化与非结构化数据。传统数据仓库通常以经过处理的结构化格式存储数据，而数据湖则以原生格式保留大量原始数据。如图 <a data-type="xref" href="#ch08_figure_4_1734552289299685">#ch08_figure_4_1734552289299685</a> 所示，这种架构具有多项优势：可以利用低成本硬件实现横向扩展，灵活配置数据湖的组织方式、索引和处理逻辑，并支持存储和分析多种类型的数据，包括日志、XML、JSON 和二进制格式。数据湖架构不仅能够存储海量数据，还可以与各种大数据处理框架集成，直接对所存储的数据进行全面分析和机器学习。</p>
 
 <div data-type="note">
 <p>你也可以使用 Amazon S3 等对象存储服务来构建数据湖架构。Amazon S3 可以方便地与 Amazon EMR、AWS Glue 和 Amazon Athena 等大数据服务集成，以运行大数据工作负载。我们将在<a data-type="xref" href="#ch13_big_data_analytics_and_machine_learning_services_1734552292002899">第 13 章</a>中进一步介绍这些服务。</p>
@@ -244,19 +244,19 @@
 
 <p>通过采用 Lambda 架构、Kappa 架构和数据湖架构等大数据架构，组织可以有效管理自身的数据生态系统，既满足当前的数据分析需求，也为未来的数据驱动型业务计划提供支持。这能够确保基础设施不仅符合大数据处理的技术要求，也与企业的战略业务目标保持一致。</p>
 
-<p>大数据架构主要关注如何高效处理和管理海量数据，而应用解决方案的系统设计则侧重于构建满足特定业务需求、整合不同组件的系统。下一节将比较解决方案架构设计与以数据为中心的大数据架构方法。<a contenteditable="false" data-primary="data lakes" data-startref="data-lake" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="big data" data-startref="arch-design-bigdata" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="big data architectures" data-startref="bigdata" data-type="indexterm">&nbsp;</a></p>
+<p>大数据架构主要关注如何高效处理和管理海量数据，而应用解决方案的系统设计则侧重于构建满足特定业务需求、整合不同组件的系统。下一节将比较解决方案架构设计与以数据为中心的<a contenteditable="false" data-primary="data lakes" data-startref="data-lake" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="big data" data-startref="arch-design-bigdata" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="big data architectures" data-startref="bigdata" data-type="indexterm">&nbsp;</a>大数据架构方法。</p>
 </section>
 </section>
 
 <section data-type="sect1" id="ch08_solution_architecture_1734552289325703">
 <h1>解决方案架构</h1>
 
-<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="solution" data-type="indexterm" id="arch-design-solution">&nbsp;</a><a contenteditable="false" data-primary="solution architecture" data-type="indexterm" id="solution-arch">&nbsp;</a>解决方案架构从单体架构逐步演进到微服务架构，反映了技术发展和业务需求的变化。本节将回顾这一演进过程，介绍相关架构的组织方式及其背后的设计原则。</p>
+<p>解决方案架构<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="solution" data-type="indexterm" id="arch-design-solution">&nbsp;</a><a contenteditable="false" data-primary="solution architecture" data-type="indexterm" id="solution-arch">&nbsp;</a>从单体架构逐步演进到微服务架构，反映了技术发展和业务需求的变化。本节将回顾这一演进过程，介绍相关架构的组织方式及其背后的设计原则。</p>
 
 <section data-type="sect2" id="ch08_monoliths_1734552289325765">
 <h2>单体架构</h2>
 
-<p><a contenteditable="false" data-primary="monoliths" data-type="indexterm" id="monolith">&nbsp;</a>如图 <a data-type="xref" href="#ch08_figure_5_1734552289299705">#ch08_figure_5_1734552289299705</a> 所示，在<em>单体架构</em>中，软件应用的所有组件紧密集成，并作为单一服务运行。这意味着应用中任何部分的变更都可能影响整个系统，而这种架构在产品生命周期的早期阶段通常有助于简化开发和部署流程。</p>
+<p>如图 <a data-type="xref" href="#ch08_figure_5_1734552289299705">#ch08_figure_5_1734552289299705</a> 所示，在<em><a contenteditable="false" data-primary="monoliths" data-type="indexterm" id="monolith">&nbsp;</a>单体架构</em>中，软件应用的所有组件紧密集成，并作为单一服务运行。这意味着应用中任何部分的变更都可能影响整个系统，而这种架构在产品生命周期的早期阶段通常有助于简化开发和部署流程。</p>
 
 <figure id="ch08_figure_5_1734552289299705"><img src="images/sdoa_0805.png" />
 <figcaption>单体架构</figcaption>
@@ -264,13 +264,13 @@
 
 <p>由于单体应用作为单一的可执行程序或部署单元运行，因此其开发、测试、部署和水平扩展都相对简单。与微服务架构相比，这是一项显著优势，因为单体架构不需要通过<span class='keep-together'>网络</span>在不同微服务之间进行通信，从而有助于降低延迟，也更容易应对网络不稳定带来的问题。</p>
 
-<p>然而，随着应用规模不断增长，单体系统可能变得臃肿，难以理解和修改。此外，要单独扩展应用中的特定功能，而不是扩展整个应用，也可能变得更加困难。从可扩展性的角度来看，我们建议保持代码的解耦和模块化，以便在必要时能够将各个模块独立部署。即使所有代码都集中存放在同一个代码仓库中，模块化的代码架构仍有助于复用组件、添加新功能，并保持良好的代码可读性。下一节将进一步介绍这种模式。<a contenteditable="false" data-primary="monoliths" data-startref="monolith" data-type="indexterm">&nbsp;</a></p>
+<p>然而，随着应用规模不断增长，单体系统可能变得臃肿，难以理解和修改。此外，要单独扩展应用中的特定功能，而不是扩展整个应用，也可能变得更加困难。从可扩展性的角度来看，我们建议保持代码的解耦和模块化，以便在必要时能够将各个模块独立部署。即使所有代码都集中存放在同一个代码仓库中，模块化的代码架构仍有助于复用组件、添加新功能，并保持良好的代码可读性。下一节将进一步介绍这种<a contenteditable="false" data-primary="monoliths" data-startref="monolith" data-type="indexterm">&nbsp;</a>模式。</p>
 </section>
 
 <section data-type="sect2" id="ch08_n_tier_architectures_1734552289325846">
 <h2>N 层架构</h2>
 
-<p><a contenteditable="false" data-primary="N-tier architectures" data-type="indexterm">&nbsp;</a><em>N 层架构</em>将应用程序划分为多个逻辑层，每一层都有明确的职责。典型的三层结构包括表示层（前端）、业务逻辑层（中间层）和数据管理层（后端）。这种结构称为<em>三层架构</em>，如图 <a data-type="xref" href="#ch08_figure_6_1734552289299723">#ch08_figure_6_1734552289299723</a> 所示。</p>
+<p><em>N 层架构</em>将<a contenteditable="false" data-primary="N-tier architectures" data-type="indexterm">&nbsp;</a>应用程序划分为多个逻辑层，每一层都有明确的职责。典型的三层结构包括表示层（前端）、业务逻辑层（中间层）和数据管理层（后端）。这种结构称为<em>三层架构</em>，如图 <a data-type="xref" href="#ch08_figure_6_1734552289299723">#ch08_figure_6_1734552289299723</a> 所示。</p>
 
 <p>这种架构通过将不同的职责分配给不同组件，提高了系统的可维护性，使各个部分更容易独立管理、更新和扩展，而不会影响其他部分。由于每一层都可以根据需求独立扩展，这种架构还具有良好的可扩展性和灵活性。例如，为了应对更大的数据负载，可以单独扩展数据层，而不必同时扩展表示层。</p>
 
@@ -284,7 +284,7 @@
 <section data-type="sect2" id="ch08_microservices_1734552289325907">
 <h2>微服务</h2>
 
-<p><a contenteditable="false" data-primary="microservices" data-type="indexterm" id="microservice">&nbsp;</a>如图 <a data-type="xref" href="#ch08_figure_7_1734552289299743">#ch08_figure_7_1734552289299743</a> 所示，<em>微服务架构</em>进一步发展了 N 层架构的设计原则，将系统拆分为规模更小、彼此松耦合的服务。每个微服务专注于一项特定功能，并且可以独立开发、部署和扩展。</p>
+<p>如图 <a data-type="xref" href="#ch08_figure_7_1734552289299743">#ch08_figure_7_1734552289299743</a> 所示，<em>微服务架构</em><a contenteditable="false" data-primary="microservices" data-type="indexterm" id="microservice">&nbsp;</a>进一步发展了 N 层架构的设计原则，将系统拆分为规模更小、彼此松耦合的服务。每个微服务专注于一项特定功能，并且可以独立开发、部署和扩展。</p>
 
 <figure id="ch08_figure_7_1734552289299743"><img src="images/sdoa_0807.png" />
 <figcaption>微服务架构</figcaption>
@@ -294,7 +294,7 @@
 
 <p>不过，微服务的去中心化特性也增加了系统管理和运维的复杂性，尤其是在服务间通信、数据一致性和事务管理方面。此外，由于每个服务可能需要独立的数据库、软件库和依赖项，服务本身的开销也可能增加，进而占用更多资源并加大运维工作量。</p>
 
-<p class="pagebreak-before less_space">从单体架构迁移到微服务架构，并不一定适合所有项目或组织，因此需要充分了解其中的权衡取舍。要妥善应对网络延迟、消息格式、数据完整性和事务管理等问题，需要采取完善的技术策略，例如使用 API 网关、服务网格，以及全面的日志记录和监控系统，以保障系统的可靠性和性能。组织应仔细评估业务需求和团队能力，选择最适合自身目标的架构，使软件基础设施既能满足当前需求，也能适应未来的变化。<a contenteditable="false" data-primary="microservices" data-startref="microservice" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="solution" data-startref="arch-design-solution" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="solution architecture" data-startref="solution-arch" data-type="indexterm">&nbsp;</a></p>
+<p class="pagebreak-before less_space">从单体架构迁移到微服务架构，并不一定适合所有项目或组织，因此需要充分了解其中的权衡取舍。要妥善应对网络延迟、消息格式、数据完整性和事务管理等问题，需要采取完善的技术策略，例如使用 API 网关、服务网格，以及全面的日志记录和监控系统，以保障系统的可靠性和性能。组织应仔细评估业务需求和团队能力，选择最适合自身目标的架构，使软件基础设施既能满足当前需求，也能适应<a contenteditable="false" data-primary="microservices" data-startref="microservice" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="solution" data-startref="arch-design-solution" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="solution architecture" data-startref="solution-arch" data-type="indexterm">&nbsp;</a>未来的变化。</p>
 
 <p>事件驱动架构（EDA）是另一种值得关注的架构范式，可用于构建应用系统或大数据系统。</p>
 </section>
@@ -303,7 +303,7 @@
 <section data-type="sect1" id="ch08_event_driven_architecture_1734552289325973">
 <h1>事件驱动架构</h1>
 
-<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="EDA (event-driven architecture)" data-type="indexterm" id="arch-design-eda">&nbsp;</a><a contenteditable="false" data-primary="EDA (event-driven architecture)" data-type="indexterm" id="eda">&nbsp;</a><a contenteditable="false" data-primary="event-driven architecture (EDA)" data-type="indexterm" id="event-driven-arch">&nbsp;</a><em>EDA</em> 是一种以事件的产生、检测和消费为中心来组织系统行为的架构范式。它为应用程序提供了一种动态机制，使各个组件无需紧密耦合，就能够响应分布式系统中的各种状态变化，从而提高系统的可扩展性和响应能力。我们将首先介绍 EDA 的基本概念和实现范式，再深入探讨事件溯源的具体机制。</p>
+<p><em>EDA</em> 是一种<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="EDA (event-driven architecture)" data-type="indexterm" id="arch-design-eda">&nbsp;</a><a contenteditable="false" data-primary="EDA (event-driven architecture)" data-type="indexterm" id="eda">&nbsp;</a><a contenteditable="false" data-primary="event-driven architecture (EDA)" data-type="indexterm" id="event-driven-arch">&nbsp;</a>以事件的产生、检测和消费为中心来组织系统行为的架构范式。它为应用程序提供了一种动态机制，使各个组件无需紧密耦合，就能够响应分布式系统中的各种状态变化，从而提高系统的可扩展性和响应能力。我们将首先介绍 EDA 的基本概念和实现范式，再深入探讨事件溯源的具体机制。</p>
 
 <section data-type="sect2" id="ch08_eda_concepts_and_implementations_1734552289326056">
 <h2>EDA 的概念与实现</h2>
@@ -342,13 +342,13 @@
 <section data-type="sect3" id="ch08_state_oriented_implementation_1734552289326186">
 <h3>面向状态的实现</h3>
 
-<p><a contenteditable="false" data-primary="state-oriented EDA implementations" data-type="indexterm">&nbsp;</a>这种方法只记录系统的当前状态，重点在于持久化保存状态随时间发生的变化。状态数据可以在受控范围内修改，但必须通过预先定义的操作进行。这种方式有助于系统及时响应状态变化，但若没有另外保存历史记录，系统就无法追踪过去的状态变化。</p>
+<p>这种方法<a contenteditable="false" data-primary="state-oriented EDA implementations" data-type="indexterm">&nbsp;</a>只记录系统的当前状态，重点在于持久化保存状态随时间发生的变化。状态数据可以在受控范围内修改，但必须通过预先定义的操作进行。这种方式有助于系统及时响应状态变化，但若没有另外保存历史记录，系统就无法追踪过去的状态变化。</p>
 </section>
 
 <section data-type="sect3" id="ch08_event_sourcing_1734552289326245">
 <h3>事件溯源</h3>
 
-<p><a contenteditable="false" data-primary="event sourcing" data-type="indexterm" id="event-sourcing">&nbsp;</a>与面向状态的实现不同，事件溯源将每一次状态变化记录为不可变事件，并持久化存储。这些事件构成系统的事实来源，可用于重建当前状态。这种方式支持重建历史状态、执行审计，以及通过状态回滚和事件重放等复杂操作来应对错误或系统故障。</p>
+<p>与面向状态的实现不同，<a contenteditable="false" data-primary="event sourcing" data-type="indexterm" id="event-sourcing">&nbsp;</a>事件溯源将每一次状态变化记录为不可变事件，并持久化存储。这些事件构成系统的事实来源，可用于重建当前状态。这种方式支持重建历史状态、执行审计，以及通过状态回滚和事件重放等复杂操作来应对错误或系统故障。</p>
 
 <p>事件溯源支持以下能力：</p>
 
@@ -367,9 +367,9 @@
 	</dd>
 </dl>
 
-<p><a contenteditable="false" data-primary="event stores" data-type="indexterm">&nbsp;</a>事件驱动系统通常使用<em>事件存储</em>作为应用状态和数据操作的单一事实来源。事件存储是一种针对按顺序存储事件而优化的仅追加式持久化机制。它以不可变的方式保存所有事件，为触发操作、构建投影以及重建历史状态提供可靠的基础。这类系统将数据变更与应用逻辑解耦，使系统能够更灵活地扩展，并适应不断变化的业务需求。</p>
+<p>事件驱动系统<a contenteditable="false" data-primary="event stores" data-type="indexterm">&nbsp;</a>通常使用<em>事件存储</em>作为应用状态和数据操作的单一事实来源。事件存储是一种针对按顺序存储事件而优化的仅追加式持久化机制。它以不可变的方式保存所有事件，为触发操作、构建投影以及重建历史状态提供可靠的基础。这类系统将数据变更与应用逻辑解耦，使系统能够更灵活地扩展，并适应不断变化的业务需求。</p>
 
-<p><a contenteditable="false" data-primary="persistence" data-secondary="in event sourcing" data-secondary-sortas="event sourcing" data-type="indexterm">&nbsp;</a>事件溯源持久化机制将实体表示为事件流，并为这些事件流维护不可变日志。当实体的状态或属性发生变化时，系统会生成并保存一个新事件。如果需要恢复实体的状态，系统会读取与该实体相关的所有事件，再依次应用这些事件，逐步重建出实体的最终状态。需要注意的是，这里的状态是将事件流作为纯函数应用于实体后得到的结果。</p>
+<p>事件溯源持久化<a contenteditable="false" data-primary="persistence" data-secondary="in event sourcing" data-secondary-sortas="event sourcing" data-type="indexterm">&nbsp;</a>机制将实体表示为事件流，并为这些事件流维护不可变日志。当实体的状态或属性发生变化时，系统会生成并保存一个新事件。如果需要恢复实体的状态，系统会读取与该实体相关的所有事件，再依次应用这些事件，逐步重建出实体的最终状态。需要注意的是，这里的状态是将事件流作为纯函数应用于实体后得到的结果。</p>
 
 <p>在事件驱动系统中实现事件溯源时，有几个重要因素需要考虑：</p>
 
@@ -398,10 +398,10 @@
 
 <p>由于应用程序的工作流采用去中心化控制方式，且事件处理具有分布式特性，因此在设计事件驱动系统时，需要充分考虑上述与最终一致性相关的实际问题，并妥善应对由此带来的复杂性。</p>
 
-<p>事件驱动架构标志着从传统请求驱动模型向事件驱动模型的范式转变，为处理异步系统行为和数据流提供了一种灵活且可扩展的方式。这种架构风格尤其适用于对可扩展性、响应能力和健壮性要求较高的应用，例如微服务环境，以及需要处理复杂业务流程和工作流的系统。<a contenteditable="false" data-primary="event sourcing" data-startref="event-sourcing" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="EDA (event-driven architecture)" data-startref="arch-design-eda" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EDA (event-driven architecture)" data-startref="eda" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="event-driven architecture (EDA)" data-startref="event-driven-arch" data-type="indexterm">&nbsp;</a></p>
+<p>事件驱动架构标志着从传统请求驱动模型向事件驱动模型的范式转变，为处理异步系统行为和数据流提供了一种灵活且可扩展的方式。这种架构风格尤其适用于对可扩展性、响应能力和健壮性要求较高的应用，例如微服务环境，以及需要处理复杂业务流程<a contenteditable="false" data-primary="event sourcing" data-startref="event-sourcing" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="EDA (event-driven architecture)" data-startref="arch-design-eda" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EDA (event-driven architecture)" data-startref="eda" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="event-driven architecture (EDA)" data-startref="event-driven-arch" data-type="indexterm">&nbsp;</a>和工作流的系统。</p>
 
 <div data-type="note">
-<p><a contenteditable="false" data-primary="CDC (change data capture)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="change data capture (CDC)" data-type="indexterm">&nbsp;</a>事件溯源和 CDC 都用于追踪数据变化，但两者的目的不同。事件溯源将状态变化记录为事件，并以这些事件作为事实来源，使系统能够通过事件重建或恢复不同时刻的状态。相比之下，CDC 主要捕获数据库中发生的变更，用于数据复制或集成。它利用数据库事务日志记录状态变化，但这些记录本身不一定包含变更背后的意图或业务上下文。</p>
+<p>事件溯源和 <a contenteditable="false" data-primary="CDC (change data capture)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="change data capture (CDC)" data-type="indexterm">&nbsp;</a>CDC 都用于追踪数据变化，但两者的目的不同。事件溯源将状态变化记录为事件，并以这些事件作为事实来源，使系统能够通过事件重建或恢复不同时刻的状态。相比之下，CDC 主要捕获数据库中发生的变更，用于数据复制或集成。它利用数据库事务日志记录状态变化，但这些记录本身不一定包含变更背后的意图或业务上下文。</p>
 </div>
 </section>
 </section>
@@ -410,7 +410,7 @@
 <section data-type="sect1" id="ch08_common_cloud_architecture_patterns_1734552289326313">
 <h1>常见云架构模式</h1>
 
-<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="cloud" data-type="indexterm" id="arch-design-cloud">&nbsp;</a><a contenteditable="false" data-primary="cloud architecture patterns" data-type="indexterm" id="cloud-pattern">&nbsp;</a>本节将介绍一些重要的云架构模式，它们是构建可扩展、高弹性且易于维护的云端系统的基础。这些模式涵盖断路器等提高系统弹性的技术，以及 Saga 编排等事务处理策略，为解决分布式系统中的常见问题提供了基础工具。在 <a data-type="xref" href="#part3">#part3</a> 介绍的系统设计案例中，这些模式尤其有用。理解它们有助于你将经过实践验证的可靠方案应用于分布式架构中的常见挑战，并做出更合理的设计决策。</p>
+<p>本节将<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="cloud" data-type="indexterm" id="arch-design-cloud">&nbsp;</a><a contenteditable="false" data-primary="cloud architecture patterns" data-type="indexterm" id="cloud-pattern">&nbsp;</a>介绍一些重要的云架构模式，它们是构建可扩展、高弹性且易于维护的云端系统的基础。这些模式涵盖断路器等提高系统弹性的技术，以及 Saga 编排等事务处理策略，为解决分布式系统中的常见问题提供了基础工具。在 <a data-type="xref" href="#part3">#part3</a> 介绍的系统设计案例中，这些模式尤其有用。理解它们有助于你将经过实践验证的可靠方案应用于分布式架构中的常见挑战，并做出更合理的设计决策。</p>
 
 <section data-type="sect2" id="ch08_event_based_patterns_cqrs_and_saga_1734552289326383">
 <h2>基于事件的模式：CQRS 与 Saga</h2>
@@ -420,11 +420,11 @@
 <dl>
 	<dt>命令查询职责分离（CQRS）</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="command query responsibility segregation (CQRS)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="CQRS (command query responsibility segregation)" data-type="indexterm">&nbsp;</a>CQRS 是一种架构模式，它将读取数据的查询操作与更新数据的命令操作分离，并通过不同的接口处理。这样一来，系统就可以针对读操作和写操作采用不同的处理方式，从而优化性能、可扩展性和安全性。例如，读模型可以独立于写模型进行扩展，对于读取请求远多于写入请求的系统，这一点尤其有益。</p>
+	<p>CQRS 是<a contenteditable="false" data-primary="command query responsibility segregation (CQRS)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="CQRS (command query responsibility segregation)" data-type="indexterm">&nbsp;</a>一种架构模式，它将读取数据的查询操作与更新数据的命令操作分离，并通过不同的接口处理。这样一来，系统就可以针对读操作和写操作采用不同的处理方式，从而优化性能、可扩展性和安全性。例如，读模型可以独立于写模型进行扩展，对于读取请求远多于写入请求的系统，这一点尤其有益。</p>
 	</dd>
 	<dt>Saga</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="sagas" data-type="indexterm">&nbsp;</a>Saga 模式用于管理跨多个服务的事务。每个事务步骤都配有相应的补偿操作，以便在必要时撤销其影响。Saga 可以通过编配或编排两种方式实现。在编配方式下，参与 Saga 的各个服务分别执行自己的事务，并发布事件来触发其他服务的后续步骤。在编排方式下，中央协调器（编排器）负责协调 Saga 的各个步骤、控制执行顺序，并在必要时触发补偿事务。</p>
+	<p>Saga 模式用于管理<a contenteditable="false" data-primary="sagas" data-type="indexterm">&nbsp;</a>跨多个服务的事务。每个事务步骤都配有相应的补偿操作，以便在必要时撤销其影响。Saga 可以通过编配或编排两种方式实现。在编配方式下，参与 Saga 的各个服务分别执行自己的事务，并发布事件来触发其他服务的后续步骤。在编排方式下，中央协调器（编排器）负责协调 Saga 的各个步骤、控制执行顺序，并在必要时触发补偿事务。</p>
 	</dd>
 </dl>
 
@@ -434,7 +434,7 @@
 <section data-type="sect2" id="ch08_failure_tolerant_patterns_circuit_breaker_retry_1734552289326446">
 <h2>容错模式：断路器、<span class="keep-together">带退避的重试与限流器</span></h2>
 
-<p><a contenteditable="false" data-primary="failure-tolerant patterns" data-type="indexterm" id="failure-tolerant">&nbsp;</a>为增强系统应对故障时的弹性，可以采用以下模式：</p>
+<p>为增强<a contenteditable="false" data-primary="failure-tolerant patterns" data-type="indexterm" id="failure-tolerant">&nbsp;</a>系统应对故障时的弹性，可以采用以下模式：</p>
 
 <dl>
 	<dt>断路器</dt>
@@ -443,11 +443,11 @@
 	</dd>
 	<dt>带退避的重试</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="retry with backoff pattern" data-type="indexterm">&nbsp;</a>带退避的重试模式会在操作失败后再次尝试，并逐步延长相邻两次重试之间的等待时间，直到达到最大重试次数。这种模式特别适合处理瞬时故障，因为延长重试间隔能够为故障恢复留出时间，避免过早再次尝试。</p>
+	<p>带退避的重试<a contenteditable="false" data-primary="retry with backoff pattern" data-type="indexterm">&nbsp;</a>模式会在操作失败后再次尝试，并逐步延长相邻两次重试之间的等待时间，直到达到最大重试次数。这种模式特别适合处理瞬时故障，因为延长重试间隔能够为故障恢复留出时间，避免过早再次尝试。</p>
 	</dd>
 	<dt>限流器</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="rate limiter pattern" data-type="indexterm">&nbsp;</a>限流器模式通过控制指定时间段内向服务发送的请求数量，防止系统因流量过大或请求量突然激增而不堪重负。限流可以在不同层级实施，例如针对单个用户、单项服务，或在整个系统范围内统一限流。这种模式有助于服务在高负载下保持稳定运行，并降低资源耗尽导致性能下降或系统崩溃的风险。</p>
+	<p>限流器模式<a contenteditable="false" data-primary="rate limiter pattern" data-type="indexterm">&nbsp;</a>通过控制指定时间段内向服务发送的请求数量，防止系统因流量过大或请求量突然激增而不堪重负。限流可以在不同层级实施，例如针对单个用户、单项服务，或在整个系统范围内统一限流。这种模式有助于服务在高负载下保持稳定运行，并降低资源耗尽导致性能下降或系统崩溃的风险。</p>
 	</dd>
 </dl>
 
@@ -457,16 +457,16 @@
 <section data-type="sect2" id="ch08_domain_based_patterns_domain_driven_design_and_de_1734552289326510">
 <h2>基于领域的模式：领域驱动设计<span class="keep-together">与按子域分解</span></h2>
 
-<p><a contenteditable="false" data-primary="domain-based patterns" data-type="indexterm">&nbsp;</a>以下模式旨在使软件设计与业务目标保持一致：</p>
+<p>以下<a contenteditable="false" data-primary="domain-based patterns" data-type="indexterm">&nbsp;</a>模式旨在使软件设计与业务目标保持一致：</p>
 
 <dl>
 	<dt>领域驱动设计（DDD）</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="domain-driven design (DDD)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="DDD (domain-driven design)" data-type="indexterm">&nbsp;</a>DDD 关注核心业务领域的逻辑及其复杂性，并以该领域的行为和业务逻辑为基础开展设计。这种模式提倡建立包含业务规则和行为的领域模型，使软件设计能够更直观地反映其所要满足的业务需求。</p>
+	<p>DDD 关注核<a contenteditable="false" data-primary="domain-driven design (DDD)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="DDD (domain-driven design)" data-type="indexterm">&nbsp;</a>心业务领域的逻辑及其复杂性，并以该领域的行为和业务逻辑为基础开展设计。这种模式提倡建立包含业务规则和行为的领域模型，使软件设计能够更直观地反映其所要满足的业务需求。</p>
 	</dd>
 	<dt>按子域分解</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="decompose by subdomains pattern" data-type="indexterm">&nbsp;</a><em></em>在微服务架构中，按子域分解模式以 DDD 为基础，将系统划分为多个子域，每个子域负责特定的业务能力。每个微服务负责一个子域，从而能够根据该子域的业务需求独立演进，提高系统的可维护性和可扩展性。</p>
+	<p><em></em>在微服务架构中，按子域分解模式以 DDD 为基础，<a contenteditable="false" data-primary="decompose by subdomains pattern" data-type="indexterm">&nbsp;</a>将系统划分为多个子域，每个子域负责特定的业务能力。每个微服务负责一个子域，从而能够根据该子域的业务需求独立演进，提高系统的可维护性和可扩展性。</p>
 	</dd>
 </dl>
 
@@ -476,20 +476,20 @@
 <section data-type="sect2" id="ch08_api_routing_strategies_and_patterns_1734552289326571">
 <h2>API 路由策略与模式</h2>
 
-<p><a contenteditable="false" data-primary="API routing patterns" data-type="indexterm" id="api-route-pattern">&nbsp;</a>API 路由模式决定了在云环境中如何将请求转发到相应的服务。这些模式有助于确保请求能够高效、安全地到达正确的后端系统。常见的路由策略包括：</p>
+<p>API 路由模式<a contenteditable="false" data-primary="API routing patterns" data-type="indexterm" id="api-route-pattern">&nbsp;</a>决定了在云环境中如何将请求转发到相应的服务。这些模式有助于确保请求能够高效、安全地到达正确的后端系统。常见的路由策略包括：</p>
 
 <dl>
-	<dt>这种策略根据 URL 中的主机名，将请求转发到不同的后端系统。它通常适用于多个服务使用不同域名或子域名的场景。</dt>
+	<dt>主机名路由</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="hostname routing" data-type="indexterm">&nbsp;</a></p>
+	<p>这种<a contenteditable="false" data-primary="hostname routing" data-type="indexterm">&nbsp;</a>策略根据 URL 中的主机名，将请求转发到不同的后端系统。它通常适用于多个服务使用不同域名或子域名的场景。</p>
 	</dd>
 	<dt>路径路由</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="path routing" data-type="indexterm">&nbsp;</a>这种路由模式根据 URL 路径，将请求转发到特定的服务或请求处理程序。它利用 URL 的路径结构组织路由规则，使服务更易于管理和扩展。</p>
+	<p>这种<a contenteditable="false" data-primary="path routing" data-type="indexterm">&nbsp;</a>路由模式根据 URL 路径，将请求转发到特定的服务或请求处理程序。它利用 URL 的路径结构组织路由规则，使服务更易于管理和扩展。</p>
 	</dd>
 	<dt>HTTP 标头路由</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="HTTP header routing" data-type="indexterm">&nbsp;</a>这种方式根据 HTTP 请求中的标头信息决定请求的路由方向。它特别适用于 A/B 测试以及新功能的逐步发布。例如，在 A/B 测试中，可以根据请求标头将不同用户群的请求转发到不同的后端服务。</p>
+	<p><a contenteditable="false" data-primary="HTTP header routing" data-type="indexterm">&nbsp;</a>这种方式根据 HTTP 请求中的标头信息决定请求的路由方向。它特别适用于 A/B 测试和新功能的逐步发布等场景，例如将不同用户群的请求转发到不同的后端服务。</p>
 	</dd>
 </dl>
 
@@ -498,15 +498,15 @@
 <dl>
 	<dt>API 网关</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="API gateways" data-type="indexterm">&nbsp;</a>API 网关作为客户端请求的统一入口，为访问多个后端服务提供一致的接口。它负责请求路由、请求组合和协议转换等任务。API 网关可以针对一个客户端请求调用多个微服务，并将这些服务的响应整合为统一的结果。这种模式特别适合微服务<span class="keep-together">架构</span>，因为它既能简化客户端与后端服务之间的交互，又能通过集中管理访问控制和监控来增强安全性。</p>
+	<p>API 网关作<a contenteditable="false" data-primary="API gateways" data-type="indexterm">&nbsp;</a>为客户端请求的统一入口，为访问多个后端服务提供一致的接口。它负责请求路由、请求组合和协议转换等任务。API 网关可以针对一个客户端请求调用多个微服务，并将这些服务的响应整合为统一的结果。这种模式特别适合微服务<span class="keep-together">架构</span>，因为它既能简化客户端与后端服务之间的交互，又能通过集中管理访问控制和监控来增强安全性。</p>
 	</dd>
 	<dt>服务网格</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="service mesh architecture" data-type="indexterm">&nbsp;</a>服务网格是一个基础设施层，用于管理微服务架构中各服务之间的通信。它提供高级路由、负载均衡和服务发现等功能，以及双向 TLS 身份认证、流量加密等安全能力。API 网关主要处理外部客户端与服务之间的通信，而服务网格则侧重于内部服务之间的交互，以保障云环境中服务通信的可靠性和安全性。服务网格通过边车代理拦截和管理服务间的网络流量，无需修改应用程序代码即可提供可观测性和故障恢复能力。</p>
+	<p>服务网格是一<a contenteditable="false" data-primary="service mesh architecture" data-type="indexterm">&nbsp;</a>个基础设施层，用于管理微服务架构中各服务之间的通信。它提供高级路由、负载均衡和服务发现等功能，以及双向 TLS 身份认证、流量加密等安全能力。API 网关主要处理外部客户端与服务之间的通信，而服务网格则侧重于内部服务之间的交互，以保障云环境中服务通信的可靠性和安全性。服务网格通过边车代理拦截和管理服务间的网络流量，无需修改应用程序代码即可提供可观测性和弹性。</p>
 	</dd>
 </dl>
 
-<p>这些 API 路由策略与模式，以及 API 网关和服务网格架构，为构建可扩展、安全且易于维护的云原生应用提供了重要基础。<a contenteditable="false" data-primary="API routing patterns" data-startref="api-route-pattern" data-type="indexterm">&nbsp;</a></p>
+<p>这些 API 路由策略与模式，以及 API 网关和服务网格架构，为构建可扩展、安全且易于维护的云原生<a contenteditable="false" data-primary="API routing patterns" data-startref="api-route-pattern" data-type="indexterm">&nbsp;</a>应用提供了重要基础。</p>
 </section>
 
 <section data-type="sect2" id="ch08_other_cloud_architecture_patterns_1734552289326631">
@@ -521,7 +521,7 @@
 	</dd>
 	<dt>绞杀者模式</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="strangler fig pattern" data-type="indexterm">&nbsp;</a>这种模式通过使用新的应用程序或服务逐步替换遗留系统中的部分功能，实现对旧系统的渐进式改造。随着越来越多的功能被新组件接管，旧系统会逐步被取代，最终实现完全替换。</p>
+	<p>这种模式<a contenteditable="false" data-primary="strangler fig pattern" data-type="indexterm">&nbsp;</a>通过使用新的应用程序或服务逐步替换遗留系统中的部分功能，实现对旧系统的渐进式改造。随着越来越多的功能被新组件接管，旧系统会逐步被取代，最终实现完全替换。</p>
 	</dd>
 	<dt>事务性发件箱</dt>
 	<dd>
@@ -529,31 +529,31 @@
 	</dd>
 	<dt>边车模式</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="sidecar pattern" data-type="indexterm">&nbsp;</a>边车模式常用于微服务架构。它通过在主服务容器旁部署额外的容器或进程，为应用程序<span class="keep-together">提供</span>监控、日志记录、配置管理和网络通信等基础设施能力。边车组件可以使用不同的编程语言实现，而不必与主服务在实现技术上紧密耦合。这种模式有助于将基础设施相关的职责与应用程序本身分离，使应用程序的结构更加清晰、模块化程度更高。</p>
+	<p>边车模式<a contenteditable="false" data-primary="sidecar pattern" data-type="indexterm">&nbsp;</a>常用于微服务架构。它通过在主服务容器旁部署额外的容器或进程，为应用程序<span class="keep-together">提供</span>监控、日志记录、配置管理和网络通信等基础设施能力。边车组件可以使用不同的编程语言实现，而不必与主服务在实现技术上紧密耦合。这种模式有助于将基础设施相关的职责与应用程序本身分离，使应用程序的结构更加清晰、模块化程度更高。</p>
 	</dd>
 	<dt>前端专属后端（BFF）</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="backend for frontend (BFF)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="BFF (backend for frontend)" data-type="indexterm">&nbsp;</a>这种模式为不同类型的客户端（例如桌面浏览器和移动设备）分别构建专用的后端服务。开发人员可以根据不同用户界面的需求优化相应的后端服务，减少数据获取过多或不足的情况，从而改善用户体验。</p>
+	<p>这种模<a contenteditable="false" data-primary="backend for frontend (BFF)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="BFF (backend for frontend)" data-type="indexterm">&nbsp;</a>式为不同类型的客户端（例如桌面浏览器和移动设备）分别构建专用的后端服务。开发人员可以根据不同用户界面的需求优化相应的后端服务，减少数据获取过多或不足的情况，从而改善用户体验。</p>
 	</dd>
 	<dt>单元式架构</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="cellular architecture" data-type="indexterm">&nbsp;</a>单元式架构将系统划分为多个独立的单元（cell）。各单元可以独立运行，同时又能够与其他单元通信。每个单元都是自包含的，拥有独立的数据存储和业务逻辑，并且可以单独扩展。这种架构具有较强的弹性，因为某个单元发生故障时，其他单元仍可继续运行。此外，各单元还可以独立演进，从而支持系统架构的持续演化。</p>
+	<p>单元式架构<a contenteditable="false" data-primary="cellular architecture" data-type="indexterm">&nbsp;</a>将系统划分为多个独立的单元（cell）。各单元可以独立运行，同时又能够与其他单元通信。每个单元都是自包含的，拥有独立的数据存储和业务逻辑，并且可以单独扩展。这种架构具有较强的弹性，因为某个单元发生故障时，其他单元仍可继续运行。此外，各单元还可以独立演进，从而支持系统架构的持续演化。</p>
 	</dd>
 </dl>
 
-<p>这些模式分别为开发和管理云原生应用时遇到的常见问题提供有针对性的解决方案，有助于构建更具弹性、灵活性和可扩展性的系统架构。需要注意的是，这里列出的架构模式并不全面；随着系统设计技术不断发展，新的模式也会持续涌现。尽管如此，这些模式仍能为你在设计复杂系统时面临的各种架构挑战提供可靠的解决方案。<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="cloud" data-startref="arch-design-cloud" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="cloud architecture patterns" data-startref="cloud-pattern" data-type="indexterm">&nbsp;</a></p>
+<p>这些模式分别为开发和管理云原生应用时遇到的常见问题提供有针对性的解决方案，有助于构建更具弹性、灵活性和可扩展性的系统架构。需要注意的是，这里列出的架构模式并不全面；随着系统设计技术不断发展，新的模式也会持续涌现。尽管如此，这些模式仍能为你在设计<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="cloud" data-startref="arch-design-cloud" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="cloud architecture patterns" data-startref="cloud-pattern" data-type="indexterm">&nbsp;</a>复杂系统时面临的各种架构挑战提供可靠的解决方案。</p>
 </section>
 </section>
 
 <section data-type="sect1" id="ch08_open_source_distributed_systems_architecture_1734552289326718">
 <h1>开源分布式系统架构</h1>
 
-<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-type="indexterm" id="arch-design-distributed">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-type="indexterm" id="distributed-system-arch">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-type="indexterm" id="open-source-distributed-system-arch">&nbsp;</a><em>分布式系统架构</em>将系统的不同职责分配给多个计算节点，以提升系统的可扩展性、容错能力和运行效率。本节将介绍两类核心组件：分布式文件系统和分布式消息队列，重点讨论它们的开源实现，分别以 HDFS 和 Kafka 为代表。</p>
+<p><em>分布式系统架构</em>将系统的<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-type="indexterm" id="arch-design-distributed">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-type="indexterm" id="distributed-system-arch">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-type="indexterm" id="open-source-distributed-system-arch">&nbsp;</a>不同职责分配给多个计算节点，以提升系统的可扩展性、容错能力和运行效率。本节将介绍两类核心组件：分布式文件系统和分布式消息队列，重点讨论它们的开源实现，分别以 HDFS 和 Kafka 为代表。</p>
 
 <section data-type="sect2" id="ch08_hdfs_1734552289326806">
 <h2>HDFS</h2>
 
-<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="HDFS" data-type="indexterm" id="arch-design-distributed-hdfs">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-type="indexterm" id="distributed-system-arch-hdfs">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-type="indexterm" id="open-source-distributed-system-arch-hdfs">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-type="indexterm" id="hdfs">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-type="indexterm" id="hadoop-dist-filesystem">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-type="indexterm" id="filesystem-hdfs">&nbsp;</a>HDFS 是一种面向通用商用硬件设计的开源文件系统，能够在成本较低的硬件设备上运行，并具有较强的容错能力。它支持以高吞吐量访问应用程序数据，适用于需要处理大规模数据集的应用。HDFS 的主要特性包括：</p>
+<p>HDFS 是<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="HDFS" data-type="indexterm" id="arch-design-distributed-hdfs">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-type="indexterm" id="distributed-system-arch-hdfs">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-type="indexterm" id="open-source-distributed-system-arch-hdfs">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-type="indexterm" id="hdfs">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-type="indexterm" id="hadoop-dist-filesystem">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-type="indexterm" id="filesystem-hdfs">&nbsp;</a>一种面向通用商用硬件设计的开源文件系统，能够在成本较低的硬件设备上运行，并具有较强的容错能力。它支持以高吞吐量访问应用程序数据，适用于需要处理大规模数据集的应用。HDFS 的主要特性包括：</p>
 
 <dl class="pagebreak-before less_space">
 	<dt>分布式存储</dt>
@@ -578,12 +578,12 @@
 	</dd>
 	<dt>与 Hadoop 生态系统的集成</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="HDFS integration" data-type="indexterm">&nbsp;</a>HDFS 与 Hadoop 生态系统紧密集成，支持 MapReduce、Hive 和 Spark 等多种数据处理框架。借助这种集成，系统可以利用 HDFS 的分布式架构，尽可能在靠近数据存储位置的节点上执行计算，从而减少网络传输瓶颈，提高数据处理和分析的效率。</p>
+	<p>HDFS 与 <a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="HDFS integration" data-type="indexterm">&nbsp;</a>Hadoop 生态系统紧密集成，支持 MapReduce、Hive 和 Spark 等多种数据处理框架。借助这种集成，系统可以利用 HDFS 的分布式架构，尽可能在靠近数据存储位置的节点上执行计算，从而减少网络传输瓶颈，提高数据处理和分析的效率。</p>
 	</dd>
 </dl>
 
 <div data-type="note">
-<p><a contenteditable="false" data-primary="Elastic MapReduce (EMR)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EMR (Elastic MapReduce)" data-type="indexterm">&nbsp;</a>AWS 提供 Amazon EMR（Amazon Elastic MapReduce）托管服务，帮助用户更便捷地在 AWS 云上运行 Hadoop 等大数据框架，包括使用 HDFS 进行存储。我们将在 <a data-type="xref" href="#ch13_big_data_analytics_and_machine_learning_services_1734552292002899">#ch13_big_data_analytics_and_machine_learning_services_1734552292002899</a> 中进一步介绍。Amazon EMR 支持使用 HDFS 或 EMRFS 处理海量数据，并利用其可扩展性、容错能力以及与 Hadoop 生态系统的集成优势。</p>
+<p>AWS 提供 <a contenteditable="false" data-primary="Elastic MapReduce (EMR)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EMR (Elastic MapReduce)" data-type="indexterm">&nbsp;</a>Amazon EMR（Amazon Elastic MapReduce）托管服务，帮助用户更便捷地在 AWS 云上运行 Hadoop 等大数据框架，包括使用 HDFS 进行存储。我们将在 <a data-type="xref" href="#ch13_big_data_analytics_and_machine_learning_services_1734552292002899">#ch13_big_data_analytics_and_machine_learning_services_1734552292002899</a> 中进一步介绍。Amazon EMR 支持使用 HDFS 或 EMRFS 处理海量数据，并利用其可扩展性、容错能力以及与 Hadoop 生态系统的集成优势。</p>
 </div>
 
 <section data-type="sect3" id="ch08_hdfs_architecture_1734552289326874">
@@ -604,15 +604,15 @@
 	</dd>
 	<dt>DataNode（数据节点）</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="DataNodes" data-type="indexterm">&nbsp;</a>DataNode 是 HDFS 中负责存储数据的工作节点，保存组成文件的实际数据块。每个 DataNode 都会定期向 NameNode 发送心跳信号和数据块报告，使 NameNode 能够及时了解各节点的运行状态、数据块信息以及数据的可用情况。</p>
+	<p>DataNode <a contenteditable="false" data-primary="DataNodes" data-type="indexterm">&nbsp;</a>是 HDFS 中负责存储数据的工作节点，保存组成文件的实际数据块。每个 DataNode 都会定期向 NameNode 发送心跳信号和数据块报告，使 NameNode 能够及时了解各节点的运行状态、数据块信息以及数据的可用情况。</p>
 	</dd>
 	<dt>辅助 NameNode</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="secondary NameNodes" data-type="indexterm">&nbsp;</a>尽管名称中带有“Secondary”，但辅助 NameNode 并不是 NameNode 的备用节点。它与 NameNode 协同工作，主要负责定期将文件系统的元数据镜像与编辑日志合并，生成新的检查点。这有助于减少 NameNode 故障恢复时需要处理的编辑日志数量，从而缩短恢复时间。</p>
+	<p>尽管名称中带有“Secondary”，但<a contenteditable="false" data-primary="secondary NameNodes" data-type="indexterm">&nbsp;</a>辅助 NameNode 并不是 NameNode 的备用节点。它与 NameNode 协同工作，主要负责定期将文件系统的元数据镜像与编辑日志合并，生成新的检查点。这有助于减少 NameNode 故障恢复时需要处理的编辑日志数量，从而缩短恢复时间。</p>
 	</dd>
 	<dt>数据块</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="blocks (HDFS)" data-type="indexterm">&nbsp;</a>HDFS 将文件划分为多个数据块进行存储，每个数据块的大小通常为 128 MB。为实现数据冗余，系统通常会将每个数据块的副本分布在三个不同的 DataNode 上。这种基于数据块的存储方式使 HDFS 能够高效处理大文件，并在某个 DataNode 发生故障时，通过其他副本继续提供数据访问。</p>
+	<p>HDFS 将<a contenteditable="false" data-primary="blocks (HDFS)" data-type="indexterm">&nbsp;</a>文件划分为多个数据块进行存储，每个数据块的大小通常为 128 MB。为实现数据冗余，系统通常会将每个数据块的副本分布在三个不同的 DataNode 上。这种基于数据块的存储方式使 HDFS 能够高效处理大文件，并在某个 DataNode 发生故障时，通过其他副本继续提供数据访问。</p>
 	</dd>
 </dl>
 
@@ -624,13 +624,13 @@
 
 <p>这些组件和特性共同构成了一个高度可靠且可扩展的分布式文件系统，使 HDFS 成为 Hadoop 生态系统的核心组成部分。HDFS 的架构能够支持在数千个节点组成的集群中存储和读取海量数据，因此非常适合大数据应用。</p>
 
-<p>HDFS 是 Hadoop 生态系统的重要组成部分，为大数据处理提供关键的存储能力。不过，在评估大数据解决方案时，也应考虑其他平台。Hadoop 生态系统提供了用于管理和处理大型数据集的丰富开源工具，而 AWS 等云平台则提供托管服务，有助于简化系统部署和扩展。接下来，我们将对比 Hadoop 生态系统与 AWS，重点介绍二者的区别、优势及适用场景。<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed-hdfs" data-tertiary="HDFS" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-startref="distributed-system-arch-hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-startref="open-source-distributed-system-arch-hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-startref="hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-startref="hadoop-dist-filesystem" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-startref="filesystem-hdfs" data-type="indexterm">&nbsp;</a></p>
+<p>HDFS 是 Hadoop 生态系统的重要组成部分，为大数据处理提供关键的存储能力。不过，在评估大数据解决方案时，也应考虑其他平台。Hadoop 生态系统提供了用于管理和处理大型数据集的丰富开源工具，而 AWS 等云平台则提供托管服务，有助于简化系统部署和<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed-hdfs" data-tertiary="HDFS" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-startref="distributed-system-arch-hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-startref="open-source-distributed-system-arch-hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-startref="hdfs" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-startref="hadoop-dist-filesystem" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-startref="filesystem-hdfs" data-type="indexterm">&nbsp;</a>扩展。接下来，我们将对比 Hadoop 生态系统与 AWS，重点介绍二者的区别、优势及适用场景。</p>
 </section>
 
 <section data-type="sect3" id="ch08_hadoop_ecosystem_versus_aws_1734552289326940">
 <h3>Hadoop 生态系统与 AWS 的对比</h3>
 
-<p><a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="AWS versus" data-type="indexterm" id="hadoop-aws-compare">&nbsp;</a><a contenteditable="false" data-primary="AWS (Amazon Web Services)" data-secondary="Hadoop ecosystem versus" data-type="indexterm" id="aws-hadoop-compare">&nbsp;</a>Hadoop 生态系统包含一系列工具，用于在大规模计算机集群中进行分布式数据存储和处理。Hadoop 的核心组件包括提供可扩展存储的 HDFS，以及用于大规模数据并行处理的 MapReduce。除此之外，Hadoop 生态系统还涵盖 Hive（用于对大型数据集执行类似 SQL 的查询）、Pig（提供用于数据分析的高级脚本语言）、HBase（用于处理实时数据的 NoSQL 数据库）和 YARN（用于资源管理）等工具。此外，还有用于内存数据处理的 Apache Spark、用于工作流调度的 Oozie，以及用于分布式协调的 ZooKeeper。</p>
+<p>Hadoop 生态系<a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="AWS versus" data-type="indexterm" id="hadoop-aws-compare">&nbsp;</a><a contenteditable="false" data-primary="AWS (Amazon Web Services)" data-secondary="Hadoop ecosystem versus" data-type="indexterm" id="aws-hadoop-compare">&nbsp;</a>统包含一系列工具，用于在大规模计算机集群中进行分布式数据存储和处理。Hadoop 的核心组件包括提供可扩展存储的 HDFS，以及用于大规模数据并行处理的 MapReduce。除此之外，Hadoop 生态系统还涵盖 Hive（用于对大型数据集执行类似 SQL 的查询）、Pig（提供用于数据分析的高级脚本语言）、HBase（用于处理实时数据的 NoSQL 数据库）和 YARN（用于资源管理）等工具。此外，还有用于内存数据处理的 Apache Spark、用于工作流调度的 Oozie，以及用于分布式协调的 ZooKeeper。</p>
 
 <p>AWS 为 Hadoop 生态系统中的许多功能提供了相应的托管服务，有助于减少系统部署和运维工作。例如，Amazon S3 提供可扩展的对象存储，Amazon EMR 支持运行 Hadoop 和 Spark 集群，Amazon Athena 提供交互式查询服务，AWS Glue 则用于数据提取、转换和加载（ETL）。这些服务还提供扩展、成本管理和安全方面的相关能力。表 <a data-type="xref" href="#ch08_table_1_1734552289307598">#ch08_table_1_1734552289307598</a> 对 Hadoop 生态系统中的工具与相关 AWS 服务进行了比较。</p>
 
@@ -816,14 +816,14 @@
 	</tbody>
 </table>
 
-<p>通过上述比较可以看出，与传统 Hadoop 服务相比，AWS 提供了集成度更高、扩展更便捷的相关解决方案，通常还能减少运维工作。我们将在 <a data-type="xref" href="#part2">#part2</a> 中进一步介绍这些 AWS 服务。<a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="AWS versus" data-startref="hadoop-aws-compare" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="AWS (Amazon Web Services)" data-secondary="Hadoop ecosystem versus" data-startref="aws-hadoop-compare" data-type="indexterm">&nbsp;</a></p>
+<p>通过上述比较可以看出，与传统 Hadoop 服务相比，AWS 提供了集成度更高、扩展更便捷的相关解决方案，通常还能减少运维工作。我们将在 <a data-type="xref" href="#part2">#part2</a> 中进一步介绍这些 <a contenteditable="false" data-primary="Hadoop ecosystem" data-secondary="AWS versus" data-startref="hadoop-aws-compare" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="AWS (Amazon Web Services)" data-secondary="Hadoop ecosystem versus" data-startref="aws-hadoop-compare" data-type="indexterm">&nbsp;</a>AWS 服务。</p>
 </section>
 </section>
 
 <section data-type="sect2" id="ch08_apache_kafka_s_distributed_message_queue_1734552289327017">
 <h2>Apache Kafka：分布式消息队列</h2>
 
-<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="Kafka" data-type="indexterm" id="arch-design-distributed-kafka">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="Kafka" data-type="indexterm" id="distributed-system-arch-kafka">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="Kafka" data-type="indexterm" id="open-source-distributed-system-arch-kafka">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-type="indexterm" id="kafka">&nbsp;</a><a contenteditable="false" data-primary="message queues" data-secondary="Kafka" data-type="indexterm" id="message-queue-kafka">&nbsp;</a><a contenteditable="false" data-primary="Apache Kafka" data-see="Kafka" data-type="indexterm">&nbsp;</a>Apache Kafka 是一个开源的分布式事件流平台，能够实时处理海量事件，处理规模可达每天数万亿个事件。作为一种可靠且可扩展的消息系统，Kafka 的处理吞吐量可达到每秒数百万条记录，因此适用于事件驱动架构、实时分析以及复杂的数据管道。Kafka 的主要特性包括：</p>
+<p>Apache Kafka <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="Kafka" data-type="indexterm" id="arch-design-distributed-kafka">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="Kafka" data-type="indexterm" id="distributed-system-arch-kafka">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="Kafka" data-type="indexterm" id="open-source-distributed-system-arch-kafka">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-type="indexterm" id="kafka">&nbsp;</a><a contenteditable="false" data-primary="message queues" data-secondary="Kafka" data-type="indexterm" id="message-queue-kafka">&nbsp;</a><a contenteditable="false" data-primary="Apache Kafka" data-see="Kafka" data-type="indexterm">&nbsp;</a>是一个开源的分布式事件流平台，能够实时处理海量事件，处理规模可达每天数万亿个事件。作为一种可靠且可扩展的消息系统，Kafka 的处理吞吐量可达到每秒数百万条记录，因此适用于事件驱动架构、实时分析以及复杂的数据管道。Kafka 的主要特性包括：</p>
 
 <dl>
 	<dt>可扩展性</dt>
@@ -858,35 +858,35 @@
 <dl>
 	<dt>生产者</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="producers" data-type="indexterm">&nbsp;</a>生产者负责将数据（记录）发布到 Kafka 主题中。生产者将记录发送给 Kafka Broker，由 Broker 在集群内存储数据，并按照复制机制维护数据副本。</p>
+	<p>生产者<a contenteditable="false" data-primary="producers" data-type="indexterm">&nbsp;</a>负责将数据（记录）发布到 Kafka 主题中。生产者将记录发送给 Kafka Broker，由 Broker 在集群内存储数据，并按照复制机制维护数据副本。</p>
 	</dd>
 	<dt>消费者</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="consumers" data-type="indexterm">&nbsp;</a>消费者负责从 Kafka 主题中读取记录。它们可以订阅一个或多个主题，并按照各个分区内记录的存储顺序进行消费。</p>
+	<p>消费者<a contenteditable="false" data-primary="consumers" data-type="indexterm">&nbsp;</a>负责从 Kafka 主题中读取记录。它们可以订阅一个或多个主题，并按照各个分区内记录的存储顺序进行消费。</p>
 	</dd>
 	<dt>Schema Registry</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="Schema Registry" data-type="indexterm">&nbsp;</a>Schema Registry 是一项用于管理 Kafka 生产者和消费者所使用的数据模式（Schema），并根据配置执行模式兼容性检查的服务。它有助于规范数据格式，并在数据结构不断演进的过程中，减少不同版本之间的兼容性问题。</p>
+	<p>Schema Registry <a contenteditable="false" data-primary="Schema Registry" data-type="indexterm">&nbsp;</a>是一项用于管理 Kafka 生产者和消费者所使用的数据模式（Schema），并根据配置执行模式兼容性检查的服务。它有助于规范数据格式，并在数据结构不断演进的过程中，减少不同版本之间的兼容性问题。</p>
 	</dd>
 	<dt>Broker</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="brokers" data-type="indexterm">&nbsp;</a>Kafka Broker 是负责数据持久化存储和副本管理的服务器。每个 Broker 都会存储一个或多个<em>分区</em>的数据。分区是 Kafka 实现横向扩展的基本单位，通过将不同分区分布到多个 Broker 上，Kafka 可以扩展数据存储和处理能力。</p>
+	<p>Kafka Broker <a contenteditable="false" data-primary="brokers" data-type="indexterm">&nbsp;</a>是负责数据持久化存储和副本管理的服务器。每个 Broker 都会存储一个或多个<em>分区</em>的数据。分区是 Kafka 实现横向扩展的基本单位，通过将不同分区分布到多个 Broker 上，Kafka 可以扩展数据存储和处理能力。</p>
 	</dd>
 	<dt>协调器</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="ZooKeeper" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="KRaft (Apache Kafka Raft)" data-type="indexterm">&nbsp;</a>过去，Kafka 使用 ZooKeeper 协调集群中的 Broker，负责分区 Leader 选举、集群配置及元数据管理等工作。此后，Kafka 引入了 <a href="https://oreil.ly/BBg6D">Apache Kafka Raft（KRaft）</a> 机制，取代 ZooKeeper 承担集群元数据管理和一致性协调职责。</p>
+	<p>过去，Kafka 使用 Zo<a contenteditable="false" data-primary="ZooKeeper" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="KRaft (Apache Kafka Raft)" data-type="indexterm">&nbsp;</a>oKeeper 协调集群中的 Broker，负责分区 Leader 选举、集群配置及元数据管理等工作。此后，Kafka 引入了 <a href="https://oreil.ly/BBg6D">Apache Kafka Raft（KRaft）</a> 机制，取代 ZooKeeper 承担集群元数据管理和一致性协调职责。</p>
 	</dd>
 	<dt>主题</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="topics (Kafka)" data-type="indexterm">&nbsp;</a>Kafka 主题（Topic）是用于组织和发布记录的逻辑类别。一个主题可以划分为多个分区，使数据能够分布在不同的 Broker 上。每个分区都包含按顺序排列、写入后不可修改的记录，这些记录会持续追加到分区日志中。</p>
+	<p>Kafka 主题<a contenteditable="false" data-primary="topics (Kafka)" data-type="indexterm">&nbsp;</a>（Topic）是用于组织和发布记录的逻辑类别。一个主题可以划分为多个分区，使数据能够分布在不同的 Broker 上。每个分区都包含按顺序排列、写入后不可修改的记录，这些记录会持续追加到分区日志中。</p>
 	</dd>
 	<dt>分区</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="partitions (Kafka)" data-type="indexterm">&nbsp;</a>Kafka 通过将主题划分为多个分区，支持对主题中的记录进行并行处理。不同分区可以分布在不同的 Broker 上，使 Kafka 能够横向扩展并处理海量数据。分区也是 Kafka 进行数据复制的基本单位，有助于提高数据的持久性和容错能力。</p>
+	<p>Kafka 通过将主题划<a contenteditable="false" data-primary="partitions (Kafka)" data-type="indexterm">&nbsp;</a>分为多个分区，支持对主题中的记录进行并行处理。不同分区可以分布在不同的 Broker 上，使 Kafka 能够横向扩展并处理海量数据。分区也是 Kafka 进行数据复制的基本单位，有助于提高数据的持久性和容错能力。</p>
 	</dd>
 	<dt>键</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="keys" data-secondary="Kafka" data-type="indexterm">&nbsp;</a>在 Kafka 中，记录的键（Key）是决定其目标分区的重要依据。生产者发送记录时，可以为其指定一个键。Kafka 通常使用该键及哈希函数，将记录映射到特定分区。这样，具有相同键的记录通常会被发送到同一分区，从而有助于保持这些记录的顺序。</p>
+	<p>在 Kafka 中，<a contenteditable="false" data-primary="keys" data-secondary="Kafka" data-type="indexterm">&nbsp;</a>记录的键（Key）是决定其目标分区的重要依据。生产者发送记录时，可以为其指定一个键。Kafka 通常使用该键及哈希函数，将记录映射到特定分区。这样，具有相同键的记录通常会被发送到同一分区，从而有助于保持这些记录的顺序。</p>
 	</dd>
 </dl>
 
@@ -898,7 +898,7 @@
 <section data-type="sect3" id="ch08_kafka_s_configuration_levels_1734552289327148">
 <h3>Kafka 的主要配置参数</h3>
 
-<p><a contenteditable="false" data-primary="configuration levels (Kafka)" data-type="indexterm">&nbsp;</a>Kafka 提供多种配置参数，可根据具体需求对系统进行调整和优化：</p>
+<p>Kafka <a contenteditable="false" data-primary="configuration levels (Kafka)" data-type="indexterm">&nbsp;</a>提供多种配置参数，可根据具体需求对系统进行调整和优化：</p>
 
 <dl>
 	<dt>复制因子</dt>
@@ -919,16 +919,16 @@
 	</dd>
 </dl>
 
-<p><a contenteditable="false" data-primary="messaging guarantees (Kafka)" data-type="indexterm" id="message-guarantee">&nbsp;</a>Kafka 提供多种消息投递语义，用于控制消息在分布式系统中的传递方式及其可靠性。这些机制对于维护复杂数据管道中的数据一致性和完整性具有重要意义：</p>
+<p>Kafka 提供多种<a contenteditable="false" data-primary="messaging guarantees (Kafka)" data-type="indexterm" id="message-guarantee">&nbsp;</a>消息投递语义，用于控制消息在分布式系统中的传递方式及其可靠性。这些机制对于维护复杂数据管道中的数据一致性和完整性具有重要意义：</p>
 
 <dl>
 	<dt>最多一次投递</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="at-most-once delivery" data-type="indexterm">&nbsp;</a>在最多一次投递语义下，每条消息最多投递给消费者一次。消息可能丢失，但不会因失败而重新投递。通常需要通过相应的重试、确认和消费位置管理方式来实现这种语义。</p>
+	<p>在最多一次投递语义下，每条消息<a contenteditable="false" data-primary="at-most-once delivery" data-type="indexterm">&nbsp;</a>最多投递给消费者一次。消息可能丢失，但不会因失败而重新投递。通常需要通过相应的重试、确认和消费位置管理方式来实现这种语义。</p>
 	</dd>
 	<dt>至少一次投递</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="at-least-once delivery" data-type="indexterm">&nbsp;</a>在至少一次投递语义下，系统会尝试确保每条消息至少到达消费者一次。即使发生故障，也可以通过重试等机制完成投递，但同一条消息可能被重复投递。这种语义适用于需要尽量避免消息丢失、且应用程序能够处理重复消息的场景。为避免重复消息产生不必要的影响，消费者应在消息处理逻辑中实现幂等性。</p>
+	<p>在至少一次投递语义下，系统会尝试确保每条消息<a contenteditable="false" data-primary="at-least-once delivery" data-type="indexterm">&nbsp;</a>至少到达消费者一次。即使发生故障，也可以通过重试等机制完成投递，但同一条消息可能被重复投递。这种语义适用于需要尽量避免消息丢失、且应用程序能够处理重复消息的场景。为避免重复消息产生不必要的影响，消费者应在消息处理逻辑中实现幂等性。</p>
 
 	<div data-type="note">
 	<p><a contenteditable="false" data-primary="idempotence" data-type="indexterm">&nbsp;</a>如果某个操作执行多次与执行一次产生的结果相同，就称该操作具有<em>幂等性</em>。例如，消费者可以记录已处理的消息 ID，以识别重复消息并避免再次处理。这样可以降低重复消息造成意外副作用的风险，帮助应用程序保持数据完整性。</p>
@@ -936,14 +936,14 @@
 	</dd>
 	<dt>精确一次投递</dt>
 	<dd>
-	<p><a contenteditable="false" data-primary="exactly-once semantics (EOS)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EOS (exactly-once semantics)" data-type="indexterm">&nbsp;</a>Kafka 的精确一次语义（EOS）旨在使每条消息的处理结果只生效一次，即使发生故障，也能够在支持的处理流程中避免重复结果。这一机制依赖幂等生产者和事务 API，使跨多个分区和主题的相关操作能够以原子方式提交。对于金融交易等高度重视数据完整性的应用场景，EOS 尤其有价值。</p>
+	<p>Kafka 的精确一次语义（EOS）旨在使每条消息<a contenteditable="false" data-primary="exactly-once semantics (EOS)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="EOS (exactly-once semantics)" data-type="indexterm">&nbsp;</a>的处理结果只生效一次，即使发生故障，也能够在支持的处理流程中避免重复结果。这一机制依赖幂等生产者和事务 API，使跨多个分区和主题的相关操作能够以原子方式提交。对于金融交易等高度重视数据完整性的应用场景，EOS 尤其有价值。</p>
 	</dd>
 </dl>
 
 <p>Kafka 支持多种消息投递语义，并具备较强的容错能力和可扩展性，因此是构建分布式数据流处理系统的可靠选择。凭借低延迟处理大规模数据流的能力，Kafka 已成为现代分布式系统中的一项基础技术。</p>
 
 <div data-type="note">
-<p><a contenteditable="false" data-primary="Managed Streaming for Apache Kafka (MSK)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="MSK (Managed Streaming for Apache Kafka)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kinesis" data-type="indexterm">&nbsp;</a>AWS 提供 Amazon Managed Streaming for Apache Kafka（Amazon MSK）和 Amazon Kinesis 等用于实时数据流处理的托管服务。Amazon MSK 简化了在 AWS 上部署和运行 Apache Kafka 的工作，而 Amazon Kinesis 则提供用于采集、处理和分析流数据的服务。这两类服务都有助于构建可扩展、可靠的数据流处理系统。我们将在 <a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a> 中进一步介绍。</p>
+<p>AWS 提供 A<a contenteditable="false" data-primary="Managed Streaming for Apache Kafka (MSK)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="MSK (Managed Streaming for Apache Kafka)" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kinesis" data-type="indexterm">&nbsp;</a>mazon Managed Streaming for Apache Kafka（Amazon MSK）和 Amazon Kinesis 等用于实时数据流处理的托管服务。Amazon MSK 简化了在 AWS 上部署和运行 Apache Kafka 的工作，而 Amazon Kinesis 则提供用于采集、处理和分析流数据的服务。这两类服务都有助于构建可扩展、可靠的数据流处理系统。我们将在 <a data-type="xref" href="#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">#ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018</a> 中进一步介绍。</p>
 </div>
 </section>
 </section>
@@ -951,7 +951,7 @@
 <section data-type="sect2" id="ch08_comparing_hdfs_and_kafka_1734552289327212">
 <h2>HDFS 与 Kafka 的比较</h2>
 
-<p><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="HDFS" data-type="indexterm" id="arch-design-distributed-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-type="indexterm" id="distributed-system-arch-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-type="indexterm" id="open-source-distributed-system-arch-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-type="indexterm" id="hdfs2">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-type="indexterm" id="hadoop-dist-filesystem2">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-type="indexterm" id="filesystem-hdfs2">&nbsp;</a>HDFS 和 Kafka 都能够高效处理大规模数据，但两者的设计目标和用途有所不同。表 <a data-type="xref" href="#ch08_table_2_1734552289307636">#ch08_table_2_1734552289307636</a> 对它们的主要特性进行了比较。</p>
+<p>HDFS 和 Kafka <a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-tertiary="HDFS" data-type="indexterm" id="arch-design-distributed-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="HDFS" data-type="indexterm" id="distributed-system-arch-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="HDFS" data-type="indexterm" id="open-source-distributed-system-arch-hdfs2">&nbsp;</a><a contenteditable="false" data-primary="HDFS (Hadoop Distributed File System)" data-type="indexterm" id="hdfs2">&nbsp;</a><a contenteditable="false" data-primary="Hadoop Distributed File System (HDFS)" data-type="indexterm" id="hadoop-dist-filesystem2">&nbsp;</a><a contenteditable="false" data-primary="filesystems" data-secondary="HDFS" data-type="indexterm" id="filesystem-hdfs2">&nbsp;</a>都能够高效处理大规模数据，但两者的设计目标和用途有所不同。表 <a data-type="xref" href="#ch08_table_2_1734552289307636">#ch08_table_2_1734552289307636</a> 对它们的主要特性进行了比较。</p>
 
 <table id="ch08_table_2_1734552289307636">
 	<caption>HDFS 与 Kafka 对比</caption>
@@ -1032,7 +1032,7 @@
 	</tbody>
 </table>
 
-<p>HDFS 和 Kafka 都是分布式系统中重要的开源技术，但各自适用于不同的需求。HDFS 更适合需要大规模数据存储和批量处理的应用，而 Kafka 则适合需要实时数据流处理和消息传递能力的应用。选择 HDFS 还是 Kafka，应根据组织在数据存储、管理和处理方面的具体需求来决定。<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed-kafka" data-tertiary="Kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="Kafka" data-startref="distributed-system-arch-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="Kafka" data-startref="open-source-distributed-system-arch-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-startref="kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="message queues" data-secondary="Kafka" data-startref="message-queue-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-startref="distributed-system-arch" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-startref="open-source-distributed-system-arch" data-type="indexterm">&nbsp;</a></p>
+<p>HDFS 和 Kafka 都是分布式系统中重要的开源技术，但各自适用于不同的需求。HDFS 更适合需要大规模数据存储和批量处理的应用，而 Kafka 则适合需要实时数据流处理和消息传递能力的应用。选择 HDFS 还是 Kafka，应根据组织在数据存储、管理和<a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed-kafka" data-tertiary="Kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-secondary="Kafka" data-startref="distributed-system-arch-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-secondary="Kafka" data-startref="open-source-distributed-system-arch-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="Kafka" data-startref="kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="message queues" data-secondary="Kafka" data-startref="message-queue-kafka" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="architectural designs and patterns" data-secondary="distributed systems" data-startref="arch-design-distributed" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="distributed systems" data-startref="distributed-system-arch" data-type="indexterm">&nbsp;</a><a contenteditable="false" data-primary="open source distributed systems architecture" data-startref="open-source-distributed-system-arch" data-type="indexterm">&nbsp;</a>处理方面的具体需求来决定。</p>
 </section>
 </section>
 
