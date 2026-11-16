@@ -57,37 +57,37 @@
           <dl>
             <dt>固态硬盘（SSD）</dt>
             <dd>
-              <p>包括<a contenteditable="false" data-type="indexterm" data-primary="solid-state drives (SSDs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SSDs (solid-state drives)">&nbsp;</a>通用型 SSD 和预置 IOPS SSD 在内的此类卷类型，针对事务性工作负载进行了优化。其主要性能指标为小 I/O 规模。</p>
+              <p>此类卷包括<a contenteditable="false" data-type="indexterm" data-primary="solid-state drives (SSDs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SSDs (solid-state drives)">&nbsp;</a>通用型 SSD 和预置 IOPS SSD，针对事务性工作负载进行了优化，适合处理单次读写数据量较小的 I/O 请求。</p>
             </dd>
             <dt>硬盘驱动器（HDD）</dt>
             <dd>
-              <p>包括<a contenteditable="false" data-type="indexterm" data-primary="hard disk drives (HDDs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="HDDs (hard disk drives)">&nbsp;</a>吞吐量优化型 HDD 和冷存储 HDD 在内的此类卷类型，针对大型流式工作负载进行了优化。其主要性能指标为吞吐量。</p>
+              <p>此类卷包括<a contenteditable="false" data-type="indexterm" data-primary="hard disk drives (HDDs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="HDDs (hard disk drives)">&nbsp;</a>吞吐量优化型 HDD 和冷存储 HDD，针对大规模流式工作负载进行了优化，主要以吞吐量衡量其性能。</p>
             </dd>
             <dt>磁性磁盘</dt>
             <dd>
-              <p>此类<a contenteditable="false" data-type="indexterm" data-primary="magnetic disks">&nbsp;</a>卷类型主要适用于性能要求不高的小型工作负载，例如对存储磁盘进行低频数据访问。</p>
+              <p>此类<a contenteditable="false" data-type="indexterm" data-primary="magnetic disks">&nbsp;</a>卷主要适用于对性能要求不高的小型工作负载，例如需要低频访问磁盘数据的场景。</p>
             </dd>
           </dl>
-          <p>以下是关于 EBS 卷的几个重要注意事项：</p>
+          <p>使用 EBS 卷时，需要注意以下几点：</p>
           <ul>
             <li>
-              <p>一个 EC2 实例可以挂载多个 EBS 卷。</p>
+              <p>一个 EC2 实例可以同时挂载多个 EBS 卷。</p>
             </li>
             <li>
-              <p>EBS 卷的作用范围在可用区（AZ）级别。us-east-1a 中的 EBS 卷无法挂载到 us-east-1b 中的 EC2 实例。我们可以为 EBS 卷创建时间点快照（备份），以实现跨可用区或跨区域的复制并确保高可用性。</p>
+              <p>EBS 卷仅能挂载到同一可用区（AZ）内的 EC2 实例。例如，位于 us-east-1a 的 EBS 卷无法挂载到 us-east-1b 的 EC2 实例。通过创建 EBS 卷的时间点快照（备份），可以在其他可用区或区域恢复数据，为跨可用区或跨区域的高可用性及灾难恢复方案提供支持。</p>
             </li>
             <li>
-              <p>EBS 卷最初作为非共享块存储推出，即一个 EBS 卷无法在多个 EC2 实例间共享。AWS 推出了 <a href="https://oreil.ly/sup6p">EBS 多重挂载功能</a>，允许用户将一个预置 IOPS SSD 卷挂载到同一可用区内最多 16 个 <a href="https://oreil.ly/Yj49e">Nitro 架构 EC2</a> 实例，适用于 Linux <span class='keep-together'>应用程序</span>。</p>
+              <p>EBS 卷最初不支持在多个 EC2 实例之间共享。后来，AWS 推出了 <a href="https://oreil.ly/sup6p">EBS 多重挂载（Multi-Attach）功能</a>，允许将一个预置 IOPS SSD 卷同时挂载到同一可用区内最多 16 个 <a href="https://oreil.ly/Yj49e">基于 Nitro 系统的 EC2</a> 实例，供 Linux <span class='keep-together'>应用程序</span>使用。</p>
             </li>
             <li>
-              <p>EBS 卷在可用区内自动复制，以防止数据丢失。</p>
+              <p>EBS 卷会在可用区内自动复制，以降低单个硬件组件故障造成数据丢失的风险。</p>
             </li>
           </ul>
-          <p>EBS 卷存在一定局限性，例如作用范围限于可用区级别，以及无法在 EC2 实例间共享数据。AWS 提供了另一种存储解决方案 Amazon EFS，以克服这些<a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="EBS (Elastic Block Store)" data-startref="cloud-storage-ebs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic Block Store (EBS)" data-startref="elastic-block-store-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EBS (Elastic Block Store)" data-startref="ebs-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="block-based storage" data-startref="block-storage-ch10">&nbsp;</a>局限性。</p>
+          <p>EBS 卷存在一些限制，例如卷的挂载受可用区约束，而跨 EC2 实例共享也受到限制。对于需要跨实例共享文件的场景，AWS 提供了另一种存储方案——Amazon EFS。<a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="EBS (Elastic Block Store)" data-startref="cloud-storage-ebs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic Block Store (EBS)" data-startref="elastic-block-store-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EBS (Elastic Block Store)" data-startref="ebs-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="block-based storage" data-startref="block-storage-ch10">&nbsp;</a></p>
         </section>
         <section data-type="sect2" id="ch10_amazon_elastic_file_system_1734552290475356">
           <h2>亚马逊弹性文件系统</h2>
-          <p><a href="https://oreil.ly/6Fmlc">EFS</a> 是一种共享文件系统，<a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="EFS (Elastic File System)" id="cloud-storage-efs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic File System (EFS)" id="elastic-file-system-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EFS (Elastic File System)" id="efs-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="file-based storage" id="file-storage-ch10">&nbsp;</a>允许在某个区域内的多台服务器或本地数据中心之间共享存储。EFS 是一种完全托管的无服务器解决方案，支持所有 AWS 计算平台，如 Amazon EC2、Amazon ECS 和 AWS Lambda。无需预先配置存储空间，定价根据应用程序实际使用的存储空间计算。</p>
+          <p><a href="https://oreil.ly/6Fmlc">EFS</a> 是一种共享文件系统，<a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="EFS (Elastic File System)" id="cloud-storage-efs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic File System (EFS)" id="elastic-file-system-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EFS (Elastic File System)" id="efs-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="file-based storage" id="file-storage-ch10">&nbsp;</a>支持同一 AWS 区域内的多台服务器以及本地数据中心的服务器共享文件数据。EFS 是一项完全托管的无服务器存储服务，可与 Amazon EC2、Amazon ECS 和 AWS Lambda 等 AWS 计算服务配合使用。用户无需预先分配存储容量，存储费用主要根据实际使用量计算。</p>
           <p>Amazon EFS 通常用于企业级业务场景，如大数据分析、机器学习工作负载和内容管理。EFS 和 EBS 存储解决方案均提供低延迟的数据访问，但整体性能受延迟、吞吐量和 IOPS 等多种因素影响。</p>
           <p>EFS 提供多种存储类。您可以根据业务需求选择最合适的<a contenteditable="false" data-type="indexterm" data-primary="storage classes" data-secondary="EFS">&nbsp;</a>存储类：</p>
           <dl>
