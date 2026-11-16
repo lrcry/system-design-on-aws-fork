@@ -1051,3 +1051,13 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | write-around | 绕写（Write-Around，即绕过缓存写入） | Explicit descriptive explanation at first mention. |
 | slab class | slab 类别 | P103–P104 terminology pending author technical confirmation. |
 | append-only file (AOF) | 仅追加文件（AOF） | Distinguish from generic write-ahead logging (WAL). |
+
+## Chapter 10 translation-review clarifications (2026-11-16)
+
+These working decisions supplement the cross-chapter glossary. Final consistency review of Chapters 06, 08, 10 and the rest of the book is still required.
+
+| Term (EN) | Working Chinese | Notes and sources |
+|---|---|---|
+| OS boot volume | 操作系统启动卷 | Chapter 10 P18 approved. “引导卷” is an alternative seen in OS/Windows literature. AWS uses “根卷” for EC2 *root volume* and “根（启动）卷” in its EBS modification guide; distinguish overlapping but not necessarily identical terms. [AWS root volumes](https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/UserGuide/RootDeviceStorage.html), [AWS volume modification](https://docs.aws.amazon.com/zh_cn/ebs/latest/userguide/requesting-ebs-volume-modifications.html). |
+| root volume (EC2) | 根卷 | AWS official Chinese EC2 term; use where English explicitly says *root volume*. [AWS EC2](https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/UserGuide/RootDeviceStorage.html). |
+| network-attached block storage (EBS) | 网络连接的块存储 | P19: EBS is network-attached block storage. Do not conflate with EFS shared file storage or use NAS as an unqualified synonym. [AWS Launch Wizard](https://docs.aws.amazon.com/pdfs/launchwizard/latest/userguide/launch-wizard-user-guide.pdf). |
