@@ -1,31 +1,31 @@
 <section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch10_aws_storage_services_1734552290474903">
       <h1>AWS 存储服务</h1>
-      <p><a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892" data-xrefstyle="select:labelnumber">#ch02_storage_types_and_relational_stores_1734552286519892</a> 和 <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587" data-xrefstyle="select:labelnumber">#ch03_nonrelational_stores_1734552286860587</a> 介绍了多种存储类型与解决方案。本章将探讨 <a href="https://oreil.ly/a1A_9">AWS 特有的存储服务</a>，这些服务对应市场上不同类型的存储解决方案。我们将从块存储等传统存储服务入手，然后介绍用于存储数据的各类数据库，并结合业务和技术需求加以说明。</p>
-      <p>回顾 <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a> 中 Cafe Delhi Heights 的案例——这家连锁餐厅正在开展线上业务，让顾客能够浏览餐品并在线下单。为提供最佳的客户体验和线上外卖服务，Cafe Delhi Heights 将把餐厅图片、菜单、营销活动信息等数据存储在 AWS 存储服务上。Cafe Delhi Heights 委托我们完成这项工作，因此让我们明确其存储需求，并选择最合适的 AWS 存储方案。我们需要能够：</p>
+      <p><a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892" data-xrefstyle="select:labelnumber">#ch02_storage_types_and_relational_stores_1734552286519892</a> 和 <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587" data-xrefstyle="select:labelnumber">#ch03_nonrelational_stores_1734552286860587</a> 介绍了多种存储类型与解决方案。本章将介绍 <a href="https://oreil.ly/a1A_9">AWS 提供的各类存储服务</a>，以及它们与市场上不同存储解决方案的对应关系。我们将从块存储等传统存储服务入手，再介绍不同类型的数据库，并结合业务需求和技术需求探讨如何选择合适的解决方案。</p>
+      <p>回顾 <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a> 介绍的 Cafe Delhi Heights 案例。这家连锁餐厅正准备拓展线上业务，让顾客能够浏览餐品并在线下单。为提供良好的客户体验并支持线上餐饮配送服务，Cafe Delhi Heights 计划使用 AWS 存储服务来保存餐厅图片、菜单、营销活动信息等数据。Cafe Delhi Heights 已委托我们完成这项工作。接下来，我们需要明确其存储需求，并选择最合适的 AWS 存储方案。具体来说，我们需要能够：</p>
       <ul>
         <li>
-          <p>存储顾客的个人资料及访问凭证，如用户名和密码</p>
+          <p>存储顾客的个人资料和登录凭证，例如用户名和密码</p>
         </li>
         <li>
-          <p>存储食品信息，如可用菜单项</p>
+          <p>存储餐品信息，例如当前供应的菜单项</p>
         </li>
         <li>
-          <p>存储各类媒体文件，如餐品图片及顾客上传的评价</p>
+          <p>存储各类媒体内容，例如餐品图片和顾客上传的评价</p>
         </li>
         <li>
-          <p>进行大数据分析以改善客户体验，例如区分好评与差评</p>
+          <p>通过大数据分析改善客户体验，例如区分正面评价和负面评价</p>
         </li>
         <li>
-          <p>创建美食社区，让人们在社交圈中互动</p>
+          <p>建立美食社区，让用户能够在社交圈中交流互动</p>
         </li>
         <li>
-          <p>根据多种标识符搜索餐品，如名称、餐厅位置和评分</p>
+          <p>根据名称、餐厅位置、评分等多个条件搜索餐品</p>
         </li>
         <li>
-          <p>在 90 天后归档应用程序日志和指标，并保留一年</p>
+          <p>在应用程序日志和指标产生 90 天后将其归档，并保留一年</p>
         </li>
       </ul>
-      <p>AWS 存储服务让客户能够存储、保护和分析数据，而无需担忧任何运维开销。我们将在两个主要部分讨论存储服务：云存储和数据库。我们将先从云存储入手，了解块存储、文件存储和对象存储服务。</p>
+      <p>AWS 存储服务使客户能够存储、保护和分析数据，同时减少相关的运维负担。本章将分为两大部分：云存储和数据库。首先，我们将介绍云存储，包括块存储、文件存储和对象存储服务。</p>
       <section data-type="sect1" id="ch10_cloud_storage_on_aws_1734552290475193">
         <h1>AWS 云存储</h1>
         <p>AWS <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="cloud storage services" id="aws-cloud-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" id="cloud-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data storage systems" data-secondary="cloud storage services (AWS)" id="data-storage-cloud">&nbsp;</a>提供多种云存储选项：亚马逊弹性块存储（Amazon EBS）作为块存储服务、亚马逊弹性文件系统（Amazon EFS）作为文件存储服务，以及亚马逊简单存储服务（Amazon S3）作为对象存储服务。我们在 <a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a> 中已经讨论了这些存储选项的通用概念。在本节中，我们将了解 AWS 为支持这些解决方案所提供的服务。每项服务针对特定的存储需求，因此我们将在以下各节中分别介绍它们各自的优势。</p>
