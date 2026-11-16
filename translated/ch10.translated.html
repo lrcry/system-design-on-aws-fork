@@ -88,36 +88,36 @@
         <section data-type="sect2" id="ch10_amazon_elastic_file_system_1734552290475356">
           <h2>亚马逊弹性文件系统</h2>
           <p><a href="https://oreil.ly/6Fmlc">EFS</a> 是一种共享文件系统，<a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="EFS (Elastic File System)" id="cloud-storage-efs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic File System (EFS)" id="elastic-file-system-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EFS (Elastic File System)" id="efs-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="file-based storage" id="file-storage-ch10">&nbsp;</a>支持同一 AWS 区域内的多台服务器以及本地数据中心的服务器共享文件数据。EFS 是一项完全托管的无服务器存储服务，可与 Amazon EC2、Amazon ECS 和 AWS Lambda 等 AWS 计算服务配合使用。用户无需预先分配存储容量，存储费用主要根据实际使用量计算。</p>
-          <p>Amazon EFS 通常用于企业级业务场景，如大数据分析、机器学习工作负载和内容管理。EFS 和 EBS 存储解决方案均提供低延迟的数据访问，但整体性能受延迟、吞吐量和 IOPS 等多种因素影响。</p>
-          <p>EFS 提供多种存储类。您可以根据业务需求选择最合适的<a contenteditable="false" data-type="indexterm" data-primary="storage classes" data-secondary="EFS">&nbsp;</a>存储类：</p>
+          <p>Amazon EFS 通常用于大数据分析、机器学习和内容管理等业务场景。EFS 和 EBS 都能提供低延迟的数据访问，但实际性能还取决于延迟、吞吐量和每秒 I/O 操作次数（IOPS）等因素。</p>
+          <p>EFS 提供多种存储类别，可根据业务需求选择合适的<a contenteditable="false" data-type="indexterm" data-primary="storage classes" data-secondary="EFS">&nbsp;</a>存储类别：</p>
           <dl>
             <dt>EFS 标准版和标准低频访问版（Standard IA）</dt>
             <dd>
-              <p>两种存储类均在 AWS 区域的各可用区之间提供最高级别的可用性。EFS 标准版适用于需要频繁访问数据的场景，而标准低频访问版则更适合低频数据访问，是一种经济高效的选择。低频访问（IA）存储类的首字节读写延迟较高。</p>
+              <p>这两种存储类别均支持跨 AWS 区域内多个可用区的高可用性。EFS Standard 适用于频繁访问数据的场景，而 Standard Infrequent Access（Standard IA）则更适合低频访问数据的场景，有助于降低存储成本。不过，IA 存储类别的首字节读取和写入延迟相对较高。</p>
             </dd>
             <dt>EFS 单区版和单区低频访问版（One Zone IA）</dt>
             <dd>
-              <p>单区存储类与标准存储类在可用性和成本方面有所不同。单区版在单个可用区内提供高可用性，而标准版则跨区域内的多个可用区。因此，单区版相对较便宜。可借助 AWS Backup 跨三个可用区复制数据，进一步提高数据持久性。</p>
+              <p>EFS One Zone 与区域级 EFS 存储方案在可用性和成本方面有所不同。One Zone 将文件系统数据存储在单个可用区内，而区域级方案则跨多个可用区存储数据。因此，One Zone 的成本通常较低，但无法抵御整个可用区发生故障的风险。可以使用 AWS Backup 备份 One Zone 文件系统的数据，以增强数据保护能力。</p>
             </dd>
           </dl>
-          <p>云对于托管业务应用程序而言仍是相对较新的技术，在某些场景下仍需依赖其他文件系统，例如 Windows 文件服务器。针对此类场景，AWS 提供了一种托管服务：<a href="https://oreil.ly/ldVSO">亚马逊 FSx</a>，它无需任何运维开销即可自动扩展。您可以利用 FSx 运行流行的开源和商业授权文件系统，无需担心维护或硬件设置。根据使用场景，您可以选择以下两种 FSx 变体：</p>
+          <p>在托管企业业务应用程序方面，云仍是一项相对较新的技术，因此有些场景仍依赖 Windows 文件服务器等其他文件系统。针对这些场景，AWS 提供了托管服务 <a href="https://oreil.ly/ldVSO">Amazon FSx</a>，可自动扩展，并减轻运维负担。借助 FSx，可以运行常见的开源和商业授权文件系统，而无需自行负责底层硬件的维护和配置。以下介绍其中两种 FSx 类型：</p>
           <dl>
             <dt>
               <p><a href="https://oreil.ly/fW9na"><em>FSx for Windows File Server</em>
               </a></p>
             </dt>
             <dd>
-              <p>此选项<a contenteditable="false" data-type="indexterm" data-primary="FSx for Windows File Server">&nbsp;</a>基于 Windows Server 构建，可通过服务器消息块（SMB）协议从 Windows、Linux 或 macOS 访问，支持数据去重、终端用户文件存储以及 Microsoft Active Directory（AD）集成等使用场景。</p>
+              <p>FSx for Windows File Server <a contenteditable="false" data-type="indexterm" data-primary="FSx for Windows File Server">&nbsp;</a>基于 Windows Server 构建，支持 Windows、Linux 和 macOS 系统通过服务器消息块（SMB）协议访问。它支持数据去重、终端用户文件共享，以及与 Microsoft Active Directory（AD）集成等功能。</p>
             </dd>
             <dt>
               <p><a href="https://oreil.ly/_BuxA"><em>FSx for Lustre</em>
               </a></p>
             </dt>
             <dd>
-              <p>此选项<a contenteditable="false" data-type="indexterm" data-primary="FSx for Lustre">&nbsp;</a>基于流行的高性能文件系统 <a href="https://lustre.org">Lustre</a> 构建，适用于计算密集型工作负载，如机器学习、高性能计算和视频渲染。它还可以与 Amazon S3 关联，支持同时通过文件系统和 S3 API 访问和处理数据。</p>
+              <p>FSx for Lustre <a contenteditable="false" data-type="indexterm" data-primary="FSx for Lustre">&nbsp;</a>基于高性能文件系统 <a href="https://lustre.org">Lustre</a> 构建，适用于机器学习、高性能计算和视频渲染等计算密集型工作负载。它还可以与 Amazon S3 集成，使用户能够通过文件系统接口和 S3 API 访问与处理相关数据。</p>
             </dd>
           </dl>
-          <p>请注意，访问 EBS 和 EFS 存储服务中的数据需要服务器。S3 是 AWS 提供的一种无限容量存储解决方案，允许用户通过公共互联网或 AWS 私有网络直接访问文件，无需中间服务器。<a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="EFS (Elastic File System)" data-startref="cloud-storage-efs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic File System (EFS)" data-startref="elastic-file-system-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EFS (Elastic File System)" data-startref="efs-ch10">&nbsp;</a></p>
+          <p>需要注意的是，EBS 和 EFS 通常需要通过计算实例或客户端来访问其中的数据。相比之下，Amazon S3 是 AWS 提供的可扩展对象存储服务，用户可以通过公共互联网或 AWS 私有网络，直接使用 S3 API 访问对象，而无需额外部署中间文件服务器。<a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="EFS (Elastic File System)" data-startref="cloud-storage-efs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Elastic File System (EFS)" data-startref="elastic-file-system-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="EFS (Elastic File System)" data-startref="efs-ch10">&nbsp;</a></p>
         </section>
         <section data-type="sect2" id="ch10_amazon_simple_storage_service_1734552290475435">
           <h2>亚马逊简单存储服务</h2>
