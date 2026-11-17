@@ -1070,3 +1070,8 @@ These working decisions supplement the cross-chapter glossary. Final consistency
 | S3 Lifecycle transition | 存储类别转换操作 | CH10 P59. Distinguish transition from expiration. |
 | S3 Lifecycle expiration | 对象的过期操作 | CH10 P60. With versioning, expiry can create a delete marker; author TBC. |
 | minimum storage duration charge | 最短计费存储时长 | CH10 P56–P57. Early deletion or transition may still incur a minimum-duration storage charge. |
+| S3 Intelligent-Tiering | S3 智能分层（Intelligent-Tiering） | CH10 P61; AWS storage class that automatically shifts objects between **访问层** (access tiers) within the same storage class. At first mention include English in parentheses. Launched in 2018. |
+| Intelligent-Tiering access tier | 访问层 | CH10 P61–P64; distinguish from **存储类别** (*storage class*). Examples: 频繁访问层, 低频访问层, 归档即时访问层, 归档访问层, 深度归档访问层. |
+| S3 Object Lock | 对象锁定（Object Lock） | CH10 P68; protects specific object versions with retention settings or legal holds. |
+| legal hold (S3) | 法律保留（Legal Hold） | CH10 P68; retained in original `<em>` span as 法律保留 with English parenthetical outside emphasis. Persists until released. |
+| SSE-S3 / SSE-KMS | SSE-S3 / SSE-KMS | CH10 P67; distinguish S3-managed keys from AWS KMS keys for server-side encryption. |
