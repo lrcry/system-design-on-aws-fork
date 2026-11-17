@@ -121,39 +121,39 @@
         </section>
         <section data-type="sect2" id="ch10_amazon_simple_storage_service_1734552290475435">
           <h2>亚马逊简单存储服务</h2>
-          <p>AWS <a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="S3 (Simple Storage Service)" id="cloud-storage-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Simple Storage Service (S3)" id="simple-storage-service-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="S3 (Simple Storage Service)" id="s3-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="object-based storage" id="object-storage-ch10">&nbsp;</a>提供 Amazon S3 作为无限容量的对象存储解决方案。您可以使用 S3 存储和保护各种使用场景下的数据，如网站、媒体存储、备份和大数据分析。S3 将对象存储在称为<em>存储桶</em>的容器中。以下是帮助您深入了解如何使用 S3 的几个关键概念：</p>
+          <p>AWS <a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="S3 (Simple Storage Service)" id="cloud-storage-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Simple Storage Service (S3)" id="simple-storage-service-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="S3 (Simple Storage Service)" id="s3-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="object-based storage" id="object-storage-ch10">&nbsp;</a>提供的 Amazon S3 是一种高度可扩展的对象存储服务，适用于网站、媒体文件存储、备份和大数据分析等多种场景，可用于存储和保护数据。S3 将对象存放在称为<em>存储桶</em>（bucket）的容器中。下面介绍使用 S3 时需要了解的几个关键概念：</p>
           <dl>
             <dt>存储桶</dt>
             <dd>
-              <p>存储桶<a contenteditable="false" data-type="indexterm" data-primary="buckets">&nbsp;</a>是以唯一名称标识的容器。创建存储桶时需要指定存储桶名称和 AWS 区域，以及其他选项，如版本控制支持。</p>
+              <p>存储桶<a contenteditable="false" data-type="indexterm" data-primary="buckets">&nbsp;</a>是通过唯一名称标识的容器。创建存储桶时，需要指定名称和 AWS 区域，还可以配置版本控制等选项。</p>
             </dd>
             <dt>对象</dt>
             <dd>
-              <p>对象<a contenteditable="false" data-type="indexterm" data-primary="objects (S3)">&nbsp;</a>是上传到存储桶的文件，由在存储桶内唯一的键名标识。存储桶中的对象恰好有一个键作为标识符。</p>
+              <p>对象<a contenteditable="false" data-type="indexterm" data-primary="objects (S3)">&nbsp;</a>是存储在存储桶中的数据单元，通常由上传的文件形成。每个对象都有一个键名（key），用于在存储桶内标识该对象。</p>
             </dd>
             <dt>版本控制</dt>
             <dd>
-              <p>S3 允许您<a contenteditable="false" data-type="indexterm" data-primary="versioning">&nbsp;</a>存储同一对象的多个版本。这使用户可以访问任意版本的对象，在应用程序故障等场景中非常有用。每个版本的对象都关联有唯一的版本 ID。</p>
+              <p>S3 版本控制功能允许<a contenteditable="false" data-type="indexterm" data-primary="versioning">&nbsp;</a>保留同一对象的多个版本，使用户能够访问和恢复以前的版本，在应用程序故障或意外修改数据等情况下尤其有用。每个对象版本都有对应的版本 ID。</p>
             </dd>
           </dl>
           <section data-type="sect3" id="ch10_amazon_s3_storage_classes_1734552290475530">
             <h3>S3 存储类</h3>
-            <p>不同<a contenteditable="false" data-type="indexterm" data-primary="storage classes" data-secondary="S3" id="storage-class-s3">&nbsp;</a>使用场景下的数据存储模式各不相同，因此 S3 提供了多种存储类。您可以根据业务需求选择存储类，例如：是否需要频繁访问数据，还是需要数据归档存储？</p>
-            <p>识别业务使用场景，选择最合适的 <a href="https://oreil.ly/i3Qco">S3 存储类</a>，是以最低成本充分利用 S3 的关键。S3 根据对象的访问类型和冗余度提供三种存储类。</p>
+            <p>不同<a contenteditable="false" data-type="indexterm" data-primary="storage classes" data-secondary="S3" id="storage-class-s3">&nbsp;</a>业务场景对数据存储和访问方式的要求各不相同，因此 S3 提供了多种存储类别。可以根据业务需求选择合适的存储类别，例如考虑数据是否需要频繁访问，或者是否需要长期归档。</p>
+            <p>要以尽可能低的成本充分利用 S3，关键在于明确业务需求，并选择最合适的 <a href="https://oreil.ly/i3Qco">S3 存储类别</a>。下面将根据对象的访问方式和冗余需求，介绍三种存储类别。</p>
             <section data-type="sect4" id="ch10_frequently_accessed_objects_1734552290475613">
               <h4>频繁访问对象</h4>
-              <p>频繁访问对象的<a contenteditable="false" data-type="indexterm" data-primary="frequently accessed objects storage class">&nbsp;</a>存储类适用于对延迟敏感（毫秒级）的场景。根据所需冗余支持，有两个子类：</p>
+              <p>面向频繁访问对象的<a contenteditable="false" data-type="indexterm" data-primary="frequently accessed objects storage class">&nbsp;</a>存储类别适用于对访问延迟敏感、需要毫秒级响应的场景。根据所需的数据冗余程度，可分为以下两种：</p>
               <dl>
                 <dt>S3 标准版</dt>
                 <dd>
-                  <p>创建存储桶时的默认存储类</p>
+                  <p>新上传对象的默认存储类别</p>
                 </dd>
                 <dt>低冗余存储</dt>
                 <dd>
-                  <p>可用于非关键性场景，冗余度低于 S3 标准版</p>
+                  <p>适用于非关键性数据的存储场景，其冗余程度低于 S3 Standard</p>
                 </dd>
               </dl>
-              <p>AWS 推荐使用 S3 标准存储类而非低冗余存储，因为前者更具成本效益。</p>
+              <p>AWS 建议优先选择 S3 Standard，而不是低冗余存储（Reduced Redundancy Storage），因为前者的成本效益更高。</p>
             </section>
             <section data-type="sect4" id="ch10_infrequently_accessed_objects_1734552290475677">
               <h4>低频访问对象</h4>
