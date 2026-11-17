@@ -203,43 +203,43 @@
             </section>
             <section data-type="sect4" id="ch10_intelligent_tiering_1734552290475871">
               <h4>智能分层</h4>
-              <p>S3 <a contenteditable="false" data-type="indexterm" data-primary="intelligent tiering">&nbsp;</a>可选择性地提供智能分层支持，数据将自动在不同存储类之间迁移，无需任何运维开销。以下是对象被移至不同存储类所遵循的生命周期：</p>
+              <p>S3 <a contenteditable="false" data-type="indexterm" data-primary="intelligent tiering">&nbsp;</a>提供智能分层（Intelligent-Tiering）功能，可根据对象的访问模式，自动将其转移到不同的访问层，从而减少存储管理的运维工作。下面介绍对象在各访问层之间自动转换的过程：</p>
               <dl>
                 <dt>频繁访问</dt>
                 <dd>
-                  <p>上传或转移到 S3 智能分层的对象存储在频繁访问层。</p>
+                  <p>新上传或转换到 S3 Intelligent-Tiering 存储类别的对象，最初都会进入频繁访问层。</p>
                 </dd>
                 <dt>低频访问</dt>
                 <dd>
-                  <p>连续 30 天未被访问的对象将移至低频访问层。</p>
+                  <p>如果对象连续 30 天未被访问，S3 会自动将其转移到低频访问层。</p>
                 </dd>
                 <dt>归档即时访问</dt>
                 <dd>
-                  <p>连续 90 天未被访问的对象将移至归档即时访问层。S3 根据数据访问的时间周期提供两个可选的归档访问层。如果启用，连续至少 90 天未被访问的数据将移至归档访问层，连续至少 180 天未被访问的数据则移至深度归档访问层。</p>
+                  <p>如果对象连续 90 天未被访问，S3 会自动将其转移到归档即时访问层。此外，S3 还提供两个可选的归档访问层。启用相应选项后，连续至少 90 天未被访问的对象可转移到归档访问层，而连续至少 180 天未被访问的对象可转移到深度归档访问层。</p>
                 </dd>
               </dl>
-              <p>存储类根据访问模式或所需冗余支持将数据存储到 S3。在将对象存储到 S3 时，还需要考虑另一个因素——数据安全。<a contenteditable="false" data-type="indexterm" data-primary="storage classes" data-secondary="S3" data-startref="storage-class-s3">&nbsp;</a></p>
+              <p>选择 S3 存储类别时，需要考虑数据的访问模式和冗余需求。除此之外，在 S3 中存储对象时，数据安全也是一个重要的考虑因素。<a contenteditable="false" data-type="indexterm" data-primary="storage classes" data-secondary="S3" data-startref="storage-class-s3">&nbsp;</a></p>
             </section>
           </section>
           <section data-type="sect3" id="ch10_amazon_s3_data_security_1734552290475936">
             <h3>Amazon S3 数据安全</h3>
-            <p>S3 存储桶中的对象<a contenteditable="false" data-type="indexterm" data-primary="data security (S3)" id="data-security-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="security" data-secondary="S3" id="security-s3">&nbsp;</a>默认只有存储桶所有者可以访问。S3 提供不同的机制来保障数据安全并配置 S3 存储桶及对象的访问权限：</p>
+            <p>默认情况下，S3 存储桶中的对象<a contenteditable="false" data-type="indexterm" data-primary="data security (S3)" id="data-security-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="security" data-secondary="S3" id="security-s3">&nbsp;</a>仅允许存储桶所有者访问。S3 提供了多种安全机制，用于保护数据并管理存储桶及对象的访问权限：</p>
             <dl>
               <dt>加密</dt>
               <dd>
-                <p>S3 <a contenteditable="false" data-type="indexterm" data-primary="encryption">&nbsp;</a>默认使用服务器端加密（SSE-S3）对所有对象进行加密，除非选择了其他加密选项，例如 AWS 密钥管理服务（KMS），即 <a href="https://oreil.ly/skNNa">SSE-KMS</a>。您也可以配置客户端加密以获得更高安全性。</p>
+                <p>默认情况下，S3 <a contenteditable="false" data-type="indexterm" data-primary="encryption">&nbsp;</a>使用 S3 托管密钥进行服务器端加密（SSE-S3），也可以选择其他加密方式，例如使用 AWS Key Management Service（AWS KMS）密钥的服务器端加密（<a href="https://oreil.ly/skNNa">SSE-KMS</a>）。此外，还可以在客户端对数据进行加密，以满足特定的安全需求。</p>
               </dd>
               <dt>对象锁定</dt>
               <dd>
-                <p><a href="https://oreil.ly/RWgqD">对象锁定</a>可在<a contenteditable="false" data-type="indexterm" data-primary="object lock">&nbsp;</a>已启用版本控制的存储桶上开启。启用后，对象将使用一次写入、多次读取（WORM）模型存储，这可能是组织的合规要求。对象锁定为对象变更提供额外保护层，可防止对象在固定保留期内或无限期（称为<em>依法保留</em>）被删除或覆盖。</p>
+                <p><a href="https://oreil.ly/RWgqD">对象锁定（Object Lock）</a>功能可以在<a contenteditable="false" data-type="indexterm" data-primary="object lock">&nbsp;</a>启用版本控制的 S3 存储桶上启用。该功能采用一次写入、多次读取（WORM）模型，有助于满足组织的合规要求。对象锁定可以通过设置固定保留期限或<em>法律保留</em>（Legal Hold），防止受保护的对象版本在保留期内或法律保留生效期间被删除或覆盖。</p>
               </dd>
               <dt>阻止公共访问</dt>
               <dd>
-                <p>此<a contenteditable="false" data-type="indexterm" data-primary="public access (S3)">&nbsp;</a>选项用于设置和管理对存储桶公共访问的集中控制。此配置也可应用于账户级别，以便对 AWS 账户中的所有 S3 存储桶生效。通常，除非有特定的业务需求（如存储桶中包含可公开访问的媒体文件），否则不建议将存储桶设为公开。您可以使用 <a href="https://oreil.ly/R_H-_">S3 访问分析器</a>来识别授予公共访问权限的存储桶。</p>
+                <p>此<a contenteditable="false" data-type="indexterm" data-primary="public access (S3)">&nbsp;</a>功能用于集中管理 S3 存储桶的公共访问权限，也可以在 AWS 账户级别进行配置，使相关设置适用于账户中的所有 S3 存储桶。一般情况下，除非业务确有需要，例如提供可公开访问的媒体文件，否则不应开放存储桶的公共访问权限。可以使用 <a href="https://oreil.ly/R_H-_">S3 访问分析器（Access Analyzer for S3）</a>识别允许公共访问的存储桶。</p>
               </dd>
               <dt>IAM 策略</dt>
               <dd>
-                <p><a href="https://oreil.ly/BWlOg">IAM 策略</a>向用户或用户组<a contenteditable="false" data-type="indexterm" data-primary="IAM (Identity and Access Management)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Identity and Access Management (IAM)">&nbsp;</a>授予对 S3 资源的读写访问权限。</p>
+                <p>可以通过<a href="https://oreil.ly/BWlOg">IAM 策略</a>向用户或用户组<a contenteditable="false" data-type="indexterm" data-primary="IAM (Identity and Access Management)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Identity and Access Management (IAM)">&nbsp;</a>授予访问 S3 资源的权限，例如读取或写入对象。</p>
               </dd>
               <dt>Amazon Macie</dt>
               <dd>
