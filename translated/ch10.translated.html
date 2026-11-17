@@ -157,47 +157,47 @@
             </section>
             <section data-type="sect4" id="ch10_infrequently_accessed_objects_1734552290475677">
               <h4>低频访问对象</h4>
-              <p>低频访问对象的<a contenteditable="false" data-type="indexterm" data-primary="infrequently accessed objects storage class">&nbsp;</a>存储类适用于长期保存、低频访问的数据，如备份。根据所需冗余支持，有两个子类：</p>
+              <p>面向低频访问对象的<a contenteditable="false" data-type="indexterm" data-primary="infrequently accessed objects storage class">&nbsp;</a>存储类别适用于需要长期保存、但访问频率较低的数据，例如备份数据。根据数据冗余需求，可分为以下两种：</p>
               <dl>
                 <dt>标准低频访问（Standard IA）</dt>
                 <dd>
-                  <p>数据冗余存储在多个可用区，因此对象能够抵御单个可用区故障。</p>
+                  <p>数据以冗余方式存储在多个可用区中，因此即使单个可用区发生故障，对象数据仍能得到保护。</p>
                 </dd>
                 <dt>单区低频访问（One Zone IA）</dt>
                 <dd>
-                  <p>数据存储在单个可用区，与标准低频访问版相比弹性较低，因此价格也相对较低。如果数据丢失对业务影响不大，或数据可以某种方式重新创建，则适合使用此存储类。</p>
+                  <p>数据存储在单个可用区中，因此与 S3 Standard-IA 相比，抵御可用区故障的能力较弱，但存储成本通常也较低。如果数据丢失不会对业务造成重大影响，或者数据可以重新生成，则适合选择此存储类别。</p>
                 </dd>
               </dl>
             </section>
             <section data-type="sect4" id="ch10_archived_objects_1734552290475736">
               <h4>归档对象</h4>
-              <p>归档对象的<a contenteditable="false" data-type="indexterm" data-primary="archived objects storage class">&nbsp;</a>存储类提供低成本的数据归档支持，弹性类似于 S3 标准存储类。根据数据检索需求，有三个子类：</p>
+              <p>面向归档对象的<a contenteditable="false" data-type="indexterm" data-primary="archived objects storage class">&nbsp;</a>存储类别支持以较低成本长期保存数据，其数据持久性与 S3 Standard 相近。根据数据检索需求，可分为以下三种：</p>
               <dl>
                 <dt>S3 Glacier 即时检索</dt>
                 <dd>
-                  <p>此存储类适用于极少访问但需要毫秒级检索的数据。存储成本较低，但与标准低频访问版相比，数据访问成本较高。</p>
+                  <p>此存储类别适用于访问频率极低、但仍需要毫秒级检索的数据。与 S3 Standard-IA 相比，其存储成本较低，但数据访问成本较高。</p>
                 </dd>
                 <dt>S3 Glacier 灵活检索</dt>
                 <dd>
-                  <p>此存储类适用于可在几分钟内（1 至 5 分钟）完成数据检索的场景。此子类要求最短存储时长为 90 天，即使数据在此期限前被删除或转移，费用仍按完整 90 天计算。</p>
+                  <p>此存储类别适用于需要在数分钟内（1 至 5 分钟）检索数据的场景。该类别的最短计费存储时长为 90 天，即使对象提前删除或转移到其他存储类别，存储费用仍按完整的 90 天计算。</p>
                 </dd>
                 <dt>S3 Glacier 深度归档</dt>
                 <dd>
-                  <p>此存储类成本最低，要求最短存储时长为 180 天，默认检索时间为 12 小时。您也可以使用批量检索选项，数据将在 48 小时内完成检索。</p>
+                  <p>此存储类别的存储成本最低，最短计费存储时长为 180 天，标准检索通常可在 12 小时内完成。此外，也可以选择批量检索，通常可在 48 小时内完成。</p>
                 </dd>
               </dl>
             </section>
             <section data-type="sect4" id="ch10_lifecycle_configurations_1734552290475795">
               <h4>生命周期配置</h4>
-              <p>假设<a contenteditable="false" data-type="indexterm" data-primary="lifecycle configurations">&nbsp;</a>某个场景需要在前 30 天频繁访问数据，之后则低频访问。此类使用场景可通过 S3 生命周期配置来满足；这些配置是应用于存储桶对象的规则。作为配置的一部分，您需要定义两种类型的操作：</p>
+              <p>假设<a contenteditable="false" data-type="indexterm" data-primary="lifecycle configurations">&nbsp;</a>某个业务场景中的数据在最初 30 天需要频繁访问，之后访问频率逐渐降低。可以使用 S3 生命周期配置来满足这一需求。生命周期配置由应用于存储桶中对象的一组规则构成，可定义以下两类操作：</p>
               <dl>
                 <dt>转换操作</dt>
                 <dd>
-                  <p>定义对象向另一存储类的转换，例如在 30 天后将对象从标准存储类移至标准低频访问存储类。</p>
+                  <p>定义对象的存储类别转换操作，例如在 30 天后将对象从 S3 Standard 转换到 S3 Standard-IA。</p>
                 </dd>
                 <dt>过期操作</dt>
                 <dd>
-                  <p>定义对象的过期策略。S3 将根据配置的规则自动删除已过期的对象。</p>
+                  <p>定义对象的过期操作。S3 会根据配置的生命周期规则自动处理已过期的对象。</p>
                 </dd>
               </dl>
             </section>
