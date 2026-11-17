@@ -243,40 +243,40 @@
               </dd>
               <dt>Amazon Macie</dt>
               <dd>
-                <p><a href="https://aws.amazon.com/macie">Amazon Macie</a> 可识别并<a contenteditable="false" data-type="indexterm" data-primary="Macie">&nbsp;</a>保护存储在 S3 存储桶中的敏感数据，如信用卡号。它还帮助评估存储桶级别的访问控制（类似于访问分析器），例如可公开访问的存储桶。</p>
+                <p><a href="https://aws.amazon.com/macie">Amazon Macie</a> 可以发现<a contenteditable="false" data-type="indexterm" data-primary="Macie">&nbsp;</a>S3 存储桶中的敏感数据，例如信用卡号，并帮助识别相关的数据安全风险。它还可以评估存储桶级别的访问控制情况，例如识别允许公共访问的存储桶，其作用在这方面与访问分析器类似。</p>
               </dd>
               <dt>访问控制列表（ACL）</dt>
               <dd>
-                <p><a href="https://oreil.ly/wVf4E">S3 ACL</a> 作为子资源附加到 S3 存储桶或对象，<a contenteditable="false" data-type="indexterm" data-primary="access control lists (ACLs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ACLs (access control lists)">&nbsp;</a>用于管理其他用户的访问权限。ACL 默认禁用，建议保持禁用状态，除非需要对每个对象单独控制访问权限。可以使用<a href="https://oreil.ly/QVffd">策略</a>替代 ACL 进行访问控制。</p>
+                <p><a href="https://oreil.ly/wVf4E">S3 访问控制列表（ACL）</a>是附属于存储桶或对象的子资源，<a contenteditable="false" data-type="indexterm" data-primary="access control lists (ACLs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ACLs (access control lists)">&nbsp;</a>用于管理其他用户的访问权限。ACL 默认处于禁用状态，通常建议保持禁用，除非确实需要对各个对象分别设置访问权限。一般情况下，可以使用<a href="https://oreil.ly/QVffd">策略</a>代替 ACL 管理访问权限。</p>
               </dd>
               <dt>存储桶策略</dt>
               <dd>
-                <p><a href="https://oreil.ly/qhwTP">存储桶策略</a>管理对<a contenteditable="false" data-type="indexterm" data-primary="bucket policies">&nbsp;</a> S3 存储桶及其中对象的访问权限。例如，允许账户 A 从账户 B 拥有的 S3 存储桶中读取对象。存储桶策略的大小限制为 20 KB。</p>
+                <p><a href="https://oreil.ly/qhwTP">存储桶策略</a>用于管理对<a contenteditable="false" data-type="indexterm" data-primary="bucket policies">&nbsp;</a> S3 存储桶及其中对象的访问权限。例如，可以通过存储桶策略允许账户 A 读取账户 B 所拥有的 S3 存储桶中的对象。存储桶策略的大小上限为 20 KB。</p>
               </dd>
             </dl>
-            <p>我们已经介绍了允许您通过云存储存储数据的不同服务，<a contenteditable="false" data-type="indexterm" data-primary="data security (S3)" data-startref="data-security-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="security" data-secondary="S3" data-startref="security-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="S3 (Simple Storage Service)" data-startref="cloud-storage-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Simple Storage Service (S3)" data-startref="simple-storage-service-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="S3 (Simple Storage Service)" data-startref="s3-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="object-based storage" data-startref="object-storage-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="cloud storage services" data-startref="aws-cloud-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-startref="cloud-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data storage systems" data-secondary="cloud storage services (AWS)" data-startref="data-storage-cloud">&nbsp;</a>并像使用个人计算机存储一样处理数据。接下来，我们将讨论 AWS 提供的数据库服务。您应该已经熟悉数据库中数据的存储方式——<a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>（关系数据库）和 <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a>（非关系数据库）。</p>
+            <p>前面介绍了多种云存储服务。借助这些服务，我们可以像使用个人计算机上的存储设备一样保存<a contenteditable="false" data-type="indexterm" data-primary="data security (S3)" data-startref="data-security-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="security" data-secondary="S3" data-startref="security-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-secondary="S3 (Simple Storage Service)" data-startref="cloud-storage-s3">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Simple Storage Service (S3)" data-startref="simple-storage-service-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="S3 (Simple Storage Service)" data-startref="s3-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="object-based storage" data-startref="object-storage-ch10">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="cloud storage services" data-startref="aws-cloud-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="cloud storage services (AWS)" data-startref="cloud-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data storage systems" data-secondary="cloud storage services (AWS)" data-startref="data-storage-cloud">&nbsp;</a>和处理数据。接下来，我们将介绍 AWS 提供的数据库服务。<a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>和 <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a>分别介绍了关系数据库和非关系数据库，相信读者已经了解数据库存储数据的基本方式。</p>
           </section>
         </section>
       </section>
       <section data-type="sect1" id="ch10_aws_databases_1734552290476028">
         <h1>AWS 数据库</h1>
-        <p>AWS 提供<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" id="aws-database">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" id="database-aws">&nbsp;</a>一系列数据库服务——Amazon RDS、Amazon DynamoDB、Amazon DocumentDB、Amazon ElastiCache 等——以满足客户在不同使用场景下的需求。这些服务将软件和硬件管理的运维开销降至最低，甚至完全消除，使您能够获得组织所需的规模扩展能力。我们将从关系数据库产品入手，该产品涵盖在 RDS 服务下，支持 Oracle、Microsoft SQL Server、MySQL、PostgreSQL、MariaDB 和 Amazon Aurora 作为数据库引擎。</p>
+        <p>AWS 提供<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" id="aws-database">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" id="database-aws">&nbsp;</a>多种数据库及相关数据服务，包括 Amazon RDS、Amazon DynamoDB、Amazon DocumentDB 和 Amazon ElastiCache 等，以满足不同业务场景的需求。这些托管服务可以减少软件和硬件管理方面的运维负担，并提供业务所需的扩展能力。我们将首先介绍关系数据库服务 Amazon RDS，它支持 Oracle、Microsoft SQL Server、MySQL、PostgreSQL、MariaDB 和 Amazon Aurora 等数据库引擎。</p>
         <section data-type="sect2" id="ch10_amazon_rds_1734552290476113">
           <h2>Amazon RDS</h2>
-          <p>没有<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="RDS" id="aws-database-rds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="RDS" id="database-aws-rds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RDS (Relational Database Service)" id="rds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Relational Database Service (RDS)" id="relational-database-service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="relational databases" data-secondary="RDS" id="relational-db-rds">&nbsp;</a> Amazon RDS 时，如果想运行 MySQL 或 PostgreSQL 等关系数据库引擎（详见 <a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>），您有几种选择。如果要在本地机器上使用 MySQL 数据库引擎，需要下载安装包并进行安装。如果使用 AWS 云计算服务，可以在 EC2 机器上安装，但安装完成后，您必须自行负责维护、挂载 EBS 卷等工作。</p>
-          <p>RDS 消除了所有这些开销，让您只需专注于创建数据库实例，并通过几次点击即可开始使用。您可以按照<a href="https://oreil.ly/IxH3y">创建 RDS 数据库实例的文档</a>中的步骤操作，但创建数据库时需要注意以下几个重要细节：</p>
+          <p>如果不使用<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="RDS" id="aws-database-rds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="RDS" id="database-aws-rds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RDS (Relational Database Service)" id="rds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Relational Database Service (RDS)" id="relational-database-service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="relational databases" data-secondary="RDS" id="relational-db-rds">&nbsp;</a> Amazon RDS，而是自行运行<a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>介绍的 MySQL 或 PostgreSQL 等关系数据库引擎，可以采用不同的部署方式。例如，要在本地计算机上运行 MySQL，需要自行下载安装软件。也可以在 AWS 云中的 EC2 实例上安装数据库，但随后仍需自行负责数据库维护、EBS 卷的挂载和管理等工作。</p>
+          <p>RDS 可以减轻数据库部署和维护方面的运维负担，让用户通过简单的操作创建并使用数据库实例。您可以参考<a href="https://oreil.ly/IxH3y">创建 RDS 数据库实例的文档</a>完成设置。在创建数据库时，还需要注意以下几个重要事项：</p>
           <dl>
             <dt>引擎类型</dt>
             <dd>
-              <p>您可以选择满足需求的数据库引擎。选定具体引擎后，需要指定一些额外配置，如数据库发行版和引擎版本。</p>
+              <p>您可以根据需求选择合适的数据库引擎。选定引擎后，还需要指定其他配置，例如数据库版本类别（edition）和引擎版本。</p>
             </dd>
             <dt>模板</dt>
             <dd>
-              <p>模板允许您在设置数据库时预先选择配置选项。可用模板包括生产环境、开发/测试环境和免费套餐。</p>
+              <p>创建数据库时，可以使用模板预先选定一组配置。可选模板包括生产环境、开发/测试环境和免费套餐。</p>
             </dd>
             <dt>设置</dt>
             <dd>
-              <p>设置包括数据库实例标识符（在区域内的 AWS 账户中唯一）和凭证信息（用户名和密码）等详细信息。</p>
+              <p>配置内容包括数据库实例标识符（在同一 AWS 账户的同一区域内必须唯一），以及用户名、密码等登录凭证信息。</p>
             </dd>
             <dt>数据库实例类</dt>
             <dd>
