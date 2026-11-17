@@ -1063,3 +1063,6 @@ These working decisions supplement the cross-chapter glossary. Final consistency
 | network-attached block storage (EBS) | 网络连接的块存储 | P19: EBS is network-attached block storage. Do not conflate with EFS shared file storage or use NAS as an unqualified synonym. [AWS Launch Wizard](https://docs.aws.amazon.com/pdfs/launchwizard/latest/userguide/launch-wizard-user-guide.pdf). |
 
 | storage class (EFS / S3) | 存储类别 | Chapter 10 P32–P33 approved terminology, including **EFS 存储类别** and **IA 存储类别**. Earlier chapters and later CH10 S3 paragraphs also use **存储类**; retain as a synonym until a final book-wide consistency decision. Do not alter unreviewed paragraphs without approval. |
+| S3 bucket | 存储桶（bucket） | CH10 P41 first-mention term; preserve `<em>` around Chinese term in original HTML, adding parenthetical bucket outside emphasis. |
+| S3 object key | 键名（key） | CH10 P43 identifies object keys; do not confuse an object key with a version ID. |
+| S3 Standard / Reduced Redundancy Storage | S3 Standard / 低冗余存储（Reduced Redundancy Storage） | CH10 P49–P50. Retain official product names and explain RRS once. |
