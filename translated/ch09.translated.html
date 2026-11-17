@@ -501,7 +501,7 @@
           <section data-type="sect3" id="ch09_nat_gateway_1734552289954876">
             <h3>NAT 网关</h3>
             <p>在<a contenteditable="false" data-type="indexterm" data-primary="NAT gateways" id="nat-gateway">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="private subnets" id="private-subnet-nat-gateway">&nbsp;</a>餐厅的例子中，厨房里的厨师们希望向大厅中的顾客征求对所上菜肴的反馈意见；只有主厨才被允许直接在主餐厅区域与顾客互动，厨师只在厨房工作——这样做是为了避免顾客被过多打扰，以及大厅人员过于拥挤。</p>
-            <p>NAT 网关在子网中扮演着主厨的角色——它通过 IGW 将私有子网中的实例与互联网相连。您可以将 NAT 网关理解为 IGW 与私有实例之间的桥梁。IGW 需要公有 IP 才能与互联网交互，NAT 网关负责提供这种支持，适用于 TCP、UDP 和 ICMP 协议。</p>
+            <p>NAT 网关扮演着主厨的角色——它通过 IGW 将私有子网中的实例与互联网相连。您可以将 NAT 网关理解为 IGW 与私有实例之间的桥梁。IGW 需要公有 IP 才能与互联网交互，NAT 网关负责提供这种支持，适用于 TCP、UDP 和 ICMP 协议。</p>
             <p>NAT 网关是 AWS 托管的网络设备，允许 VPC 私有子网中的资源发起出站互联网连接，同时通过隐藏其私有 IP 地址，防止来自互联网的直接入站访问。进一步来看，NAT 将私有 IP 地址转换为 NAT 设备的公有 IP 地址，当互联网返回响应时，再将其映射回原始的私有 IP 地址。为建立连接，您需要分配一个弹性 IP（EIP）地址并将其与 NAT 网关关联，EIP 作为代表 NAT 网关的静态公有 IP 地址，用于与互联网进行通信。</p>
             <p>关于 NAT 网关，有以下几个要点需要考虑：</p>
             <ul>
@@ -552,7 +552,7 @@
           </section>
           <section data-type="sect3" id="ch09_aws_privatelink_1734552289955106">
             <h3>AWS PrivateLink</h3>
-            <p>AWS PrivateLink（私有链接）以私有方式<a contenteditable="false" data-type="indexterm" data-primary="PrivateLink" id="privatelink">&nbsp;</a>将应用程序暴露给另一个 VPC 中的调用方，确保流量在 AWS 骨干网络内传输，不经过公网。其与 VPC 对等连接的核心区别在于流量方向：VPC 对等连接提供双向连接，而当客户端仅需通过私有 IP 地址访问服务时，AWS PrivateLink 更适合实现这种单向连接需求。</p>
+            <p>AWS PrivateLink（私有链接）以私有方式<a contenteditable="false" data-type="indexterm" data-primary="PrivateLink" id="privatelink">&nbsp;</a>将应用程序暴露给另一个 VPC 中的调用方，确保流量在 AWS 骨干网络内传输，不经过公网。其与 VPC 对等连接的核心区别在于流量方向：VPC 对等连接提供双向连接，而当服务提供方希望通过私有 IP 地址向消费方提供服务时，AWS PrivateLink 更适合这种服务访问模式。</p>
             <p>PrivateLink 由两方建立：开放特定服务访问权限的一方是<a contenteditable="false" data-type="indexterm" data-primary="service providers">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="consumers">&nbsp;</a><em>服务提供方</em>，使用该服务的其他方则是<em>消费方</em>。</p>
             <p>服务提供方在某个区域内创建端点服务，并将其与网络负载均衡器（NLB）关联（应用程序负载均衡器不能直接与端点服务关联），以便在该区域提供服务。服务消费方通过指定服务名称来创建 VPC 端点，以将其 VPC 连接到端点服务。如<a data-type="xref" href="#ch09_figure_9_1734552289929322">#ch09_figure_9_1734552289929322</a>所示，端点可以是接口端点或网关端点。接口端点建立到另一个 VPC 中端点服务的连接，网关端点则通过私有 IP 地址连接到 Amazon S3 或 Amazon DynamoDB。此外还有网关负载均衡器类型，可用于管理第三方虚拟设备，例如用于合规检查的设备（更多关于负载均衡器的内容见后文）。</p>
             <figure id="ch09_figure_9_1734552289929322">
@@ -631,7 +631,7 @@
               </ul>
                </dd>
             </dl>
-            <p>我们已探讨了网络数据包在 Amazon 网络内部传输的多种方式，以及 AWS 提供的多种连接选项。本章其余部分将重点介绍随着应用程序规模扩大时这些网络数据包的入口，例如 Amazon Route 53、负载均衡器（LB）和 Amazon API Gateway。最后，我们将讨论 AWS 的 CDN 服务——亚马逊 CloudFront，通过将数据内容部署在靠近用户的位置，实现<a contenteditable="false" data-type="indexterm" data-primary="Direct Connect" data-startref="direct-connect">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="hybrid connectivity" data-startref="network-service-vpc-hybrid">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="hybrid connectivity" data-startref="vpc-service-hybrid">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hybrid connectivity" data-startref="hybrid-vpc">&nbsp;</a>更快速的内容检索。</p>
+            <p>我们已探讨了网络数据包在 Amazon 网络内部传输的多种方式，以及 AWS 提供的多种连接选项。本章其余部分将重点介绍随着应用程序规模扩大时这些网络数据包的入口，例如 Amazon Route 53、负载均衡器（LB）和 Amazon API Gateway。最后，我们将讨论 AWS 的 CDN 服务——亚马逊 CloudFront，通过将内容缓存到靠近用户的位置，实现<a contenteditable="false" data-type="indexterm" data-primary="Direct Connect" data-startref="direct-connect">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="hybrid connectivity" data-startref="network-service-vpc-hybrid">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="hybrid connectivity" data-startref="vpc-service-hybrid">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="hybrid connectivity" data-startref="hybrid-vpc">&nbsp;</a>更快速的内容检索。</p>
           </section>
         </section>
       </section>
@@ -662,7 +662,7 @@
             <p>域名的 DNS 记录统一存储在托管区域（hosted zone）中，用于响应域名查询。</p>
           </li>
           <li>
-            <p>Route 53 使用任播（Anycast）作为其网络与路由技术，通过将请求路由到最近的数据中心来降低延迟，并通过多台服务器响应流量来提高可用性，<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="Route 53 (DNS services)" data-startref="network-service-route53">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Route 53" data-startref="route53">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DNS (Domain Name System)" data-startref="dns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Domain Name System (DNS)" data-startref="domain-name-system">&nbsp;</a>而非依赖单一源站服务器。</p>
+            <p>Route 53 使用任播（Anycast）技术，将 DNS 查询路由到可响应查询的 AWS 接入点，从而降低解析延迟，并通过全球分布式基础设施提高可用性，<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="Route 53 (DNS services)" data-startref="network-service-route53">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Route 53" data-startref="route53">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DNS (Domain Name System)" data-startref="dns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Domain Name System (DNS)" data-startref="domain-name-system">&nbsp;</a>而非依赖单一源站服务器。</p>
           </li>
         </ul>
       </section>
@@ -739,7 +739,7 @@
             <p>NLB 针对突发流量峰值进行了优化；对于 ALB，如果预期到流量峰值，最佳实践是提前通知 AWS Support 以预先分配容量。</p>
           </li>
           <li>
-            <p>NLB 支持长连接 TCP 连接，ALB 则不支持。这对于需要大量持久连接的场景（如在线游戏应用的 WebSocket 连接）非常有帮助。</p>
+            <p>NLB 支持长时间保持的 TCP 连接，而 ALB 也支持 WebSocket 等持久连接。这对于需要大量持久连接的场景（如在线游戏应用的 WebSocket 连接）非常有帮助。</p>
           </li>
           <li>
             <p>ALB 支持 AWS Web 应用程序防火墙（WAF）以及 Amazon Cognito 和 OpenID Connect 等身份验证机制，将相应责任从应用程序卸载，使其更轻量。</p>
