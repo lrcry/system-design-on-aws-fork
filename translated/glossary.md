@@ -1075,3 +1075,8 @@ These working decisions supplement the cross-chapter glossary. Final consistency
 | S3 Object Lock | 对象锁定（Object Lock） | CH10 P68; protects specific object versions with retention settings or legal holds. |
 | legal hold (S3) | 法律保留（Legal Hold） | CH10 P68; retained in original `<em>` span as 法律保留 with English parenthetical outside emphasis. Persists until released. |
 | SSE-S3 / SSE-KMS | SSE-S3 / SSE-KMS | CH10 P67; distinguish S3-managed keys from AWS KMS keys for server-side encryption. |
+| Amazon Macie | Amazon Macie | CH10 P71: sensitive-data discovery and security posture review; do not imply enforcement of permissions. |
+| access control list (ACL) for S3 | 访问控制列表（ACL） | CH10 P72: access-control subresource; newly created buckets generally default to ACLs disabled through Object Ownership settings. |
+| S3 bucket policy | 存储桶策略 | CH10 P73: resource-based access policy for S3 buckets and objects. |
+| database edition | 数据库版本类别（edition） | CH10 P78 working rendering; distinguish *edition* (e.g., a product edition) from engine version and distribution. Revisit terminology in final book-wide consistency pass. |
+| DB instance identifier | 数据库实例标识符 | CH10 P80: unique within an AWS account and Region, not across all AWS accounts. |
