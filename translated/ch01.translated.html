@@ -113,7 +113,7 @@
 <dl>
 	<dt>强一致性</dt>
 	<dd>
-	<p>在谱系的一端<a contenteditable="false" data-type="indexterm" data-primary="strong consistency">&nbsp;</a>，强一致性保证所有副本节点在任何时候都拥有相同的数据视图，对数据的任何更新都会立即反映在所有副本节点上。这样可以确保数据始终准确且最新，但在实践中很难实现，因为它要求所有副本节点保持持续通信。</p>
+	<p>在谱系的一端<a contenteditable="false" data-type="indexterm" data-primary="strong consistency">&nbsp;</a>，强一致性（通常以线性一致性等正式模型来定义）保证：对外部观察者而言，系统的行为就如同所有操作按照某个全局唯一的顺序依次执行一样，每次读取都能获得最近一次写入的结果。这并不要求所有副本节点在任意时刻都持有完全相同的数据，但在实践中往往需要副本节点之间保持持续通信与协调，因此较难高效实现。</p>
 
 	<div data-type="note">
 	<p>我们将在<a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>中介绍关系数据库作为 ACID 模型一部分的强一致性要求。</p>
@@ -125,7 +125,7 @@
 	</dd>
 	<dt>单调写一致性</dt>
 	<dd>
-	<p>单调写一致性<a contenteditable="false" data-type="indexterm" data-primary="monotonic read consistency">&nbsp;</a>保证：某个副本节点一旦确认了一次写操作，此后从该副本节点进行的所有读取都会返回更新后的值。这意味着在确认写操作之后，副本节点不会再向客户端返回过时的数据。它提供比最终一致性更强的一致性保证，因为它确保副本节点不会向客户端返回过时的数据。</p>
+	<p>单调写一致性<a contenteditable="false" data-type="indexterm" data-primary="monotonic read consistency">&nbsp;</a>保证：同一客户端（或进程）发出的多个写操作，会被所有副本节点以相同的顺序应用，不会出现写操作被乱序执行的情况。这意味着副本节点不会先应用后发出的写操作、再应用先发出的写操作。它提供比最终一致性更强的一致性保证，因为它确保了同一来源写操作之间的顺序一致。</p>
 	</dd>
 	<dt>因果一致性</dt>
 	<dd>

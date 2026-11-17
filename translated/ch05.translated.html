@@ -228,7 +228,7 @@
       </section>
       <section data-type="sect3" id="ch05_network_load_balancers_l4_lbs_1734552287464198">
         <h3>网络负载均衡器（L4 LB）</h3>
-        <p>网络负载均衡器<a contenteditable="false" data-type="indexterm" data-primary="network load balancers (NLBs)" id="network-load-balance">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="NLBs (network load balancers)" id="nlbs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)" data-secondary="NLB (network load balancer)" id="lb-nlb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="load balancers (LBs)" data-secondary="NLB (network load balancer)" id="load-balance-nlb">&nbsp;</a>工作在 OSI 模型的传输层（L4），根据 IP 地址和目标端口等网络变量处理流量。这类 LB 在传输层分发流量，完全基于网络层信息做出路由决策，主要处理 IP、TCP、FTP 和 UDP 等网络层协议。L4 LB 通常以网络地址转换（NAT）的形式实现，在后端服务器之间分发流量。</p>
+        <p>网络负载均衡器<a contenteditable="false" data-type="indexterm" data-primary="network load balancers (NLBs)" id="network-load-balance">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="NLBs (network load balancers)" id="nlbs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LBs (load balancers)" data-secondary="NLB (network load balancer)" id="lb-nlb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="load balancers (LBs)" data-secondary="NLB (network load balancer)" id="load-balance-nlb">&nbsp;</a>工作在 OSI 模型的传输层（L4），根据 IP 地址和目标端口等网络变量处理流量。这类 LB 在传输层分发流量，完全基于网络层/传输层信息做出路由决策，主要处理 TCP 和 UDP 等基于 IP 的传输层协议。L4 LB 通常以网络地址转换（NAT）的形式实现，在后端服务器之间分发流量。</p>
         <p>L4 LB 的一些特性包括：</p>
         <dl>
           <dt>基于 IP 地址的会话持久性</dt>

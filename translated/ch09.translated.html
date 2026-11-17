@@ -185,7 +185,7 @@
           </section>
           <section data-type="sect3" id="ch09_creating_an_amazon_vpc_1734552289954331">
             <h3>创建 Amazon VPC</h3>
-            <p>前文<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="creating VPC" id="network-aws-vpc-create">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="creating VPC" id="vpc-service-create">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CIDR blocks" id="cidr-block">&nbsp;</a>介绍的网络概念将帮助我们搭建第一个 VPC。VPC 创建向导需要输入 IPv4 CIDR 块、IPv6 CIDR 块和租用方式。IPv4 CIDR 块为必填项，必须填写才能继续。VPC 支持双栈模式，可同时使用 IPv4 和 IPv6。IPv4 允许的 CIDR 块范围为 /16 至 /28；IPv6 固定为 /64。</p>
+            <p>前文<a contenteditable="false" data-type="indexterm" data-primary="networking services (AWS)" data-secondary="VPC service" data-tertiary="creating VPC" id="network-aws-vpc-create">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="creating VPC" id="vpc-service-create">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CIDR blocks" id="cidr-block">&nbsp;</a>介绍的网络概念将帮助我们搭建第一个 VPC。VPC 创建向导需要输入 IPv4 CIDR 块、IPv6 CIDR 块和租用方式。IPv4 CIDR 块为必填项，必须填写才能继续。VPC 支持双栈模式，可同时使用 IPv4 和 IPv6。IPv4 允许的 CIDR 块范围为 /16 至 /28；AWS 通常为 VPC 分配一个 /56 的 IPv6 CIDR 块，而 VPC 下各子网的 IPv6 CIDR 块通常固定为 /64（具体可分配选项取决于地址来源和配置）。</p>
             <p>配置 CIDR 块时，需考虑以下几点：</p>
             <ul>
               <li>
@@ -224,7 +224,7 @@
             <img src="images/sdoa_0906.png"/>
             <figcaption>各类网络组件概览</figcaption>
           </figure>
-          <p>公有子网中的资源可以访问互联网，因为存在指向<a class="orm:hideurl" href="https://oreil.ly/rKh2C">互联网网关</a>（IGW）的直接路由（如<a data-type="xref" href="#ch09_figure_6_1734552289929264">#ch09_figure_6_1734552289929264</a>中自定义路由表的 igw-id 条目所示）；而<a contenteditable="false" data-type="indexterm" data-primary="Internet Gateway (IGW)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IGW (Internet Gateway)">&nbsp;</a>私有子网中的资源则需要 NAT 服务或 NAT 实例才能访问互联网（路由表中的 nat-gateway-id 条目）。本章后续章节将详细介绍网络访问控制列表（NACL）、路由表、NAT 网关和互联网网关。关键在于，指向互联网网关的直接路由是区分公有子网和私有子网的唯一因素。具有公有 IPv4 地址但没有指向互联网网关的直接路由的子网称为<em>私有子网</em>。</p>
+          <p>公有子网的路由表中存在指向<a class="orm:hideurl" href="https://oreil.ly/rKh2C">互联网网关</a>（IGW）的直接路由（如<a data-type="xref" href="#ch09_figure_6_1734552289929264">#ch09_figure_6_1734552289929264</a>中自定义路由表的 igw-id 条目所示），这是公有子网接入互联网路径的必要条件；但若某个 IPv4 资源要直接通过 IPv4 与互联网通信，还需要拥有公有 IPv4 地址（或弹性 IP）。<a contenteditable="false" data-type="indexterm" data-primary="Internet Gateway (IGW)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IGW (Internet Gateway)">&nbsp;</a>私有子网中的资源则需要 NAT 服务或 NAT 实例才能访问互联网（路由表中的 nat-gateway-id 条目）。本章后续章节将详细介绍网络访问控制列表（NACL）、路由表、NAT 网关和互联网网关。关键在于，子网是公有子网还是私有子网，本质上由其路由表是否包含指向互联网网关的路由决定，而不取决于该子网当前是否存在可被互联网访问的资源；IGW 本身是挂载在 VPC 上的，而非专属或仅限于某一类子网。具有公有 IPv4 地址但没有指向互联网网关的直接路由的子网称为<em>私有子网</em>。</p>
           <p>在 AWS 账户中配置 VPC 和子网时，请遵循以下最佳实践：</p>
           <dl>
             <dt>使用多个子网</dt>
@@ -474,7 +474,7 @@
             <h3>互联网网关</h3>
             <p>在<a data-type="xref" href="#ch09_table_3_1734552289937365">#ch09_table_3_1734552289937365</a>中，我们展示了<a contenteditable="false" data-type="indexterm" data-primary="Internet Gateway (IGW)" id="internet-gateway">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IGW (Internet Gateway)" id="igw">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="public subnets" id="public-subnet-internet-gateway">&nbsp;</a>目标地址为 0.0.0.0/0、目标为 igw-id 的路由，用于为资源开通互联网访问权限。该路由的目标地址指向整个互联网，目标为互联网网关（IGW）的标识符。</p>
             <p>IGW 是 AWS 托管的 VPC 软件组件，提供 VPC 与互联网之间的连接。IGW 是一种高可用、冗余且可水平扩展的应用，挂载到 VPC 后可跨越不同可用区中的子网。</p>
-            <p>在 Cafe Delhi Heights 的例子中，IGW 相当于进出餐厅的前门。正如您只能进入公共就餐区而不能进入厨房一样，IGW 只与公有子网中的资源建立连接。</p>
+            <p>在 Cafe Delhi Heights 的例子中，IGW 相当于进出餐厅的前门。IGW 本身是挂载在整个 VPC 上的，但只有路由表中配置了指向 IGW 的路由的子网（即公有子网）中的资源，才能通过它直接访问互联网，这类似于您只能进入公共就餐区而不能进入厨房。</p>
             <p>关于 IGW，有以下几个要点：</p>
             <ul>
               <li>

@@ -170,7 +170,7 @@ CMD ["python", "app.py"]</pre>
               </dd>
               <dt>顶层</dt>
               <dd>
-                <p>顶层是容器镜像的最终层，包含应用程序代码、运行时依赖项和配置文件。该层是可读写的，允许在运行时对容器镜像进行更改，例如在容器文件系统中创建或修改文件。</p>
+                <p>顶层是容器镜像的最终层，包含应用程序代码、运行时依赖项和配置文件。镜像的各层本身都是不可变的：创建容器时，容器运行时会在镜像层之上叠加一个独立的可写层。运行时对容器文件系统的创建或修改（例如新增或改动文件）都发生在这个容器专属的可写层中，并不会改变底层的镜像层。</p>
               </dd>
             </dl>
             <p>构建和管理容器镜像是容器部署的基本方面。容器镜像可以使用 Dockerfile 创建和定制，Dockerfile 是声明式文件，逐层指定构建镜像的指令。Docker 提供了一套命令和工具，用于构建和标记容器镜像，并将其推送到容器注册表，如 <a href="https://hub.docker.com">Docker Hub</a> 或 <a href="https://aws.amazon.com/ecr">亚马逊弹性容器注册表（Amazon ECR）</a>。</p>
@@ -418,7 +418,7 @@ CMD ["python", "app.py"]</pre>
             </dd>
             <dt>无服务器部署</dt>
             <dd>
-              <p><a contenteditable="false" data-type="indexterm" data-primary="serverless deployments">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="function as a service (FaaS)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="FaaS (function as a service)">&nbsp;</a>函数即服务（FaaS）是一种无服务器计算模式，它抽象了基础设施层，使开发人员可以专注于编写代码。Kubernetes 通过 Knative 或 AWS Lambda on Kubernetes 等平台提供无服务器功能，使开发人员能够部署事件驱动、自动扩展的应用程序，而无需管理底层基础设施。</p>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="serverless deployments">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="function as a service (FaaS)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="FaaS (function as a service)">&nbsp;</a>函数即服务（FaaS）是一种无服务器计算模式，它抽象了基础设施层，使开发人员可以专注于编写代码。Kubernetes 可以通过 Knative 等 Kubernetes 原生无服务器框架在集群内部提供无服务器能力，使开发人员能够部署事件驱动、自动扩展的应用程序，而无需管理底层基础设施。另外，AWS Lambda 是一项独立的托管无服务器计算服务，运行在 Kubernetes 集群之外；虽然存在将 Kubernetes 工作负载与 Lambda 集成的方案，但这与在 Kubernetes 集群内运行无服务器工作负载是不同的架构。</p>
             </dd>
             <dt>金丝雀部署</dt>
             <dd>

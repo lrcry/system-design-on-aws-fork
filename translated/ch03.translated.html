@@ -333,8 +333,8 @@
         </section>
       </section>
       <section data-type="sect1" id="ch03_columnar_databases_1734552286862167">
-        <h1>列式数据库</h1>
-        <p><em>列式数据库</em>或<em>列族数据库</em>，也<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" id="nonrelational-db-column">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" id="column-store">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="wide-column stores" data-see="column-family stores">&nbsp;</a>称为<em>宽列存储</em>，是一类非关系型数据库，其独特的架构针对处理海量结构化和半结构化数据进行了优化。这类数据库擅长管理大规模分布式系统、分析，以及需要快速 OLTP 读写性能的用例。在本节中，我们将探讨宽列存储的架构和设计考量，揭示其主要特性和优势。</p>
+        <h1>宽列（列族）存储</h1>
+        <p><em>宽列存储</em>，也<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" id="nonrelational-db-column">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" id="column-store">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="wide-column stores" data-see="column-family stores">&nbsp;</a>称为<em>列族数据库</em>，是一类非关系型数据库，其独特的架构针对处理海量结构化和半结构化数据进行了优化。需要注意的是，宽列/列族存储（如 Apache Cassandra）与面向 OLAP 分析场景的列式（columnar）数据库并非同一种存储模型：前者按分区存储带有聚类顺序的行与列，后者则以列为单位组织物理存储布局以支持分析查询。这类数据库擅长管理大规模分布式系统、分析，以及需要快速 OLTP 读写性能的用例。在本节中，我们将探讨宽列存储的架构和设计考量，揭示其主要特性和优势。</p>
         <section data-type="sect2" id="ch03_data_model_1734552286862231">
           <h2>数据模型</h2>
           <p>与按行组织数据的<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="data model" id="nonrelational-db-column-model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="data model" id="column-store-model">&nbsp;</a>传统关系型数据库不同，宽列存储采用面向列的数据模型，将列分组为列族或列组。在该模型中，数据按列而非按行存储和检索。每一列代表一个特定的属性或字段，属于该属性的数据值在磁盘上连续存储。这种设计在查询性能方面具有显著优势，因为它支持高效的压缩、数据跳过，以及过滤和聚合等列级操作。</p>
@@ -356,7 +356,7 @@
           <section data-type="sect3" id="ch03_eventual_consistency_1734552286862455">
             <h3>最终一致性</h3>
             <p>最终一致性<a contenteditable="false" data-type="indexterm" data-primary="eventual consistency">&nbsp;</a>是最弱的一致性级别，可提供最高程度的可用性和低延迟。在宽列存储中，最终一致性意味着副本随时间异步更新，这可能导致暂时的数据不一致。</p>
-            <p>对于最终一致性，法定人数要求可以定义为<em>ANY</em>。在这种模型中，只要操作应用到至少一个副本，即视为成功，无需所有副本确认或同步。随着时间推移，更新会被传播，并最终在整个系统中收敛到一致的状态。</p>
+            <p>对于最终一致性，法定人数要求可以定义为<em>ANY</em>。这是一种写一致性级别：只要协调节点（coordinator）成功写入，或者在目标副本不可达时为其保存了一条提示记录（hint），写操作即被视为成功，而不要求数据已实际应用到任意一个副本，也不要求所有副本确认或同步。待目标副本恢复后，通过提示移交（hinted handoff）机制补发该写入，更新最终会在整个系统中传播并收敛到一致的状态。</p>
           </section>
           <section data-type="sect3" id="ch03_weak_consistency_1734552286862511">
             <h3>弱一致性</h3>
@@ -374,11 +374,11 @@
           </section>
           <section data-type="sect3" id="ch03_strong_consistency_1734552286862567">
             <h3>强一致性</h3>
-            <p>强一致性<a contenteditable="false" data-type="indexterm" data-primary="strong consistency">&nbsp;</a>提供最高级别的数据一致性，但可能带来更高的延迟和更低的可用性。在宽列存储中，强一致性确保在返回响应之前，所有副本都已同步更新且保持一致。对于强一致性，法定人数要求可以定义为：</p>
+            <p>强一致性<a contenteditable="false" data-type="indexterm" data-primary="strong consistency">&nbsp;</a>这一术语本身是指线性一致性等正式一致性模型，并不特指某个产品的具体一致性级别。宽列存储中与之最接近的级别是 ALL，它要求相关分区的所有副本都响应操作，但这并不等同于线性一致性，也不意味着所有副本在任意时刻都保持全局同步。对于最接近强一致性的场景，可以使用以下法定人数级别：</p>
             <dl>
               <dt>ALL</dt>
               <dd>
-                <p>在这种模型中，操作必须被集群中的所有副本确认并应用，才被视为一致。这意味着，读或写操作要想成功，就必须传播到系统中的每个副本并得到其确认。</p>
+                <p>在这种模型中，操作必须被相关分区的所有副本确认并应用，才被视为成功。这意味着，读或写操作要想成功，就必须传播到该分区的每个副本并得到其确认。</p>
               </dd>
               <dt>各数据中心法定人数（EACH_QUORUM）</dt>
               <dd>
@@ -441,8 +441,8 @@
           <p>总之，宽列存储的架构和设计围绕面向列的数据模型、分布式可扩展性和高效的分析能力展开。通过利用列式存储的优势和灵活的模式设计，这些数据库使组织能够高效地存储、检索和分析大量结构化及半结构化数据。</p>
         </section>
         <section data-type="sect2" id="ch03_apache_cassandra_open_source_columnar_database_1734552286862869">
-          <h2>Apache Cassandra：开源列式数据库</h2>
-          <p><a href="https://oreil.ly/6929x">Apache Cassandra</a>是一款高度可扩展的<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="Apache Cassandra" id="nonrelational-db-column-cass">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="Apache Cassandra" id="column-store-cass">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Apache Cassandra" id="apache-cass">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Cassandra" id="cass">&nbsp;</a>分布式开源列式数据库，以能够跨多台商用服务器处理海量结构化和半结构化数据而闻名。它提供稳健的架构和一系列特性，适用于高性能、容错的应用。</p>
+          <h2>Apache Cassandra：开源宽列数据库</h2>
+          <p><a href="https://oreil.ly/6929x">Apache Cassandra</a>是一款高度可扩展的<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="Apache Cassandra" id="nonrelational-db-column-cass">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="Apache Cassandra" id="column-store-cass">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Apache Cassandra" id="apache-cass">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Cassandra" id="cass">&nbsp;</a>分布式开源宽列（列族）数据库，以能够跨多台商用服务器处理海量结构化和半结构化数据而闻名。它提供稳健的架构和一系列特性，适用于高性能、容错的应用。</p>
           <p>Cassandra 的特性包括：</p>
           <dl>
             <dt>分布式查询语言 </dt>
@@ -470,7 +470,7 @@
               <p>Cassandra 允许跨多个数据中心或地理区域复制数据，提供地理冗余和灾难恢复能力。它支持多种复制策略，包括网络拓扑感知复制，确保分布式环境中的数据可用性和低延迟访问。</p>
             </dd>
           </dl>
-          <p>总之，Apache Cassandra 是一款开源列式数据库，提供可扩展性、高可用性、容错性、可调一致性，并支持分布式和去中心化架构。凭借列式数据模型、分布式查询语言、时间序列数据能力和活跃的社区支持，Cassandra 使开发者能够构建稳健、可扩展的应用，在<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="Apache Cassandra" data-startref="nonrelational-db-column-cass">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="Apache Cassandra" data-startref="column-store-cass">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Apache Cassandra" data-startref="apache-cass">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Cassandra" data-startref="cass">&nbsp;</a>分布式环境中处理海量数据。</p>
+          <p>总之，Apache Cassandra 是一款开源宽列数据库，提供可扩展性、高可用性、容错性、可调一致性，并支持分布式和去中心化架构。凭借宽列数据模型、分布式查询语言、时间序列数据能力和活跃的社区支持，Cassandra 使开发者能够构建稳健、可扩展的应用，在<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="Apache Cassandra" data-startref="nonrelational-db-column-cass">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="Apache Cassandra" data-startref="column-store-cass">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Apache Cassandra" data-startref="apache-cass">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Cassandra" data-startref="cass">&nbsp;</a>分布式环境中处理海量数据。</p>
           <div data-type="note">
             <p>AWS 提供<a contenteditable="false" data-type="indexterm" data-primary="Keyspaces">&nbsp;</a>Amazon Keyspaces（兼容 Apache Cassandra），这是一项高度可扩展、可用且托管的宽列数据库服务，以无服务器方案提供，并与 Apache Cassandra 兼容。我们将在<a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a>中更详细地介绍它。</p>
           </div>
@@ -598,10 +598,10 @@
                 <p>CAP 定理</p>
               </td>
               <td>
-                <p>SQL 事务始终遵循 ACID 特性（强一致性）。</p>
+                <p>SQL（关系型）数据库通常支持 ACID 事务，但具体的隔离级别和跨分布式节点的一致性保证因系统实现而异。</p>
               </td>
               <td>
-                <p>NoSQL 数据库通常遵循 BASE 特性（最终一致性）。</p>
+                <p>许多 NoSQL 数据库默认倾向于 BASE/最终一致性模型，但部分 NoSQL 系统也支持 ACID 事务或可调的强一致性，具体取决于产品实现。</p>
               </td>
             </tr>
           </tbody>
