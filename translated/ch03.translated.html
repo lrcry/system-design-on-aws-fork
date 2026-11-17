@@ -1,0 +1,615 @@
+<section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch03_nonrelational_stores_1734552286860587">
+      <h1>非关系型存储</h1>
+      <p>在现代数据管理<a contenteditable="false" data-type="indexterm" data-primary="data storage systems" data-secondary="nonrelational databases" data-see="nonrelational databases">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="nonrelational" data-see="nonrelational databases">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="NoSQL databases" data-see="nonrelational databases">&nbsp;</a>不断演进的格局中，传统关系型数据库长期以来一直是结构化数据存储与检索的中流砥柱。然而，新技术的兴起、数据格式的多样化，以及对高性能、可扩展解决方案的需求，催生了一类新型数据库，即<em>非关系型数据库</em>（又称 <em>NoSQL 数据库</em>）。这类数据库能够应对当今数据密集型应用带来的挑战，也能适配多种数据模型，同时提供前所未有的可扩展性和性能，因而广受欢迎。</p>
+      <p>关系型数据库历来是数据管理的基石，以结构化、标准化的方式组织和检索信息。然而，随着数字世界呈指数级扩张，传统关系模型在面对现代 Web 应用、实时分析和大规模分布式系统的需求时，暴露出固有的局限。</p>
+      <p>非关系型数据库打破了关系范式的严格约束，引入了新颖的数据模型和存储机制，挑战现状。这类数据库优先考虑可扩展性、容错性和低延迟访问，使组织能够有效处理海量数据，并满足动态、快速演变的数据需求。</p>
+      <p>在本章中，我们将探讨非关系型数据库的基本原理、关键概念和各种类型，剖析它们的优势、劣势和理想用例。我们将涵盖一系列主流的 NoSQL 数据库模型，包括文档数据库、键值数据库、列式数据库和图数据库，每种模型都针对数据管理中的特定挑战而设计。我们还将讨论它们的架构，以及无主架构如何借助法定人数（quorum）、乐观复制、一致性哈希和提示移交来支持扩展。</p>
+      <p>在本章中，我们将深入探讨与非关系型数据库相关的数据建模、查询语言和一致性模型的细节。我们将审视支撑其设计的核心架构原则，例如水平可扩展性、分布式数据存储和去中心化控制。我们还将探讨非关系型数据库在数据一致性和数据完整性方面的权衡，以及对应用开发的影响。</p>
+      <p>在本章结束时，你将全面了解非关系型数据库，从而在为组织需求选择合适的数据存储方案时做出明智的决策。无论你是经验丰富的数据专业人士，还是充满好奇的爱好者，都请做好准备，拥抱非关系型数据库的世界，探索它们在大数据时代及未来所带来的非凡可能。</p>
+      <div data-type="note">
+        <p>AWS 提供一系列非关系型数据库服务，例如亚马逊 DynamoDB（Amazon DynamoDB）、Amazon DocumentDB、Amazon Neptune、Amazon ElastiCache、Amazon OpenSearch、Amazon Keyspaces 等，以满足客户在不同业务场景下的需求。我们将在<a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a>中更详细地介绍这些服务。</p>
+      </div>
+      <section data-type="sect1" id="ch03_nonrelational_database_concepts_1734552286860790">
+        <h1>非关系型数据库概念</h1>
+        <p>本节介绍非关系型数据库的基本概念。</p>
+        <section data-type="sect2" id="ch03_schema_flexibility_1734552286860857">
+          <h2>模式灵活性</h2>
+          <p>与强制使用固定模式的<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="schema flexibility">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="nonrelational databases">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="flexible schema design" data-secondary="nonrelational databases">&nbsp;</a>关系型数据库不同，非关系型数据库允许动态、灵活的模式设计。这意味着存储数据时无需预先定义严格的结构，因此更容易适应多变的数据格式和不断演进的应用需求。</p>
+        </section>
+        <section data-type="sect2" id="ch03_data_models_1734552286860914">
+          <h2>数据模型</h2>
+          <p>非关系型数据库支持多种数据模型，每种模型都针对特定用例进行了优化。最常见的数据模型包括：</p>
+          <dl>
+            <dt>文档数据库</dt>
+            <dd>
+              <p>这类<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="document stores">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="document stores">&nbsp;</a>数据库以灵活的半结构化文档存储和管理数据，通常采用 JSON 或二进制 JSON（BSON）等格式。这种方式非常适合处理复杂或动态数据的应用。</p>
+            </dd>
+            <dt>键值数据库</dt>
+            <dd>
+              <p>这类<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="key-value stores">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="key-value stores">&nbsp;</a>数据库以简单的键值格式存储数据，读写操作效率极高。它们常用于缓存和高速数据检索。</p>
+            </dd>
+            <dt>列族数据库</dt>
+            <dd>
+              <p>这类<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores">&nbsp;</a>数据库将数据组织成列族，能高效存储和检索大量数据，在分析和数据仓库场景中尤其适用。</p>
+            </dd>
+            <dt>图数据库 </dt>
+            <dd>
+              <p>这类<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="graph databases">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="graph databases">&nbsp;</a>数据库聚焦数据实体之间的关系，非常适合需要对相互关联的数据进行复杂查询和分析的应用。</p>
+            </dd>
+          </dl>
+        </section>
+        <section data-type="sect2" id="ch03_scalability_1734552286860970">
+          <h2>可扩展性</h2>
+          <p>非关系型<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="scalability">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scalability" data-secondary="of nonrelational databases" data-secondary-sortas="nonrelational databases">&nbsp;</a>数据库设计为水平扩展，将数据分布到多个节点或服务器上。这使它们能够处理海量数据集和高并发流量。扩展通过分片和复制等技术实现，让应用能够随着需求增长而平滑扩展。</p>
+        </section>
+        <section data-type="sect2" id="ch03_high_availability_and_fault_tolerance_1734552286861040">
+          <h2>高可用性与容错性</h2>
+          <p>许多<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="availability and fault tolerance">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="of nonrelational databases" data-secondary-sortas="nonrelational databases">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="high availability">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="fault tolerance">&nbsp;</a>非关系型数据库优先考虑高可用性和容错性。它们通常能够应对硬件故障、网络分区和其他中断，同时不损害数据完整性或可访问性。</p>
+        </section>
+        <section data-type="sect2" id="ch03_base_1734552286861095">
+          <h2>BASE</h2>
+          <p>在<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="BASE principles" id="nonrelate-db-base">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="BASE principles" id="base">&nbsp;</a>非关系型数据库领域，首字母缩写 <em>BASE</em> 代表“基本可用（Basically Available）、软状态（Soft state）、最终一致性（Eventually consistent）”。根据 CAP 定理，与关系型数据库传统上采用的 ACID 特性相比，BASE 是处理数据一致性与可用性的另一种方案。BASE 特别适用于分布式大规模系统，这类系统把高可用性和可扩展性作为关键要求，往往以牺牲严格的强一致性为代价。</p>
+          <div data-type="note">
+            <p>有关 CAP 定理（分布式系统中自然出现的一种权衡），请参阅<a data-type="xref" href="#ch01_system_design_trade_offs_and_guidelines_1734552285979675">#ch01_system_design_trade_offs_and_guidelines_1734552285979675</a>。有关 ACID 特性（关系型数据库的基本特性）的更多信息，请参阅<a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>。</p>
+          </div>
+          <p class="pagebreak-before less_space">BASE 的原则包括：</p>
+          <dl>
+            <dt>基本可用</dt>
+            <dd>
+              <p>BASE 中的“基本可用”强调，即使出现网络分区、硬件故障或其他问题，非关系型数据库也应始终保证一定程度的可用性。数据库系统设计为响应客户端请求，即使这意味着牺牲一定程度的数据一致性。对于无法承受停机或无响应的现代应用来说，可用性是一项关键要求。</p>
+            </dd>
+            <dt>软状态</dt>
+            <dd>
+              <p>“软状态”意味着系统状态可能随时间变化，原因包括节点故障、网络延迟或并发更新等。这与传统 ACID 原则中始终保持硬性、严格的状态一致性形成对比。在 BASE 系统中，人们承认系统状态可能是流动的，应用需要设计成能够从容应对这种变化。</p>
+            </dd>
+            <dt>最终一致性</dt>
+            <dd>
+              <p>BASE 最具特色的特征，可能是“最终一致性”原则。ACID 始终强制严格一致性，而 BASE 允许分布式系统中的副本之间暂时缺乏一致性。换句话说，它承认数据库的更新可能需要一些时间才能传播到所有节点，其间会有一小段时间，不同节点对数据的视图略有差异。然而，随着系统解决冲突并同步更新，数据最终会收敛到一致的状态。</p>
+            </dd>
+          </dl>
+          <p>BASE 原则特别适用于对快速扩展和高可用性要求极高的场景，例如现代 Web 应用、实时分析和大规模数据处理。需要注意的是，虽然<a contenteditable="false" data-type="indexterm" data-primary="ACID model">&nbsp;</a>ACID 特性为数据完整性和一致性提供了强有力的保证，但它们可能会妨碍分布式环境中的性能和可扩展性。BASE 则相反，它以牺牲强一致性为代价换取可用性，让应用在出现网络分区或硬件故障时仍能保持响应并继续运行。</p>
+          <p>值得一提的是，选择 ACID 还是 BASE，取决于应用的具体需求。有些应用，例如金融系统或传统关系型数据库，可能优先考虑 ACID 提供的严格一致性，因此需要使用关系型数据库。而另一些应用，例如社交媒体平台或内容分发网络（CDN），可能更能从 BASE 原则所提供的可用性和可扩展性<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="BASE principles" data-startref="nonrelate-db-base">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="BASE principles" data-startref="base">&nbsp;</a>中获益。</p>
+          <p>现在，让我们基于这些数据模型介绍不同类型的非关系型数据库，首先从键值数据库开始。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch03_key_value_databases_1734552286861161">
+        <h1>键值数据库</h1>
+        <p><em>键值数据库</em>是一类<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="key-value stores" id="nonrelate-db-key-value">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="key-value stores" id="key-value-store">&nbsp;</a>非关系型数据库，它提供简单而强大的数据模型，借助分布式哈希表，基于唯一的键高效存储和检索数据。这一设计原则围绕将键映射到对应的值展开，为数据管理提供了高度可扩展、灵活的方法。在本节中，我们将深入探讨键值存储的架构和设计考量，揭示这些精简数据库的内部工作机制。</p>
+        <section data-type="sect2" id="ch03_data_model_1734552286861226">
+          <h2>数据模型</h2>
+          <p>键值存储的<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="key-value stores" data-tertiary="data model" id="nonrelate-db-key-value-model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="key-value stores" data-secondary="data model" id="key-value-store-model">&nbsp;</a>基本概念围绕一种基础数据结构展开：键值对。数据存储在类似 RDBMS 的表中，但表抽象构建在键值存储之上。每个键都关联一个对应的值，二者构成称为<em>项</em>的数据存储单元。键通常在数据库内唯一，用于访问和检索其关联的值。键值存储中的值可以是多种类型，包括字符串、数字、二进制数据，甚至是 JSON 对象等复杂结构。下面来看键值存储的数据模型特征：无模式设计和键的实现。</p>
+          <section data-type="sect3" id="ch03_no_fixed_schema_or_indexes_1734552286861294">
+            <h3>无固定模式或索引</h3>
+            <p>与<a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="key-value stores">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="indexes" data-secondary="key-value stores">&nbsp;</a>传统关系型数据库不同，键值存储不强制使用固定模式。这意味着不同的键值对可以有不同的结构，从而支持动态数据模型。因此，有些项记录可以拥有其他记录没有的属性。</p>
+            <p>键值存储通常缺乏复杂的索引机制，因为它们在很大程度上依赖基于键的查找效率来检索数据。即使存在索引，通常也仅限于键本身，以优化定位目标值的过程。</p>
+          </section>
+          <section data-type="sect3" id="ch03_keys_1734552286861353">
+            <h3>键</h3>
+            <p>在<a contenteditable="false" data-type="indexterm" data-primary="keys" data-secondary="in key-value stores" data-secondary-sortas="key-value stores" id="key-key-value-store">&nbsp;</a>键值存储中，主键、分区键和排序键是高效组织和检索数据的基本概念，如<a data-type="xref" href="#ch03_figure_1_1734552286842516">#ch03_figure_1_1734552286842516</a>所示。</p>
+            <figure id="ch03_figure_1_1734552286842516">
+              <img src="images/sdoa_0301.png"/>
+              <figcaption>键值存储中的键</figcaption>
+            </figure>
+            <p>下面更详细地探讨每个概念：</p>
+            <dl>
+              <dt>主键</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="primary keys" data-secondary="in key-value stores" data-secondary-sortas="key-value stores">&nbsp;</a>主键是键值存储中与每个键值对关联的唯一标识符。它是访问和检索数据的主要手段。主键直接映射到对应的值，因此检索操作很快。主键通常是简单的数据元素，例如字符串、整数，或多个字段的组合。通过保证唯一性，主键确保每个键值对在存储中都可被识别。</p>
+              </dd>
+              <dt>分区键</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="partition keys" data-secondary="in key-value stores" data-secondary-sortas="key-value stores">&nbsp;</a>分区键是主键的子集，负责在分布式键值存储中将数据分布到多个存储分区。它决定数据在存储中的存放位置。分区键用于将数据集划分为更小、更易管理的子集，这些子集可以分布到不同的物理或虚拟存储节点上。每个分区独立运行，从而支持水平扩展并提升性能。选择合适的分区键，可以让数据在各分区间均匀分布、保持均衡，避免热点，并确保存储和检索操作高效。</p>
+              </dd>
+              <dt>排序键</dt>
+              <dd>
+                <p><a contenteditable="false" data-type="indexterm" data-primary="sort keys" data-secondary="in key-value stores" data-secondary-sortas="key-value stores">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="range keys in key-value stores">&nbsp;</a>排序键，又称<em>范围键</em>，是一个可选属性，用于对分区内的数据进行排序。主键唯一标识每个键值对，而排序键则支持高效的范围查询，并按特定顺序检索数据。当你希望根据特定条件查询一定范围的数据时，排序键尤其有用，例如检索时间戳落在某个范围内的所有记录，或按字母或数字顺序检索数据。基于排序键组织数据，使键值存储能够执行高效的范围查询，并优化检索性能。</p>
+              </dd>
+            </dl>
+            <p>总之，主键唯一标识键值存储中的每个键值对。分区键决定数据如何分布到多个存储分区，从而实现水平可扩展性和负载均衡。排序键虽然是可选的，但有助于在每个分区内实现高效的排序和基于范围的查询。理解并恰当运用键值存储中的这些关键概念，有助于优化数据存储、数据检索和<a contenteditable="false" data-type="indexterm" data-primary="keys" data-secondary="in key-value stores" data-secondary-sortas="key-value stores" data-startref="key-key-value-store">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="key-value stores" data-tertiary="data model" data-startref="nonrelate-db-key-value-model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="key-value stores" data-secondary="data model" data-startref="key-value-store-model">&nbsp;</a>查询性能。</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch03_data_access_and_retrieval_operations_1734552286861414">
+          <h2>数据访问与检索操作</h2>
+          <p>在<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="key-value stores" data-tertiary="access and retrieval operations">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="key-value stores" data-secondary="access and retrieval operations">&nbsp;</a>键值存储中，通常使用以下几种操作来处理与特定键关联的数据：</p>
+          <dl>
+            <dt>GetItem </dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="GetItem operation (key-value stores)">&nbsp;</a>GetItem 操作检索描述给定主键所关联项的属性。如果所提供的键不存在对应的项，GetItem 操作返回空结果。</p>
+            </dd>
+            <dt>PutItem</dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="PutItem operation (key-value stores)">&nbsp;</a>PutItem 操作用于向存储中插入项。如果指定的键下没有现有项，该操作会创建新项并将其与键关联。如果给定的键已存在对应的项，PutItem 操作会用新项替换现有项。</p>
+            </dd>
+            <dt>UpdateItem</dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="UpdateItem operation (key-value stores)">&nbsp;</a>UpdateItem 操作用于修改现有项。如果指定键对应的项存在，该操作会更新该项的属性。它允许添加新属性、修改现有属性，或从项中删除属性。如果给定的键不存在对应的项，UpdateItem 操作会改为添加一个新项。</p>
+            </dd>
+            <dt>DeleteItem</dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="DeleteItem operation (key-value stores)">&nbsp;</a>DeleteItem 操作用于从键值存储中移除项。提供项的主键后，DeleteItem 操作会删除对应的项。如果指定的键不存在对应的项，则不执行任何操作。</p>
+            </dd>
+          </dl>
+          <p>这些操作构成了基于关联键与键值存储中的项进行交互的基本函数集。借助这些操作，开发者可以管理和操作键值存储中的数据。</p>
+        </section>
+        <section data-type="sect2" id="ch03_scaling_key_value_stores_1734552286861505">
+          <h2>键值存储的扩展</h2>
+          <p>键值存储<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="key-value stores" data-tertiary="scaling" id="nonrelate-db-key-value-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="key-value stores" data-secondary="scaling" id="key-value-store-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scaling" data-secondary="key-value stores" id="scale-key-value-store">&nbsp;</a>设计用于处理海量数据并支持水平可扩展性。为此，它们通常采用分布式架构，将数据分区到多个节点或服务器上。每个节点负责存储一部分数据，使系统能够应对高负载并提供容错能力。分布式键值存储采用多种技术，例如使用一致性哈希的无主复制或分区算法，将数据均匀分布到各节点。下面详细介绍这些技术。</p>
+          <section data-type="sect3" id="ch03_leaderless_replication_1734552286861565">
+            <h3>无主复制</h3>
+            <p><em>无主复制</em>是<a contenteditable="false" data-type="indexterm" data-primary="leaderless replication" id="leaderless-replicate">&nbsp;</a>分布式系统（包括键值存储）中使用的一种技术，无需依赖单个指定的主节点，即可实现高可用性和容错性。系统中没有专门负责协调读写操作的主节点，所有节点地位平等，都可以独立接受客户端请求，如<a data-type="xref" href="#ch03_figure_2_1734552286842550">#ch03_figure_2_1734552286842550</a>所示。</p>
+            <figure id="ch03_figure_2_1734552286842550">
+              <img src="images/sdoa_0302.png"/>
+              <figcaption>无主系统配置</figcaption>
+            </figure>
+            <p>在无主复制中，数据通常被划分为更小的分区或分片，每个分片通过点对点复制在系统的多个节点间复制。这种复制确保了数据冗余和容错性。客户端要读取或写入数据时，可以把请求发送给系统中的任意节点，无需知道哪个节点是主节点。每个节点都能处理读写操作，从而消除了专用主节点带来的瓶颈和单点故障。</p>
+            <p>为确保一致性，无主复制通常采用<a contenteditable="false" data-type="indexterm" data-primary="quorums">&nbsp;</a>法定人数（quorum）和冲突解决机制等技术。<em>法定人数</em>规定了一次操作被视为成功所需的最少成功响应数。例如，可能要求 N/2 + 1 个节点确认一次写操作，以确保多数节点同意该状态变更。典型的法定人数模型要求写法定人数（W）与读法定人数（R）之和大于节点总数（N），通常表示为：W + R &gt; N。</p>
+            <p class="pagebreak-before less_space">向量时钟和<a contenteditable="false" data-type="indexterm" data-primary="Merkle trees">&nbsp;</a>默克尔树等冲突解决工具，有助于解决不同节点收到针对同一数据的冲突更新时可能出现的冲突。例如，默克尔树能高效找出数据集两个版本之间的具体差异。比较这些树的根哈希，就能精确定位出现差异的分支，从而简化识别和调和冲突数据的过程。</p>
+            <p>无主复制提供高可用性和容错性，因为即使部分节点不可用，系统也能继续运行。客户端可以向任何可用节点发送请求，系统会透明地处理复制和协调。然而，与有指定主节点的系统相比，在无主复制模型中确保各副本之间的强一致性可能更具挑战性。因此，Amazon DynamoDB 基于主从架构，我们已在<a contenteditable="false" data-type="indexterm" data-primary="leaderless replication" data-startref="leaderless-replicate">&nbsp;</a><a data-type="xref" href="#ch01_system_design_trade_offs_and_guidelines_1734552285979675">#ch01_system_design_trade_offs_and_guidelines_1734552285979675</a>中讨论过。</p>
+          </section>
+          <section data-type="sect3" id="ch03_consistent_hashing_1734552286861622">
+            <h3>一致性哈希</h3>
+            <p><em>一致性哈希</em>是分布式系统（包括键值存储）中常用的一种<a contenteditable="false" data-type="indexterm" data-primary="consistent hashing" id="consistent-hash">&nbsp;</a>哈希技术，用于将数据分布到一组节点上，同时尽量减小节点增减对整体数据分布的影响。这种技术有助于确保键值存储和其他分布式系统具备高可用性、负载均衡和便捷的可扩展性。</p>
+            <p>在传统哈希中，对数据进行哈希运算以确定负责存储或提供该数据的节点。然而，当系统增减节点时，这种方式就会出问题。此时需要重新计算数据分布，导致大量数据迁移，并可能造成中断。</p>
+            <p><a data-type="xref" href="#ch03_figure_3_1734552286842574">#ch03_figure_3_1734552286842574</a>所示的一致性哈希通过引入环状结构来表示系统中的节点集合，解决了这个问题。每个节点通过哈希函数被分配到环上的一个位置。数据同样被哈希到环上的一个位置。从数据所在位置顺时针方向最近的节点，负责存储或提供该数据。</p>
+            <p>一致性哈希的关键优势在于，增减节点时只需将一小部分数据重新映射到新节点。大多数数据仍分配给原来的节点，从而最大限度地减少系统中数据的迁移和中断。这使一致性哈希在分布式环境中具有高度的可扩展性和高效性。</p>
+            <p>此外，一致性哈希还能在节点之间实现负载均衡，因为数据在环上均匀分布，各节点被分配的数据分区数量往往相近。它还能让增减节点的扩展更容易，因为数据的重新分布仅限于受影响的<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="key-value stores" data-tertiary="scaling" data-startref="nonrelate-db-key-value-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="key-value stores" data-secondary="scaling" data-startref="key-value-store-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scaling" data-secondary="key-value stores" data-startref="scale-key-value-store">&nbsp;</a>分区。</p>
+            <figure id="ch03_figure_3_1734552286842574">
+              <img src="images/sdoa_0303.png"/>
+              <figcaption>一致性哈希的实现 </figcaption>
+            </figure>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch03_availability_in_key_value_stores_1734552286861681">
+          <h2>键值存储的可用性</h2>
+          <p>在<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="key-value stores" data-tertiary="availability" id="nonrelate-db-key-value-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="key-value stores" data-secondary="availability" id="key-value-store-availabile">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="in key-value stores" data-secondary-sortas="key-value stores" id="available-key-value-store">&nbsp;</a>分布式键值存储中，确保高可用性对于保持系统的响应能力和可靠性至关重要。在这类环境中，通常采用以下机制来实现可用性：</p>
+          <dl>
+            <dt>乐观复制</dt>
+            <dd>
+              <p>乐观复制<a contenteditable="false" data-type="indexterm" data-primary="optimistic replication">&nbsp;</a>是一种在出现网络分区或临时故障时提供可用性的技术。在这种方式下，系统在不同节点上维护数据的多个副本。发生写操作时，变更以异步方式传播到各副本。系统不会等到所有副本确认后才认为写操作成功，而是假定写入成功并继续处理。这种乐观的方式降低了延迟，即使部分副本暂时不可用，也能保持持续可用。然而，它会带来副本之间暂时不一致的可能，这些不一致最终会通过后台同步进程解决。</p>
+            </dd>
+            <dt>宽松仲裁与最后写入者获胜（LWW）</dt>
+            <dd>
+              <p>宽松仲裁<a contenteditable="false" data-type="indexterm" data-primary="sloppy quorum">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="last write wins (LWW)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LWW (last write wins)">&nbsp;</a>和 LWW 是在网络分区或副本不可用期间实现可用性和最终一致性的技术。在宽松仲裁中，只需要一部分副本（而非全部副本）确认读或写操作。通过放宽法定人数的要求，即使部分副本不可用，系统也能继续运行。然而，这种放宽可能导致副本之间暂时不一致。为了解决写操作中的冲突，通常采用 LWW 策略。在 LWW 中，如果多个副本收到针对同一个键的冲突更新，则时间戳最新（依据预定义的排序机制）的更新优先。这种方式牺牲强一致性来换取可用性，确保最新的写入最终传播到所有副本。</p>
+            </dd>
+            <dt>提示移交</dt>
+            <dd>
+              <p>提示移交<a contenteditable="false" data-type="indexterm" data-primary="hinted handoff">&nbsp;</a>是分布式键值存储中用于处理临时不可用或网络分区的一种机制。当对某个无法立即与主副本通信的副本执行写操作时，该写入会以“提示”的形式暂存。待目标副本重新可用后，这些提示再被投递给它。这种方式让写操作保持可用，即使副本出现临时故障也是如此。利用提示移交，可以确保不丢失数据，并确保所有更新最终都应用到相应的副本上。</p>
+            </dd>
+          </dl>
+          <p>通过在可用性与一致性之间权衡取舍，这些机制确保系统即使出现网络分区、临时故障或副本不可用，仍能保持响应并具备韧性<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="key-value stores" data-tertiary="availability" data-startref="nonrelate-db-key-value-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="key-value stores" data-secondary="availability" data-startref="key-value-store-availabile">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="in key-value stores" data-secondary-sortas="key-value stores" data-startref="available-key-value-store">&nbsp;</a>。</p>
+        </section>
+        <section data-type="sect2" id="ch03_advantages_trade_offs_and_considerations_1734552286861739">
+          <h2>优势、权衡与注意事项</h2>
+          <p>键值存储<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="key-value stores" data-tertiary="advantages and trade-offs" id="nonrelate-db-key-value-tradeoff">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="key-value stores" data-secondary="advantages and trade-offs" id="key-value-store-tradeoff">&nbsp;</a>的主要优势之一，是能够提供高性能和低延迟的数据访问。由于直接使用键访问数据，检索过程非常高效，通常只有极小的处理开销。键值存储非常适合需要快速读写操作的用例，例如缓存、会话管理和实时数据处理。</p>
+          <p>键值存储虽然具有出色的可扩展性和性能优势，但也存在一些权衡。其中一个主要考量是查询能力有限。键值存储针对简单的基于键的查找进行了优化，缺乏关系型数据库提供的高级查询能力。此外，在没有表、关系或已定义模式的分布式键值存储中，涉及多个键的事务和复杂操作可能难以实现。开发者通常必须在应用层处理复杂的数据关系，这会使应用设计变得复杂。</p>
+          <p>键值存储广泛应用于各个领域，包括 Web 应用、分布式系统和缓存层。在需要快速、直接访问数据的场景中，它们表现出色，例如用户会话管理、用户档案、产品目录和实时分析。</p>
+        </section>
+        <section data-type="sect2" id="ch03_dynamo_key_value_database_1734552286861797">
+          <h2>Dynamo：键值数据库</h2>
+          <p>键值数据库<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="key-value stores" data-tertiary="Dynamo" id="nonrelate-db-key-value-dynamo">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="key-value stores" data-secondary="Dynamo" id="key-value-store-dynamo">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Dynamo" id="dynamo">&nbsp;</a>为开发者提供灵活、可扩展的解决方案，以分布式和高可用的方式管理数据。其中一个流行的键值存储 Dynamo 已受到广泛关注和采用。</p>
+          <p>Dynamo 是亚马逊开发的高可用、可扩展的键值存储，用于满足其购物车服务的严苛要求。虽然 Dynamo 本身并不开源，但其原理影响了多种开源实现的开发，例如 Riak、Voldemort 和 Dynomite。</p>
+          <p>Dynamo 的特性包括：</p>
+          <dl>
+            <dt>数据模型</dt>
+            <dd>
+              <p>Dynamo 遵循简单的键值数据模型，每个项由一个键唯一标识。与键关联的值可以是任意二进制数据。</p>
+            </dd>
+            <dt>一致性模型</dt>
+            <dd>
+              <p>Dynamo 使用可调的最终一致性模型，这意味着更新可能不会立即反映到所有副本上。</p>
+            </dd>
+            <dt>查询语言</dt>
+            <dd>
+              <p>Dynamo 不提供内置的查询语言，而是依靠简单的基于键的操作来访问数据。</p>
+            </dd>
+            <dt>高可用性</dt>
+            <dd>
+              <p>Dynamo 优先考虑高可用性，确保即使出现故障或网络分区，数据仍可访问。</p>
+            </dd>
+            <dt>水平可扩展性</dt>
+            <dd>
+              <p>Dynamo 通过将数据分布到多台商用硬件服务器上来支持水平扩展，从而在降低计算成本的同时，提升存储容量和性能。</p>
+            </dd>
+          </dl>
+          <div data-type="note">
+            <p>AWS 提供的 Amazon DynamoDB 受 <a href="https://oreil.ly/AbRi9">Dynamo 论文</a>及其初始版本启发。我们将在<a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a>中更详细地介绍它。</p>
+          </div>
+          <p>键值存储的架构和设计优先考虑简单性、可扩展性和高性能数据访问。借助简明的键值数据模型和分布式存储，这些数据库使组织能够高效应对大规模数据管理的挑战，同时提供快速、可靠的数据检索能力。键值数据库是应对现代<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="key-value stores" data-startref="nonrelate-db-key-value">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="key-value stores" data-startref="key-value-store">&nbsp;</a>数据密集型应用的宝贵工具。</p>
+          <p>下一类非关系型数据库基于文档数据模型，以文档的形式存储和管理数据。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch03_document_databases_1734552286861861">
+        <h1>文档数据库</h1>
+        <p><em>文档数据库</em>是<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="document stores" id="nonrelational-db-document">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="document stores" id="document-store">&nbsp;</a>一类非关系型数据库，专为以文档形式存储、检索和管理半结构化数据而设计。它们以灵活的无模式方式存储数据，非常适合数据结构动态、不断演变的应用。在本节中，我们将探讨文档存储的架构和设计考量，阐明其主要特性和优势。</p>
+        <section data-type="sect2" id="ch03_data_model_1734552286861924">
+          <h2>数据模型</h2>
+          <p>文档存储的<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="document stores" data-tertiary="data model" id="nonrelational-db-document-model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="document stores" data-secondary="data model" id="document-store-model">&nbsp;</a>核心是文档数据模型。文档存储不将数据组织成带有预定义模式的表，而是将数据存储为自包含的文档，类似于关系型数据库中的行，通常以 JSON、BSON 或 XML 等格式表示。这些文档的结构可以各不相同，可以包含嵌套字段、数组和键值对，从而以层次化方式表示数据。文档被组织成<em>集合</em>，类似于关系型数据库中的表。文档模型能够将复杂的数据结构作为单个单元存储和检索，因此非常适合处理非结构化或半结构化数据。</p>
+          <p>文档存储模式及其架构的关键组成部分包括：</p>
+          <dl>
+            <dt>集合</dt>
+            <dd>
+              <p>文档存储中的<a contenteditable="false" data-type="indexterm" data-primary="collections">&nbsp;</a>集合是存放相关文档的容器。它们提供数据的逻辑分组，支持按数据的特征或用途来组织和管理数据。例如，在电商应用中，可能有产品、订单和客户的集合。每个集合可以有自己的文档集，每个文档代表一个独立的实体或记录。</p>
+            </dd>
+            <dt>文档</dt>
+            <dd>
+              <p>文档<a contenteditable="false" data-type="indexterm" data-primary="documents">&nbsp;</a>是文档存储中数据的基本单元。文档是一种类似 JSON 的结构，以键值对的形式存储数据。它代表单个实体或记录，可以包含嵌套结构和数组。同一集合中的文档可以有不同的字段集，从而实现灵活的数据结构。文档存储的这种动态特性，在数据快速演变或处理多样且不可预测的数据源时尤其有利。例如，在“products”集合中，每个文档可以包含“name”、“price”、“description”等字段。</p>
+            </dd>
+            <dt>操作符</dt>
+            <dd>
+              <p>文档<a contenteditable="false" data-type="indexterm" data-primary="operators">&nbsp;</a>存储提供丰富的操作符，可用于查询、更新和操作文档内的数据。常见的操作符包括：</p>
+              <dl>
+                <dt>Insert</dt>
+                <dd>
+                  <p>向集合中插入新文档</p>
+                </dd>
+                <dt>Update</dt>
+                <dd>
+                  <p>通过更新或添加字段来修改现有文档</p>
+                </dd>
+                <dt>Delete</dt>
+                <dd>
+                  <p>从集合中移除文档</p>
+                </dd>
+                <dt>Query</dt>
+                <dd>
+                  <p>根据指定条件从集合中检索文档</p>
+                </dd>
+                <dt>Aggregation</dt>
+                <dd>
+                  <p>对文档执行复杂的数据聚合和转换，例如分组、排序和聚合数据</p>
+                </dd>
+              </dl>
+            </dd>
+          </dl>
+          <dl>
+            <dt>投影</dt>
+            <dd>
+              <p>投影<a contenteditable="false" data-type="indexterm" data-primary="projection">&nbsp;</a>是文档存储中的一项强大功能，允许你只检索文档中所需的字段。使用投影时，你可以指定结果集中包含或排除哪些字段。二级索引等索引机制通常用于优化查询性能，使你能够基于特定字段或条件快速访问所需文档。由于只有所需的数据从数据库传输到客户端，这可以显著减少网络流量并提升查询性能。</p>
+            </dd>
+          </dl>
+          <p>总之，文档存储为数据存储和检索提供了灵活的无模式方式。集合将相关文档分组，文档则代表单个实体或记录。操作符提供数据操作功能，投影则支持有选择地检索字段。文档存储的分布式架构支持高可用性、容错性和可扩展性。凭借丰富的功能和灵活的数据模型，文档存储非常适合各种用例，从内容管理系统到实时分析<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="document stores" data-tertiary="data model" data-startref="nonrelational-db-document-model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="document stores" data-secondary="data model" data-startref="document-store-model">&nbsp;</a>应用。</p>
+        </section>
+        <section data-type="sect2" id="ch03_availability_in_document_stores_1734552286861983">
+          <h2>文档存储的可用性</h2>
+          <p>文档存储的架构<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="document stores" data-tertiary="availability">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="document stores" data-secondary="availability">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="in document stores" data-secondary-sortas="document stores">&nbsp;</a>通常是由多个节点组成的分布式系统。这些节点协同工作，提供高可用性、容错性和可扩展性。每个节点都可以独立处理读写操作，从而支持并行处理并提升性能。集合内的数据通常会分区或分片到多个节点上，以分散工作负载并支持水平扩展。</p>
+          <p>文档存储采用多种机制来实现可用性：</p>
+          <dl>
+            <dt>副本集</dt>
+            <dd>
+              <p>副本集<a contenteditable="false" data-type="indexterm" data-primary="replica sets">&nbsp;</a>是文档存储中一组包含数据多个副本的节点。每个副本集由一个主节点和一个或多个从节点组成。主节点负责处理写操作，并作为数据的主要来源。从节点从主节点复制数据，并充当备份。副本集允许在主节点故障时自动故障转移，从而提供容错能力。</p>
+            </dd>
+            <dt>主从节点集群</dt>
+            <dd>
+              <p>在<a contenteditable="false" data-type="indexterm" data-primary="primary-secondary node clusters">&nbsp;</a>主从节点集群架构中，主节点接受写操作并维护数据的权威副本。从节点从主节点复制数据，并充当只读副本。客户端可以从任意从节点读取数据，从而分散读取工作负载并提升读取性能。主从节点集群架构确保读操作可扩展，并可由多个节点处理。当心跳机制诊断出主节点故障时，其中一个从节点会被提升为新的主节点，集群继续运行且不丢失数据。</p>
+            </dd>
+            <dt>心跳机制</dt>
+            <dd>
+              <p><a contenteditable="false" data-type="indexterm" data-primary="heartbeat mechanism">&nbsp;</a>心跳机制监控节点的健康状况和状态，检测故障、启动故障转移流程，并在需要时将从节点提升为新的主节点。它依靠节点之间的定期通信来检测故障并触发相应的动作。文档存储中的节点定期交换心跳消息，以表明自己可用。如果某个节点在指定时间内未响应，就被视为不可用，副本集或集群会采取必要的措施来维持可用性。</p>
+            </dd>
+          </dl>
+          <p>总的来说，这些机制提供容错性、自动故障转移、数据冗余和高效的读取扩展。借助这些特性，文档存储能够持续提供数据访问、经受住故障，并为应用和用户提供一致、可靠的性能。</p>
+        </section>
+        <section data-type="sect2" id="ch03_advantages_trade_offs_and_considerations_1734552286862042">
+          <h2>优势、权衡与注意事项</h2>
+          <p>文档存储<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="document stores" data-tertiary="advantages and trade-offs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="document stores" data-secondary="advantages and trade-offs">&nbsp;</a>广泛应用于各个应用领域，包括内容管理系统、电商平台、实时分析和移动应用开发。在数据建模灵活性、动态模式演进以及复杂数据结构的高效查询至关重要的场景中，它们表现出色。文档存储还便于存储和检索非结构化或半结构化数据，因此适用于涉及用户生成内容、传感器数据、日志文件和社交媒体信息流的场景。</p>
+          <p>文档存储虽然提供灵活性和可扩展性，但也需要考虑一些权衡。无模式设计的灵活性有时会给数据一致性带来挑战，因为数据完整性约束的强制执行可能要交给应用层。此外，缺乏强模式约束和复杂连接，可能会影响某些严重依赖关系和聚合的分析或报表查询。</p>
+          <p>总之，文档存储的架构和设计围绕文档数据模型、灵活的无模式存储、分布式可扩展性和强大的查询能力展开。通过采用面向文档的方式，这些数据库使组织能够轻松处理半结构化和不断演变的数据，实现复杂数据结构的高效存储、检索和操作。文档存储为数据专业人员提供了一种管理多样化动态数据的多功能工具。</p>
+        </section>
+        <section data-type="sect2" id="ch03_mongodb_open_source_document_database_1734552286862100">
+          <h2>MongoDB：开源文档数据库</h2>
+          <p><a href="https://mongodb.com">MongoDB</a> 是一款被广泛采用的开源<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="document stores" data-tertiary="MongoDB" id="nonrelational-db-document-mongodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="document stores" data-secondary="MongoDB" id="document-store-mongodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MongoDB" id="mongodb">&nbsp;</a>文档数据库，以可扩展性、性能和对开发者友好的特性而闻名。它使用灵活的类 JSON 文档模型，让开发者以无模式的方式存储和检索数据。MongoDB 支持动态模式，这意味着集合中的每个文档都可以有自己独特的结构。</p>
+          <p>MongoDB 的特性包括：</p>
+          <dl>
+            <dt>灵活性</dt>
+            <dd>
+              <p>MongoDB 的无模式设计支持灵活的数据模型，便于适应不断变化的应用需求。它允许开发者在同一个集合中处理多变且不断演进的数据结构。</p>
+            </dd>
+            <dt>丰富的查询语言</dt>
+            <dd>
+              <p>MongoDB 提供功能强大的查询语言，支持复杂查询、索引和聚合。它允许开发者表达各种各样的查询操作和转换。</p>
+            </dd>
+            <dt>多文档事务</dt>
+            <dd>
+              <p>MongoDB 中的事务遵循 ACID 特性，详见<a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>。MongoDB 支持多文档事务，使开发者能够在单个事务中处理多个文档。在需要同时更新多个集合中的数据并保持数据完整性的场景中，这尤其有用。</p>
+            </dd>
+            <dt>数据一致性模型</dt>
+            <dd>
+              <p>MongoDB 支持多种一致性模型，允许开发者为应用选择所需的一致性级别。</p>
+            </dd>
+            <dt>水平可扩展性</dt>
+            <dd>
+              <p>MongoDB 通过分片支持水平扩展，使数据可以分布到多个节点上。这有助于实现高性能，并能处理大数据量和高流量负载。</p>
+            </dd>
+            <dt>复制与高可用性 </dt>
+            <dd>
+              <p>MongoDB 支持副本集，即提供数据冗余和自动故障转移的自愈集群。副本集通过维护数据的多个副本来确保高可用性和容错性。</p>
+            </dd>
+          </dl>
+          <p>MongoDB 是一款流行的开源文档存储，具有独特的特性和功能。它拥有庞大而活跃的社区，提供广泛的支持、文档和丰富的第三方集成。MongoDB 的灵活性和社区支持使其适用于各种应用和部署场景，包括本地部署和云端部署。</p>
+          <div data-type="note">
+            <p>AWS 提供 Amazon DocumentDB，<a contenteditable="false" data-type="indexterm" data-primary="DocumentDB">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="document stores" data-secondary="DocumentDB">&nbsp;</a>它兼容 MongoDB，支持强大的即席查询，并提供与 Amazon DynamoDB 类似的事务支持。我们将在<a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a>中更详细地介绍它。</p>
+          </div>
+          <p>下<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="document stores" data-tertiary="MongoDB" data-startref="nonrelational-db-document-mongodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="document stores" data-secondary="MongoDB" data-startref="document-store-mongodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MongoDB" data-startref="mongodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="document stores" data-startref="nonrelational-db-document">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="document stores" data-startref="document-store">&nbsp;</a>一类非关系型数据库基于列式数据模型，它将数据组织成列族，以便高效存储和检索大量数据。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch03_columnar_databases_1734552286862167">
+        <h1>列式数据库</h1>
+        <p><em>列式数据库</em>或<em>列族数据库</em>，也<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" id="nonrelational-db-column">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" id="column-store">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="wide-column stores" data-see="column-family stores">&nbsp;</a>称为<em>宽列存储</em>，是一类非关系型数据库，其独特的架构针对处理海量结构化和半结构化数据进行了优化。这类数据库擅长管理大规模分布式系统、分析，以及需要快速 OLTP 读写性能的用例。在本节中，我们将探讨宽列存储的架构和设计考量，揭示其主要特性和优势。</p>
+        <section data-type="sect2" id="ch03_data_model_1734552286862231">
+          <h2>数据模型</h2>
+          <p>与按行组织数据的<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="data model" id="nonrelational-db-column-model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="data model" id="column-store-model">&nbsp;</a>传统关系型数据库不同，宽列存储采用面向列的数据模型，将列分组为列族或列组。在该模型中，数据按列而非按行存储和检索。每一列代表一个特定的属性或字段，属于该属性的数据值在磁盘上连续存储。这种设计在查询性能方面具有显著优势，因为它支持高效的压缩、数据跳过，以及过滤和聚合等列级操作。</p>
+          <p>列式数据库采用多种压缩技术来提高存储效率和查询性能。由于每一列单独存储，面向列的存储可以获得更好的压缩比。可以根据每一列的数据特征（例如数据类型或冗余程度）单独对其进行压缩。这不仅降低了存储需求，还通过减少磁盘 I/O 和内存占用来提升数据访问速度。</p>
+          <section data-type="sect3" id="ch03_flexible_schema_design_1734552286862287">
+            <h3>灵活的模式设计</h3>
+            <p>宽列存储中的<a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="in column-family stores" data-secondary-sortas="column-family stores">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="flexible schema design" data-secondary="in column-family stores" data-secondary-sortas="column-family stores">&nbsp;</a>模式设计很灵活，可以添加或删除列，而无需改动整个数据集。这种灵活性使其能轻松适应不断变化的业务需求和演进的数据模型。模式变更可以针对每个列族独立进行，从而在管理数据结构时更加敏捷。</p>
+          </section>
+          <section data-type="sect3" id="ch03_keys_1734552286862341">
+            <h3>键</h3>
+            <p>宽列存储<a contenteditable="false" data-type="indexterm" data-primary="keys" data-secondary="in column-family stores" data-secondary-sortas="column-family stores">&nbsp;</a>通常使用两种键，即分区键和聚类键，二者共同构成复合主键。<em>分区键</em>用于<a contenteditable="false" data-type="indexterm" data-primary="partition keys" data-secondary="in column-family stores" data-secondary-sortas="column-family stores">&nbsp;</a>将数据分布到集群中的各个节点，决定数据存储的物理位置。数据根据分区键进行分区，每个分区存储在单独的节点上。高效选择分区键对于均匀的数据分布和最佳的查询性能至关重要。<em>聚类键</em>用于<a contenteditable="false" data-type="indexterm" data-primary="clustering keys in column-family stores">&nbsp;</a>定义分区内数据的顺序，支持在分区内进行高效的排序和基于范围的查询。聚类键可以由多个列组成，为数据定义层次化的排序顺序。</p>
+            <p>选择合适的分区键和聚类键是设计宽列存储数据库的关键环节。这些键决定数据在数据库中如何分布、存储和访问。分区键应选择基数高的列，以实现均匀的数据分布；聚类键则应根据应用的查询访问模式来选择，取决于数据如何按特定顺序或<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="data model" data-startref="nonrelational-db-column-model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="data model" data-startref="column-store-model">&nbsp;</a>模式被检索。</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch03_consistency_levels_1734552286862397">
+          <h2>一致性级别</h2>
+          <p>宽列<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="consistency levels" id="nonrelational-db-column-consistent">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="consistency levels" id="column-store-consistent">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="consistency" data-secondary="in column-family stores" data-secondary-sortas="column-family stores" id="consistent-column-store">&nbsp;</a>存储提供不同的一致性级别，以平衡性能和数据完整性。它们通常提供可调一致性，允许开发者按每次操作配置一致性级别。这样就能针对特定的读写操作精细调整一致性要求。</p>
+          <p>宽列存储中可调一致性的一致性级别基于<em>法定人数</em>（quorum）的概念，即参与一次读或写操作所需的最少副本数。组成法定人数所需的副本数，随期望的一致性级别而异。</p>
+          <section data-type="sect3" id="ch03_eventual_consistency_1734552286862455">
+            <h3>最终一致性</h3>
+            <p>最终一致性<a contenteditable="false" data-type="indexterm" data-primary="eventual consistency">&nbsp;</a>是最弱的一致性级别，可提供最高程度的可用性和低延迟。在宽列存储中，最终一致性意味着副本随时间异步更新，这可能导致暂时的数据不一致。</p>
+            <p>对于最终一致性，法定人数要求可以定义为 <em>ANY</em>。在这种模型中，只要操作应用到至少一个副本，即视为成功，无需所有副本确认或同步。随着时间推移，更新会被传播，并最终在整个系统中收敛到一致的状态。</p>
+          </section>
+          <section data-type="sect3" id="ch03_weak_consistency_1734552286862511">
+            <h3>弱一致性</h3>
+            <p>弱一致性<a contenteditable="false" data-type="indexterm" data-primary="weak consistency">&nbsp;</a>是一种较少使用的一致性级别，与强一致性相比，它提供的数据完整性较低。在宽列存储中，弱一致性允许更宽松的要求，优先考虑可用性和低延迟，而非数据一致性。对于弱一致性，法定人数要求可以定义如下：</p>
+            <dl>
+              <dt>法定人数（QUORUM）</dt>
+              <dd>
+                <p>在这种模型中，当法定人数（即多数副本，超过一半 = N/2 + 1）<a contenteditable="false" data-type="indexterm" data-primary="quorums">&nbsp;</a>确认操作时，即达到该一致性级别。这意味着，对于成功的读或写操作，只要数据在法定人数内至少被一个副本读取或写入，就视为一致。例如，在两个数据中心各有三个副本（共六个副本）的键空间中，写请求会发送到全部六个副本。如果写请求使用 quorum 一致性级别，则必须在超时前至少有六个副本中的四个确认写入，才视为成功。</p>
+              </dd>
+              <dt>本地法定人数（LOCAL_QUORUM）</dt>
+              <dd>
+                <p>在这种模型中，本地<a contenteditable="false" data-type="indexterm" data-primary="local quorum">&nbsp;</a>法定人数指本地数据中心或区域内的多数副本。如果操作在该本地法定人数内完成，则视为一致。</p>
+              </dd>
+            </dl>
+          </section>
+          <section data-type="sect3" id="ch03_strong_consistency_1734552286862567">
+            <h3>强一致性</h3>
+            <p>强一致性<a contenteditable="false" data-type="indexterm" data-primary="strong consistency">&nbsp;</a>提供最高级别的数据一致性，但可能带来更高的延迟和更低的可用性。在宽列存储中，强一致性确保在返回响应之前，所有副本都已同步更新且保持一致。对于强一致性，法定人数要求可以定义为：</p>
+            <dl>
+              <dt>ALL</dt>
+              <dd>
+                <p>在这种模型中，操作必须被集群中的所有副本确认并应用，才被视为一致。这意味着，读或写操作要想成功，就必须传播到系统中的每个副本并得到其确认。</p>
+              </dd>
+              <dt>各数据中心法定人数（EACH_QUORUM）</dt>
+              <dd>
+                <p>在跨多个数据中心或区域的这种模型中，各数据中心法定人数指每个数据中心或区域内的多数副本。当操作在每个这样的法定人数内都完成时，才视为一致。</p>
+              </dd>
+            </dl>
+            <p>这些示例让你大致了解在宽列存储的可调一致性模型中，如何基于法定人数定义一致性级别。需要注意的是，不同的宽列存储数据库，其具体的一致性级别及对应的法定人数要求可能有所不同。选择一致性级别时，必须根据应用和用例的具体需求，考虑一致性、可用性和性能之间的权衡。</p>
+            <p>宽列存储提供灵活的数据模型，支持动态模式演进，并能高效存储结构化和半结构化数据。其模式设计具有适应性，而键（分区键和聚类键）在数据分布和查询优化中起着关键作用。一致性级别则为平衡性能和<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="consistency levels" data-startref="nonrelational-db-column-consistent">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="consistency levels" data-startref="column-store-consistent">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="consistency" data-secondary="in column-family stores" data-secondary-sortas="column-family stores" data-startref="consistent-column-store">&nbsp;</a>数据完整性提供了选项。</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch03_columnar_store_architecture_1734552286862627">
+          <h2>列式存储架构</h2>
+          <p>列式<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="architecture" id="nonrelational-db-column-arch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="architecture" id="column-store-arch">&nbsp;</a>存储的架构因实现而异，但核心组件基本相同。列式存储中数据存储的关键组件包括：</p>
+          <dl>
+            <dt>提交日志</dt>
+            <dd>
+              <p><em>提交日志</em>是<a contenteditable="false" data-type="indexterm" data-primary="commit logs">&nbsp;</a>一种预写日志，记录对数据库执行的所有写操作。它是对数据所做变更的持久化顺序日志。每当发生写操作，都会先写入提交日志，以确保系统故障或崩溃时不会丢失数据。</p>
+            </dd>
+            <dt>memtable</dt>
+            <dd>
+              <p><em>memtable</em> 是<a contenteditable="false" data-type="indexterm" data-primary="memtables">&nbsp;</a>一种内存数据结构，在近期写操作刷新到磁盘之前存放它们。它充当写缓冲区，先把数据暂存在内存中，再以高效的方式持久化到磁盘。memtable 通常构建为有序哈希表或跳表，以支持快速写操作。当 memtable 写满时，会定期刷新到磁盘，生成 SSTable（排序字符串表）。</p>
+            </dd>
+            <dt>SSTable </dt>
+            <dd>
+              <p><em>SSTable</em>（排序字符串表）<a contenteditable="false" data-type="indexterm" data-primary="SSTables">&nbsp;</a>是列式存储中的磁盘数据结构。它们不可变，并按键排序，从而支持高效的范围查询和压缩。每个 SSTable 包含一组有序的键值对，其中键对应行键，值代表每个键的列式数据。SSTable 针对快速读操作进行了优化，并可通过压实来提升性能和存储效率。</p>
+            </dd>
+            <dt>布隆过滤器</dt>
+            <dd>
+              <p>列式存储<a contenteditable="false" data-type="indexterm" data-primary="Bloom filters">&nbsp;</a>利用布隆过滤器判断某个 SSTable 是否包含与特定分区相关的数据。布隆过滤器用于索引扫描，而不用于范围扫描。布隆过滤器是一种概率集合，可快速测试某个元素是否属于该集合，并在内存与准确性之间进行权衡。在可以接受误报但不希望出现漏报的情况下，它们尤其高效。</p>
+            </dd>
+          </dl>
+          <section data-type="sect3" id="ch03_compaction_strategies_1734552286862698">
+            <h3>压实策略</h3>
+            <p><em>压实</em>（压缩合并，compaction）是<a contenteditable="false" data-type="indexterm" data-primary="compaction strategies" id="compact-strategy">&nbsp;</a>合并和压实多个 SSTable 的过程，用于提升读取性能并管理磁盘空间。系统采用多种压实策略，以平衡读写性能和磁盘空间利用率：</p>
+            <dl>
+              <dt>分层压实（size-tiered）</dt>
+              <dd>
+                <p>这种<a contenteditable="false" data-type="indexterm" data-primary="size-tiered compaction">&nbsp;</a>策略按大小把 SSTable 分到不同层级。当某一层级的 SSTable 达到一定阈值时，它们会被合并为下一层级的新 SSTable。这样可以减少 SSTable 的数量，简化数据访问，代价是产生一定的写放大。</p>
+              </dd>
+              <dt>分级压实（leveled）</dt>
+              <dd>
+                <p>在这种<a contenteditable="false" data-type="indexterm" data-primary="leveled compaction">&nbsp;</a>策略中，SSTable 被组织为多个级别，每个级别包含大小大致相等的 SSTable。SSTable 在各级别内进行压实，晋升到更高级别时，会与更大的 SSTable 合并。分级压实提供更均衡的读写性能，代价是磁盘空间开销更高。</p>
+              </dd>
+              <dt>时间窗口压实（time-window）</dt>
+              <dd>
+                <p>这种策略<a contenteditable="false" data-type="indexterm" data-primary="time-window compaction">&nbsp;</a>专为时间序列数据设计，数据按时间窗口组织。它可以根据基于时间的标准丢弃或合并 SSTable，从而高效地使旧数据过期。</p>
+              </dd>
+            </dl>
+          </section>
+          <section data-type="sect3" id="ch03_tombstones_for_soft_delete_1734552286862755">
+            <h3>用于软删除的墓碑</h3>
+            <p><em>墓碑</em>（标记）是列式存储中用于软删除的特殊标记。<a contenteditable="false" data-type="indexterm" data-primary="tombstones">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="soft deletes">&nbsp;</a>删除某一行或某一列时，会创建一个墓碑来表示该删除。墓碑确保已删除的数据在压实和读操作期间得到正确处理，从而保持各 SSTable 之间的数据一致性。在压实期间，墓碑用于识别并移除已删除或已过期的数据。</p>
+            <p>列式存储中墓碑过多，会导致压实期间垃圾回收（GC）停顿显著增加，因为列式存储需要处理并清除这些墓碑，从而拖慢数据访问并增加延迟。大量墓碑还会占用存储空间，而在存在大量墓碑的情况下查询数据，可能导致查询性能下降，因为列式数据库必须筛查这些标记，可能在检索相关数据时造成不必要的开销和延迟。有效的墓碑管理对于保持列式存储的性能和<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="architecture" data-startref="nonrelational-db-column-arch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="architecture" data-startref="column-store-arch">&nbsp;</a>响应能力至关重要。</p>
+          </section>
+        </section>
+        <section data-type="sect2" id="ch03_advantages_trade_offs_and_considerations_1734552286862811">
+          <h2>优势、权衡与注意事项</h2>
+          <p>宽列存储<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="advantages and trade-offs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="advantages and trade-offs">&nbsp;</a>广泛应用于各个领域，尤其是分析、大数据处理和时间序列数据。它们非常适合涉及复杂查询、即席分析、数据仓库和高速数据摄取的应用。用例包括日志分析、金融分析、实时报表、物联网（IoT）数据处理和客户行为分析。</p>
+          <p>宽列存储虽然在可扩展性和查询性能方面优势显著，但也存在一些权衡。由于其分布式特性和复杂的数据组织方式，与传统关系型数据库相比，它们通常需要更高级的数据建模和查询优化。对于严重依赖跨多个表的复杂连接的场景，宽列存储可能不太适合。</p>
+          <p>总之，宽列存储的架构和设计围绕面向列的数据模型、分布式可扩展性和高效的分析能力展开。通过利用列式存储的优势和灵活的模式设计，这些数据库使组织能够高效地存储、检索和分析大量结构化及半结构化数据。</p>
+        </section>
+        <section data-type="sect2" id="ch03_apache_cassandra_open_source_columnar_database_1734552286862869">
+          <h2>Apache Cassandra：开源列式数据库</h2>
+          <p><a href="https://oreil.ly/6929x">Apache Cassandra</a> 是一款高度可扩展的<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="Apache Cassandra" id="nonrelational-db-column-cass">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="Apache Cassandra" id="column-store-cass">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Apache Cassandra" id="apache-cass">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Cassandra" id="cass">&nbsp;</a>分布式开源列式数据库，以能够跨多台商用服务器处理海量结构化和半结构化数据而闻名。它提供稳健的架构和一系列特性，适用于高性能、容错的应用。</p>
+          <p>Cassandra 的特性包括：</p>
+          <dl>
+            <dt>分布式查询语言 </dt>
+            <dd>
+              <p>Cassandra 使用 Cassandra 查询语言（CQL）与数据库交互，这是一种类似 SQL 的查询语言。CQL 为开发者提供熟悉的语法，并提供数据定义、数据操作和查询<span class='keep-together'>能力</span>。它简化了数据访问，并支持复杂的查询、过滤和排序操作。</p>
+            </dd>
+            <dt>分布式与去中心化架构</dt>
+            <dd>
+              <p>Cassandra 遵循分布式架构模型，采用点对点方式。它在节点集群中组织数据，易于扩展并具备容错能力。无主集群中的每个节点都可以独立执行读写操作，从而形成分布式、高可用的数据库系统。</p>
+            </dd>
+            <dt>线性可扩展性</dt>
+            <dd>
+              <p>Cassandra 的架构支持线性可扩展性，这意味着只需向集群添加更多节点，就能应对不断增加的工作负载。这种可扩展性使系统能够随着数据量和用户需求的增长而无缝扩展，因此是数据集快速增长的应用的合适选择。</p>
+            </dd>
+            <dt>高可用性与容错性</dt>
+            <dd>
+              <p>Cassandra 提供内置的高可用性和容错机制。它在节点之间使用点对点复制，确保数据冗余，并防止节点故障时丢失数据。Cassandra 会根据复制因子自动将数据复制到多个节点，保证数据的可用性和持久性。</p>
+            </dd>
+            <dt>可调一致性</dt>
+            <dd>
+              <p>Cassandra 提供可调一致性，使开发者能够为每次读写操作定义所需的一致性级别。这种灵活性允许根据应用的特定需求，在性能和数据一致性之间取得平衡。开发者可以配置从最终一致性到强一致性的各种一致性级别。</p>
+            </dd>
+            <dt>灵活的数据复制与数据中心</dt>
+            <dd>
+              <p>Cassandra 允许跨多个数据中心或地理区域复制数据，提供地理冗余和灾难恢复能力。它支持多种复制策略，包括网络拓扑感知复制，确保分布式环境中的数据可用性和低延迟访问。</p>
+            </dd>
+          </dl>
+          <p>总之，Apache Cassandra 是一款开源列式数据库，提供可扩展性、高可用性、容错性、可调一致性，并支持分布式和去中心化架构。凭借列式数据模型、分布式查询语言、时间序列数据能力和活跃的社区支持，Cassandra 使开发者能够构建稳健、可扩展的应用，在<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="Apache Cassandra" data-startref="nonrelational-db-column-cass">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="Apache Cassandra" data-startref="column-store-cass">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Apache Cassandra" data-startref="apache-cass">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Cassandra" data-startref="cass">&nbsp;</a>分布式环境中处理海量数据。</p>
+          <div data-type="note">
+            <p>AWS 提供 <a contenteditable="false" data-type="indexterm" data-primary="Keyspaces">&nbsp;</a>Amazon Keyspaces（兼容 Apache Cassandra），这是一项高度可扩展、可用且托管的宽列数据库服务，以无服务器方案提供，并与 Apache Cassandra 兼容。我们将在<a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a>中更详细地介绍它。</p>
+          </div>
+          <p>下一类非关系型数据库基于图数据模型，非常适合需要对相互关联的数据进行复杂查询和分析<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-startref="nonrelational-db-column">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-startref="column-store">&nbsp;</a>的应用。</p>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch03_graph_databases_1734552286862927">
+        <h1>图数据库</h1>
+        <p><em>图数据库</em>是<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="graph databases" id="nonrelational-db-graph">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="graph databases" id="graph-db">&nbsp;</a>一类专门的非关系型数据库，旨在处理高度互联的数据和复杂的关系。它们擅长存储、查询和遍历类图结构，非常适合社交网络、推荐系统、欺诈检测和知识图谱等场景。在本节中，我们将探讨图存储的架构和设计考量，揭示其主要特性和优势。</p>
+        <section data-type="sect2" id="ch03_data_model_1734552286862983">
+          <h2>数据模型</h2>
+          <p>图存储的核心是图数据模型，它将数据表示为一组相互连接的节点（顶点）和关系（边）。每个节点通常对应一个实体或对象，而关系则表示节点之间的连接。图数据库存储这些实体、关系及相关属性，以便高效遍历和查询图结构。图数据模型以自然的方式表示复杂的互联数据，支持丰富且富有表现力的数据建模。</p>
+          <p>传统数据库聚焦数据实体及其属性，而图存储则优先考虑实体之间的关系。图数据库中的关系可以带有属性，也可以是有向或无向的，从而支持各种类型的连接。图存储以关系为中心的设计，便于通过遍历节点和关系的查询，发现数据中的模式、路径和洞察。</p>
+        </section>
+        <section data-type="sect2" id="ch03_data_access_and_retrieval_1734552286863037">
+          <h2>数据访问与检索</h2>
+          <p>图存储提供专为探索和查询图结构而设计的强大查询语言或 API。这些语言，例如 Cypher（用于 Neo4j）或 Gremlin（用于 Apache TinkerPop），提供声明式、富有表现力的语法，使用户能够表达复杂的图模式、执行图遍历，并基于关系和属性过滤和聚合数据。</p>
+          <p>图存储采用多种索引技术来优化图遍历和查询性能。它们通常在节点、关系或属性上使用索引，以加快在图中查找特定元素的速度。图数据库还常利用缓存机制，将频繁访问的图元素存储在内存中，进一步缩短查询响应时间。这些索引和缓存策略使图存储能够高效处理复杂的图遍历和模式匹配查询。</p>
+        </section>
+        <section data-type="sect2" id="ch03_advantages_trade_offs_and_considerations_1734552286863092">
+          <h2>优势、权衡与注意事项</h2>
+          <p>在理解和分析实体之间的关系至关重要的场景中，图数据库表现出色。它们特别适合涉及复杂关系、网络分析和推荐系统的应用。它们广泛应用于社交网络平台、欺诈检测系统、推荐引擎、知识图谱和数据血缘分析。</p>
+          <p>图存储虽然提供强大的图遍历和查询能力，但在处理海量数据集和复杂图模式时可能面临挑战。图查询的性能在很大程度上取决于图的规模和结构，某些复杂查询可能需要额外的优化技术。对于主要涉及简单表格数据或需要强事务能力的场景，图存储也未必是最佳选择。</p>
+          <p>总之，图存储的架构和设计围绕图数据模型、以关系为中心的设计、高效的图遍历和查询，以及可扩展的分布式架构展开。通过利用图结构和关系的力量，这些数据库使组织能够在高度互联的数据集中存储、导航并发掘有价值的洞察。</p>
+        </section>
+        <section data-type="sect2" id="ch03_neo4j_open_source_graph_database_1734552286863149">
+          <h2>Neo4j：开源图数据库</h2>
+          <p><a href="https://neo4j.com">Neo4j</a> 是一款领先的开源图数据库，<a contenteditable="false" data-type="indexterm" data-primary="Neo4j" id="neo4j">&nbsp;</a>以强大的图处理能力和直观的查询语言而闻名。它旨在高效地存储、管理和遍历高度关联的数据，非常适合严重依赖复杂关系和互联的应用。</p>
+          <p>Neo4j 的特性包括：</p>
+          <dl>
+            <dt>图数据模型</dt>
+            <dd>
+              <p>Neo4j 围绕属性图数据模型构建，该模型由节点、关系和属性组成。节点代表实体或对象，关系定义节点之间的连接，属性则存储与节点和关系关联的键值对。这种灵活、富有表现力的数据模型让开发者能够轻松表示和探索复杂的关系。</p>
+            </dd>
+            <dt>图查询语言</dt>
+            <dd>
+              <p>Neo4j 使用 Cypher，这是一种专为图数据库设计的强大而直观的查询语言。Cypher 让开发者能够使用熟悉、易读的语法表达复杂的图模式，并执行高级图遍历。它提供丰富的查询能力，包括过滤、聚合和模式匹配，更便于从高度关联的数据中提取有意义的洞察。</p>
+            </dd>
+            <dt>可扩展性与性能</dt>
+            <dd>
+              <p>Neo4j 为图数据处理提供出色的可扩展性和性能。它通过将图分布到集群中的多台机器来支持水平扩展，实现高吞吐量并适应大规模部署。Neo4j 的查询优化器能高效执行查询，利用索引结构和缓存机制，即使在海量图上也能确保最佳性能。</p>
+            </dd>
+            <dt>符合 ACID 特性</dt>
+            <dd>
+              <p>Neo4j 提供强有力的 ACID 保证，以确保数据的完整性和可靠性。它保持严格的事务一致性，允许将多个操作组合成原子性的工作单元。这确保了即使存在并发操作，对图所做的更改也是持久且一致的。</p>
+            </dd>
+            <dt>原生图处理</dt>
+            <dd>
+              <p>Neo4j 从底层开始就设计为原生图数据库，使其能够充分利用图处理算法的威力。它提供广泛的图专用操作，例如最短路径计算、中心性度量、社区发现和图分析。这些内置能力使开发者能够执行复杂的图分析，并高效遍历关系。</p>
+            </dd>
+            <dt>数据可视化</dt>
+            <dd>
+              <p>Neo4j 提供可视化工具，帮助用户理解图的结构、识别图数据中的模式，并洞察复杂的关系。可视化增强了对数据模型的直观理解，并有助于决策过程。</p>
+            </dd>
+          </dl>
+          <p>凭借图数据模型、强大的 Cypher 查询语言、可扩展性、性能、对 ACID 特性的支持、原生图处理能力、活跃的社区和可视化工具，Neo4j 使开发者能够构建复杂的应用，充分发挥关系和图数据的威力。无论用于社交网络、推荐系统、欺诈检测还是知识图谱，Neo4j 都为基于图的<a contenteditable="false" data-type="indexterm" data-primary="Neo4j" data-startref="neo4j">&nbsp;</a>应用提供了坚实的基础。</p>
+          <div data-type="note">
+            <p>AWS 提供完全托管的图数据库服务 Amazon Neptune，我们将在<a contenteditable="false" data-type="indexterm" data-primary="Neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="graph databases" data-startref="nonrelational-db-graph">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="graph databases" data-startref="graph-db">&nbsp;</a><a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a>中更详细地介绍它。</p>
+          </div>
+        </section>
+      </section>
+      <section data-type="sect1" id="ch03_conclusion_1734552286863206">
+        <h1>结论</h1>
+        <p>在结束对非关系型数据库的探索之际，我们可以清楚地看到，这一领域丰富多样。从针对快速操作优化的键值存储，到为分析能力量身定制的列式存储，再到满足灵活数据结构和复杂关系的文档数据库和图数据库，每种类型的非关系型数据库都提供了一套独特的能力。我们没有涵盖其他数据库类型，例如时间序列数据库（如 InfluxDB）、内存数据库（如 Redis）、文本搜索数据库（如 Elasticsearch）、向量数据库（如 Milvus）、地理空间数据库或账本数据库，但可选的类型数量庞大。选择数据库类型应以对应用需求、工作负载特征和增长预期的深入理解为指导，如<a data-type="xref" href="#ch03_figure_4_1734552286842595">#ch03_figure_4_1734552286842595</a>中的决策流程图所示。</p>
+        <p>在<a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892" data-xrefstyle="select:labelnumber">#ch02_storage_types_and_relational_stores_1734552286519892</a>和<a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587" data-xrefstyle="select:labelnumber">#ch03_nonrelational_stores_1734552286860587</a>中，我们了解了不同种类的<a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="choosing">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="choosing" data-secondary="databases">&nbsp;</a>数据库，每种都有自己的特长。一个应用可能既需要关系型数据库，也需要几种非关系型数据库，以支持特定的用例。你可以把这些数据库看作工具箱里的不同工具，帮助我们以各种精彩的方式管理数据。当然，使用多种工具意味着你必须学会如何操作每一种，但这没有问题。每种工具各司其职，关键是为手头的任务选用合适的工具。例如，你要往墙上钉钉子，手边有锤子、扳手、螺丝刀等工具，这时你会选择锤子。所以请记住，始终为任务选择合适的工具，而不要试图让一种工具包办一切，或者把所有工具都用上，因为那样行不通！</p>
+        <p><a data-type="xref" href="#ch03_table_1_1734552286848742">#ch03_table_1_1734552286848742</a>汇总比较了<a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892" data-xrefstyle="select:labelnumber">#ch02_storage_types_and_relational_stores_1734552286519892</a>和<a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587" data-xrefstyle="select:labelnumber">#ch03_nonrelational_stores_1734552286860587</a>中介绍的关系型存储与非关系型存储的特征。</p>
+        <table id="ch03_table_1_1734552286848742">
+          <caption>关系型存储与非关系型存储对比</caption>
+          <thead>
+            <tr>
+              <th>属性</th>
+              <th>关系型存储</th>
+              <th>非关系型存储</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <p>数据模型</p>
+              </td>
+              <td>
+                <p>遵循严格的模式。</p>
+                <p>数据存储在结构明确的表中。向已定义的表添加列可能很困难。</p>
+              </td>
+              <td>
+                <p>无模式。</p>
+                <p>数据存储时没有明确的表结构。根据具体的 NoSQL 设计，数据可以组织为键值对、JSON、文档、图或宽列格式。</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>层次化存储</p>
+              </td>
+              <td>
+                <p>不适合层次化数据存储。</p>
+              </td>
+              <td>
+                <p>最适合层次化或互联数据的存储。</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>可扩展性</p>
+              </td>
+              <td>
+                <p>最适合垂直扩展。</p>
+              </td>
+              <td>
+                <p>可水平扩展。可以采用分片等技术来处理海量数据。</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>连接</p>
+              </td>
+              <td>
+                <p>适合需要跨多个表进行大量复杂连接的查询。</p>
+              </td>
+              <td>
+                <p>可以执行连接，但计算开销很大，在分布式数据库上尤其如此。</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>CAP 定理</p>
+              </td>
+              <td>
+                <p>SQL 事务始终遵循 ACID 特性（强一致性）。</p>
+              </td>
+              <td>
+                <p>NoSQL 数据库通常遵循 BASE 特性（最终一致性）。</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <figure id="ch03_figure_4_1734552286842595">
+          <img src="images/sdoa_0304.png"/>
+          <figcaption>数据库选型决策流程图</figcaption>
+        </figure>
+        <p>我们<a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="relational databases, compared">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="relational databases" data-secondary="nonrelational databases, compared">&nbsp;</a>希望你已经掌握了使用各类数据库的知识，并对不同用例应选择哪种数据库有了基本的了解。下一章将带你探索缓存策略与方案，它们能缩短访问频繁使用的数据所需的时间，即使这些数据来自数据存储。</p>
+      </section>
+    </section>

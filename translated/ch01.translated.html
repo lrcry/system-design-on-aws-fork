@@ -1,0 +1,850 @@
+<section data-type="chapter" id="ch01_system_design_trade_offs_and_guidelines_1734552285979675" xmlns="http://www.w3.org/1999/xhtml">
+<h1>系统设计的权衡与原则</h1>
+
+<p>当今的现代技术革命，得益于大规模软件系统的出现。谷歌、亚马逊、甲骨文和 SAP 等大型企业，都构建了大规模软件系统来运行自身（及其客户）的业务。构建和运营这类大规模软件系统，需要运用第一性原理思维：先设计并制定技术架构，再动手编写代码。原因在于，我们不希望系统在用户增多时无法正常运行，或无法扩展。</p>
+
+<p>如果一开始设计得当，后续的实施过程就会顺畅许多。这需要审视业务需求，理解客户的需要和目标，评估不同的权衡，考虑错误处理和边界情况，展望未来的变化和系统的健壮性，同时还要兼顾算法和数据结构等基础细节。企业认真思考系统，投入时间理解瓶颈、系统需求、目标用户、用户访问模式以及许多类似的决策，就能避免软件开发工作的浪费。简而言之，这就是<em>系统设计</em>。</p>
+
+<p>本章介绍系统设计的基础知识，目标是帮助你理解基本概念、此类大规模软件系统中自然出现的权衡、构建这类系统时应避免的谬误，以及系统设计的原则——这些都是多年来构建大规模软件系统所积累的经验教训。本章旨在为你介绍要点。我们会在后续章节深入细节，但希望你先打下良好的基础。让我们从系统设计的基本概念开始。</p>
+
+<section data-type="sect1" id="ch01_system_design_concepts_1734552285980090">
+<h1>系统设计概念</h1>
+
+<p>要理解系统设计的构建块，我们应当先理解围绕系统的基本概念。在这里，我们可以<a contenteditable="false" data-type="indexterm" data-primary="abstraction">&nbsp;</a>借助<em>抽象</em>：这是计算机科学中的一个概念，指隐藏内部细节，为这些系统设计概念建立模型，帮助我们把握全局。无论是哪种软件系统，系统设计的概念都围绕通信、一致性、可用性、可靠性、可扩展性、系统可维护性和容错性展开。我们将详细介绍每个概念，建立心智模型，同时探讨它们在大规模系统设计中如何应用。</p>
+
+<section data-type="sect2" id="ch01_communication_1734552285980214">
+<h2>通信</h2>
+
+<p>大规模软件系统<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="communication" id="sysdesign-concept-comms">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" id="comms">&nbsp;</a>由许多小型子系统组成，这些子系统称为<em>服务器</em>。它们相互通信，也就是通过网络交换信息或数据，以解决业务问题、提供业务逻辑并组合出功能。通信可以采用同步或异步方式，具体取决于系统的需要和要求。<a data-type="xref" href="#ch01_figure_1_1734552285950529">#ch01_figure_1_1734552285950529</a>展示了同步通信与异步通信在操作顺序上的差异。</p>
+
+<div data-type="note">
+	<p>我们将在<a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a>中详细介绍通信协议以及异步通信的机制。</p>
+	</div>
+
+<figure id="ch01_figure_1_1734552285950529"><img src="images/sdoa_0101.png" />
+<figcaption>同步通信与异步通信的时序图</figcaption>
+</figure>
+
+<section data-type="sect3" id="ch01_synchronous_communication_1734552285980295">
+<h3>同步通信</h3>
+
+<p>想象<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="synchronous" id="comms-synchronous">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="synchronous communication" id="synchronous-comms">&nbsp;</a>你与朋友通电话：你们同时听对方说话，也同时与对方交谈，并利用中间的停顿来完成对话。这就是<em>同步通信</em>的一个例子。同步通信是指两方或多方实时相互通信的一种通信类型。这种通信方式更即时，能更快地解决问题或疑问。</p>
+
+<p>在系统设计中，如果发送方会阻塞（或等待）调用或执行返回后才继续，那么这种通信机制就是同步的。这意味着在接收方返回响应之前，应用程序不会继续执行。用户可能会将此感知为应用程序的延迟或性能滞后。</p>
+</section>
+
+<section data-type="sect3" id="ch01_asynchronous_communication_1734552285980368">
+<h3>异步通信</h3>
+
+<p>现在，想象<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="asynchronous">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="asynchronous communication">&nbsp;</a>你不再打电话，而是改用电子邮件。你通过电子邮件与朋友沟通：发出消息后，等待对方稍后（但在可接受的时间限度内）回复。如果超过这个时间限度仍无回复，你还会按惯例跟进询问。这就是<em>异步通信</em>的一个例子。异步通信是指两方或多方不实时相互通信的一种通信类型。异步通信也可以通过消息平台、论坛和社交媒体进行，用户可以发布消息，而回复未必即时。</p>
+
+<p>在系统设计中，如果发送方不会阻塞（或等待）接收方的调用或执行返回，那么这种通信机制就是异步的。程序或系统会继续执行；当接收服务器返回调用结果时，系统会执行<a contenteditable="false" data-type="indexterm" data-primary="callbacks">&nbsp;</a><em>回调</em>函数。当不需要即时响应，或系统需要更灵活、更能容忍延迟或故障时，系统设计中通常会使用异步通信。</p>
+
+<p>总体而言，在系统设计中选择同步还是异步通信，取决于系统的具体需求和约束。需要实时响应时（例如前端 UI 与后端之间的通信），通常首选同步通信；灵活性和健壮性更重要时（例如检查长时间运行的作业的状态<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="communication" data-startref="sysdesign-concept-comms">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="communication" data-startref="comms">&nbsp;</a>），通常首选异步通信。</p>
+</section>
+</section>
+
+<section data-type="sect2" id="ch01_consistency_1734552285980446">
+<h2>一致性</h2>
+
+<p><em>一致性</em>是指保持一致，或符合一组规则或标准<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="consistency" id="sysdesign-concept-consistent">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="consistency" id="consist">&nbsp;</a>。对于软件系统中服务器之间的通信，一致性是一项重要要求。在系统设计中，一致性可以指多种概念和场景。</p>
+
+<p>在分布式系统中，一致性可以指所有<em>副本</em>节点<a contenteditable="false" data-type="indexterm" data-primary="replica nodes">&nbsp;</a>（稍后详述）或服务器在某一时间点拥有相同的数据视图。这意味着所有副本节点的数据相同，对数据的任何更新都会立即反映在所有副本节点上。</p>
+
+<p>在数据存储和检索中，一致性是指每个读请求都返回最近一次写入的值。这意味着如果某次写操作更新了某条数据的值，那么之后对该数据的任何读请求，都应返回更新后的值。下面我们逐一详细讨论。</p>
+
+<section data-type="sect3" id="ch01_consistency_in_distributed_systems_1734552285980531">
+<h3>分布式系统中的一致性</h3>
+
+<p><em>分布式系统</em>是<a contenteditable="false" data-type="indexterm" data-primary="consistency" data-secondary="in distributed systems" data-secondary-sortas="distributed systems">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="distributed systems" data-secondary="consistency in">&nbsp;</a>物理上分离、但通过网络相连的软件系统，它们利用共享的计算资源来实现共同的目标。</p>
+
+<p>确保一致性，也就是为分布式系统中的每台服务器提供相同的数据视图，可能颇具挑战。原因在于，多台副本服务器可能位于不同的物理位置，可能遭遇不同的故障或延迟。</p>
+
+<p>为应对这些挑战并确保分布式系统中的数据一致性，我们可以使用多种技术：</p>
+
+<dl>
+	<dt>数据复制</dt>
+	<dd>
+	<p>在这种方法中<a contenteditable="false" data-type="indexterm" data-primary="data replication">&nbsp;</a>，数据的多个副本保存在不同的副本节点上，对数据的更新通过阻塞式同步通信同时在所有副本节点上进行。这样可以确保所有副本节点在任意时刻都拥有相同的数据视图。</p>
+	</dd>
+	<dt>共识协议</dt>
+	<dd>
+	<p>共识协议<a contenteditable="false" data-type="indexterm" data-primary="consensus protocols">&nbsp;</a>确保所有副本节点就要对数据进行的更新达成一致。它们可以使用多种机制，例如投票或领导者选举，确保所有副本节点在更新数据之前意见一致。</p>
+	</dd>
+	<dt>冲突解决</dt>
+	<dd>
+	<p>如果<a contenteditable="false" data-type="indexterm" data-primary="conflict resolution">&nbsp;</a>两个或多个副本节点尝试同时更新同一数据，系统会使用冲突解决算法来决定应用哪个更新。这些算法可以采用多种策略来解决冲突，例如最后写入者获胜或合并算法。</p>
+	</dd>
+</dl>
+</section>
+
+<section data-type="sect3" id="ch01_consistency_in_data_storage_and_retrieval_1734552285980610">
+<h3>数据存储与检索中的一致性</h3>
+
+<p>大规模<a contenteditable="false" data-type="indexterm" data-primary="consistency" data-secondary="in data storage systems" data-secondary-sortas="data storage systems" id="consistency-data-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data storage systems" data-secondary="consistency in" id="data-storage-consistency">&nbsp;</a>软件系统会产生和使用大量数据，因此，确保数据存储和检索的一致性，对维护这些系统中数据的准确性和完整性十分重要。例如，设想一个存储银行账户余额的数据库。如果我们从账户中取款，数据库应立即反映更新后的余额。如果数据库无法确保一致性，读请求就可能返回旧的余额，这可能导致我们做出错误的财务决策，甚至给我们或银行造成经济损失。</p>
+
+<p>为应对这些挑战并确保数据存储系统中的读一致性，我们可以使用多种技术：</p>
+
+<dl>
+	<dt>预写式日志（WAL）</dt>
+	<dd>
+	<p>在这种技术中<a contenteditable="false" data-type="indexterm" data-primary="write-ahead logging">&nbsp;</a>，对数据的写入会先记录到日志中，然后才应用到实际数据上。这样，如果系统崩溃或发生故障，就可以通过重放日志将数据恢复到一致的状态。</p>
+	</dd>
+	<dt>加锁</dt>
+	<dd>
+	<p>锁机制<a contenteditable="false" data-type="indexterm" data-primary="locking">&nbsp;</a>用于确保同一时间只能执行一个写操作。这样可以确保多个写操作互不干扰，读操作始终返回最近一次写入的值。</p>
+	</dd>
+	<dt>数据版本控制</dt>
+	<dd>
+	<p>在这种技术中<a contenteditable="false" data-type="indexterm" data-primary="data versioning">&nbsp;</a>，每个写操作都会分配一个版本号，读操作始终返回最新版本的值。这样可以并发执行多个写操作，同时仍确保读操作返回最近一次写入的值。</p>
+	</dd>
+</dl>
+
+<div data-type="note">
+<p>我们<a contenteditable="false" data-type="indexterm" data-primary="consistency" data-secondary="in data storage systems" data-secondary-sortas="data storage systems" data-startref="consistency-data-storage">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data storage systems" data-secondary="consistency in" data-startref="data-storage-consistency">&nbsp;</a>将在第<a data-type="xref" data-xrefstyle="select:labelnumber" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>章和第<a data-type="xref" data-xrefstyle="select:labelnumber" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a>章中详细讨论其中一些确保一致性的技术。</p>
+</div>
+</section>
+
+<section data-type="sect3" id="ch01_consistency_spectrum_model_1734552285980708">
+<h3>一致性谱系模型</h3>
+
+<p>由于<a contenteditable="false" data-type="indexterm" data-primary="consistency" data-secondary="consistency spectrum model" id="consistency-consist-spectrum-model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="consistency spectrum model" id="consistency-spectrum-model">&nbsp;</a>一致性可以有不同的含义，<em>一致性谱系模型</em>能帮助我们判断：分布式系统在同时执行多项操作（如读取、写入和更新数据）时，是否正常工作。一致性谱系模型表示分布式系统可以提供的各种一致性保证，范围从最终一致性到强一致性。选择哪种一致性保证，取决于系统的具体需求和约束。下面我们逐一了解一致性谱系模型中的各个一致性级别：</p>
+
+<dl>
+	<dt>强一致性</dt>
+	<dd>
+	<p>在谱系的一端<a contenteditable="false" data-type="indexterm" data-primary="strong consistency">&nbsp;</a>，强一致性保证所有副本节点在任何时候都拥有相同的数据视图，对数据的任何更新都会立即反映在所有副本节点上。这样可以确保数据始终准确且最新，但在实践中很难实现，因为它要求所有副本节点保持持续通信。</p>
+
+	<div data-type="note">
+	<p>我们将在<a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>中介绍关系数据库作为 ACID 模型一部分的强一致性要求。</p>
+	</div>
+	</dd>
+	<dt>单调读一致性</dt>
+	<dd>
+	<p>单调读一致性<a contenteditable="false" data-type="indexterm" data-primary="monotonic read consistency">&nbsp;</a>保证：客户端一旦从某个副本节点读到一个值，此后该客户端的所有读取都会返回相同的值或更新的值。这意味着客户端不会看到已被其他客户端更新的“过期”数据。它提供比最终一致性更强的一致性保证，因为它确保客户端不会看到过时的数据。</p>
+	</dd>
+	<dt>单调写一致性</dt>
+	<dd>
+	<p>单调写一致性<a contenteditable="false" data-type="indexterm" data-primary="monotonic read consistency">&nbsp;</a>保证：某个副本节点一旦确认了一次写操作，此后从该副本节点进行的所有读取都会返回更新后的值。这意味着在确认写操作之后，副本节点不会再向客户端返回过时的数据。它提供比最终一致性更强的一致性保证，因为它确保副本节点不会向客户端返回过时的数据。</p>
+	</dd>
+	<dt>因果一致性</dt>
+	<dd>
+	<p>因果一致性<a contenteditable="false" data-type="indexterm" data-primary="causal consistency">&nbsp;</a>的工作方式是将操作分为相关操作和独立操作。相关操作也称为<em>因果相关操作</em>。因果一致性会保持因果相关操作的顺序。它保证：如果两个操作在相关操作和独立操作的划分中存在因果关系，那么系统中的所有进程看到它们的顺序都相同。这意味着，如果操作 A 必须先于操作 B 发生，那么系统中的所有进程都会先看到 A，再看到 B。它提供比最终一致性更强的一致性保证，因为它确保相关操作的顺序得以保持。</p>
+	</dd>
+	<dt>最终一致性</dt>
+	<dd>
+	<p>在谱系的<a contenteditable="false" data-type="indexterm" data-primary="eventual consistency">&nbsp;</a>另一端，最终一致性保证：只要时间足够，所有副本节点最终都会拥有相同的数据视图。这样更灵活，也更能容忍延迟或故障，但可能导致数据暂时不一致。</p>
+	</dd>
+</dl>
+
+<div data-type="note">
+<p>我们将在<a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a>中介绍 Cassandra 等一些非关系型列式数据库的<a contenteditable="false" data-type="indexterm" data-primary="tunable consistency">&nbsp;</a>可调一致性特性。</p>
+</div>
+
+<p><a data-type="xref" href="#ch01_figure_2_1734552285950582">#ch01_figure_2_1734552285950582</a>展示了在强一致性或最终一致性下执行一系列操作所得结果的差异。左侧是强一致性：将 <em>x</em> 从 0 更新为 2 后，从副本节点读取 <em>x</em> 时，请求会被阻塞，直到复制完成，然后返回 2。右侧是最终一致性：查询副本节点时，在复制完成之前，它会返回过期的结果，即 <em>x</em> 为 0。</p>
+
+<p>因此，一致性谱系模型提供了一个框架，用于理解分布式系统中一致性与可用性之间的权衡，并帮助系统设计者根据具体需求选择合适的一致性保证。</p>
+
+<figure id="ch01_figure_2_1734552285950582"><img src="images/sdoa_0102.png" />
+<figcaption>强一致性与最终一致性的时序图</figcaption>
+</figure>
+
+<p>分布式系统追求的一致性级别，会直接影响其复杂度<a contenteditable="false" data-type="indexterm" data-primary="distributed systems" data-secondary="complexity and consistency">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="complexity of distributed systems">&nbsp;</a>。一致性模型越严格（如强一致性），越需要跨节点进行大量的协调、同步和共识，这会增加延迟和运营成本，也让故障处理更具挑战。在地理分布的系统中，这种复杂性尤为突出，因为网络延迟和可扩展性约束使全局数据的同步更加复杂。反过来，放宽一致性要求（如最终一致性）可以降低系统复杂度，以允许数据暂时不一致为代价，换取更高的可扩展性和可用性。归根结底，数据准确性与系统简洁性之间存在权衡，每种选择都要根据应用程序对延迟、可用性和正确性的具体需求和容忍度来定制<a contenteditable="false" data-type="indexterm" data-primary="consistency" data-secondary="consistency spectrum model" data-startref="consistency-consist-spectrum-model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="consistency spectrum model" data-startref="consistency-spectrum-model">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="consistency" data-startref="sysdesign-concept-consistent">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="consistency" data-startref="consist">&nbsp;</a>。</p>
+</section>
+</section>
+
+<section data-type="sect2" id="ch01_availability_1734552285980801">
+<h2>可用性</h2>
+
+<p>在大规模软件系统中<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="availability" id="sysdesign-concept-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" id="available">&nbsp;</a>，子系统或服务器可能会宕机，无法完全响应客户端的请求，这就是系统的<em>可用性</em>问题。高可用的系统即使在高负载下，或出现故障和错误时，也能及时处理请求并返回响应。下面我们来尝试量化系统可用性的度量方法。</p>
+
+<section data-type="sect3" id="ch01_measuring_availability_1734552285980894">
+<h3>度量可用性</h3>
+
+<p>可用性<a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="measuring" id="available-measure">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="measuring" data-secondary="availability" id="measure-available">&nbsp;</a>可以用数学方法度量，即系统正常运行的时间（总时间减去系统停机时间）占系统应运行总时间的百分比：</p>
+
+<div data-type="equation">
+	<p data-type="tex">\begin{equation} \text{Availability} \% = \frac{(\text{Total Time} - \text{Sum total of time system was down})}{\text{Total Time}} \times 100 \end{equation}
+	</p></div>
+
+<p>基于这个公式，可用性百分比以“9”的个数来表示，对应一段时间内的停机时间。这些数字的具体换算结果见<a data-type="xref" href="#ch01_table_1_1734552285961064">#ch01_table_1_1734552285961064</a>。</p>
+
+<table id="ch01_table_1_1734552285961064">
+	<caption>以“9”表示的可用性百分比</caption>
+	<thead>
+		<tr>
+			<th>可用性百分比</th>
+			<th>每年停机时间</th>
+			<th>每月停机时间</th>
+			<th>每周停机时间</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>
+			<p>90%（1个9）</p>
+			</td>
+			<td>
+			<p>36.5 天</p>
+			</td>
+			<td>
+			<p>72 小时</p>
+			</td>
+			<td>
+			<p>16.8 小时</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>99%（2个9）</p>
+			</td>
+			<td>
+			<p>3.65 天</p>
+			</td>
+			<td>
+			<p>7.2 小时</p>
+			</td>
+			<td>
+			<p>1.68 小时</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>99.5%（2个9）</p>
+			</td>
+			<td>
+			<p>1.83 天</p>
+			</td>
+			<td>
+			<p>3.60 小时</p>
+			</td>
+			<td>
+			<p>50.4 分钟</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>99.9%（3个9）</p>
+			</td>
+			<td>
+			<p>8.76 小时</p>
+			</td>
+			<td>
+			<p>43.8 分钟</p>
+			</td>
+			<td>
+			<p>10.1 分钟</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>99.99%（4个9）</p>
+			</td>
+			<td>
+			<p>52.56 分钟</p>
+			</td>
+			<td>
+			<p>4.32 分钟</p>
+			</td>
+			<td>
+			<p>1.01 分钟</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>99.999%（5个9）</p>
+			</td>
+			<td>
+			<p>5.26 分钟</p>
+			</td>
+			<td>
+			<p>25.9 秒</p>
+			</td>
+			<td>
+			<p>6.05 秒</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>99.9999%（6个9）</p>
+			</td>
+			<td>
+			<p>31.5 秒</p>
+			</td>
+			<td>
+			<p>2.59 秒</p>
+			</td>
+			<td>
+			<p>0.605 秒</p>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			<p>99.99999%（7个9）</p>
+			</td>
+			<td>
+			<p>3.15 秒</p>
+			</td>
+			<td>
+			<p>0.259 秒</p>
+			</td>
+			<td>
+			<p>0.0605 秒</p>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>可用性的目标通常是尽可能达到最高水平，例如“5个9”（99.999%）甚至“6个9”（99.9999%）。不过，多高的可用性才算现实或可实现，取决于多个因素，包括系统的复杂度、可用于维护和冗余的资源，以及应用程序或服务的具体要求。</p>
+
+<p>要达到更高的可用性，难度和资源消耗会逐级上升。每增加一个9，都需要成倍增加冗余、容错架构和严格的维护实践。这通常需要实现冗余组件、备份系统、负载均衡、<span class='keep-together'>故障转移</span>机制和持续监控，以尽量减少停机时间，并在发生故障时确保快速恢复。</p>
+
+<p>金融交易平台或紧急服务等一些关键系统，可能会追求最高水平的可用性，但要实现并维持这一水平，可能极其困难且成本高昂。相比之下，对于不太关键的应用程序或服务，较低的可用性水平（如 99% 或 99.9%）可能更现实，也更容易在合理的资源约束下实现。</p>
+
+<p>最终，要判断哪种可用性水平现实可行，需要针对每种情况，仔细评估其中涉及的具体要求、资源、成本和权衡<a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="measuring" data-startref="available-measure">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="measuring" data-secondary="availability" data-startref="measure-available">&nbsp;</a>。</p>
+</section>
+
+<section data-type="sect3" id="ch01_availability_in_parallel_versus_in_sequence_1734552285980992">
+<h3>并行与串行系统的可用性</h3>
+
+<p>由多个子系统组成的系统，其可用性取决于这些组件在处理请求时是串行还是并行排列。<a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="sequential systems versus parallel systems" id="available-sequence-parallel">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="sequential systems, availability" id="sequence-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="parallel systems, availability" id="parallel-available">&nbsp;</a><a data-type="xref" href="#ch01_figure_3_1734552285950616">#ch01_figure_3_1734552285950616</a>展示了这两种排列方式：左侧是串行系统，请求需要依次由每个组件处理；右侧是并行系统，请求可以由任一组件并行处理。</p>
+
+<figure id="ch01_figure_3_1734552285950616"><img src="images/sdoa_0103.png" />
+<figcaption>串行系统与并行系统</figcaption>
+</figure>
+
+<p>如果组件是串行的，服务的整体可用性等于各组件可用性的乘积。例如，如果两个可用性为 99.9% 的组件串行排列，它们的总可用性将是 99.8%：</p>
+
+<div data-type="equation">
+		<p data-type="tex">$ \begin{aligned} &amp;\text{Availability of two components in sequence} \\ &amp;= \text{Availability of component 1} \times \text{Availability of component 2} \\ &amp;= .999 \times .999 = .998001 \sim 99.8\% \end{aligned} $
+		</p></div>
+
+<p>另一方面，如果组件是并行的，服务的整体可用性等于各组件可用性之和减去它们不可用性的乘积。例如，如果两个可用性为 99.9% 的组件并行排列，它们的总可用性将是 99.9999%。与相同组件串行排列相比，这可以显著提高可用性（在这个例子中，从3个9提升到6个9）：</p>
+
+
+<div data-type="equation">
+	<p data-type="tex">$ \begin{aligned} &amp;\text{Availability of two components in parallel} \\ &amp;= 1 - \text{Unavailability of both components} \\ &amp;= 1 - (\text{P(Component 1 going down}) \times \text{P(Component 2 going down})) \\ &amp;= 1 - (\text{.001} \times \text{.001}) = 1 - \text{.000001} \\ &amp;= \text{.999999} \sim \text{99.9999}\% \\ \end{aligned} $
+	</p></div>
+
+<p>服务中组件的排列方式会显著影响其整体可用性，因此在设计高可用系统时<a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="sequential systems versus parallel systems" data-startref="available-sequence-parallel">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="sequential systems, availability" data-startref="sequence-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="parallel systems, availability" data-startref="parallel-available">&nbsp;</a>，务必考虑这一点。</p>
+</section>
+
+<section data-type="sect3" id="ch01_ensuring_availability_1734552285981068">
+<h3>确保可用性</h3>
+
+<p>确保<a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="ensuring">&nbsp;</a>系统的可用性，对维持系统的性能和可靠性至关重要。提高系统可用性有几种方法：</p>
+
+<dl>
+	<dt>冗余</dt>
+	<dd>
+	<p>如果系统拥有关键组件或子系统的多个副本<a contenteditable="false" data-type="indexterm" data-primary="redundancy">&nbsp;</a>，即使某个组件发生故障，系统也能继续运行。可以通过使用冗余的负载均衡器、故障转移系统或复制的数据存储来实现。</p>
+	</dd>
+	<dt>容错性</dt>
+	<dd>
+	<p>设计为能抵御故障或错误的系统<a contenteditable="false" data-type="indexterm" data-primary="fault tolerance">&nbsp;</a>，即使出现意外事件也能继续运行。可以通过使用错误处理机制、冗余硬件或自愈系统来实现。</p>
+	</dd>
+	<dt>负载均衡</dt>
+	<dd>
+	<p>通过将传入的请求分发到多台服务器或多个组件<a contenteditable="false" data-type="indexterm" data-primary="load balancing">&nbsp;</a>，系统可以更有效地应对高负载，并保持高可用性。可以通过使用多个负载均衡器或分布式系统来实现。</p>
+	</dd>
+</dl>
+
+<div data-type="note">
+<p>我们将在<a data-type="xref" href="#ch05_load_balancing_approaches_and_techniques_1734552287463010">#ch05_load_balancing_approaches_and_techniques_1734552287463010</a>中详细介绍负载均衡，并在<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>中探讨各类 AWS 负载均衡器。</p>
+</div>
+</section>
+
+<section data-type="sect3" id="ch01_availability_patterns_1734552285981143">
+<h3>可用性模式</h3>
+
+<p>支持高可用性有<a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="patterns" id="available-pattern">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="patterns of availability" id="pattern-available">&nbsp;</a>两种互补的主要模式：故障转移和复制。</p>
+
+<section data-type="sect4" id="ch01_failover_patterns_1734552285981218">
+<h4>故障转移模式</h4>
+
+<p><em>故障转移</em>是指<a contenteditable="false" data-type="indexterm" data-primary="failover patterns" id="failover">&nbsp;</a>主系统发生故障或错误时，切换到冗余系统或备份系统的过程。选择哪种故障转移模式，取决于系统的具体需求和约束，包括期望的可用性水平以及实施故障转移方案的成本。故障转移模式主要有两种：主动-主动和主动-被动：</p>
+
+<dl>
+	<dt>主动-主动故障转移（双活）</dt>
+	<dd>
+	<p>在主动-主动故障转移模式<a contenteditable="false" data-type="indexterm" data-primary="active-active failover pattern">&nbsp;</a>下，如<a data-type="xref" href="#ch01_figure_4_1734552285950648">#ch01_figure_4_1734552285950648</a>左侧所示，多个系统并行使用，所有系统都在主动处理请求。如果某个系统发生故障，其余系统可以继续处理请求，并保持高可用性。这种方法更灵活，资源利用率也更高，但实现和维护可能更复杂，因为它需要更精密的负载均衡和故障转移机制。</p>
+	</dd>
+	<dt>主动-被动故障转移（主备）</dt>
+	<dd>
+	<p>在主动-被动故障转移模式<a contenteditable="false" data-type="indexterm" data-primary="active-passive failover pattern">&nbsp;</a>下，如<a data-type="xref" href="#ch01_figure_4_1734552285950648">#ch01_figure_4_1734552285950648</a>右侧所示，一个系统被指定为主系统，主动处理请求，而一个或多个备份系统保持被动状态。如果主系统发生故障，备份系统会被激活，接管请求的处理。这种方法的实现和维护更简单，因为数据只需单向复制：从主动服务器复制到被动服务器。它还能避免主动-主动配置中可能出现的数据冲突和同步问题的复杂性。不过，如果主系统发生故障，可用性可能下降，因为切换到备份系统存在延迟。</p>
+	</dd>
+</dl>
+
+
+<p>故障转移模式可能需要额外的硬件，并会增加系统的复杂度。如果主动系统在新写入的数据复制到被动系统之前发生故障，还可能造成数据丢失。选择哪种故障转移模式，取决于系统的具体需求和约束，包括期望的可用性水平以及实施故障转移方案的成本。</p>
+
+<div data-type="note">
+<p>这些故障转移模式应用于关系型数据存储、非关系型数据存储、缓存和负载均衡器，我们将分别在第<a data-type="xref" data-xrefstyle="select:labelnumber" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>章、第<a data-type="xref" data-xrefstyle="select:labelnumber" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a>章、第<a data-type="xref" data-xrefstyle="select:labelnumber" href="#ch04_caching_policies_and_strategies_1734552287178593">#ch04_caching_policies_and_strategies_1734552287178593</a>章和第<a data-type="xref" data-xrefstyle="select:labelnumber" href="#ch05_load_balancing_approaches_and_techniques_1734552287463010">#ch05_load_balancing_approaches_and_techniques_1734552287463010</a>章中介绍。</p>
+</div>
+<figure id="ch01_figure_4_1734552285950648"><img src="images/sdoa_0104.png" />
+<figcaption>主动-主动（双活）故障转移系统配置与主动-被动（主备）故障转移系统配置</figcaption>
+</figure>
+</section>
+
+<section data-type="sect4" id="ch01_replication_patterns_1734552285981301">
+<h4>复制模式</h4>
+
+<p><em>复制</em>是指<a contenteditable="false" data-type="indexterm" data-primary="replication patterns" id="replicate-pattern">&nbsp;</a>维护数据或其他资源的多个副本，以提高可用性和容错性。选择哪种复制模式，取决于系统的具体需求和约束，包括期望的可用性水平以及实施复制方案的成本。复制模式主要有两种：多领导者复制和单领导者复制：</p>
+
+<dl>
+	<dt>多领导者复制</dt>
+	<dd>
+	<p>在多领导者复制模式<a contenteditable="false" data-type="indexterm" data-primary="multileader replication">&nbsp;</a>下，如<a data-type="xref" href="#ch01_figure_5_1734552285950683">#ch01_figure_5_1734552285950683</a>左侧所示，多个系统并行使用，所有系统都可以读写数据。这种方式更灵活，资源利用率也更高，因为所有系统都能同时处理请求和数据更新。需要使用负载均衡器，或修改应用程序逻辑，才能支持多个领导者，并确定应写入哪个领导者节点。大多数多领导者系统要么是松散一致的，要么需要增加同步的写延迟才能保持一致。随着写节点增加，冲突解决的作用越来越突出，导致延迟增加。这种方法的实现和维护可能很复杂，因为它需要谨慎管理冲突和错误。</p>
+	</dd>
+	<dt>单领导者复制</dt>
+	<dd>
+	<p>在单领导者复制模式<a contenteditable="false" data-type="indexterm" data-primary="single-leader replication">&nbsp;</a>下，如<a data-type="xref" href="#ch01_figure_5_1734552285950683">#ch01_figure_5_1734552285950683</a>右侧所示，一个系统被指定为领导者系统，负责读写数据，而一个或多个跟随者系统用于复制数据。跟随者系统只能用于读取数据，对数据的更新必须在领导者系统上进行。还需要额外实现逻辑，才能将跟随者提升为领导者。这种方法的实现和维护更简单，但如果领导者系统发生故障，可用性可能下降，因为数据更新只能在领导者系统上进行，还存在丢失数据更新的风险。</p>
+	</dd>
+</dl>
+
+<figure id="ch01_figure_5_1734552285950683"><img src="images/sdoa_0105.png" />
+<figcaption>多领导者复制与单领导者复制系统配置</figcaption>
+</figure>
+
+<p>如果领导者系统在新写入的数据复制到其他节点之前发生故障，就存在数据丢失的风险。使用的只读副本越多，需要复制的写入就越多，可能导致更大的复制延迟。此外，使用只读副本会影响系统性能，因为系统可能忙于重放写入，导致无法处理同样多的读请求。再者，复制可能需要额外的硬件，这会增加系统的复杂度。最后，有些系统在领导者系统上的写入性能可能更高，因为它可以创建多个线程并行写入，而只读副本可能只支持用单个线程顺序写入。选择哪种复制模式，取决于系统的具体需求和约束，包括期望的可用性水平以及实施复制方案的成本。</p>
+
+<div data-type="note">
+<p>我们将在第<a data-type="xref" data-xrefstyle="select:labelnumber" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>章和第<a data-type="xref" data-xrefstyle="select:labelnumber" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a>章中介绍关系型和非关系型数据存储如何使用单领导者复制和多领导者复制来确保可用性。请留意<a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a>中的无主复制：它使用一致性哈希，在键值存储和列式存储等非关系型存储中确保可用性<a contenteditable="false" data-type="indexterm" data-primary="replication patterns" data-startref="replicate-pattern">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="patterns" data-startref="available-pattern">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="patterns of availability" data-startref="pattern-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="availability" data-startref="sysdesign-concept-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-startref="available">&nbsp;</a>。</p>
+</div>
+</section>
+</section>
+</section>
+
+<section class="pagebreak-before" data-type="sect2" id="ch01_reliability_1734552285981380">
+<h2 class="less_space">可靠性</h2>
+
+<p>在系统设计中<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="reliability" id="sysdesign-concept-reliable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="reliability" id="reliable">&nbsp;</a>，<em>可靠性</em>是指系统或组件在给定时间段内持续、无故障地执行其预期功能的能力。它衡量系统的可信赖程度。可靠性通常表示为系统无故障运行的概率或时间百分比。例如，可靠性为 99% 的系统，只有 1% 的时间会发生故障。下面我们来尝试量化系统可靠性的度量方法。</p>
+
+<section data-type="sect3" id="ch01_measuring_reliability_1734552285981470">
+<h3>度量可靠性</h3>
+
+<p>度量系统可靠性的<a contenteditable="false" data-type="indexterm" data-primary="measuring" data-secondary="reliability" id="measure-reliable">&nbsp;</a>一种方法，是使用平均故障间隔时间（MTBF）和平均修复时间（MTTR）。</p>
+
+<section data-type="sect4" id="ch01_mean_time_between_failures_1734552285981547">
+<h4>平均故障间隔时间</h4>
+
+<p>MTBF 衡量系统在不发生故障的情况下，平均能运行多长时间<a contenteditable="false" data-type="indexterm" data-primary="mean time between failures (MTBF)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MTBF (mean time between failures)">&nbsp;</a>。它通常以小时或其他时间单位表示。MTBF 越高，系统就被认为越可靠：</p>
+
+
+<div data-type="equation">
+	<p data-type="tex">\begin{equation} \label {Mean time between failures (MTBF)} \text{Mean time between failures (MTBF)} = \frac{(\text{Total Elapsed Time} - \text{Sum total of time system was down})}{\text{Total Number of Failures}} \end{equation}
+	</p></div>
+	
+
+<p>对于关键任务系统，通常期望 MTBF 达到数万小时或更高，而消费电子产品的 MTBF 值可能较低。例如，高可靠性服务器的 MTBF 目标通常为 50,000 小时或更高；消费级笔记本电脑的 MTBF 可能在 5,000−10,000 小时左右。</p>
+
+<p>MTBF 有助于估算故障发生的频率，从而更好地规划和预算维护活动。如果某个关键组件的 MTBF 较低，可以通过冗余来尽量减少停机时间。在高可用性配置中，可以将多台 MTBF 较低的服务器或组件组成集群，以实现整体可靠性。随着设计变更使 MTBF 提高，你可以定量评估可靠性的提升，最终减少故障并降低运营成本。</p>
+</section>
+
+<section data-type="sect4" id="ch01_mean_time_to_repair_1734552285981621">
+<h4>平均修复时间</h4>
+
+<p>MTTR 衡量修复系统故障平均所需的时间<a contenteditable="false" data-type="indexterm" data-primary="mean time to repair (MTTR)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MTTR (mean time to repair)">&nbsp;</a>。它同样通常以小时或其他时间单位表示。MTTR 越低，系统在故障后恢复运行就越快：</p>
+
+
+<div data-type="equation">
+	<p data-type="tex">\begin{equation} \label {Mean time to repair (MTTR)} \text{Mean time to repair (MTTR)} = \frac{(\text{Total Maintenance Tim}e)}{\text{Total Number of Repairs}} \end{equation}
+	</p></div>
+
+<p>MTBF 和 MTTR 结合起来，可用于理解系统的整体可靠性。例如，MTBF 高且 MTTR 低的系统，比 MTBF 低且 MTTR 高的系统更可靠，因为它不太可能发生故障，而且一旦发生故障<a contenteditable="false" data-type="indexterm" data-primary="measuring" data-secondary="reliability" data-startref="measure-reliable">&nbsp;</a>，也能更快恢复运行。</p>
+</section>
+</section>
+
+<section data-type="sect3" id="ch01_reliability_and_availability_1734552285981700">
+<h3>可靠性与可用性</h3>
+
+<p>需要注意，可靠性与可用性并不互斥<a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="reliability and">&nbsp;</a>。系统可以既可靠又可用，也可以两者都不具备。可靠但不可用的系统用处不大，因为它虽然可靠，却无法在需要时执行其预期功能。可用但不可靠的系统同样没有用处，因为它虽然能在需要时执行其预期功能，却无法持续执行，也无法保证不出故障。</p>
+
+<p>要实现高可靠性和高可用性，满足约定的<a contenteditable="false" data-type="indexterm" data-primary="service-level objectives (SLOs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SLOs (service-level objectives)">&nbsp;</a>服务级别目标（SLO），就必须设计并维护带有冗余组件和强大故障转移机制的系统。定期进行维护和测试，也能确保系统以最佳性能水平运行。总体而言，系统的可靠性是系统设计中的重要考量因素，因为它会随时间推移影响系统的性能和可用性。</p>
+
+<div data-type="note">
+<p>AWS 托管服务（将在<a href="#part2" data-type="xref">#part2</a>中介绍）的 SLO 和目标（包括变更管理、问题管理和服务请求管理），见 <a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="reliability" data-startref="sysdesign-concept-reliable">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="reliability" data-startref="reliable">&nbsp;</a><a href="https://oreil.ly/oex3G">AWS 文档</a>。</p>
+</div>
+</section>
+</section>
+
+<section data-type="sect2" id="ch01_scalability_1734552285981791">
+<h2>可扩展性</h2>
+
+<p>在系统设计中<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="scalability" id="sysdesign-concept-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scalability" id="scale">&nbsp;</a>，我们需要确保系统的性能能随着工作负载的增长，借助新增的资源而提升。这里的工作负载既可以是请求负载，也可以是数据存储负载。这在系统设计中称为<em>可扩展性</em>，要求系统能够响应不断增长的需求和负载。例如，社交网络需要随着用户数量的增长，以及平台上需要索引和提供的内容信息流的增长而扩展。</p>
+
+<p>扩展系统的两种主要互补模式是垂直扩展和水平扩展：</p>
+
+<dl>
+	<dt>垂直扩展（纵向扩展）</dt>
+	<dd>
+	<p>垂直扩展<a contenteditable="false" data-type="indexterm" data-primary="scalability" data-secondary="vertical scaling">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="vertical scaling">&nbsp;</a>是指为单台服务器升级更多资源（CPU、内存、图形处理单元、存储等），提升其容量，以满足系统的负载需求，如<a data-type="xref" href="#ch01_figure_6_1734552285950724">#ch01_figure_6_1734552285950724</a>左侧所示。处理可预测的流量时，垂直扩展很有用，因为它可以调用更多资源来应对现有需求。不过，单台服务器基于其当前配置所能扩展的程度有限。纵向扩展的成本通常也较高，因为向现有服务器添加更多高端资源需要更大的投入。</p>
+	</dd>
+	<dt>水平扩展（横向扩展）</dt>
+	<dd>
+	<p>水平扩展<a contenteditable="false" data-type="indexterm" data-primary="scalability" data-secondary="horizontal scaling">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="horizontal scaling">&nbsp;</a>是指添加更多通用服务器来处理请求，增加服务器数量，以满足系统的负载需求，如<a data-type="xref" href="#ch01_figure_6_1734552285950724">#ch01_figure_6_1734552285950724</a>右侧所示。处理不可预测的流量时，水平扩展很有用，因为它增加了处理更多请求的容量；一旦有需求，还可以经济高效地向资源池中添加更多服务器。水平扩展虽然在扩展成本上更有优势，但难点在于：管理多台服务器，并确保它们作为一台抽象的单一服务器协同处理工作负载，会带来复杂性。</p>
+	</dd>
+</dl>
+
+<figure id="ch01_figure_6_1734552285950724"><img src="images/sdoa_0106.png" />
+<figcaption>垂直扩展与水平扩展</figcaption>
+</figure>
+
+<div data-type="note">
+<p>我们将在<a data-type="xref" href="#ch05_load_balancing_approaches_and_techniques_1734552287463010">#ch05_load_balancing_approaches_and_techniques_1734552287463010</a>中详细介绍这两种扩展方式及其机制。</p>
+</div>
+
+<p>在系统的早期阶段，你可以先通过垂直扩展来提升系统，为其添加更好的配置。之后，当遇到纵向扩展的上限时，可以转为对系统进行水平扩展<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="scalability" data-startref="sysdesign-concept-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scalability" data-startref="scale">&nbsp;</a>。</p>
+</section>
+
+<section data-type="sect2" id="ch01_maintainability_1734552285981862">
+<h2>可维护性</h2>
+
+<p>在系统设计中<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="maintainability">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="maintainability">&nbsp;</a>，<em>可维护性</em>是指系统能够被修改、调整或扩展，以满足用户不断变化的需求，同时确保运行顺畅。软件系统要具备可维护性，就必须设计得灵活，易于修改或扩展。可维护性涉及系统的以下三个基本方面：</p>
+
+<dl>
+	<dt>可操作性</dt>
+	<dd>
+	<p>这要求系统<a contenteditable="false" data-type="indexterm" data-primary="operability">&nbsp;</a>在正常条件下运行顺畅，甚至在发生故障后，能在规定时间内恢复正常运行。系统在可操作性方面具备可维护性，就能减少保持系统顺畅运行所需的时间和精力。这一点很重要，因为高效的运维和管理有助于提升系统整体的稳定性、可靠性和可用性。</p>
+	</dd>
+	<dt>简明性</dt>
+	<dd>
+	<p>这要求系统简单清晰<a contenteditable="false" data-type="indexterm" data-primary="lucidity">&nbsp;</a>，便于理解、添加功能进行扩展，甚至修复缺陷。系统简明，团队成员之间就能高效协作，调试和维护任务也更简单，还有利于知识传递。这也降低了在修改或更新过程中引入错误的风险。</p>
+	</dd>
+	<dt>可修改性</dt>
+	<dd>
+	<p>这要求系统以模块化的方式构建<a contenteditable="false" data-type="indexterm" data-primary="modifiability">&nbsp;</a>，以便轻松更改和扩展，而不影响其他子系统的功能。可修改性至关重要，因为软件系统需要不断演进，以适应新的业务需求、技术进步或用户反馈。缺乏可修改性的系统可能陷入停滞，难以改变，也难以增强功能或适应未来的需求。</p>
+	</dd>
+</dl>
+
+<p>优先考虑可维护性，组织可以减少停机时间、降低维护成本、提高生产力，并延长软件系统的寿命、提升其价值。</p>
+</section>
+
+<section data-type="sect2" id="ch01_fault_tolerance_1734552285981937">
+<h2>容错性</h2>
+
+<p>大规模<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="fault tolerance" id="sysdesign-concept-fault">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="fault tolerance" id="fault-tolerance">&nbsp;</a>系统通常使用大量服务器和存储设备来处理并响应用户请求、存储数据。<em>容错性</em>要求系统能从任何故障（无论是硬件故障还是软件故障）中恢复，并继续处理请求。这意味着要避免大型系统中的单点故障，并能将请求重新路由到正常运行的子系统以完成工作负载。</p>
+
+<p>容错性需要在硬件和软件层面都得到支持，同时确保数据安全，也就是确保数据不丢失。确保数据安全的两种主要机制是复制和检查点。</p>
+
+<section data-type="sect3" id="ch01_replication_1734552285982009">
+<h3>复制</h3>
+
+<p>基于复制的<a contenteditable="false" data-type="indexterm" data-primary="replication-based fault tolerance">&nbsp;</a>容错性，通过多个副本服务器复制服务，并将数据复制为多个副本存放在多台存储服务器上，来同时确保数据安全和请求处理。发生故障时，故障节点会被一个完全正常运行的副本节点替换。同样，如果数据存储发生故障，数据会重新从副本存储中提供。我们已在<a data-type="xref" href="#ch01_availability_1734552285980801">ch01_availability_1734552285980801</a>中讨论过复制模式。</p>
+</section>
+
+<section data-type="sect3" id="ch01_checkpointing_1734552285982079">
+<h3>检查点</h3>
+
+<p>基于检查点的容错性<a contenteditable="false" data-type="indexterm" data-primary="checkpointing" id="checkpoint">&nbsp;</a>确保数据被可靠地存储和备份，即使在初始处理完成之后也是如此。它让系统能够通过恢复到之前的系统状态，从任何潜在的数据丢失中恢复，并防止数据丢失。检查点通常用于确保系统和数据的完整性，尤其是处理大型数据集时。它还可以用来验证数据没有损坏或缺失，因为它能快速检测到数据中的任何变化或问题，然后采取纠正措施。检查点是保障数据完整性、可靠性和安全性的重要工具。</p>
+
+<div data-type="note">
+<p>数据库的恢复管理器使用检查点，确保数据库在发生故障或崩溃时的持久性和可靠性。我们将在<a data-type="xref" href="#ch02_storage_types_and_relational_stores_1734552286519892">#ch02_storage_types_and_relational_stores_1734552286519892</a>中详细介绍。</p>
+</div>
+
+<p>检查点可以通过同步或异步机制来实现：</p>
+
+<dl>
+	<dt>同步检查点</dt>
+	<dd>
+	<p>系统中的同步检查点<a contenteditable="false" data-type="indexterm" data-primary="synchronous checkpointing">&nbsp;</a>是这样实现的：停止所有数据变更请求，只允许读请求，同时等待当前数据变更的检查点过程完成。这样始终能确保所有节点的数据状态一致。</p>
+	</dd>
+	<dt>异步检查点</dt>
+	<dd>
+	<p>系统中的异步检查点<a contenteditable="false" data-type="indexterm" data-primary="asynchronous checkpointing">&nbsp;</a>是这样实现的：在所有节点上异步地创建检查点，同时继续处理所有请求（包括数据变更请求），而无需等待检查点过程完成的确认。这种机制的缺点是，各服务器之间的数据状态可能不一致。</p>
+	</dd>
+</dl>
+
+<p>在基于检查点的容错性中，恢复时间目标（RTO）和恢复点目标（RPO）是关键指标，有助于界定数据恢复和系统可靠性的有效性：</p>
+
+<dl>
+	<dt>恢复点目标</dt>
+	<dd>
+	<p>RPO<a contenteditable="false" data-type="indexterm" data-primary="recovery point objective (RPO)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RPO (recovery point objective)">&nbsp;</a>定义以时间衡量的、可接受的最大数据丢失量。它表示系统在对运营造成重大影响之前，能承受丢失多少数据。在检查点机制中，RPO 决定了应以多高的频率创建检查点。例如，如果 RPO 设置为 15 分钟，系统就应每 15 分钟创建一个检查点，以确保恢复时丢失的数据不超过 15 分钟的量。RPO 越小（检查点越频繁），数据保护越好，但可能增加系统负载和存储需求。对于大型数据集，要实现较低的 RPO，需要高效的数据存储和快速的检查点机制。</p>
+	</dd>
+	<dt>恢复时间目标</dt>
+	<dd>
+	<p>RTO<a contenteditable="false" data-type="indexterm" data-primary="recovery time objective (RTO)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="RTO (recovery time objective)">&nbsp;</a>规定故障发生后可接受的最长停机时间，表示系统应以多快的速度恢复到运行状态。检查点有助于缩短 RTO，因为系统可以从最近的检查点恢复，而无需从头重新开始。在处理大型数据集或实时数据时，更快的恢复时间至关重要，因为任何停机都可能影响用户或服务。检查点对 RTO 的有效性，取决于从检查点恢复数据的难易程度，以及系统无需大量重新处理就能快速恢复运行的能力<a contenteditable="false" data-type="indexterm" data-primary="checkpointing" data-startref="checkpoint">&nbsp;</a>。</p>
+	</dd>
+</dl>
+
+<p>现在你应该已经理解了大规模系统的基本概念和要求。我们致力于构建高性能、可扩展的系统，同时还要让它具备高可用性、可靠性、可维护性和容错性。在探讨如何构建这样的系统之前，让我们先了解其中固有的谬误，以及设计这类系统时的权衡<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="concepts" data-tertiary="fault tolerance" data-startref="sysdesign-concept-fault">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="fault tolerance" data-startref="fault-tolerance">&nbsp;</a>。</p>
+</section>
+</section>
+</section>
+
+<section data-type="sect1" id="ch01_fallacies_of_distributed_computing_1734552285982155">
+<h1>分布式计算的谬误</h1>
+
+<p>由于<a contenteditable="false" data-type="indexterm" data-primary="distributed systems" data-secondary="fallacies of" id="distributed-system-fallacy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="fallacies of distributed systems" id="sysdesign-fallacy">&nbsp;</a>大规模软件系统涉及多个分布式系统，它往往会陷入某些谬误，导致错误的假设和实现。<a href="https://oreil.ly/Byb-U">这些谬误</a>由 <a href="https://oreil.ly/rKk8M">L. Peter Deutsch</a> 提出，涵盖了软件开发人员在实现分布式系统时常有的错误假设。这八个谬误如下：</p>
+
+<dl>
+	<dt>可靠网络</dt>
+	<dd>
+	<p>第一个谬误是假设“网络是可靠的”<a contenteditable="false" data-type="indexterm" data-primary="reliable network fallacy">&nbsp;</a>。网络复杂、动态，而且往往不可预测。交换机故障或断电等小问题，就可能让整个数据中心的网络瘫痪，使网络变得不可靠。因此，设计大规模系统时，务必考虑网络不可靠的可能性，并从一开始就确保网络容错。既然网络本质上不可靠，要在其上构建可靠的服务，就必须依靠能够应对网络中断和丢包的协议。</p>
+	</dd>
+	<dt>零延迟</dt>
+	<dd>
+	<p>第二个谬误是假设“延迟为零”<a contenteditable="false" data-type="indexterm" data-primary="zero latency fallacy">&nbsp;</a>。延迟是网络固有的限制，受光速约束。也就是说，即使在理论上完美的系统中，数据在节点之间的传输速度也无法超过光速。为了应对延迟，系统的设计应通过边缘计算，甚至通过选择地理上更靠近客户端的数据中心的服务器，并明智地路由流量，让客户端靠近数据。</p>
+	</dd>
+	<dt>无限带宽</dt>
+	<dd>
+	<p>第三个谬误是假设“带宽是无限的”<a contenteditable="false" data-type="indexterm" data-primary="infinite bandwidth fallacy">&nbsp;</a>。当大量数据流经网络时，总会出现网络资源争用，导致排队延迟、瓶颈、丢包和网络拥塞。为了应对有限的带宽，构建系统时应对传输中的数据使用轻量级数据格式，以节省网络带宽并避免网络拥塞。</p>
+	</dd>
+	<dt>安全网络</dt>
+	<dd>
+	<p>第四个谬误是假设“网络是安全的”<a contenteditable="false" data-type="indexterm" data-primary="secure network fallacy">&nbsp;</a>。网络有多种被攻破的途径（包括软件缺陷、操作系统漏洞、病毒和恶意软件、跨站脚本、未加密的通信、恶意的中间人等）。假设网络始终安全，可能导致系统被攻破和失效。为了应对不安全的网络，构建系统时应秉持安全优先的思维，并对已构建的系统进行防御测试和威胁建模。</p>
+	</dd>
+	<dt>固定拓扑</dt>
+	<dd>
+	<p>第五个谬误是假设“拓扑结构不会改变”<a contenteditable="false" data-type="indexterm" data-primary="fixed topology fallacy">&nbsp;</a>。在分布式系统中，由于节点故障或新增节点，拓扑结构会不断变化。构建假设拓扑固定的系统，会因延迟和带宽约束而导致系统问题和故障。因此，必须将底层拓扑抽象出来，让系统在构建时不依赖底层拓扑，并能容忍其变化。</p>
+	</dd>
+	<dt>单一管理员</dt>
+	<dd>
+	<p>第六个谬误是假设“只有一个管理员”<a contenteditable="false" data-type="indexterm" data-primary="single administrator fallacy">&nbsp;</a>。在个人项目这样的小型系统中，这个假设或许合理；但在大规模分布式计算中，这个假设不成立：多个系统各有独立的操作系统，各有不同的团队负责，因此存在多个管理员。为了应对这一点，系统应以解耦的方式构建，确保修复和故障排查也变得简单且分布式。</p>
+	</dd>
+	<dt>零传输成本</dt>
+	<dd>
+	<p>第七个谬误是假设“传输成本为零”<a contenteditable="false" data-type="indexterm" data-primary="zero transport cost fallacy">&nbsp;</a>。网络基础设施是有成本的，包括网络服务器、交换机、路由器等硬件的成本，这些硬件的操作系统的成本，以及保持一切顺畅运行的团队成本。因此，认为将数据从一个节点传输到另一个节点的成本可以忽略不计，这种假设是错误的，必须相应地计入预算，以避免出现巨大的资金缺口。</p>
+	</dd>
+	<dt>同质网络</dt>
+	<dd>
+	<p>第八个谬误是假设“网络是同质的”<a contenteditable="false" data-type="indexterm" data-primary="homogeneous network fallacy">&nbsp;</a>。网络由多种配置不同的设备构建而成，并在不同层使用多种协议。考虑网络的异构性，并关注系统的互操作性（即确保子系统尽管存在这些差异，仍能相互通信、协同工作），有助于避免这个陷阱。</p>
+	</dd>
+</dl>
+
+<div data-type="note">
+<p><a href="https://oreil.ly/_4X-y">AWS Well-Architected 框架</a>由六大核心支柱组成<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="AWS Well-Architected Framework">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Well-Architected Framework (AWS)">&nbsp;</a>，为在 AWS 云上设计和构建系统提供指导和最佳实践，以避免这些谬误和陷阱。卓越运营支柱可避免单一管理员谬误和同质网络谬误。安全性支柱可避免安全网络谬误。可靠性支柱可避免可靠网络谬误和固定拓扑谬误。性能效率支柱可避免零延迟谬误和无限带宽谬误。成本优化和可持续性支柱可避免零传输成本谬误。我们在此不会详细介绍 Well-Architected 框架。</p>
+</div>
+
+<p>这些谬误涵盖了构建大规模系统时应避免的基本假设。总体而言，忽视分布式计算的谬误，可能引发一系列问题，包括系统故障、性能瓶颈、数据不一致、安全漏洞、可扩展性挑战，以及系统管理复杂度的增加。在设计和实现分布式系统时，务必认识并考虑这些谬误，以确保系统在真实环境中健壮、可靠且有效地运行<a contenteditable="false" data-type="indexterm" data-primary="distributed systems" data-secondary="fallacies of" data-startref="distributed-system-fallacy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="fallacies of distributed systems" data-startref="sysdesign-fallacy">&nbsp;</a>。</p>
+
+<p>现在，让我们来看看设计大规模软件系统时通常会遇到的权衡。</p>
+</section>
+
+<section data-type="sect1" id="ch01_system_design_trade_offs_1734552285982236">
+<h1>系统设计的权衡</h1>
+
+<p>系统设计<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="trade-offs" id="sysdesign-tradeoff">&nbsp;</a>需要做出许多权衡，这些权衡会对系统的性能和可用性产生重大影响。设计系统时，你必须考虑成本、可扩展性、可靠性、可维护性和健壮性等因素。这些因素必须相互平衡，才能打造出针对用户特定需求而优化的系统。归根结底，目标是创建一个满足用户需求、又不牺牲上述任何重要因素的系统。</p>
+
+<p>例如，如果系统需要高可靠性，同时还要具备可扩展性，那么你需要考虑成本与健壮性之间的权衡。高可靠性的系统可能需要更昂贵的组件，但这些组件同样可能很健壮，并支持未来的扩展。另一方面，如果成本是优先考虑的因素，你可能不得不牺牲健壮性或可扩展性，才能让系统控制在预算之内。</p>
+
+<p>设计系统时，除了成本和可扩展性，还必须考虑其他权衡。性能、安全性、可维护性和可用性都是必须权衡的重要考量。在本节中，我们将讨论系统设计中出现的一些理论上的权衡。</p>
+
+<section data-type="sect2" id="ch01_time_versus_space_1734552285982313">
+<h2>时间与空间</h2>
+
+<p>在计算机科学中，针对工作负载实现算法时，天然会出现时间-空间权衡（也称时间-内存权衡）<a contenteditable="false" data-type="indexterm" data-primary="time-space trade-offs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="storage capacity" data-secondary="time-space trade-offs">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="memory capacity, time-space trade-offs">&nbsp;</a>，分布式系统中也不例外。这些权衡不可避免，因为系统设计者需要考虑算法的时间限制，有时还要使用额外的内存或存储，以确保一切运行达到最优。这类权衡的一个例子，是在内存或数据存储中使用查找表，而不是重新计算，这样只需查找预先计算好的值，就能处理更多请求。</p>
+</section>
+
+<section data-type="sect2" id="ch01_latency_versus_throughput_1734552285982387">
+<h2>延迟与吞吐量</h2>
+
+<p>系统设计中天然<a contenteditable="false" data-type="indexterm" data-primary="latency" data-secondary="throughput versus" id="latency-throughput">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="throughput" data-secondary="latency versus" id="throughput-latency">&nbsp;</a>出现的另一个权衡，是延迟与吞吐量之间的权衡。在深入探讨这个权衡之前，先确保你理解这些概念。</p>
+
+<section data-type="sect3" id="ch01_latency_processing_time_and_response_time_1734552285982463">
+<h3>延迟、处理时间与响应时间</h3>
+
+<p><em>延迟</em>是请求等待被处理的时间。而<em>处理时间</em><a contenteditable="false" data-type="indexterm" data-primary="processing time">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="response time">&nbsp;</a>是系统在接手请求后处理该请求所花的时间。因此，整体响应时间是从发送请求到收到相应响应之间的时长，其中包含网络延迟和服务器延迟。用数学公式表示如下：</p>
+
+<div data-type="equation">
+<p>响应时间 = 延迟 + 处理时间</p>
+</div>
+</section>
+
+<section data-type="sect3" id="ch01_throughput_and_bandwidth_1734552285982536">
+<h3>吞吐量与带宽</h3>
+
+<p>吞吐量<a contenteditable="false" data-type="indexterm" data-primary="bandwidth">&nbsp;</a>和带宽是衡量网络数据容量的指标，用于评估网络的可扩展性和负载。<em>带宽</em>是指理论上在给定时间内，数据能从网络中的一点传输到另一点的最大数据量。<em>吞吐量</em>是指整个网络中实际传输和处理的数据量。因此，带宽描述的是理论上限，吞吐量提供的是经验指标。除非网络以最高效率运行，否则吞吐量总是低于带宽。</p>
+
+<p>带宽是有限的资源，因为每台网络设备在将数据传给下一台网络设备之前，只能处理有限容量的数据，而且有些设备比其他设备消耗更多带宽。带宽不足会导致网络拥塞，使连接变慢。</p>
+
+<p>延迟衡量数据包在网络中到达目的地所需的时间，而吞吐量衡量指定时间段内处理的数据包数量，因此两者呈反比关系。延迟越高，数据包在网络中排队就越多，数据包的处理就越慢，最终导致吞吐量下降。</p>
+
+<p>由于系统要在高吞吐量或高负载下评估其延迟是否更低，因此捕获延迟的指标要用百分位数，例如 P50、P90、P99 等。例如，P90 延迟是最快的 90% 请求中的最高延迟值（最慢响应）。换句话说，90% 的请求，其响应等于或快于 P90 延迟值。请注意，我们不使用工作负载的平均延迟作为指标，因为平均值作为点估计，容易受到异常值的影响。</p>
+
+<p>由于存在延迟与吞吐量的权衡，为了获得更高的吞吐量而增加系统负载时，延迟也会随之增加。因此，设计系统时应以在可接受的延迟范围内实现最大吞吐量为目标<a contenteditable="false" data-type="indexterm" data-primary="latency" data-secondary="throughput versus" data-startref="latency-throughput">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="throughput" data-secondary="latency versus" data-startref="throughput-latency">&nbsp;</a>。</p>
+</section>
+</section>
+
+<section data-type="sect2" id="ch01_performance_versus_scalability_1734552285982608">
+<h2>性能与可扩展性</h2>
+
+<p>如<a contenteditable="false" data-type="indexterm" data-primary="scalability" data-secondary="performance versus">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="performance" data-secondary="scalability versus">&nbsp;</a><a data-type="xref" href="#ch01_scalability_1734552285981791">#ch01_scalability_1734552285981791</a>所述，<em>可扩展性</em>是系统响应不断增长的需求和负载的能力。而<em>性能</em>是系统响应单个请求的速度。如果服务的性能提升与新增资源成正比，它就是可扩展的。系统存在性能问题时，对单个用户就很慢（P50 延迟 = 100 毫秒）；而系统存在可扩展性问题时，对部分用户可能很快（一百个请求时 P50 延迟 = 1 毫秒），但在高负载下对用户就很慢（十万个请求时 P50 延迟 = 100 毫秒）。</p>
+</section>
+
+<section data-type="sect2" id="ch01_consistency_versus_availability_1734552285982683">
+<h2>一致性与可用性</h2>
+
+<p>数据存储和检索中的<em>强一致性</em><a contenteditable="false" data-type="indexterm" data-primary="strong consistency">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="high availability">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="consistency" data-secondary="availability versus" id="consistent-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="consistency versus" id="available-consistent">&nbsp;</a>是指保证每次读取都能获得最近一次写入的值，而<em>高可用性</em>是指系统始终对请求提供非错误响应的要求。在网络发生故障的分布式系统中（即由于分布式计算的谬误导致数据包被丢弃或延迟，进而产生分区），强一致性与高可用性之间会出现固有的权衡。这个权衡<a contenteditable="false" data-type="indexterm" data-primary="CAP theorem" id="cap-theorem">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Brewer’s theorem" data-see="CAP theorem">&nbsp;</a>称为 <em>CAP 定理</em>，也称<em>布鲁尔定理</em>。</p>
+
+<section data-type="sect3" id="ch01_cap_theorem_1734552285982775">
+<h3>CAP 定理</h3>
+
+<p>CAP 定理如<a data-type="xref" href="#ch01_figure_7_1734552285950752">#ch01_figure_7_1734552285950752</a>中的维恩图所示，指出分布式系统不可能同时提供以下三种保证：一致性（C）、可用性（A）和分区容错性（P）。根据该定理，分布式系统在任一时刻最多只能提供其中两种保证。由于网络并不可靠，系统必须设计为能处理网络分区，因此分区容错性必须内置。所以，CAP 定理意味着：出现网络分区时，必须在一致性和可用性之间做出选择。</p>
+
+<figure id="ch01_figure_7_1734552285950752"><img src="images/sdoa_0107.png" />
+<figcaption>CAP 定理维恩图</figcaption>
+</figure>
+
+<p>然而，人们常常误解 CAP 定理，以为在任何时候都必须选择放弃三种保证中的一种。实际上，只有在发生网络分区或故障时，才需要在一致性和可用性之间做选择；其他时候，则必须根据 PACELC 定理来做权衡。</p>
+</section>
+
+<section data-type="sect3" id="ch01_pacelc_theorem_1734552285982851">
+<h3>PACELC 定理</h3>
+
+<p>PACELC 定理<a contenteditable="false" data-type="indexterm" data-primary="PACELC theorem">&nbsp;</a>如<a data-type="xref" href="#ch01_figure_8_1734552285950777">#ch01_figure_8_1734552285950777</a>中的决策流程图所示，是 CAP 定理更为细致的版本。它指出，在分布式计算机系统发生网络分区（P）时，必须按照 CAP 定理在可用性（A）和一致性（C）之间做选择；而在其他情况下（E），即使系统在没有分区的情况下正常运行，也必须在延迟（L）和一致性（C）之间做选择。这一权衡自然产生，因为大规模系统为了处理网络分区，会复制数据和服务，于是就要在一致性谱系与相应的延迟之间做选择。</p>
+
+<figure id="ch01_figure_8_1734552285950777"><img alt="一张工作流程图
+
+自动生成的描述" src="images/sdoa_0108.png" />
+<figcaption>PACELC 定理决策流程图</figcaption>
+</figure>
+
+<p>如果系统试图提供谱系一端的强一致性，就必须通过同步通信和阻塞来进行复制，确保所有只读副本都收到最近一次写入，并等待所有副本节点的确认，这会带来较高的延迟。另一方面，如果系统进行异步复制，无需等待所有节点的确认，那么当副本节点确认数据变更并开始处理请求时，最终提供的是最终一致性（即读请求最终会反映最近一次写入）。</p>
+
+<p>CAP 定理和 PACELC 定理是分布式系统设计中的重要概念，它们提供了一个框架，用于理解设计高可用且强一致的系统时涉及的权衡。</p>
+
+<div data-type="note">
+<p>我们将在<a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a>中通过详细讨论 BASE 特性，介绍非关系型存储如何应对<a contenteditable="false" data-type="indexterm" data-primary="CAP theorem" data-startref="cap-theorem">&nbsp;</a> CAP 定理的权衡。</p>
+</div>
+
+<p>面对系统设计中这些要求、谬误和权衡，为避免重蹈覆辙，我们应遵循上一代软件设计从业者总结出的一套原则<a contenteditable="false" data-type="indexterm" data-primary="consistency" data-secondary="availability versus" data-startref="consistent-available">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="availability" data-secondary="consistency versus" data-startref="available-consistent">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="trade-offs" data-startref="sysdesign-tradeoff">&nbsp;</a>。现在就来深入了解这些原则。</p>
+</section>
+</section>
+</section>
+
+<section class="pagebreak-before" data-type="sect1" id="ch01_system_design_guidelines_1734552285982930">
+<h1 class="less_space">系统设计原则</h1>
+
+<p>系统设计<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="guidelines" id="sysdesign-guideline">&nbsp;</a>总会带来最有趣、也最具挑战性的权衡。系统设计者应当了解其中的隐性成本，并做好充分准备把事情做对，尽管不可能做到完美！这些原则源自多年的系统设计实践，帮助我们在设计大规模系统时避开陷阱、处理权衡。这些原则并非空泛的笼统之谈，而是一种美德，帮助我们反思系统为什么这样设计和实现，以及为什么这样做是正确的。</p>
+
+<section data-type="sect2" id="ch01_guideline_of_isolation_build_it_modularly_1734552285983011">
+<h2>隔离原则：模块化构建</h2>
+
+<blockquote data-type="epigraph">
+<p>控制复杂度是计算机编程的本质。</p>
+
+<p data-type="attribution">Brian Kernighan</p>
+</blockquote>
+
+<p>第一条原则是模块化地构建系统<a contenteditable="false" data-type="indexterm" data-primary="modular systems">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="isolation">&nbsp;</a>，也就是将复杂的系统分解为更小的独立组件或模块。这些模块既能独立运行，又能协同工作，组成更大的系统。模块化地构建大规模系统，有助于改善系统的各项要求：</p>
+
+<dl>
+	<dt>可维护性</dt>
+	<dd>
+	<p>可以单独更新或替换模块，而不影响系统的其余部分。</p>
+	</dd>
+	<dt>可复用性</dt>
+	<dd>
+	<p>模块可以在不同的系统或项目中复用，减少所需的新开发量。</p>
+	</dd>
+	<dt>可扩展性</dt>
+	<dd>
+	<p>可以根据需要添加或移除模块，甚至独立扩展模块，以适应需求变化或支持增长。</p>
+	</dd>
+	<dt>可靠性</dt>
+	<dd>
+	<p>可以独立测试和验证模块，降低系统级故障的风险。</p>
+	</dd>
+</dl>
+
+<p>模块化系统可以通过多种方式实现，包括使用微服务架构、基于组件的开发和模块化编程，我们将在<a data-type="xref" href="#ch07_containerization_orchestration_and_deployments_1734552288630240">#ch07_containerization_orchestration_and_deployments_1734552288630240</a>中更详细地介绍。不过，设计模块化系统可能颇具挑战，因为这需要仔细考虑模块之间的接口、数据共享与流动，以及依赖关系。</p>
+</section>
+
+<section class="pagebreak-before" data-type="sect2" id="ch01_guideline_of_simplicity_keep_it_simple_silly_1734552285983088">
+<h2 class="less_space">简洁原则：保持简单（KISS）</h2>
+
+<blockquote data-type="epigraph">
+<p>一切都应尽可能简单，但不能过于简单。</p>
+
+<p data-type="attribution">据称出自 Albert Einstein</p>
+</blockquote>
+
+<p>第二条原则是保持设计简单<a contenteditable="false" data-type="indexterm" data-primary="simplicity">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="KISS (Keep It Simple, Silly)">&nbsp;</a>，避免复杂和不必要的功能，避免过度设计。要遵循 KISS（Keep It Simple, Silly）原则构建简单的系统，设计者可以遵循以下准则：</p>
+
+<dl>
+	<dt>确定核心需求</dt>
+	<dd>
+	<p>确定系统必须具备的基本特性和功能，并为它们排定优先级。</p>
+	</dd>
+	<dt>尽量减少组件数量</dt>
+	<dd>
+	<p>减少系统中的组件或模块数量，确保每个组件都有明确的用途。</p>
+	</dd>
+	<dt>避免过度设计</dt>
+	<dd>
+	<p>不要给系统增加不必要的复杂性，例如系统运行并不需要的功能。</p>
+	</dd>
+	<dt>让系统易于使用</dt>
+	<dd>
+	<p>确保系统直观明了，用户易于使用和理解。</p>
+	</dd>
+	<dt>测试并改进</dt>
+	<dd>
+	<p>测试系统，确保其按预期工作，必要时进行修改以简化系统。</p>
+	</dd>
+</dl>
+
+<p>遵循 KISS 原则，作为系统设计者，你可以构建简单、高效且有效的系统，这样的系统更易于维护，也更不容易出故障。</p>
+</section>
+
+<section data-type="sect2" id="ch01_guideline_of_performance_metrics_don_t_lie_1734552285983169">
+<h2>性能原则：指标不会说谎</h2>
+
+<blockquote data-type="epigraph">
+<p>性能问题不能仅靠禅修来解决。</p>
+
+<p data-type="attribution">Jeffrey C. Mogul</p>
+</blockquote>
+
+<p>第三条原则是先度量，再构建，并依靠指标<a contenteditable="false" data-type="indexterm" data-primary="performance" data-secondary="measuring" id="performance-measure">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="measuring" data-secondary="performance" id="measure-performance">&nbsp;</a>，因为性能和可扩展性无法蒙混过关。指标和可观测性对于理解大规模系统的行为和性能，以及在潜在问题演变成真正的问题之前发现它们，都至关重要。</p>
+
+<p><em>指标</em>是用于评估系统性能的量化度量<a contenteditable="false" data-type="indexterm" data-primary="metrics">&nbsp;</a>。它们提供了一种方法，用来跟踪资源利用率、响应时间和错误率等关键性能指标，并识别系统行为的趋势和模式。通过监控指标，工程师可以发现性能瓶颈和异常，并采取纠正措施，以提升系统的整体性能和可靠性。</p>
+
+<p><em>可观测性</em>是指<a contenteditable="false" data-type="indexterm" data-primary="observability">&nbsp;</a>能在多大程度上通过系统对外可见的输出，推断出系统的内部状态。这包括能够实时监控系统健康状况并诊断问题。可观测性在大规模系统中很重要，因为它提供了一种方法，用来监控复杂系统的行为，并发现可能影响其性能的问题。</p>
+
+<p>指标和可观测性结合起来，可为大规模系统的运营和管理提供所需的信息，帮助做出明智的决策。确保系统已正确埋入指标，并在系统中设计好可观测性，你就能更快地发现和解决问题，预防服务中断，并提升系统的整体性能<a contenteditable="false" data-type="indexterm" data-primary="performance" data-secondary="measuring" data-startref="performance-measure">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="measuring" data-secondary="performance" data-startref="measure-performance">&nbsp;</a>和可靠性。</p>
+</section>
+
+<section data-type="sect2" id="ch01_guideline_of_trade_offs_there_is_no_such_thing_as_1734552285983248">
+<h2>权衡原则：天下没有免费的午餐（TINSTAAFL）</h2>
+
+<blockquote data-type="epigraph">
+<p>把事情做对。抽象和简洁都不能替代把事情做对。</p>
+
+<p data-type="attribution">Butler Lampson</p>
+</blockquote>
+
+<p>第四条原则是“天下没有免费的午餐”（TINSTAAFL）<a contenteditable="false" data-type="indexterm" data-primary="“there is no such thing as a free lunch”" data-primary-sortas="there is no such thing">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="trade-offs guideline">&nbsp;</a>，也就是认识到所有决策都伴随着权衡，针对系统某一方面的优化，往往以牺牲其他方面为代价。设计系统时，总要做出权衡和妥协。例如，为特定问题选择高度优化的方案，可能导致可维护性降低或复杂度增加。反过来，选择简单的方案，可能导致性能降低或延迟增加。</p>
+
+<p>TINSTAAFL 原则强调，在系统设计中需要仔细考虑并平衡相互竞争的因素，例如性能、可扩展性、可靠性、可维护性和成本。设计者必须权衡这些因素之间的取舍，并做出符合每个项目具体要求和约束的明智决策。归根结底，你需要认识到，没有任何单一方案能在所有情况下都最优；要构建合适的系统，作为系统设计者，你必须仔细考虑设计决策的权衡和影响。</p>
+</section>
+
+<section data-type="sect2" id="ch01_guideline_of_use_cases_it_always_depends_1734552285983323">
+<h2>场景原则：一切视情况而定</h2>
+
+<blockquote data-type="epigraph">
+<p>值得做的事，并非都值得做好。</p>
+
+<p data-type="attribution">Tom West</p>
+</blockquote>
+
+<p>第五条原则是<em>设计总是视情况而定</em><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="as system design guideline" data-secondary-sortas="system design guideline">&nbsp;</a>，因为系统设计是一个复杂、多方面的过程，受多种因素影响，包括需求、用户需要、技术约束、成本、可扩展性、维护，甚至法规。考虑这些因素和其他因素，你就能开发出满足用户需求、实施上可行且可长期持续的系统。要解决同一个常见问题，设计系统的方式有很多种，因此这条原则揭示了一个更深层的真理：不存在设计系统的唯一“最佳”方式。换句话说，没有银弹。所以，我们选择合理的方案，并希望它足够好<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="guidelines" data-startref="sysdesign-guideline">&nbsp;</a>。</p>
+</section>
+</section>
+
+<section data-type="sect1" id="ch01_conclusion_1734552285983395">
+<h1>总结</h1>
+
+<p>本章为你扎实地介绍了如何设计软件系统。我们讨论了系统设计背后的主要概念、处理大型软件系统时必须做出的权衡、构建此类大规模系统时应避免的谬误，以及避免这些谬误的明智原则。</p>
+
+<p>可以把系统设计想象成玩跷跷板：你必须在不同的权衡之间找到合适的平衡点。作为总体原则，系统设计始终是在相互竞争的因素之间做权衡，作为系统设计者，你必须仔细权衡这些因素，才能创建出有效且高效的系统。</p>
+
+<p>在<a data-type="xref" href="#part1">#part1</a>的其余部分，我们将探索系统的基本构建块。我们会讨论一些重要的主题，例如数据存放在哪里、如何用缓存加速、如何用负载均衡器分发工作，以及系统的不同部分如何通过网络和编排相互通信。</p>
+
+<p>掌握这些基础知识之后，我们将在<a data-type="xref" href="#part2">#part2</a>中深入 AWS 系统的世界。这将帮助你了解如何使用亚马逊云科技（Amazon Web Services）构建大型而强大的系统。所有这些知识将在<a data-type="xref" href="#part3">#part3</a>中汇聚起来：在那里，我们会把一切付诸实践，学习如何为特定用例在 AWS 上设计和构建大规模系统。</p>
+
+<p>在到达那里之前，我们的下一站是探索存储数据的不同方式，并向你介绍关系数据库。</p>
+</section>
+</section>
