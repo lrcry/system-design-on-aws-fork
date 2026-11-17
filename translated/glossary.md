@@ -1066,3 +1066,7 @@ These working decisions supplement the cross-chapter glossary. Final consistency
 | S3 bucket | 存储桶（bucket） | CH10 P41 first-mention term; preserve `<em>` around Chinese term in original HTML, adding parenthetical bucket outside emphasis. |
 | S3 object key | 键名（key） | CH10 P43 identifies object keys; do not confuse an object key with a version ID. |
 | S3 Standard / Reduced Redundancy Storage | S3 Standard / 低冗余存储（Reduced Redundancy Storage） | CH10 P49–P50. Retain official product names and explain RRS once. |
+| S3 Standard-IA (Standard - Infrequent Access) | S3 Standard-IA | Introduced by comparison in CH10 P53, after S3 Standard in P49–P50. P59 retains official names for lifecycle transitions. [AWS storage classes](https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage-class-intro.html). |
+| S3 Lifecycle transition | 存储类别转换操作 | CH10 P59. Distinguish transition from expiration. |
+| S3 Lifecycle expiration | 对象的过期操作 | CH10 P60. With versioning, expiry can create a delete marker; author TBC. |
+| minimum storage duration charge | 最短计费存储时长 | CH10 P56–P57. Early deletion or transition may still incur a minimum-duration storage charge. |
