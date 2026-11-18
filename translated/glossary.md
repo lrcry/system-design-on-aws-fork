@@ -1097,3 +1097,7 @@ These working decisions supplement the cross-chapter glossary. Final consistency
 | local secondary index (LSI) | 本地二级索引（LSI） | CH10 P103/P105/P108; must be defined when creating the base table, uses same partition key and alternative sort key. |
 | global secondary index (GSI) | 全局二级索引（GSI） | CH10 P103/P106/P109; can be added or removed after table creation, may have different partition and sort keys from base table. |
 | primary key schema | 主键结构 | CH10 P107; retain as glossary candidate for cross-chapter terminology review. |
+| item collection size limit (with LSI) | 数据项集合大小上限（10 GB） | CH10 P111: the sum of all base-table items with one partition-key value and all projected LSI entries corresponding to that value. Each distinct partition-key value has its own 10 GB limit; it is not per item or per whole index. [AWS LSI](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LSI.html). |
+| physical partition | 物理分区 | CH10 P111/P120; storage unit with capacity/throughput considerations. Distinguish from logical partition-key item collection. |
+| adaptive capacity (DynamoDB) | 自适应容量 | CH10 P120; allocates capacity dynamically to hot partitions; author TBC about original equal-split claim. |
+| read consistency: strong / eventual | 强一致性读取 / 最终一致性读取 | CH10 P117–P119; LSI supports both, GSI only eventual; use consistent expression across chapters. |
