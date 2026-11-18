@@ -1091,3 +1091,9 @@ These working decisions supplement the cross-chapter glossary. Final consistency
 | DynamoDB request router (RR) | 请求路由器（RR） | CH10 P97; implementation-sensitive routing and leader/follower details are Author TBC. |
 | read capacity unit (RCU) / write capacity unit (WCU) | 读取容量单位（RCU）/ 写入容量单位（WCU） | CH10 P99–P100; distinguish provisioned capacity and on-demand billing in detailed paragraphs. |
 | provisioned capacity mode | 预置容量模式 | CH10 P100; contrasted with on-demand mode elsewhere. |
+| DynamoDB auto scaling (provisioned capacity) | 自动扩展功能 | CH10 P101: feature of provisioned capacity; min/max RCU/WCU settings, not a separate capacity mode. |
+| on-demand capacity mode (DynamoDB) | 按需容量模式 | CH10 P102: no upfront RCU/WCU provisioned value; distinguish from provisioned capacity and autoscaling. |
+| secondary index (DynamoDB) | 二级索引 | CH10 P103; umbrella for LSI and GSI; supports alternate access patterns. |
+| local secondary index (LSI) | 本地二级索引（LSI） | CH10 P103/P105/P108; must be defined when creating the base table, uses same partition key and alternative sort key. |
+| global secondary index (GSI) | 全局二级索引（GSI） | CH10 P103/P106/P109; can be added or removed after table creation, may have different partition and sort keys from base table. |
+| primary key schema | 主键结构 | CH10 P107; retain as glossary candidate for cross-chapter terminology review. |
