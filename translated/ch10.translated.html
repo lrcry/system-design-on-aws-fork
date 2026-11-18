@@ -423,32 +423,32 @@
           </table>
           <p>传统关系数据库与现代 NoSQL 数据库的一个重要区别在于事务支持。事务是关系数据库的常见内置能力，但并非所有 NoSQL 数据库都支持事务。DynamoDB 支持<a contenteditable="false" data-type="indexterm" data-primary="transaction support">&nbsp;</a>事务操作，可以根据应用程序的需求使用相应的<a href="https://oreil.ly/Hr4K-">读写 API</a>。另一个需要考虑的方面是读取一致性：DynamoDB 支持最终一致性读取和强一致性读取，但 GSI 仅支持最终一致性读取。用户可以在支持该选项的读取操作中指定所需的<a href="https://oreil.ly/F0DLV">一致性级别</a>。</p>
           <p>前面介绍了 DynamoDB 如何根据分区键确定数据的物理分区，以及如何通过不同的容量模式配置表的读写吞吐量。吞吐量容量在表级别配置，并由 DynamoDB 分配给各个分区；系统还可以通过自适应容量机制调整分区之间的容量分配。单个分区每秒最多可支持约 3,000 个读取容量单位（RCU）或 1,000 个写入容量单位（WCU），也可以处理一定比例的读写混合负载。如果请求超过分区可提供的吞吐量，就可能发生限流。此外，每个物理分区的存储容量上限为 10 GB。因此，在设计数据模式时，需要结合查询模式和 DynamoDB 的分区机制，合理分布数据及访问负载。</p>
-          <p>超出定义限制的分区称为<em>热分区</em>（或<em>热键</em>）。<a contenteditable="false" data-type="indexterm" data-primary="hot partitions/hot keys">&nbsp;</a>如果某个分区键收到的读取或写入流量（或两者）远高于其他分区，则该分区键可能被归类为热键。深入理解查询模式，是为 DynamoDB 表设计出最优方案的关键。您可以使用 <a href="https://oreil.ly/voj-0">CloudWatch 贡献者洞察</a>进行调试，识别 DynamoDB 表中现有的热分区或最频繁访问的数据项。</p>
-          <p>让我们讨论一些分区键设计的最佳实践，以避免 DynamoDB 中的热分区问题：</p>
+          <p>当某个分区承受过高的访问负载时，就可能形成<em>热分区</em>（hot partition）；如果某个分区键值承受的读写请求远高于其他键值，则可能形成<em>热键</em>（hot key）。<a contenteditable="false" data-type="indexterm" data-primary="hot partitions/hot keys">&nbsp;</a>了解应用程序的查询和访问模式，是合理设计 DynamoDB 表结构的关键。可以使用 <a href="https://oreil.ly/voj-0">CloudWatch Contributor Insights</a> 分析访问频率较高或发生限流的数据项及分区键值，帮助识别热点问题。</p>
+          <p>下面介绍一些 DynamoDB 分区键设计的最佳实践，以降低出现热分区问题的风险：</p>
           <ul>
             <li>
-              <p>表模式应设计为具有高基数的分区键。这确保数据广泛分布在各个分区，提高读写效率。</p>
+              <p>设计表结构时，应尽量选择基数较高的分区键，即具有较多不同取值的属性。这有助于将数据和访问负载分散到不同分区，从而改善读写性能。</p>
             </li>
             <li>
-              <p>DynamoDB API（以及 AWS SDK 中所有 AWS 服务）会抛出带有详细信息的特定异常，应用程序可以相应地处理这些异常。如果热分区问题很少发生，采用指数退避策略进行<a href="https://oreil.ly/mmLFl">重试</a>是推荐做法。对于频繁出现的热分区问题，应进行更详细的分析以找到稳定的解决方案。</p>
+              <p>DynamoDB API 及 AWS SDK 通常会返回包含错误信息的异常，应用程序可以据此采取相应措施。如果热分区问题只是偶尔发生，可以采用指数退避策略进行<a href="https://oreil.ly/mmLFl">重试</a>。对于频繁出现的热分区问题，则需要进一步分析原因，寻找更稳定的解决方案。</p>
             </li>
             <li>
-              <p>使用现有数据重新设计表结构可能工作量较大，需要从不同角度考虑，如迁移停机时间和应用程序代码变更。以下是针对热分区引起的读写限流的临时解决方案——或在使用场景允许的情况下作为长期方案：</p>
+              <p>对已有数据的表重新设计结构可能需要投入大量工作，还必须考虑数据迁移期间的停机时间和应用程序代码修改等问题。对于热分区引起的读写限流，可以考虑以下缓解措施。这些措施既可以作为临时方案，也可能根据业务场景长期使用：</p>
               <ul>
                 <li>
-                  <p>对于读取，缓存（见 <a data-type="xref" href="#ch10_amazon_elasticache_1734552290476591">#ch10_amazon_elasticache_1734552290476591</a>）是推荐的解决方案。缓存可以改善延迟并解决热分区问题。</p>
+                  <p>对于读取请求，可以考虑使用缓存（参见 <a data-type="xref" href="#ch10_amazon_elasticache_1734552290476591">#ch10_amazon_elasticache_1734552290476591</a> 一节）来降低访问延迟，并减少直接发送到 DynamoDB 热点分区的读取请求，从而缓解热分区问题。</p>
                 </li>
                 <li>
-                  <p>对于<a href="https://oreil.ly/Z654h">写入</a>，解决方案是在分区键上附加随机（或基于逻辑计算的）后缀，如 1 到 100 之间的数字。读取查询将需要额外的应用程序逻辑来确定实际分区（随机逻辑情况下访问 1 到 100 的所有分区，或基于某种逻辑的后缀则访问特定分区）。</p>
+                  <p>对于<a href="https://oreil.ly/Z654h">写入</a>请求，可以采用写入分片（write sharding）技术，在分区键值后附加随机或按特定规则计算的后缀，例如 1 到 100 之间的数字，以分散写入负载。采用这种方式后，读取操作需要额外的应用程序逻辑来确定应查询哪些键值：如果使用随机后缀，可能需要查询全部 100 种后缀；如果后缀可以根据规则推导，则只需查询相应的键值。</p>
                 </li>
               </ul>
             </li>
           </ul>
-          <p>评估数据访问模式，以更低的成本充分利用 DynamoDB，<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="DynamoDB" data-startref="aws-database-dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="DynamoDB" data-startref="database-aws-dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-startref="dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="key-value stores" data-tertiary="DynamoDB" data-startref="nonrelational-keyvalue-dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="key-value stores" data-secondary="DynamoDB" data-startref="keyvalue-dynamodb">&nbsp;</a>实现零运维负担。</p>
+          <p>合理分析数据访问模式，有助于更充分地利用 DynamoDB，在控制成本的同时<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="DynamoDB" data-startref="aws-database-dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="DynamoDB" data-startref="database-aws-dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-startref="dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="key-value stores" data-tertiary="DynamoDB" data-startref="nonrelational-keyvalue-dynamodb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="key-value stores" data-secondary="DynamoDB" data-startref="keyvalue-dynamodb">&nbsp;</a>减少运维负担。</p>
         </section>
         <section data-type="sect2" id="ch10_amazon_documentdb_1734552290476246">
           <h2>Amazon DocumentDB</h2>
-          <p>Amazon DocumentDB <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="DocumentDB" id="aws-database-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="DocumentDB" id="database-aws-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DocumentDB" id="documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="document stores" data-tertiary="DocumentDB" id="nonrelational-document-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="document stores" data-secondary="DocumentDB" id="document-documentdb">&nbsp;</a>是 AWS 提供的文档数据库，旨在以类 JSON 文档的形式存储和查询数据。<a href="https://oreil.ly/OqK-v">文档</a>被构建为嵌套键值对的集合，适用于存储食品项目信息等场景，例如 Cafe Delhi Heights 的在线商店。以下是顾客订单的示例文档：</p>
+          <p>Amazon DocumentDB <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="DocumentDB" id="aws-database-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="DocumentDB" id="database-aws-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DocumentDB" id="documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="document stores" data-tertiary="DocumentDB" id="nonrelational-document-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="document stores" data-secondary="DocumentDB" id="document-documentdb">&nbsp;</a>是 AWS 提供的一项文档数据库服务，以类似 JSON 的文档形式存储和查询数据。<a href="https://oreil.ly/OqK-v">文档</a>通常由可以嵌套的键值对构成，适用于存储餐品信息等场景，例如 Cafe Delhi Heights 的线上商店。下面展示一个顾客订单的文档示例：</p>
           <pre data-type="programlisting">{
   "Name": "Mandeep Singh",
   "orderId": "1234-1234-4567",
@@ -463,7 +463,7 @@
     }
   ]
 }</pre>
-          <p>我们可以为食品项目添加或删除属性，而无需担心像关系数据库中那样的固定模式。其他业务使用场景包括<a href="https://oreil.ly/CpG9l">内容管理</a>、实时大数据以及用户资料<span class='keep-together'>维护</span>。</p>
+          <p>我们可以根据需要为餐品文档添加或删除属性，而不必像使用固定模式的关系数据库那样预先定义所有字段。其他业务场景还包括<a href="https://oreil.ly/CpG9l">内容管理</a>、实时大数据处理和用户资料<span class='keep-together'>维护</span>。</p>
           <p>作为参考，<a data-type="xref" href="#ch10_table_2_1734552290462384">#ch10_table_2_1734552290462384</a> 对比了 DocumentDB 与关系数据库的术语。</p>
           <table id="ch10_table_2_1734552290462384">
             <caption>SQL 与 Amazon DocumentDB 术语对比</caption>
