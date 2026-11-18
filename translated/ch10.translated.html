@@ -280,33 +280,33 @@
             </dd>
             <dt>数据库实例类</dt>
             <dd>
-              <p>数据库实例类决定实例的计算和内存容量。您可以根据工作负载的处理和内存要求，从<a href="https://oreil.ly/X87Ed">标准型、内存优化型和可突发型</a>实例类列表中进行选择。</p>
+              <p>数据库实例类别决定实例的计算能力和内存容量。您可以根据工作负载对计算和内存资源的需求，选择<a href="https://oreil.ly/X87Ed">标准型、内存优化型或突发性能型</a>实例。</p>
             </dd>
             <dt>存储</dt>
             <dd>
-              <p>存储配置允许您选择存储类型（SSD、HDD 或磁性磁盘）以及存储分配数量，并可启用或禁用自动扩展。</p>
+              <p>在存储配置中，您可以选择 SSD、HDD 或磁性存储等存储类型，指定分配的存储容量，并选择是否启用存储自动扩展功能。</p>
             </dd>
             <dt>可用性和持久性</dt>
             <dd>
-              <p>为确保生产数据库的高可用性，RDS 提供多可用区部署选项，可在不同可用区创建备用实例。这有助于克服数据库或可用区故障。</p>
+              <p>为提高生产数据库的可用性，RDS 提供多可用区（Multi-AZ）部署选项，可在不同的可用区中创建备用数据库实例。当数据库实例或可用区发生故障时，可以通过故障转移机制减少服务中断。</p>
             </dd>
             <dt>连接</dt>
             <dd>
-              <p>连接配置允许您选择 VPC 数据库实例。其他配置用于建立与数据库实例的连接，包括子网组、安全组、实例是否可公开访问、可用区和数据库端口。</p>
+              <p>在连接配置中，您可以指定数据库实例所在的虚拟私有云（VPC），并配置数据库子网组、安全组、是否允许公开访问、可用区以及数据库端口等选项。</p>
             </dd>
           </dl>
-          <p>除上述选项外，您还可以配置备份、监控和维护窗口等设置。</p>
-          <p>Amazon 还<a contenteditable="false" data-type="indexterm" data-primary="Aurora">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Aurora">&nbsp;</a>提供了其自研的专有数据库引擎 <a href="https://oreil.ly/_7Ash">Aurora</a>，与 MySQL 和 PostgreSQL 兼容。Aurora 比在相同硬件上运行的 MySQL 快最多 5 倍，比 PostgreSQL 快最多 3 倍。它还可以根据应用程序需求自动扩展。Aurora 将数据的 6 个副本分布在三个可用区中，并持续备份至 S3。Aurora 还可以跨多个区域复制数据，以实现更快的全球访问。对于不可预测的工作负载，或在开发阶段无需持续运行数据库实例时，可以使用 Aurora Serverless。</p>
-          <p>以下是关于 Aurora 的几个重要注意事项：</p>
+          <p>此外，您还可以配置备份、监控和维护窗口等选项。</p>
+          <p>Amazon 还<a contenteditable="false" data-type="indexterm" data-primary="Aurora">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Aurora">&nbsp;</a>提供了自主研发的数据库引擎 <a href="https://oreil.ly/_7Ash">Aurora</a>，兼容 MySQL 和 PostgreSQL。根据 AWS 的性能比较，Aurora 的运行速度最高可达在相同硬件上运行的 MySQL 的 5 倍、PostgreSQL 的 3 倍。Aurora 还可以根据应用程序需求自动扩展。它将数据的 6 个副本分布在三个可用区中，并持续备份到 Amazon S3。此外，Aurora 支持跨区域数据复制，以改善全球用户的数据访问体验。对于负载难以预测的应用程序，或不需要持续运行数据库实例的开发场景，可以考虑使用 Aurora Serverless。</p>
+          <p>使用 Aurora 时，需要注意以下几点：</p>
           <ul>
             <li>
-              <p>无需像 RDS 那样配置存储需求，Aurora 在内部自动处理。</p>
+              <p>与常规 RDS 数据库实例不同，Aurora 无需预先分配存储容量，而是由系统自动管理和扩展存储空间。</p>
             </li>
             <li>
-              <p>Aurora Serverless 基于最小和最大 Aurora 容量单位运行，而非像 RDS 那样基于实例类型。</p>
+              <p>Aurora Serverless 使用 Aurora 容量单位（Aurora Capacity Unit，ACU）来配置最小和最大容量，而不是像常规 RDS 实例那样依赖固定的实例类别。</p>
             </li>
             <li>
-              <p>RDS 在 VPC 级别运行。常规 RDS 可以对公共互联网开放，或限制仅允许特定 IP 从外部访问。Aurora Serverless 不支持公共访问，但可以使用 <a href="https://oreil.ly/40qsr">Data API</a>，或在与 Aurora 相同的 VPC 内使用 EC2 机器来建立连接。</p>
+              <p>RDS 数据库实例部署在 VPC 中。常规 RDS 实例可以配置为允许通过公共互联网访问，也可以限制为仅允许特定 IP 地址连接。对于这里介绍的 Aurora Serverless 配置，数据库不支持直接通过公共互联网访问，但可以通过 <a href="https://oreil.ly/40qsr">Data API</a>，或使用与 Aurora 位于同一 VPC 中的 EC2 实例进行连接。</p>
             </li>
             <li>
               <p>为满足静态数据加密的数据安全或合规要求，<a href="https://oreil.ly/ZLguz">RDS</a> 和 <a href="https://oreil.ly/y33pf">Aurora</a> 均具有加密数据库实例的功能。</p>
