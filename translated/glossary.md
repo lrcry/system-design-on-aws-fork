@@ -1101,3 +1101,9 @@ These working decisions supplement the cross-chapter glossary. Final consistency
 | physical partition | 物理分区 | CH10 P111/P120; storage unit with capacity/throughput considerations. Distinguish from logical partition-key item collection. |
 | adaptive capacity (DynamoDB) | 自适应容量 | CH10 P120; allocates capacity dynamically to hot partitions; author TBC about original equal-split claim. |
 | read consistency: strong / eventual | 强一致性读取 / 最终一致性读取 | CH10 P117–P119; LSI supports both, GSI only eventual; use consistent expression across chapters. |
+| hot partition / hot key | 热分区 / 热键 | CH10 P121: physical partition with concentrated load vs partition-key value with disproportionate traffic; not exact synonyms. |
+| CloudWatch Contributor Insights | CloudWatch Contributor Insights | CH10 P121: can identify highly accessed/throttled keys and items; do not imply direct exposure of DynamoDB physical partition IDs. |
+| partition-key cardinality | 分区键的基数 | CH10 P123: high cardinality means many distinct values; effective distribution also depends on access patterns. |
+| exponential-backoff retry | 指数退避重试 | CH10 P124: appropriate for transient throttling, not a permanent fix for persistent hot partitions. |
+| write sharding | 写入分片（write sharding） | CH10 P127: append random or calculated suffix to partition-key **values** to distribute writes. Reads must address multiple logical key values when suffix cannot be determined. |
+| document database / document | 文档数据库 / 文档 | CH10 P129–P130: JSON-like, nested key-value documents; item example uses 餐品信息 / 餐品文档. |
