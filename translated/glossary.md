@@ -1080,3 +1080,8 @@ These working decisions supplement the cross-chapter glossary. Final consistency
 | S3 bucket policy | 存储桶策略 | CH10 P73: resource-based access policy for S3 buckets and objects. |
 | database edition | 数据库版本类别（edition） | CH10 P78 working rendering; distinguish *edition* (e.g., a product edition) from engine version and distribution. Revisit terminology in final book-wide consistency pass. |
 | DB instance identifier | 数据库实例标识符 | CH10 P80: unique within an AWS account and Region, not across all AWS accounts. |
+| RDS Magnetic storage / EBS Magnetic volume | 磁性存储（RDS）/ 磁介质卷（EBS） | CH10 P82 approved RDS term **磁性存储**, not vague 磁盘 or awkward 磁性磁盘. Distinguish context; reconcile previous glossary entries. [RDS storage](https://docs.amazonaws.cn/zh_cn/AmazonRDS/latest/UserGuide/CHAP_Storage.html), [EBS volumes](https://docs.amazonaws.cn/zh_cn/ebs/latest/userguide/ebs-volume-types.html). |
+| DB instance class / burstable class | 数据库实例类别 / 突发性能型实例 | CH10 P81; standard/内存优化型/突发性能型 terminology. |
+| Multi-AZ deployment | 多可用区（Multi-AZ）部署 | CH10 P83; distinguish HA/failover from protection against all failures. |
+| Aurora Capacity Unit (ACU) | Aurora 容量单位（Aurora Capacity Unit，ACU） | CH10 P89; capacity unit for Aurora Serverless, distinguish from standard fixed instance classes and db.serverless. |
+| Aurora Serverless public access | Aurora Serverless 公共访问 | CH10 P90 is version/configuration dependent: v1 differs from v2. Preserve source-era context and query author. |
