@@ -1085,3 +1085,9 @@ These working decisions supplement the cross-chapter glossary. Final consistency
 | Multi-AZ deployment | 多可用区（Multi-AZ）部署 | CH10 P83; distinguish HA/failover from protection against all failures. |
 | Aurora Capacity Unit (ACU) | Aurora 容量单位（Aurora Capacity Unit，ACU） | CH10 P89; capacity unit for Aurora Serverless, distinguish from standard fixed instance classes and db.serverless. |
 | Aurora Serverless public access | Aurora Serverless 公共访问 | CH10 P90 is version/configuration dependent: v1 differs from v2. Preserve source-era context and query author. |
+| encryption at rest | 静态加密 | CH10 P91: “对数据库中的数据进行静态加密”. Contrasts with *encryption in transit* (传输中加密), not with a separate “static data” category. |
+| DynamoDB item collection | 数据项集合 | CH10 P98: items sharing a partition-key value, ordered by sort key; may span physical partitions without LSIs. [AWS partitions](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.Partitions.html). |
+| partition key / sort key | 分区键 / 排序键 | CH10 P95–P98; a primary key consists of the partition key alone or partition+sort key. |
+| DynamoDB request router (RR) | 请求路由器（RR） | CH10 P97; implementation-sensitive routing and leader/follower details are Author TBC. |
+| read capacity unit (RCU) / write capacity unit (WCU) | 读取容量单位（RCU）/ 写入容量单位（WCU） | CH10 P99–P100; distinguish provisioned capacity and on-demand billing in detailed paragraphs. |
+| provisioned capacity mode | 预置容量模式 | CH10 P100; contrasted with on-demand mode elsewhere. |
