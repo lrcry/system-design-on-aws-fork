@@ -346,14 +346,14 @@
             </dd>
             <dt>自动扩展</dt>
             <dd>
-              <p>对于工作负载变化且无法确定固定预置容量的情况，可以使用设置了 RCU 和 WCU 上下限的自动扩展模式，DynamoDB 将根据流量自动扩展或缩减。</p>
+              <p>对于流量变化较大、难以确定固定预置容量的工作负载，可以启用自动扩展功能，为 RCU 和 WCU 设置最小值和最大值。DynamoDB 会根据实际流量需求自动调整预置的读写容量。</p>
             </dd>
             <dt>按需</dt>
             <dd>
-              <p>按需模式是一种无服务器支持，无需配置 RCU 和 WCU 值。DynamoDB 在后端自动管理扩展，客户无需为此操心。此模式适用于工作负载未知或应用程序流量不可预测的表等使用场景。</p>
+              <p>在按需容量模式下，用户无需预先指定 RCU 和 WCU 数值。DynamoDB 会根据实际请求量自动管理读写容量，无需用户自行调整预置容量。这种模式适用于工作负载难以预测或应用程序流量波动较大的场景。</p>
             </dd>
           </dl>
-          <p>DynamoDB 表可能需要服务多种使用场景，并非所有场景都能仅通过主键设计获得良好性能。DynamoDB 提供<a href="https://oreil.ly/bZ5UM">索引支持</a>以加速查询，可根据需要在表之上创建索引。我们可以将 DynamoDB 索引视为通过从主表中选取部分属性创建的子表。DynamoDB <a contenteditable="false" data-type="indexterm" data-primary="index support">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="local secondary indexes (LSIs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LSI (local secondary indexes)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="global secondary indexes (GSIs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="GSIs (global secondary indexes)">&nbsp;</a>支持两种类型的索引：本地二级索引（LSI）和全局二级索引（GSI）。两者的区别列于 <a data-type="xref" href="#ch10_table_1_1734552290462351">#ch10_table_1_1734552290462351</a>。</p>
+          <p>DynamoDB 表可能需要支持多种业务场景，仅依靠主键设计未必能满足所有场景的查询性能需求。为此，DynamoDB 提供了<a href="https://oreil.ly/bZ5UM">二级索引功能</a>，以提高查询效率。可以将二级索引理解为根据基础表中的部分属性构建的辅助数据结构。DynamoDB <a contenteditable="false" data-type="indexterm" data-primary="index support">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="local secondary indexes (LSIs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="LSI (local secondary indexes)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="global secondary indexes (GSIs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="GSIs (global secondary indexes)">&nbsp;</a>支持两种二级索引：本地二级索引（LSI）和全局二级索引（GSI）。两者的区别见 <a data-type="xref" href="#ch10_table_1_1734552290462351">#ch10_table_1_1734552290462351</a>。</p>
           <table id="ch10_table_1_1734552290462351">
             <caption>Amazon DynamoDB 中 LSI 与 GSI 的区别</caption>
             <thead>
@@ -369,21 +369,21 @@
                   <p>生命周期</p>
                 </td>
                 <td>
-                  <p>LSI 的生命周期与表相同，只能随表的创建和删除而创建或删除。</p>
+                  <p>LSI 必须在创建基础表时一并定义，且不能单独删除；删除基础表时，LSI 也会随之删除。</p>
                 </td>
                 <td>
-                  <p>GSI 的生命周期独立于表，可根据需要创建或删除。</p>
+                  <p>可以在基础表创建后，根据需要新增或删除 GSI，无需重新创建基础表。</p>
                 </td>
               </tr>
               <tr>
                 <td>
-                  <p>主键模式</p>
+                  <p>主键结构</p>
                 </td>
                 <td>
-                  <p>分区键与基础表相同，但排序键不同。</p>
+                  <p>LSI 使用与基础表相同的分区键，但采用不同的排序键。</p>
                 </td>
                 <td>
-                  <p>分区键和排序键可以与基础表不同。</p>
+                  <p>GSI 可以使用与基础表不同的分区键和排序键。</p>
                 </td>
               </tr>
               <tr>
