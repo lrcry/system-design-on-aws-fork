@@ -536,46 +536,46 @@
           </section>
           <section data-type="sect3" id="ch10_caching_1734552290476530">
             <h3>缓存</h3>
-            <p>Neptune 提供<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="in Neptune" data-secondary-sortas="Neptune">&nbsp;</a>三种类型的缓存支持以提高性能：</p>
+            <p>Neptune 提供<a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="in Neptune" data-secondary-sortas="Neptune">&nbsp;</a>以下三种缓存机制，以改善查询性能：</p>
             <dl>
               <dt>缓冲区缓存</dt>
               <dd>
-                <p>用于提高查询性能的内存缓存。Neptune 将实例内存的三分之二分配给缓存。</p>
+                <p>内存缓冲池缓存用于提高查询性能。Neptune 通常会将实例约三分之二的可用内存分配给缓冲池缓存。</p>
               </dd>
               <dt>
                 <a href="https://oreil.ly/xkShP">查找缓存</a>
               </dt>
               <dd>
-                <p>用于提高重复查找属性值或 RDF 字面量的查询读取性能的实例级缓存。对于<a href="https://oreil.ly/yo1_9">R5d 实例</a>（专为在内存中处理大型工作负载而构建），默认启用此缓存，并使用实例的基于 NVM Express（NVMe）的 SSD 存储这些值以实现快速访问。</p>
+                <p>查找缓存（lookup cache）是一种实例级缓存，可提高需要反复读取属性值或 RDF 字面量的查询性能。<a href="https://oreil.ly/yo1_9">R5d 实例</a>属于内存优化型实例，适合处理需要在内存中处理大型数据集的工作负载。该缓存在 R5d 实例上默认启用，并利用 NVMe SSD 存储这些值，以加快后续访问速度。</p>
               </dd>
               <dt>
                 <a href="https://oreil.ly/GKaKi">查询结果缓存</a>
               </dt>
               <dd>
-                <p>Gremlin 只读查询结果可以被缓存，以便在重新运行查询时获得更快的响应。要清除缓存，可以为查询指定 TTL（生存时间）、在查询级别清除缓存，或清除<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Neptune" data-startref="aws-database-neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="Neptune" data-startref="database-aws-Neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Neptune" data-startref="neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="graph databases" data-startref="nonrelational-graph-neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="graph databases" data-startref="graph-database-neptune">&nbsp;</a>整个缓存。</p>
+                <p>Neptune 可以缓存 Gremlin 只读查询的结果，以便重复执行相同查询时更快地返回数据。可以通过为缓存结果设置生存时间（TTL）、清除指定查询的缓存，或清空<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Neptune" data-startref="aws-database-neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="Neptune" data-startref="database-aws-Neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Neptune" data-startref="neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="graph databases" data-startref="nonrelational-graph-neptune">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="graph databases" data-startref="graph-database-neptune">&nbsp;</a>整个结果缓存来管理缓存内容。</p>
               </dd>
             </dl>
           </section>
         </section>
         <section data-type="sect2" id="ch10_amazon_elasticache_1734552290476591">
           <h2>亚马逊 ElastiCache</h2>
-          <p>内存数据库<a contenteditable="false" data-type="indexterm" data-primary="in-memory databases" data-see="caching">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="ElastiCache" id="aws-database-ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="ElastiCache" id="database-aws-ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ElastiCache" id="ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="with ElastiCache" data-secondary-sortas="ElastiCache" id="cache-elasticache">&nbsp;</a>被广泛用作缓存解决方案，以提升系统性能。亚马逊 ElastiCache 是 AWS 提供的托管服务，作为分布式缓存环境，支持 <a contenteditable="false" data-type="indexterm" data-primary="Redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Memcached">&nbsp;</a>Redis 和 Memcached 引擎，两者均在 <a data-type="xref" href="#ch04_caching_policies_and_strategies_1734552287178593">#ch04_caching_policies_and_strategies_1734552287178593</a> 中详细介绍。Redis 和 Memcached 都是内存键值缓存解决方案，但存在<a href="https://oreil.ly/OZoO9">相关差异</a>，了解哪种缓存引擎满足业务需求至关重要。Memcached 是一种简单的键值缓存解决方案，支持多线程，可有效减轻主数据源的读取压力。Redis 具备支持长期数据的持久化、高级数据类型（如列表和集合）、在内存中对数据集进行排序和排名、地理空间支持、消息代理等多种功能。以下是 ElastiCache 中每种缓存引擎的一些关键注意事项。</p>
+          <p>内存数据库<a contenteditable="false" data-type="indexterm" data-primary="in-memory databases" data-see="caching">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="ElastiCache" id="aws-database-ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="ElastiCache" id="database-aws-ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ElastiCache" id="ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="with ElastiCache" data-secondary-sortas="ElastiCache" id="cache-elasticache">&nbsp;</a>广泛用于构建缓存系统，以提高应用程序性能。Amazon ElastiCache 是 AWS 提供的托管式分布式缓存服务，支持 <a contenteditable="false" data-type="indexterm" data-primary="Redis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Memcached">&nbsp;</a>Redis 和 Memcached 缓存引擎，第 <a data-type="xref" href="#ch04_caching_policies_and_strategies_1734552287178593">#ch04_caching_policies_and_strategies_1734552287178593</a> 已对两者进行了详细介绍。Redis 和 Memcached 都属于基于内存的键值缓存技术，但各有特点，需要根据业务需求选择合适的引擎。<a href="https://oreil.ly/OZoO9">相关差异</a>。Memcached 是一种相对简单的键值缓存系统，支持多线程处理，可以分担主数据源的读取负载。Redis 则提供数据持久化、多种数据结构（如列表和集合）、排序与排名、地理空间处理以及消息代理等功能。下面介绍使用这些缓存引擎时需要注意的几个方面。</p>
           <section data-type="sect3" id="ch10_subnet_1734552290476650">
             <h3>子网</h3>
-            <p>如 <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a> 中所述，可用 IP 地址的数量<a contenteditable="false" data-type="indexterm" data-primary="subnets">&nbsp;</a>基于子网 CIDR。在创建集群的第一步，应创建与 Amazon VPC 关联的子网，并支持所需数量的 IP 地址，因为这些 IP 地址将分配给集群中的节点。</p>
+            <p>如 <a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a> 所述，子网的 CIDR 地址范围决定了可供使用的 IP 地址数量。创建 ElastiCache 集群时，需要在 Amazon VPC 中选择合适的子网，并确保有足够的可用 IP 地址分配给集群节点。<a contenteditable="false" data-type="indexterm" data-primary="subnets">&nbsp;</a></p>
           </section>
           <section data-type="sect3" id="ch10_data_tiering_1734552290476706">
             <h3>数据分层</h3>
-            <p>数据可以<a contenteditable="false" data-type="indexterm" data-primary="data tiering">&nbsp;</a>在内存和 NVMe SSD 存储之间分层以优化成本，适用于定期访问最多 20% 数据的应用程序。此功能适用于 R6gd 实例系列的 ElastiCache for Redis，当内存（DRAM）完全占用时，低频访问数据将异步移至 SSD，如 <a data-type="xref" href="#ch10_figure_3_1734552290456102">#ch10_figure_3_1734552290456102</a> 所示。单个集群的存储可扩展至 1 PB。</p>
-            <p>Redis 和 Memcached 均可水平和垂直扩展。Redis 基于主节点和只读副本的概念，可以两种配置启动：</p>
+            <p>为优化成本，ElastiCache 可以<a contenteditable="false" data-type="indexterm" data-primary="data tiering">&nbsp;</a>在内存与 NVMe SSD 之间对数据进行分层存储。这种方式适用于经常访问的数据不超过整体数据集约 20%、且能够接受 SSD 访问延迟的应用程序。对于使用 R6gd 实例系列的 ElastiCache for Redis，系统会在内存（DRAM）容量使用达到阈值后，将部分低频访问数据异步迁移到 SSD，如 <a data-type="xref" href="#ch10_figure_3_1734552290456102">#ch10_figure_3_1734552290456102</a> 所示。在特定节点配置下，单个集群的总存储容量可达 1 PB。</p>
+            <p>Redis 和 Memcached 都支持横向扩展与纵向扩展。Redis 可以通过主节点和只读副本组织集群，主要有以下两种配置方式：</p>
             <dl>
               <dt>禁用集群模式</dt>
               <dd>
-                <p>最多可有一个主节点和最多五个副本节点。此配置针对读取水平扩展，针对写入垂直扩展。</p>
+                <p>在不启用分片的配置中，集群包含一个主节点，最多可以添加五个只读副本。通过增加副本数量，可以横向扩展读取能力；写入能力则主要通过升级主节点实例规格进行纵向扩展。</p>
               </dd>
               <dt>启用集群模式</dt>
               <dd>
-                <p>最多可有 500 个节点，每个节点最多关联 5 个副本。</p>
+                <p>在启用分片的配置中，集群最多可以包含 500 个分片，每个分片包含一个主节点，并最多可以配置五个只读副本。</p>
               </dd>
             </dl>
             <figure id="ch10_figure_3_1734552290456102">
