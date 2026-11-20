@@ -659,37 +659,37 @@
               <p>Timestream 提供内置的数据分析功能，支持使用 SQL 以及插值、平滑等函数，识别时间序列数据中的趋势、模式和异常。</p>
             </li>
             <li>
-              <p>数据默认使用标准密钥或客户自有 KMS 密钥进行加密。</p>
+              <p>Timestream 默认对存储的数据进行加密，可以使用服务默认的加密密钥，也可以配置客户管理的 AWS KMS 密钥。</p>
             </li>
             <li>
-              <p>Timestream 支持基于配置时间的数据保留策略，并支持按策略将数据移至不同存储层。它支持两种存储层：内存层（适用于对延迟敏感的查询）和磁性磁盘层（适用于分析查询）。</p>
+              <p>Timestream 支持根据设定的保留期限，在不同存储层之间管理数据。它提供两种存储层：内存存储层，适用于对延迟敏感的查询；磁性存储层，适用于长期保留数据和分析查询。</p>
             </li>
             <li>
-              <p>记录需要时间戳作为必填维度，存储到 Timestream 的数据无法删除或更新。数据的删除应通过配置保留策略来处理。</p>
+              <p>Timestream 中的记录需要包含时间戳，用于标识时间序列数据点。已有数据点可以更新，但不能直接删除单条记录；过期数据通常通过数据保留策略清理。</p>
             </li>
           </ul>
         </section>
         <section data-type="sect2" id="ch10_amazon_keyspaces_1734552290477186">
           <h2>Amazon Keyspaces</h2>
-          <p>我们在<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Keyspaces" id="aws-database-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="Keyspaces" id="database-aws-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Keyspaces" id="Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="Keyspaces" id="nonrelational-column-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="Keyspaces" id="colummn-Keyspaces">&nbsp;</a> <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a> 中讨论了宽列数据库，并了解了其开源变体 Apache Cassandra。满足类似需求的 AWS 托管解决方案是 Amazon Keyspaces。</p>
-          <p>Keyspaces 是一种高度可扩展、高可用的托管宽列数据库服务，与开源 Apache Cassandra 数据库兼容。Keyspaces 以无服务器服务形式提供，意味着您无需担心资源预置，只需专注于构建应用程序。以下是考虑使用 Keyspaces 的几个使用场景：</p>
+          <p>第<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Keyspaces" id="aws-database-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="Keyspaces" id="database-aws-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Keyspaces" id="Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="Keyspaces" id="nonrelational-column-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="Keyspaces" id="colummn-Keyspaces">&nbsp;</a> <a data-type="xref" href="#ch03_nonrelational_stores_1734552286860587">#ch03_nonrelational_stores_1734552286860587</a> 介绍过宽列数据库及其开源实现 Apache Cassandra。对于类似的业务需求，AWS 提供了托管数据库服务 Amazon Keyspaces。</p>
+          <p>Amazon Keyspaces 是一项高度可扩展、高可用的托管式宽列数据库服务，兼容开源数据库 Apache Cassandra。Keyspaces 采用无服务器架构，用户无需自行管理底层数据库集群，可以把更多精力投入应用程序开发。以下介绍几个适合使用 Keyspaces 的业务场景：</p>
           <ul>
             <li>
-              <p>您希望将本地 Cassandra 集群或运行在 EC2 实例上的集群迁移到完全托管的 AWS 服务。这有助于减少大量集群管理开销，例如管理部署、为工作负载找出最佳配置（如针对垃圾回收的 Java 虚拟机 (JVM) 调优）、了解 Cassandra 内部机制、为预期工作负载预置容量、升级至新版本、修补和维护集群基础设施等。</p>
+              <p>如果希望将本地环境或 EC2 实例上运行的 Cassandra 集群迁移至 AWS 托管服务，Keyspaces 可以减少大量集群管理工作，例如部署和维护基础设施、根据工作负载调整配置、针对垃圾回收进行 Java 虚拟机（JVM）调优、管理容量预置，以及执行版本升级和补丁维护等。这样，用户就不必深入管理 Cassandra 集群的底层实现。</p>
             </li>
             <li>
-              <p>您有与开源 Cassandra 兼容的业务需求。</p>
+              <p>业务需要使用与开源 Apache Cassandra 兼容的数据库。</p>
             </li>
             <li>
-              <p>与客户自行管理相比，Keyspaces 与 AWS 服务（如用于监控的 Amazon CloudWatch 或用于身份验证的 AWS IAM）的集成更好。</p>
+              <p>与自行管理 Cassandra 集群相比，Keyspaces 更便于集成 AWS 服务，例如使用 Amazon CloudWatch 进行监控，以及使用 AWS IAM 管理身份验证和访问权限。</p>
             </li>
           </ul>
-          <p>由于 Keyspaces 抽象了基础设施管理，您无法访问低级别集群管理控制平面 API。Keyspaces 为表的读写工作负载提供两种类型的容量模式，类似于 DynamoDB：带自动扩展的预置容量和按需模式。Keyspaces 表中的所有数据默认加密，并在多个可用区中复制，以实现高可用性和持久性。请参阅 <a href="https://oreil.ly/LTqIN">AWS 指南</a>了解 Cassandra 和 Keyspaces 之间的功能<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Keyspaces" data-startref="aws-database-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="Keyspaces" data-startref="database-aws-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Keyspaces" data-startref="Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="Keyspaces" data-startref="nonrelational-column-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="Keyspaces" data-startref="colummn-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-startref="aws-database">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-startref="database-aws">&nbsp;</a>差异。</p>
+          <p>Keyspaces 由 AWS 管理底层基础设施，因此用户无法直接使用底层集群管理的控制平面 API。与 DynamoDB 类似，Keyspaces 为表的读写负载提供两种容量模式：支持自动扩展的预置容量模式和按需容量模式。Keyspaces 表中的数据默认经过加密，并在多个可用区之间进行复制，以提高可用性和数据持久性。有关 Keyspaces 与 Apache Cassandra 的具体功能差异，请参阅 <a href="https://oreil.ly/LTqIN">AWS 指南</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Keyspaces" data-startref="aws-database-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="Keyspaces" data-startref="database-aws-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Keyspaces" data-startref="Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="column-family stores" data-tertiary="Keyspaces" data-startref="nonrelational-column-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="column-family stores" data-secondary="Keyspaces" data-startref="colummn-Keyspaces">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-startref="aws-database">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-startref="database-aws">&nbsp;</a>。</p>
         </section>
       </section>
       <section data-type="sect1" id="ch10_conclusion_1734552290477246">
         <h1>总结</h1>
-        <p>我们讨论了 AWS 提供的各种存储服务，可用于满足您的业务需求。<a data-type="xref" href="#ch10_cloud_storage_on_aws_1734552290475193">#ch10_cloud_storage_on_aws_1734552290475193</a> 重点介绍了块存储、文件存储和对象存储等基础存储选项，<a data-type="xref" href="#ch10_aws_databases_1734552290476028">#ch10_aws_databases_1734552290476028</a> 涵盖了 AWS 为关系数据库和非关系数据库提供的服务。了解业务使用场景对于选择最具成本效益的存储服务至关重要。为此，让我们再次审视 Cafe Delhi Heights 的存储需求。<a data-type="xref" href="#ch10_table_3_1734552290462408">#ch10_table_3_1734552290462408</a> 列出了可用于满足这些需求的 AWS 存储服务。</p>
+        <p>本章介绍了 AWS 提供的多种存储和数据库服务，以及它们如何满足不同的业务需求。<a data-type="xref" href="#ch10_cloud_storage_on_aws_1734552290475193">#ch10_cloud_storage_on_aws_1734552290475193</a> 一节重点介绍块存储、文件存储和对象存储等基础存储方式；<a data-type="xref" href="#ch10_aws_databases_1734552290476028">#ch10_aws_databases_1734552290476028</a> 一节则介绍关系数据库和非关系数据库的相关托管服务。选择合适且经济高效的存储方案，需要充分了解具体的业务场景。下面再次回顾 Cafe Delhi Heights 的存储需求。<a data-type="xref" href="#ch10_table_3_1734552290462408">#ch10_table_3_1734552290462408</a> 列出了可以满足这些需求的 AWS 服务。</p>
         <table id="ch10_table_3_1734552290462408">
           <caption>Cafe Delhi Heights 的存储服务选型</caption>
           <thead>
