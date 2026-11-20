@@ -1110,3 +1110,9 @@ These working decisions supplement the cross-chapter glossary. Final consistency
 | MongoDB/document identifier `_id` vs BSON `ObjectId` | 文档标识字段 `_id` / BSON `ObjectId` 类型 | CH10 P139 Author TBC: `_id` is the identifier field; its value need not always be `ObjectId`. Retain table's 对象 ID（Object ID） until author review. |
 | ad hoc queries | 即席查询（ad hoc queries） | CH10 P140; dynamically specified queries, distinct from a predefined query pattern. |
 | DocumentDB vs MongoDB compatibility | 兼容性（需限定具体功能） | CH10 P140: not complete feature parity; transaction capabilities and CRUD guarantees need version/semantics qualifications. |
+| AWS Database Migration Service (AWS DMS) | AWS 数据库迁移服务（AWS Database Migration Service，AWS DMS） | CH10 P142: MongoDB to DocumentDB migration; compatibility review recommended. |
+| Neptune Serverless / Neptune Capacity Unit (NCU) | Neptune Serverless / Neptune 容量单位（NCU） | CH10 P148: configure a minimum-to-maximum capacity range, then automatically scale within that range. |
+| Neptune cluster endpoint / reader endpoint / instance endpoint | 集群端点（写入）/ 读取端点 / 实例端点 | CH10 P150: reader endpoint distributes **new connections** by DNS round-robin, not queries. |
+| Neptune initial cluster storage allocation | 初始分配的 10 GB 存储空间 | CH10 P149: initial allocated volume segment, **not** stored application data; grows as needed. Follow up on exact binary/decimal unit designation. |
+| Neptune volume maximum | 128 TiB（多数受支持区域） | CH10 P149: maximum Neptune cluster volume in most AWS Regions; region-specific exceptions to be addressed with author. |
+| GB / GiB / TB / TiB storage-size unit audit | GB / GiB / TB / TiB 单位核对 | **Chapter-end mandatory review** per Batch 15 user feedback: verify every storage unit (also PB/PiB) across CH10 against AWS docs and English original, including per-partition/item-collection limits, initial storage allocations, maximum capacities; never change unreviewed material silently. |
