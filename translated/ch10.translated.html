@@ -464,7 +464,7 @@
   ]
 }</pre>
           <p>我们可以根据需要为餐品文档添加或删除属性，而不必像使用固定模式的关系数据库那样预先定义所有字段。其他业务场景还包括<a href="https://oreil.ly/CpG9l">内容管理</a>、实时大数据处理和用户资料<span class='keep-together'>维护</span>。</p>
-          <p>作为参考，<a data-type="xref" href="#ch10_table_2_1734552290462384">#ch10_table_2_1734552290462384</a> 对比了 DocumentDB 与关系数据库的术语。</p>
+          <p><a data-type="xref" href="#ch10_table_2_1734552290462384">#ch10_table_2_1734552290462384</a> 对比了 DocumentDB 与关系数据库中的相关术语，供读者参考。</p>
           <table id="ch10_table_2_1734552290462384">
             <caption>SQL 与 Amazon DocumentDB 术语对比</caption>
             <thead>
@@ -507,7 +507,7 @@
               </tr>
             </tbody>
           </table>
-          <p>DocumentDB 与 <a href="https://mongodb.com">MongoDB</a> <a contenteditable="false" data-type="indexterm" data-primary="MongoDB">&nbsp;</a>兼容，支持强大的即席查询，并附带与 DynamoDB 类似的<a href="https://oreil.ly/czpQE">事务支持</a>。DocumentDB 相比 MongoDB 有若干功能优势，例如对所有 CRUD 语句（包括对多个文档的操作）提供事务支持。关于 MongoDB 和 DocumentDB 之间的所有功能差异，请参阅 <a href="https://oreil.ly/KLy5s">AWS 文档</a>。</p>
+          <p>DocumentDB 与 <a href="https://mongodb.com">MongoDB</a> <a contenteditable="false" data-type="indexterm" data-primary="MongoDB">&nbsp;</a>具有一定的兼容性，支持灵活的即席查询（ad hoc queries），也提供<a href="https://oreil.ly/czpQE">事务支持</a>。与 MongoDB 相比，DocumentDB 在某些功能方面具有不同的实现特点，例如其 CRUD 操作可以提供原子性和一致性保证，包括涉及多个文档的操作。有关 MongoDB 与 DocumentDB 的具体功能差异，请参阅 <a href="https://oreil.ly/KLy5s">AWS 文档</a>。</p>
           <p>与 DynamoDB 不同，设置 DocumentDB 集群时需要指定<a href="https://oreil.ly/d-Ek5">实例类</a>和实例数量。对于生产系统，建议至少选择三个实例以获得更高的可用性。最后一步是设置用户名和密码进行身份验证，并建立与 DocumentDB 集群的连接。</p>
           <p>AWS 还提供<a href="https://oreil.ly/K_wcP">迁移工具</a>，例如数据库迁移服务（DMS），以便于将 MongoDB 工作负载从本地或 EC2 服务器迁移到<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="DocumentDB" data-startref="aws-database-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="DocumentDB" data-startref="database-aws-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DocumentDB" data-startref="documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="nonrelational databases" data-secondary="document stores" data-tertiary="DocumentDB" data-startref="nonrelational-document-documentdb">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="document stores" data-secondary="DocumentDB" data-startref="document-documentdb">&nbsp;</a> DocumentDB。</p>
         </section>
