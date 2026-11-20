@@ -1145,3 +1145,6 @@ These working decisions supplement the cross-chapter glossary. Final consistency
 | menu items / food items | 菜单项目 / 餐品 | CH10 P193/P195 and earlier Cafe Delhi Heights examples: prefer 餐品 for food items; 菜单项目 for menu entries. |
 | positive / negative customer reviews | 正面评价 / 负面评价 | CH10 P197: sentiment-analysis labels rather than casual 好评/差评. |
 | OpenSearch derived index vs primary database | 搜索索引 / 主数据存储 | CH10 P194: source recommendations mix databases and search; author-facing architecture distinction, do not add unapproved services. |
+| search criteria / identifiers | 搜索条件 / 标识符 | CH10 P201: name, location and rating are search criteria/attributes, not necessarily unique identifiers. |
+| archival retention / active retention | 归档后保留期限 / 活跃数据保留期限 | CH10 P203: 90 days before archival plus a year of retention is interpretation pending Author TBC; clarify total versus additional duration. |
+| compute resources / compute platforms | 计算资源 / 计算平台 | CH10 P206: includes serverless and managed compute, not only self-managed servers. |
