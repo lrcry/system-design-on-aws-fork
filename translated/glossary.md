@@ -1140,3 +1140,8 @@ These working decisions supplement the cross-chapter glossary. Final consistency
 | Timestream timestamp / dimension / record upsert | 时间戳 / 维度 / 数据点更新 | CH10 P183: timestamp identifies point in time, is not a dimension; versioned upserts can update data points. Keep technical details in Author TBC unless needed. |
 | Amazon Keyspaces / Apache Cassandra | Amazon Keyspaces / Apache Cassandra | CH10 P184–P189: managed Cassandra-compatible wide-column database; feature support is not complete Cassandra parity. |
 | Keyspaces provisioned / on-demand capacity | 预置容量模式 / 按需容量模式 | CH10 P189: consistent with DynamoDB chapters; provisioned mode may autoscale. |
+| customer login credentials / user profiles | 登录凭证 / 顾客资料 | CH10 P191: authentication credentials are not interchangeable with profile data; never imply storing plaintext passwords. Author TBC. |
+| ElastiCache cache layer / persistent data store | 缓存层 / 持久化数据存储 | CH10 P192: cache accelerates access, not an automatic substitute for primary database or credential store. |
+| menu items / food items | 菜单项目 / 餐品 | CH10 P193/P195 and earlier Cafe Delhi Heights examples: prefer 餐品 for food items; 菜单项目 for menu entries. |
+| positive / negative customer reviews | 正面评价 / 负面评价 | CH10 P197: sentiment-analysis labels rather than casual 好评/差评. |
+| OpenSearch derived index vs primary database | 搜索索引 / 主数据存储 | CH10 P194: source recommendations mix databases and search; author-facing architecture distinction, do not add unapproved services. |
