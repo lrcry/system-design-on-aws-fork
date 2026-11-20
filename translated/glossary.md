@@ -1135,3 +1135,8 @@ These working decisions supplement the cross-chapter glossary. Final consistency
 | dedicated cluster-manager node | 专用集群管理器节点 | CH10 P172: applies to instance-based OpenSearch Service domains; three dedicated nodes recommended for production availability. |
 | OpenSearch blue/green deployment | 蓝绿部署（blue/green deployment） | CH10 P175: not every configuration update requires a blue/green deployment; some are in-place and can have performance effects. |
 | time-series database / Amazon Timestream | 时序数据库 / Amazon Timestream | CH10 P177–P180: service for time-series analysis; source claims 10× cost and 1000× performance need Author TBC benchmark confirmation. |
+| Timestream encryption / customer-managed KMS key | 静态数据加密 / 客户管理的 AWS KMS 密钥 | CH10 P181: distinguish service-default keys from customer-managed AWS KMS keys; customer-managed need not mean imported key material. |
+| Timestream memory store / magnetic store | 内存存储层 / 磁性存储层 | CH10 P182: magnetic store is a named time-series storage tier, not necessarily a physical disk medium. |
+| Timestream timestamp / dimension / record upsert | 时间戳 / 维度 / 数据点更新 | CH10 P183: timestamp identifies point in time, is not a dimension; versioned upserts can update data points. Keep technical details in Author TBC unless needed. |
+| Amazon Keyspaces / Apache Cassandra | Amazon Keyspaces / Apache Cassandra | CH10 P184–P189: managed Cassandra-compatible wide-column database; feature support is not complete Cassandra parity. |
+| Keyspaces provisioned / on-demand capacity | 预置容量模式 / 按需容量模式 | CH10 P189: consistent with DynamoDB chapters; provisioned mode may autoscale. |
