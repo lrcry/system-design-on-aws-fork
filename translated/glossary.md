@@ -1123,3 +1123,10 @@ These working decisions supplement the cross-chapter glossary. Final consistency
 | ElastiCache data tiering | 数据分层存储 | CH10 P157: DRAM and NVMe SSD; 20% frequently accessed data is suitability guidance. Capacity “1 PB” must be checked at final GB/GiB/TB/TiB/PB/PiB audit. |
 | Redis shard / node / read replica | Redis 分片 / 节点 / 只读副本 | CH10 P159–P160: a shard (node group) has one primary and optional replicas; shard count is not node count; P160 total limit is Author TBC. |
 | Valkey / Redis OSS / Memcached (ElastiCache) | Valkey / Redis OSS / Memcached | CH10 P155: current engine offerings; original chapter lists only Redis and Memcached. Add no new engine to the translated historical text without author approval. |
+| ElastiCache Multi-AZ automatic failover | 多可用区自动故障转移 | CH10 P161: requires appropriate Multi-AZ/failover configuration and healthy eligible read replica; not unconditional. |
+| Redis command execution / multithreaded I/O | Redis 主线程命令执行 / 多线程 I/O | CH10 P162: distinguish primary command-execution threading from additional I/O processing and background work. |
+| ElastiCache compliance and Memcached encryption | 服务合规范围 / Memcached 加密配置 | CH10 P164 High Author TBC: PCI DSS/HIPAA/FedRAMP depend on service and deployment compliance, not Redis engine alone; Memcached support varies by version/configuration. |
+| DynamoDB Accelerator (DAX) | DynamoDB Accelerator（DAX） | CH10 P166–P169: VPC-deployed in-memory cache; eventually consistent read caching and supported write-through data-plane APIs, strongly consistent reads bypass cache. |
+| write-through caching | 直写式缓存（write-through） | CH10 P169: when writes pass through DAX, write to DynamoDB then update DAX; distinguish from directly writing DynamoDB. |
+| OpenSearch / Amazon OpenSearch Service | OpenSearch 搜索引擎 / Amazon OpenSearch Service 托管服务 | CH10 P170: separate open source engine from AWS managed service; author query for source wording. |
+| R5d instance description (CH10 P153) | 为内存中处理大型数据集的工作负载而优化的 R5d 实例 | Batch 17 reviewer-directed concise revision of earlier P153; retains linked R5d label, without duplicative explanation. |
