@@ -1130,3 +1130,8 @@ These working decisions supplement the cross-chapter glossary. Final consistency
 | write-through caching | 直写式缓存（write-through） | CH10 P169: when writes pass through DAX, write to DynamoDB then update DAX; distinguish from directly writing DynamoDB. |
 | OpenSearch / Amazon OpenSearch Service | OpenSearch 搜索引擎 / Amazon OpenSearch Service 托管服务 | CH10 P170: separate open source engine from AWS managed service; author query for source wording. |
 | R5d instance description (CH10 P153) | 为内存中处理大型数据集的工作负载而优化的 R5d 实例 | Batch 17 reviewer-directed concise revision of earlier P153; retains linked R5d label, without duplicative explanation. |
+| ingestion pipelines (OpenSearch) | 数据摄取管道 | CH10 P171: AWS Chinese term for ingestion pipelines; retain the “pipeline” concept rather than reducing to 数据摄取. |
+| OpenSearch Dashboards | OpenSearch Dashboards 可视化界面 | CH10 P171/P176: dashboards interface, distinct from OpenSearch engine and managed Amazon OpenSearch Service. |
+| dedicated cluster-manager node | 专用集群管理器节点 | CH10 P172: applies to instance-based OpenSearch Service domains; three dedicated nodes recommended for production availability. |
+| OpenSearch blue/green deployment | 蓝绿部署（blue/green deployment） | CH10 P175: not every configuration update requires a blue/green deployment; some are in-place and can have performance effects. |
+| time-series database / Amazon Timestream | 时序数据库 / Amazon Timestream | CH10 P177–P180: service for time-series analysis; source claims 10× cost and 1000× performance need Author TBC benchmark confirmation. |
