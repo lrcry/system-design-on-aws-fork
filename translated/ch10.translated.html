@@ -623,40 +623,40 @@
         <section data-type="sect2" id="ch10_amazon_opensearch_1734552290477057">
           <h2>亚马逊 OpenSearch 服务</h2>
           <p>应用程序可能<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="OpenSearch" id="aws-database-OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="OpenSearch" id="database-aws-OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="OpenSearch" id="OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search databases (OpenSearch)" id="search-db-OpenSearch">&nbsp;</a>需要根据用户输入的搜索条件展示相应结果。以 Cafe Delhi Heights 为例，用户可以搜索餐品、餐厅位置，或使用其他筛选条件。搜索某种餐品时，系统应返回提供该餐品的所有餐厅位置；搜索某个餐厅位置时，则应显示该位置供应的全部菜肴。如何组织这些数据，以便高效检索？对于这类搜索需求，AWS 提供了 OpenSearch 搜索引擎服务。</p>
-          <p><a href="https://oreil.ly/S2MvR">OpenSearch</a> 是一个从 Elasticsearch 派生的开源项目，与大多数运行在专有软件上的 AWS 服务不同。OpenSearch 广泛用于全文搜索、日志分析、数据摄取管道和机器学习等场景。AWS 在搜索引擎之上提供 OpenSearch 控制面板，帮助可视化数据。以下是关于 OpenSearch 架构的几个关键注意事项，以及我们作为客户如何充分利用它：</p>
+          <p>与部分基于专有软件的 AWS 服务不同，<a href="https://oreil.ly/S2MvR">OpenSearch</a> 是从 Elasticsearch 衍生而来的开源搜索与分析项目。OpenSearch 广泛应用于全文搜索、日志分析、数据摄取管道和机器学习等场景。AWS 提供 OpenSearch Dashboards 可视化界面，帮助用户分析和展示搜索与分析结果。下面介绍 OpenSearch 架构的几个关键要点，以及如何在实际应用中有效利用这些功能：</p>
           <dl>
             <dt>集群设置</dt>
             <dd>
-              <p>OpenSearch 可以作为单节点或多节点集群运行。由于这是一个开源项目，您也可以按照<a href="https://oreil.ly/sQ3dA">这些步骤</a>自行设置集群。OpenSearch 是一种托管服务，帮助您避免设置的运维开销，可以基于实例（集群管理器节点和数据节点）或无服务器模式运行。AWS 建议为生产 OpenSearch 集群设置奇数个集群管理器节点，最少为三个节点。集群管理器节点的类型可以根据域中<a href="https://oreil.ly/nqOHv">数据节点的数量</a>来决定，例如对于 1 到 10 个数据节点，可以设置 m5.large.search 或 m6g.large.search。对于开发用途可以跳过设置专用集群管理器节点以节省成本（其中一个数据节点承担集群管理器节点的职责），但建议在生产场景中配置专用节点，以提高集群稳定性并为集群管理任务提供专用节点。</p>
+              <p>OpenSearch 可以在单节点或多节点集群中运行。作为开源软件，用户可以按照<a href="https://oreil.ly/sQ3dA">这些步骤</a>自行部署集群。AWS 也提供托管服务 Amazon OpenSearch Service，以减少集群部署和管理的运维负担，并支持基于实例的部署模式及无服务器模式。在基于实例的部署中，集群包含负责管理的节点和存储、处理数据的数据节点。对于生产环境，AWS 建议配置三个专用集群管理器节点，以提高集群稳定性。管理器节点的实例规格可以根据域中的<a href="https://oreil.ly/nqOHv">数据节点的数量</a>选择，例如，当数据节点数量为 1 至 10 个时，可以考虑 m5.large.search 或 m6g.large.search。对于开发环境，可以不配置专用集群管理器节点，由数据节点兼任管理职责，以降低成本；生产环境则通常建议采用专用管理器节点。</p>
             </dd>
             <dt>存储</dt>
             <dd>
-              <p>您可以选择 EBS 或实例存储卷与实例关联；可用的卷类型取决于所选择的实例类型。</p>
+              <p>可以根据所选实例类型，使用 Amazon EBS 卷或实例存储作为数据存储。可用的存储方式和卷类型取决于实例规格。</p>
             </dd>
             <dt>集群访问</dt>
             <dd>
-              <p>对于集群访问和网络，您可以选择 VPC 访问或公共访问。VPC 访问允许您在 VPC 内运行集群，以及配置子网、安全组和 IAM 角色。</p>
+              <p>配置 OpenSearch 集群的网络访问时，可以选择通过 VPC 访问或使用公共访问端点。选择 VPC 访问后，集群可通过 VPC 内的网络资源进行连接，并可结合子网、安全组和 IAM 权限管理访问。</p>
             </dd>
             <dt>部署</dt>
             <dd>
-              <p>OpenSearch 支持在运行中的集群上进行配置更新，例如增加 EBS 存储空间或升级实例类型。这些配置通过<a href="https://oreil.ly/kW07Y">蓝绿部署</a>的方式部署到新集群，以避免任何影响。建议在非高峰时段执行此类更新。</p>
+              <p>Amazon OpenSearch Service 支持对运行中的集群进行配置更新，例如增加 EBS 存储容量或更改实例类型。某些更新会通过<a href="https://oreil.ly/kW07Y">蓝绿部署（blue/green deployment）</a>完成，以降低对现有服务的影响；其他更新则可以直接在原有环境中完成。建议尽量在业务低峰时段执行可能影响性能的配置变更。</p>
             </dd>
             <dt>控制面板身份验证</dt>
             <dd>
-              <p>OpenSearch 提供<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="OpenSearch" data-startref="aws-database-OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="OpenSearch" data-startref="database-aws-OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="OpenSearch" data-startref="OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search databases (OpenSearch)" data-startref="search-db-OpenSearch">&nbsp;</a>通过<a href="https://oreil.ly/rreMP">安全断言标记语言（SAML）身份验证</a>或 <a href="https://oreil.ly/_BG_h">Amazon Cognito 身份验证</a>为控制面板配置身份验证的选项。</p>
+              <p>Amazon OpenSearch Service 支持<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="OpenSearch" data-startref="aws-database-OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="OpenSearch" data-startref="database-aws-OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="OpenSearch" data-startref="OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search databases (OpenSearch)" data-startref="search-db-OpenSearch">&nbsp;</a>通过<a href="https://oreil.ly/rreMP">安全断言标记语言（SAML）</a>或 <a href="https://oreil.ly/_BG_h">Amazon Cognito</a>为 OpenSearch Dashboards 配置用户身份验证。</p>
             </dd>
           </dl>
         </section>
         <section data-type="sect2" id="ch10_amazon_timestream_1734552290477123">
           <h2>亚马逊 Timestream</h2>
-          <p>亚马逊 Timestream <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Timestream" id="aws-database-Timestream">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="Timestream" id="database-aws-Timestream">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Timestream" id="Timestream">&nbsp;</a>是一种完全托管的无服务器数据库服务，适用于需要时序数据操作的使用场景，如 DevOps 分析数据。<span class='keep-together'>Timestream</span> 自动扩展，每天可处理数万亿个事件，成本仅为关系数据库的十分之一，速度是关系数据库的一千倍。</p>
-          <p>以下是使用 Timestream 时需要注意的几点：</p>
+          <p>Amazon Timestream <a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="Timestream" id="aws-database-Timestream">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="Timestream" id="database-aws-Timestream">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Timestream" id="Timestream">&nbsp;</a>是一项完全托管的无服务器时序数据库服务，适用于 DevOps 监控与分析等需要处理时间序列数据的场景。<span class='keep-together'>Timestream</span> 可以自动扩展，每天处理数万亿个事件。其成本可低至关系数据库的十分之一，查询性能最高可达关系数据库的一千倍。</p>
+          <p>使用 Timestream 时，需要注意以下几点：</p>
           <ul>
             <li>
-              <p>由于 Timestream 是无服务器的，使用简单，无需分析实例数量或类型。</p>
+              <p>Timestream 采用无服务器架构，用户无需自行选择或管理数据库实例的数量和类型，从而简化了部署与运维。</p>
             </li>
             <li>
-              <p>Timestream 提供内置的分析支持，包括插值和平滑函数，可使用标准 SQL 识别趋势、规律和异常。</p>
+              <p>Timestream 提供内置的数据分析功能，支持使用 SQL 以及插值、平滑等函数，识别时间序列数据中的趋势、模式和异常。</p>
             </li>
             <li>
               <p>数据默认使用标准密钥或客户自有 KMS 密钥进行加密。</p>
