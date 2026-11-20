@@ -1107,3 +1107,6 @@ These working decisions supplement the cross-chapter glossary. Final consistency
 | exponential-backoff retry | 指数退避重试 | CH10 P124: appropriate for transient throttling, not a permanent fix for persistent hot partitions. |
 | write sharding | 写入分片（write sharding） | CH10 P127: append random or calculated suffix to partition-key **values** to distribute writes. Reads must address multiple logical key values when suffix cannot be determined. |
 | document database / document | 文档数据库 / 文档 | CH10 P129–P130: JSON-like, nested key-value documents; item example uses 餐品信息 / 餐品文档. |
+| MongoDB/document identifier `_id` vs BSON `ObjectId` | 文档标识字段 `_id` / BSON `ObjectId` 类型 | CH10 P139 Author TBC: `_id` is the identifier field; its value need not always be `ObjectId`. Retain table's 对象 ID（Object ID） until author review. |
+| ad hoc queries | 即席查询（ad hoc queries） | CH10 P140; dynamically specified queries, distinct from a predefined query pattern. |
+| DocumentDB vs MongoDB compatibility | 兼容性（需限定具体功能） | CH10 P140: not complete feature parity; transaction capabilities and CRUD guarantees need version/semantics qualifications. |
