@@ -546,7 +546,7 @@
                 <a href="https://oreil.ly/xkShP">查找缓存</a>
               </dt>
               <dd>
-                <p>查找缓存（lookup cache）是一种实例级缓存，可提高需要反复读取属性值或 RDF 字面量的查询性能。<a href="https://oreil.ly/yo1_9">R5d 实例</a>属于内存优化型实例，适合处理需要在内存中处理大型数据集的工作负载。该缓存在 R5d 实例上默认启用，并利用 NVMe SSD 存储这些值，以加快后续访问速度。</p>
+                <p>查找缓存（lookup cache）是一种实例级缓存，可提高需要反复读取属性值或 RDF 字面量的查询性能。在为内存中处理大型数据集的工作负载而优化的 <a href="https://oreil.ly/yo1_9">R5d 实例</a>上，该缓存默认启用，并利用 NVMe SSD 存储这些值，以加快后续访问速度。</p>
               </dd>
               <dt>
                 <a href="https://oreil.ly/GKaKi">查询结果缓存</a>
@@ -585,44 +585,44 @@
           </section>
           <section data-type="sect3" id="ch10_redundancy_and_replication_1734552290476764">
             <h3>冗余与复制</h3>
-            <p>ElastiCache for Redis<a contenteditable="false" data-type="indexterm" data-primary="redundancy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="replication">&nbsp;</a>具有类似于 RDS 的<a href="https://oreil.ly/fkNRY">多可用区部署</a>支持。每当主节点出现故障，只读副本（1 到 5 个只读副本分布在不同可用区）将被提升为主节点，即使整个可用区出现故障也能确保高可用性。只读副本上的数据复制还确保了读写工作负载的分离。</p>
+            <p>ElastiCache for Redis<a contenteditable="false" data-type="indexterm" data-primary="redundancy">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="replication">&nbsp;</a>与 RDS 类似，也支持<a href="https://oreil.ly/fkNRY">多可用区（Multi-AZ）部署</a>。启用自动故障转移并在不同可用区配置只读副本后，如果主节点发生故障，系统可以将符合条件的副本提升为新的主节点，从而降低单个可用区故障带来的影响。此外，应用程序可以通过只读副本分担读取请求，实现读写负载分离。</p>
           </section>
           <section data-type="sect3" id="ch10_multithreading_1734552290476818">
             <h3>多线程</h3>
-            <p>Redis 是<a contenteditable="false" data-type="indexterm" data-primary="multithreading">&nbsp;</a>单线程进程，按顺序处理传入请求，而 Memcached 是多线程的，能够充分利用具有多核的较大 Amazon EC2 实例。</p>
+            <p>Redis 通常使用单个主线程执行命令，而 Memcached 支持多线程处理，因此能够利用多核计算资源来处理并发请求。<a contenteditable="false" data-type="indexterm" data-primary="multithreading">&nbsp;</a></p>
           </section>
           <section data-type="sect3" id="ch10_persistence_1734552290476872">
             <h3>持久化</h3>
-            <p>Redis 可以作为<a contenteditable="false" data-type="indexterm" data-primary="persistence">&nbsp;</a>应用程序的独立数据库使用，因为它支持长寿命数据的持久化。Memcached 是纯粹的缓存解决方案，通常部署在数据库（如 RDS）之前充当缓存层，以提高读取性能。</p>
+            <p>Redis 支持数据持久化，因此在适当的业务场景中也可以作为独立的数据存储系统使用。相比之下，Memcached 主要用于缓存，通常部署在 RDS 等数据库前端，以减少后端数据库的读取压力并提高访问性能。<a contenteditable="false" data-type="indexterm" data-primary="persistence">&nbsp;</a></p>
           </section>
           <section data-type="sect3" id="ch10_encryption_and_compliance_1734552290476928">
             <h3>加密与合规</h3>
-            <p>Redis 支持<a contenteditable="false" data-type="indexterm" data-primary="encryption">&nbsp;</a><a class="orm:hideurl" href="https://oreil.ly/8HW9H">支付卡行业数据安全标准（PCI DSS）</a>、<a class="orm:hideurl" href="https://oreil.ly/oQIDq">健康保险可携带性和责任法案（HIPAA）</a>以及 <a class="orm:hideurl" href="https://oreil.ly/H4DaF">联邦风险和授权管理计划（FedRAMP）</a>要求，并具备加密功能。Memcached 对身份验证和加密的支持不够完善，因此建议在没有公共连接的私有子网中启动 Memcached 节点，以确保更高的安全性。</p>
-            <p>有关创建集群的分步指南，请参阅 <a href="https://oreil.ly/RgKCB">AWS Redis 和 Memcached 页面</a>。</p>
+            <p>ElastiCache for Redis 提供加密等安全功能，并可作为满足<a contenteditable="false" data-type="indexterm" data-primary="encryption">&nbsp;</a><a class="orm:hideurl" href="https://oreil.ly/8HW9H">支付卡行业数据安全标准（PCI DSS）</a>、<a class="orm:hideurl" href="https://oreil.ly/oQIDq">健康保险可携带性和责任法案（HIPAA）</a>及 <a class="orm:hideurl" href="https://oreil.ly/H4DaF">联邦风险与授权管理计划（FedRAMP）</a>相关合规要求的系统组成部分。对于 Memcached，也应根据所使用的引擎版本配置适当的身份验证、加密和网络访问控制。通常建议将缓存节点部署在不直接暴露于公共互联网的私有子网中。</p>
+            <p>有关创建 Redis 或 Memcached 缓存集群的详细步骤，请参阅 <a href="https://oreil.ly/RgKCB">AWS 官方文档</a>。</p>
           </section>
           <section data-type="sect3" id="ch10_amazon_dynamodb_accelerator_1734552290476998">
             <h3>Amazon DynamoDB Accelerator</h3>
-            <p>如前所述，<a contenteditable="false" data-type="indexterm" data-primary="DynamoDB Accelerator (DAX)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DAX (DynamoDB Accelerator)">&nbsp;</a>您可以使用 Memcached 或 Redis 来卸载数据库（如 RDS 或 DynamoDB）的读取查询。DynamoDB 还提供自定义内存缓存方案——<a href="https://oreil.ly/O7Fad">DynamoDB Accelerator（DAX）</a>，以提高读取性能。DAX 是一个由主节点和只读副本组成的集群，运行在 VPC 内部，如 <a data-type="xref" href="#ch10_figure_4_1734552290456122">#ch10_figure_4_1734552290456122</a> 所示。要访问 DAX，需要在服务器的应用程序旁边安装 DAX 客户端，将应用程序的 DynamoDB API 请求定向到 DAX 集群。</p>
+            <p>如前所述，可以通过 Memcached 或 Redis 缓存数据库（如 RDS 或 DynamoDB）的查询结果，从而减少直接访问数据库的读取请求。DynamoDB 还提供专用的内存缓存服务 <a contenteditable="false" data-type="indexterm" data-primary="DynamoDB Accelerator (DAX)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DAX (DynamoDB Accelerator)">&nbsp;</a><a href="https://oreil.ly/O7Fad">DynamoDB Accelerator（DAX）</a>，用于提升读取性能。DAX 集群部署在 VPC 中，由主节点和可选的只读副本组成，如 <a data-type="xref" href="#ch10_figure_4_1734552290456122">#ch10_figure_4_1734552290456122</a> 所示。应用程序需要使用 DAX 客户端，将受支持的 DynamoDB API 请求发送到 DAX 集群。</p>
             <figure id="ch10_figure_4_1734552290456122">
               <img src="images/sdoa_1004.png"/>
               <figcaption>DAX 集群设置</figcaption>
             </figure>
-            <p>以下是在 DAX 集群和 DynamoDB 同时存在的情况下，读写 API 的执行方式：</p>
+            <p>下面介绍应用程序通过 DAX 访问 DynamoDB 时，读取和写入 API 的处理方式：</p>
             <dl>
               <dt>读取 API</dt>
               <dd>
-                <p>最终一致性读取 API 调用（GetItem、BatchGetItem、Query 和 Scan）由 DAX 提供服务。在缓存未命中的情况下，请求会传递给 DynamoDB 以检索响应。DynamoDB 返回结果时，也会将结果写入主节点上的 DAX 缓存。</p>
+                <p>对于最终一致性读取请求（GetItem、BatchGetItem、Query 和 Scan），DAX 会先尝试从缓存中返回结果。如果缓存未命中，DAX 会将请求转发给 DynamoDB，并在收到查询结果后，将其写入 DAX 主节点的相应缓存，再返回给应用程序。</p>
               </dd>
               <dt>写入 API</dt>
               <dd>
-                <p>对于写入 API 调用（BatchWriteItem、UpdateItem、DeleteItem 和 PutItem），数据首先写入 DynamoDB 表，然后写入 DAX 集群。只有在 DynamoDB 和 DAX 上的写入均成功时，API 才返回成功。<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="ElastiCache" data-startref="aws-database-ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="ElastiCache" data-startref="database-aws-ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ElastiCache" data-startref="ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="with ElastiCache" data-secondary-sortas="ElastiCache" data-startref="cache-elasticache">&nbsp;</a></p>
+                <p>对于通过 DAX 发起的写入 API 调用（BatchWriteItem、UpdateItem、DeleteItem 和 PutItem），系统先将数据写入 DynamoDB 表，再更新 DAX 缓存。这些写入操作采用直写式缓存（write-through）机制，只有 DynamoDB 和 DAX 都成功完成相应操作，API 才会返回成功。<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="ElastiCache" data-startref="aws-database-ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="ElastiCache" data-startref="database-aws-ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ElastiCache" data-startref="ElastiCache">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="caching" data-secondary="with ElastiCache" data-secondary-sortas="ElastiCache" data-startref="cache-elasticache">&nbsp;</a></p>
               </dd>
             </dl>
           </section>
         </section>
         <section data-type="sect2" id="ch10_amazon_opensearch_1734552290477057">
           <h2>亚马逊 OpenSearch 服务</h2>
-          <p>您可能<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="OpenSearch" id="aws-database-OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="OpenSearch" id="database-aws-OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="OpenSearch" id="OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search databases (OpenSearch)" id="search-db-OpenSearch">&nbsp;</a>希望根据用户搜索查询向用户显示搜索结果；在 Cafe Delhi Heights 的示例中，这些搜索结果可以是食品项目、餐厅位置或任何支持的筛选条件。搜索食品项目应返回提供该餐品的所有餐厅位置，而搜索餐厅位置应显示该位置提供的所有菜肴。如何在数据库中对这类数据建模以实现更快的检索？对于这类业务使用场景，AWS 提供了搜索数据库——OpenSearch。</p>
+          <p>应用程序可能<a contenteditable="false" data-type="indexterm" data-primary="AWS (Amazon Web Services)" data-secondary="database services" data-tertiary="OpenSearch" id="aws-database-OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="AWS" data-tertiary="OpenSearch" id="database-aws-OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="OpenSearch" id="OpenSearch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="search databases (OpenSearch)" id="search-db-OpenSearch">&nbsp;</a>需要根据用户输入的搜索条件展示相应结果。以 Cafe Delhi Heights 为例，用户可以搜索餐品、餐厅位置，或使用其他筛选条件。搜索某种餐品时，系统应返回提供该餐品的所有餐厅位置；搜索某个餐厅位置时，则应显示该位置供应的全部菜肴。如何组织这些数据，以便高效检索？对于这类搜索需求，AWS 提供了 OpenSearch 搜索引擎服务。</p>
           <p><a href="https://oreil.ly/S2MvR">OpenSearch</a> 是一个从 Elasticsearch 派生的开源项目，与大多数运行在专有软件上的 AWS 服务不同。OpenSearch 广泛用于全文搜索、日志分析、数据摄取管道和机器学习等场景。AWS 在搜索引擎之上提供 OpenSearch 控制面板，帮助可视化数据。以下是关于 OpenSearch 架构的几个关键注意事项，以及我们作为客户如何充分利用它：</p>
           <dl>
             <dt>集群设置</dt>
