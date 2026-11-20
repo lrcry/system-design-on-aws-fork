@@ -1124,3 +1124,101 @@ All new terminology identified from `ch03.html` that is not already covered in e
 | 860 | Cypher | — | "Neo4j uses Cypher, a powerful, intuitive query language specifically designed for graph databases" | https://neo4j.com/docs/cypher-manual/current/introduction/ | non-official | Cypher | https://neo4j.com/docs/cypher-manual/current/introduction/ | non-official |
 | 861 | Gremlin | — | "These languages, such as Cypher (used in Neo4j) or Gremlin (used in Apache TinkerPop), provide a declarative, expressive syntax" | https://tinkerpop.apache.org/gremlin.html | non-official | Gremlin | https://tinkerpop.apache.org/gremlin.html | non-official |
 | 862 | BASE (theory/properties) | Basically Available, Soft State, Eventually Consistent | "NoSQL databases generally follow BASE properties (eventual consistency)" | https://en.wikipedia.org/wiki/Eventual_consistency | non-official | BASE 理论（基本可用、软状态、最终一致性） | https://javaguide.cn/distributed-system/protocol/cap-and-base-theorem.html | non-official |
+
+
+## Chapter 10 translation-review clarifications (2026-11-16)
+
+These working decisions supplement the cross-chapter glossary. Final consistency review of Chapters 06, 08, 10 and the rest of the book is still required.
+
+| Term (EN) | Working Chinese | Notes and sources |
+|---|---|---|
+| OS boot volume | 操作系统启动卷 | Chapter 10 P18 approved. “引导卷” is an alternative seen in OS/Windows literature. AWS uses “根卷” for EC2 *root volume* and “根（启动）卷” in its EBS modification guide; distinguish overlapping but not necessarily identical terms. [AWS root volumes](https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/UserGuide/RootDeviceStorage.html), [AWS volume modification](https://docs.aws.amazon.com/zh_cn/ebs/latest/userguide/requesting-ebs-volume-modifications.html). |
+| root volume (EC2) | 根卷 | AWS official Chinese EC2 term; use where English explicitly says *root volume*. [AWS EC2](https://docs.aws.amazon.com/zh_cn/AWSEC2/latest/UserGuide/RootDeviceStorage.html). |
+| network-attached block storage (EBS) | 网络连接的块存储 | P19: EBS is network-attached block storage. Do not conflate with EFS shared file storage or use NAS as an unqualified synonym. [AWS Launch Wizard](https://docs.aws.amazon.com/pdfs/launchwizard/latest/userguide/launch-wizard-user-guide.pdf). |
+
+| storage class (EFS / S3) | 存储类别 | Chapter 10 P32–P33 approved terminology, including **EFS 存储类别** and **IA 存储类别**. Earlier chapters and later CH10 S3 paragraphs also use **存储类**; retain as a synonym until a final book-wide consistency decision. Do not alter unreviewed paragraphs without approval. |
+| S3 bucket | 存储桶（bucket） | CH10 P41 first-mention term; preserve `<em>` around Chinese term in original HTML, adding parenthetical bucket outside emphasis. |
+| S3 object key | 键名（key） | CH10 P43 identifies object keys; do not confuse an object key with a version ID. |
+| S3 Standard / Reduced Redundancy Storage | S3 Standard / 低冗余存储（Reduced Redundancy Storage） | CH10 P49–P50. Retain official product names and explain RRS once. |
+| S3 Standard-IA (Standard - Infrequent Access) | S3 Standard-IA | Introduced by comparison in CH10 P53, after S3 Standard in P49–P50. P59 retains official names for lifecycle transitions. [AWS storage classes](https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage-class-intro.html). |
+| S3 Lifecycle transition | 存储类别转换操作 | CH10 P59. Distinguish transition from expiration. |
+| S3 Lifecycle expiration | 对象的过期操作 | CH10 P60. With versioning, expiry can create a delete marker; author TBC. |
+| minimum storage duration charge | 最短计费存储时长 | CH10 P56–P57. Early deletion or transition may still incur a minimum-duration storage charge. |
+| S3 Intelligent-Tiering | S3 智能分层（Intelligent-Tiering） | CH10 P61; AWS storage class that automatically shifts objects between **访问层** (access tiers) within the same storage class. At first mention include English in parentheses. Launched in 2018. |
+| Intelligent-Tiering access tier | 访问层 | CH10 P61–P64; distinguish from **存储类别** (*storage class*). Examples: 频繁访问层, 低频访问层, 归档即时访问层, 归档访问层, 深度归档访问层. |
+| S3 Object Lock | 对象锁定（Object Lock） | CH10 P68; protects specific object versions with retention settings or legal holds. |
+| legal hold (S3) | 法律保留（Legal Hold） | CH10 P68; retained in original `<em>` span as 法律保留 with English parenthetical outside emphasis. Persists until released. |
+| SSE-S3 / SSE-KMS | SSE-S3 / SSE-KMS | CH10 P67; distinguish S3-managed keys from AWS KMS keys for server-side encryption. |
+| Amazon Macie | Amazon Macie | CH10 P71: sensitive-data discovery and security posture review; do not imply enforcement of permissions. |
+| access control list (ACL) for S3 | 访问控制列表（ACL） | CH10 P72: access-control subresource; newly created buckets generally default to ACLs disabled through Object Ownership settings. |
+| S3 bucket policy | 存储桶策略 | CH10 P73: resource-based access policy for S3 buckets and objects. |
+| database edition | 数据库版本类别（edition） | CH10 P78 working rendering; distinguish *edition* (e.g., a product edition) from engine version and distribution. Revisit terminology in final book-wide consistency pass. |
+| DB instance identifier | 数据库实例标识符 | CH10 P80: unique within an AWS account and Region, not across all AWS accounts. |
+| RDS Magnetic storage / EBS Magnetic volume | 磁性存储（RDS）/ 磁介质卷（EBS） | CH10 P82 approved RDS term **磁性存储**, not vague 磁盘 or awkward 磁性磁盘. Distinguish context; reconcile previous glossary entries. [RDS storage](https://docs.amazonaws.cn/zh_cn/AmazonRDS/latest/UserGuide/CHAP_Storage.html), [EBS volumes](https://docs.amazonaws.cn/zh_cn/ebs/latest/userguide/ebs-volume-types.html). |
+| DB instance class / burstable class | 数据库实例类别 / 突发性能型实例 | CH10 P81; standard/内存优化型/突发性能型 terminology. |
+| Multi-AZ deployment | 多可用区（Multi-AZ）部署 | CH10 P83; distinguish HA/failover from protection against all failures. |
+| Aurora Capacity Unit (ACU) | Aurora 容量单位（Aurora Capacity Unit，ACU） | CH10 P89; capacity unit for Aurora Serverless, distinguish from standard fixed instance classes and db.serverless. |
+| Aurora Serverless public access | Aurora Serverless 公共访问 | CH10 P90 is version/configuration dependent: v1 differs from v2. Preserve source-era context and query author. |
+| encryption at rest | 静态加密 | CH10 P91: “对数据库中的数据进行静态加密”. Contrasts with *encryption in transit* (传输中加密), not with a separate “static data” category. |
+| DynamoDB item collection | 数据项集合 | CH10 P98: items sharing a partition-key value, ordered by sort key; may span physical partitions without LSIs. [AWS partitions](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.Partitions.html). |
+| partition key / sort key | 分区键 / 排序键 | CH10 P95–P98; a primary key consists of the partition key alone or partition+sort key. |
+| DynamoDB request router (RR) | 请求路由器（RR） | CH10 P97; implementation-sensitive routing and leader/follower details are Author TBC. |
+| read capacity unit (RCU) / write capacity unit (WCU) | 读取容量单位（RCU）/ 写入容量单位（WCU） | CH10 P99–P100; distinguish provisioned capacity and on-demand billing in detailed paragraphs. |
+| provisioned capacity mode | 预置容量模式 | CH10 P100; contrasted with on-demand mode elsewhere. |
+| DynamoDB auto scaling (provisioned capacity) | 自动扩展功能 | CH10 P101: feature of provisioned capacity; min/max RCU/WCU settings, not a separate capacity mode. |
+| on-demand capacity mode (DynamoDB) | 按需容量模式 | CH10 P102: no upfront RCU/WCU provisioned value; distinguish from provisioned capacity and autoscaling. |
+| secondary index (DynamoDB) | 二级索引 | CH10 P103; umbrella for LSI and GSI; supports alternate access patterns. |
+| local secondary index (LSI) | 本地二级索引（LSI） | CH10 P103/P105/P108; must be defined when creating the base table, uses same partition key and alternative sort key. |
+| global secondary index (GSI) | 全局二级索引（GSI） | CH10 P103/P106/P109; can be added or removed after table creation, may have different partition and sort keys from base table. |
+| primary key schema | 主键结构 | CH10 P107; retain as glossary candidate for cross-chapter terminology review. |
+| item collection size limit (with LSI) | 数据项集合大小上限（10 GB） | CH10 P111: the sum of all base-table items with one partition-key value and all projected LSI entries corresponding to that value. Each distinct partition-key value has its own 10 GB limit; it is not per item or per whole index. [AWS LSI](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LSI.html). |
+| physical partition | 物理分区 | CH10 P111/P120; storage unit with capacity/throughput considerations. Distinguish from logical partition-key item collection. |
+| adaptive capacity (DynamoDB) | 自适应容量 | CH10 P120; allocates capacity dynamically to hot partitions; author TBC about original equal-split claim. |
+| read consistency: strong / eventual | 强一致性读取 / 最终一致性读取 | CH10 P117–P119; LSI supports both, GSI only eventual; use consistent expression across chapters. |
+| hot partition / hot key | 热分区 / 热键 | CH10 P121: physical partition with concentrated load vs partition-key value with disproportionate traffic; not exact synonyms. |
+| CloudWatch Contributor Insights | CloudWatch Contributor Insights | CH10 P121: can identify highly accessed/throttled keys and items; do not imply direct exposure of DynamoDB physical partition IDs. |
+| partition-key cardinality | 分区键的基数 | CH10 P123: high cardinality means many distinct values; effective distribution also depends on access patterns. |
+| exponential-backoff retry | 指数退避重试 | CH10 P124: appropriate for transient throttling, not a permanent fix for persistent hot partitions. |
+| write sharding | 写入分片（write sharding） | CH10 P127: append random or calculated suffix to partition-key **values** to distribute writes. Reads must address multiple logical key values when suffix cannot be determined. |
+| document database / document | 文档数据库 / 文档 | CH10 P129–P130: JSON-like, nested key-value documents; item example uses 餐品信息 / 餐品文档. |
+| MongoDB/document identifier `_id` vs BSON `ObjectId` | 文档标识字段 `_id` / BSON `ObjectId` 类型 | CH10 P139 Author TBC: `_id` is the identifier field; its value need not always be `ObjectId`. Retain table's 对象 ID（Object ID） until author review. |
+| ad hoc queries | 即席查询（ad hoc queries） | CH10 P140; dynamically specified queries, distinct from a predefined query pattern. |
+| DocumentDB vs MongoDB compatibility | 兼容性（需限定具体功能） | CH10 P140: not complete feature parity; transaction capabilities and CRUD guarantees need version/semantics qualifications. |
+| AWS Database Migration Service (AWS DMS) | AWS 数据库迁移服务（AWS Database Migration Service，AWS DMS） | CH10 P142: MongoDB to DocumentDB migration; compatibility review recommended. |
+| Neptune Serverless / Neptune Capacity Unit (NCU) | Neptune Serverless / Neptune 容量单位（NCU） | CH10 P148: configure a minimum-to-maximum capacity range, then automatically scale within that range. |
+| Neptune cluster endpoint / reader endpoint / instance endpoint | 集群端点（写入）/ 读取端点 / 实例端点 | CH10 P150: reader endpoint distributes **new connections** by DNS round-robin, not queries. |
+| Neptune initial cluster storage allocation | 初始分配的 10 GB 存储空间 | CH10 P149: initial allocated volume segment, **not** stored application data; grows as needed. Follow up on exact binary/decimal unit designation. |
+| Neptune volume maximum | 128 TiB（多数受支持区域） | CH10 P149: maximum Neptune cluster volume in most AWS Regions; region-specific exceptions to be addressed with author. |
+| GB / GiB / TB / TiB storage-size unit audit | GB / GiB / TB / TiB 单位核对 | **Chapter-end mandatory review** per Batch 15 user feedback: verify every storage unit (also PB/PiB) across CH10 against AWS docs and English original, including per-partition/item-collection limits, initial storage allocations, maximum capacities; never change unreviewed material silently. |
+| R5d instance family | R5d 内存优化型实例 | CH10 P153: memory-optimised for large in-memory datasets, plus local NVMe SSD. Neptune lookup cache uses local SSD; availability/defaults remain Author TBC. |
+| Neptune lookup cache / Gremlin results cache | 查找缓存 / Gremlin 查询结果缓存 | CH10 P153–P154: instance-level repeated property/RDF literal lookups vs cached Gremlin read-only query results. |
+| Neptune buffer pool cache | 内存缓冲池缓存 | CH10 P152: roughly two-thirds of available instance memory, not necessarily total nominal RAM. |
+| ElastiCache subnet group | ElastiCache 子网组 | CH10 P156: use suitable VPC subnets with adequate available IPs; new subnets not always required. |
+| ElastiCache data tiering | 数据分层存储 | CH10 P157: DRAM and NVMe SSD; 20% frequently accessed data is suitability guidance. Capacity “1 PB” must be checked at final GB/GiB/TB/TiB/PB/PiB audit. |
+| Redis shard / node / read replica | Redis 分片 / 节点 / 只读副本 | CH10 P159–P160: a shard (node group) has one primary and optional replicas; shard count is not node count; P160 total limit is Author TBC. |
+| Valkey / Redis OSS / Memcached (ElastiCache) | Valkey / Redis OSS / Memcached | CH10 P155: current engine offerings; original chapter lists only Redis and Memcached. Add no new engine to the translated historical text without author approval. |
+| ElastiCache Multi-AZ automatic failover | 多可用区自动故障转移 | CH10 P161: requires appropriate Multi-AZ/failover configuration and healthy eligible read replica; not unconditional. |
+| Redis command execution / multithreaded I/O | Redis 主线程命令执行 / 多线程 I/O | CH10 P162: distinguish primary command-execution threading from additional I/O processing and background work. |
+| ElastiCache compliance and Memcached encryption | 服务合规范围 / Memcached 加密配置 | CH10 P164 High Author TBC: PCI DSS/HIPAA/FedRAMP depend on service and deployment compliance, not Redis engine alone; Memcached support varies by version/configuration. |
+| DynamoDB Accelerator (DAX) | DynamoDB Accelerator（DAX） | CH10 P166–P169: VPC-deployed in-memory cache; eventually consistent read caching and supported write-through data-plane APIs, strongly consistent reads bypass cache. |
+| write-through caching | 直写式缓存（write-through） | CH10 P169: when writes pass through DAX, write to DynamoDB then update DAX; distinguish from directly writing DynamoDB. |
+| OpenSearch / Amazon OpenSearch Service | OpenSearch 搜索引擎 / Amazon OpenSearch Service 托管服务 | CH10 P170: separate open source engine from AWS managed service; author query for source wording. |
+| R5d instance description (CH10 P153) | 为内存中处理大型数据集的工作负载而优化的 R5d 实例 | Batch 17 reviewer-directed concise revision of earlier P153; retains linked R5d label, without duplicative explanation. |
+| ingestion pipelines (OpenSearch) | 数据摄取管道 | CH10 P171: AWS Chinese term for ingestion pipelines; retain the “pipeline” concept rather than reducing to 数据摄取. |
+| OpenSearch Dashboards | OpenSearch Dashboards 可视化界面 | CH10 P171/P176: dashboards interface, distinct from OpenSearch engine and managed Amazon OpenSearch Service. |
+| dedicated cluster-manager node | 专用集群管理器节点 | CH10 P172: applies to instance-based OpenSearch Service domains; three dedicated nodes recommended for production availability. |
+| OpenSearch blue/green deployment | 蓝绿部署（blue/green deployment） | CH10 P175: not every configuration update requires a blue/green deployment; some are in-place and can have performance effects. |
+| time-series database / Amazon Timestream | 时序数据库 / Amazon Timestream | CH10 P177–P180: service for time-series analysis; source claims 10× cost and 1000× performance need Author TBC benchmark confirmation. |
+| Timestream encryption / customer-managed KMS key | 静态数据加密 / 客户管理的 AWS KMS 密钥 | CH10 P181: distinguish service-default keys from customer-managed AWS KMS keys; customer-managed need not mean imported key material. |
+| Timestream memory store / magnetic store | 内存存储层 / 磁性存储层 | CH10 P182: magnetic store is a named time-series storage tier, not necessarily a physical disk medium. |
+| Timestream timestamp / dimension / record upsert | 时间戳 / 维度 / 数据点更新 | CH10 P183: timestamp identifies point in time, is not a dimension; versioned upserts can update data points. Keep technical details in Author TBC unless needed. |
+| Amazon Keyspaces / Apache Cassandra | Amazon Keyspaces / Apache Cassandra | CH10 P184–P189: managed Cassandra-compatible wide-column database; feature support is not complete Cassandra parity. |
+| Keyspaces provisioned / on-demand capacity | 预置容量模式 / 按需容量模式 | CH10 P189: consistent with DynamoDB chapters; provisioned mode may autoscale. |
+| customer login credentials / user profiles | 登录凭证 / 顾客资料 | CH10 P191: authentication credentials are not interchangeable with profile data; never imply storing plaintext passwords. Author TBC. |
+| ElastiCache cache layer / persistent data store | 缓存层 / 持久化数据存储 | CH10 P192: cache accelerates access, not an automatic substitute for primary database or credential store. |
+| menu items / food items | 菜单项目 / 餐品 | CH10 P193/P195 and earlier Cafe Delhi Heights examples: prefer 餐品 for food items; 菜单项目 for menu entries. |
+| positive / negative customer reviews | 正面评价 / 负面评价 | CH10 P197: sentiment-analysis labels rather than casual 好评/差评. |
+| OpenSearch derived index vs primary database | 搜索索引 / 主数据存储 | CH10 P194: source recommendations mix databases and search; author-facing architecture distinction, do not add unapproved services. |
+| search criteria / identifiers | 搜索条件 / 标识符 | CH10 P201: name, location and rating are search criteria/attributes, not necessarily unique identifiers. |
+| archival retention / active retention | 归档后保留期限 / 活跃数据保留期限 | CH10 P203: 90 days before archival plus a year of retention is interpretation pending Author TBC; clarify total versus additional duration. |
+| compute resources / compute platforms | 计算资源 / 计算平台 | CH10 P206: includes serverless and managed compute, not only self-managed servers. |
