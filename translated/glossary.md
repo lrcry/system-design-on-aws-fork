@@ -1116,3 +1116,10 @@ These working decisions supplement the cross-chapter glossary. Final consistency
 | Neptune initial cluster storage allocation | 初始分配的 10 GB 存储空间 | CH10 P149: initial allocated volume segment, **not** stored application data; grows as needed. Follow up on exact binary/decimal unit designation. |
 | Neptune volume maximum | 128 TiB（多数受支持区域） | CH10 P149: maximum Neptune cluster volume in most AWS Regions; region-specific exceptions to be addressed with author. |
 | GB / GiB / TB / TiB storage-size unit audit | GB / GiB / TB / TiB 单位核对 | **Chapter-end mandatory review** per Batch 15 user feedback: verify every storage unit (also PB/PiB) across CH10 against AWS docs and English original, including per-partition/item-collection limits, initial storage allocations, maximum capacities; never change unreviewed material silently. |
+| R5d instance family | R5d 内存优化型实例 | CH10 P153: memory-optimised for large in-memory datasets, plus local NVMe SSD. Neptune lookup cache uses local SSD; availability/defaults remain Author TBC. |
+| Neptune lookup cache / Gremlin results cache | 查找缓存 / Gremlin 查询结果缓存 | CH10 P153–P154: instance-level repeated property/RDF literal lookups vs cached Gremlin read-only query results. |
+| Neptune buffer pool cache | 内存缓冲池缓存 | CH10 P152: roughly two-thirds of available instance memory, not necessarily total nominal RAM. |
+| ElastiCache subnet group | ElastiCache 子网组 | CH10 P156: use suitable VPC subnets with adequate available IPs; new subnets not always required. |
+| ElastiCache data tiering | 数据分层存储 | CH10 P157: DRAM and NVMe SSD; 20% frequently accessed data is suitability guidance. Capacity “1 PB” must be checked at final GB/GiB/TB/TiB/PB/PiB audit. |
+| Redis shard / node / read replica | Redis 分片 / 节点 / 只读副本 | CH10 P159–P160: a shard (node group) has one primary and optional replicas; shard count is not node count; P160 total limit is Author TBC. |
+| Valkey / Redis OSS / Memcached (ElastiCache) | Valkey / Redis OSS / Memcached | CH10 P155: current engine offerings; original chapter lists only Redis and Memcached. Add no new engine to the translated historical text without author approval. |
