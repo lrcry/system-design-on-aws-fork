@@ -155,34 +155,34 @@
   </section>
   <section data-type="sect1" id="ch14_starting_with_the_design_1734552292688238">
     <h1>从设计开始</h1>
-    <p>我们<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="architecture design" id="use-case-url-short-architecture">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="architecture design" id="url-short-architecture">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="in URL shortener service" data-secondary-sortas="URL shortener service" id="schema-url-short">&nbsp;</a>在需求收集部分提到，我们不应想得太远，因为我们不知道系统未来会是什么样子，也不知道会引入哪些新功能来顺应市场变化。我们应努力保持系统的开放性，以便在真正需要时能够轻松引入新功能。<a data-type="xref" href="#ch14_figure_1_1734552292664156">#ch14_figure_1_1734552292664156</a>展示了短网址服务最基础的架构以及用户与之交互的方式，以满足已定义的功能性需求。用户通过短网址服务为长 URL 创建对应的短 URL，然后在浏览器（或终端）中使用该短 URL 访问目标页面。短网址服务会找到短 URL 对应的长 URL，并将请求重定向到该长 URL。</p>
+    <p>我们<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="architecture design" id="use-case-url-short-architecture">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="architecture design" id="url-short-architecture">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="schema design" data-secondary="in URL shortener service" data-secondary-sortas="URL shortener service" id="schema-url-short">&nbsp;</a>在需求收集部分提到，不应过早考虑过于遥远的未来，因为我们尚不清楚系统今后会如何演变，也不知道为了适应市场变化可能需要引入哪些新功能。我们应尽量使系统保持灵活，以便在实际需要时轻松添加新功能。<a data-type="xref" href="#ch14_figure_1_1734552292664156">#ch14_figure_1_1734552292664156</a>展示了满足既定功能性需求的短网址服务的基本架构，以及用户与系统的交互方式。用户通过短网址服务为长 URL 生成对应的短 URL，然后在浏览器（或终端）中使用该短 URL 访问目标页面。短网址服务会查找短 URL 对应的长 URL，并将请求重定向到该地址。</p>
     <figure id="ch14_figure_1_1734552292664156">
       <img src="images/sdoa_1401.png"/>
       <figcaption>用户与短网址服务的交互</figcaption>
     </figure>
-    <p>设计的首要任务是确定如何从长 URL 生成短 URL，以便进行最优存储，从而支持更快速的用户查询。</p>
+    <p>设计的首要任务是确定如何从长 URL 生成短 URL，并以合适的方式存储，从而加快用户查询速度。</p>
     <section data-type="sect2" id="ch14_url_shortening_algorithm_1734552292688331">
       <h2>URL 缩短算法</h2>
-      <p>长 URL<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="algorithms for" id="use-case-url-short-algorithm">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="algorithms for" id="url-short-algorithm">&nbsp;</a>可以通过不同的算法缩短为短 URL。我们将讨论其中几种如何适用于我们的系统用例，首先从哈希开始。</p>
+      <p>长 URL<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="algorithms for" id="use-case-url-short-algorithm">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="algorithms for" id="url-short-algorithm">&nbsp;</a>可以使用不同的算法缩短为短 URL。接下来，我们将探讨其中几种算法是否适合我们的系统用例，首先介绍哈希算法。</p>
       <section data-type="sect3" id="ch14_hashing_1734552292688407">
         <h3>哈希</h3>
-        <p>哈希<a contenteditable="false" data-type="indexterm" data-primary="hashing" id="hashing-ch14">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="collisions" id="collision-ch14">&nbsp;</a>看起来是解决这个问题的可行方案：使用哈希函数（例如 <a class="orm:hideurl" href="https://oreil.ly/FfZ20">MD5</a>），以长 URL 作为输入，返回该长 URL 的哈希值作为输出。生成的哈希长度可能超过 7，因此系统需要将其截取到指定长度。这种方案易于实现，但存在一个问题：哈希碰撞。两个不同的长 URL 可能会生成相同的哈希值，即便哈希值不同，截取后的长度也可能相同。在大规模场景下，这会成为一个频繁发生的问题，使短 URL 的生成成为系统瓶颈。</p>
-        <p>处理哈希碰撞有不同的方法：一种可行方案是取其他字符集，而不是截取前 7 个字符。哈希生成方案还需要进行数据库查询（碰撞时需进行多次查询），这会给操作增加额外的延迟，如<a data-type="xref" href="#ch14_figure_2_1734552292664190">#ch14_figure_2_1734552292664190</a>所示。</p>
+        <p>哈希<a contenteditable="false" data-type="indexterm" data-primary="hashing" id="hashing-ch14">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="collisions" id="collision-ch14">&nbsp;</a>似乎是解决这个问题的一种可行方案：使用 <a class="orm:hideurl" href="https://oreil.ly/FfZ20">MD5</a> 等哈希函数，以长 URL 为输入，生成对应的哈希值。由于生成的哈希值可能超过 7 个字符，因此需要将其截取为较短的长度。这种方案虽然容易实现，但存在哈希碰撞问题。两个不同的长 URL 可能生成相同的哈希值；即使完整哈希值不同，截取后的哈希值也可能相同。在大规模系统中，哈希碰撞可能频繁发生，使短 URL 的生成成为系统瓶颈。</p>
+        <p>处理哈希碰撞有多种方法。一种可行方案是不再截取哈希值的前 7 个字符，而是选取其他位置的字符。使用哈希生成短 URL 还需要查询数据存储系统（发生碰撞时可能需要多次查询），从而增加操作延迟，如<a data-type="xref" href="#ch14_figure_2_1734552292664190">#ch14_figure_2_1734552292664190</a>所示。</p>
         <figure id="ch14_figure_2_1734552292664190">
           <img src="images/sdoa_1402.png"/>
           <figcaption>通过哈希生成短 URL</figcaption>
         </figure>
-        <p>简而言之，哈希方案对于我们的系统需求而言并不完美。让我们思考一种既能避免碰撞，又能避免数据库查询的方案，以使操作<a contenteditable="false" data-type="indexterm" data-primary="hashing" data-startref="hashing-ch14">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="collisions" data-startref="collision-ch14">&nbsp;</a>更快。</p>
+        <p>总而言之，哈希方案并不能完全满足我们的系统需求。接下来，我们考虑一种能够避免哈希碰撞，并且或许还能省去数据库查询、从而提高操作<a contenteditable="false" data-type="indexterm" data-primary="hashing" data-startref="hashing-ch14">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="collisions" data-startref="collision-ch14">&nbsp;</a>速度的方案。</p>
       </section>
       <section data-type="sect3" id="ch14_unique_id_generation_1734552292688472">
         <h3>唯一 ID 生成</h3>
-        <p>这里需要考虑的一个关键点<a contenteditable="false" data-type="indexterm" data-primary="unique ID generation" id="unique-id">&nbsp;</a>是：长 URL 和短 URL 之间不必存在关联——本质上这是一个唯一 ID 生成系统，可以将生成的 ID 映射到长 URL。</p>
-        <p>让我们来讨论几种生成唯一 ID 的方法。ID 可以像一个计数器一样简单，每次收到新的用户请求时递增，也可以使用数据库的<a href="https://oreil.ly/WtqwQ"><code>AUTO_INCREMENT</code></a>等功能。如果系统本身（无需数据库参与）处理 ID 生成，我们就能确保同时解决碰撞处理和避免数据库查询这两个问题。可以将其想象成：服务器将计数器初始化为"1"，然后每收到一个新请求就递增一次。映射关系存入数据库，然后将短 URL 返回给用户，如<a data-type="xref" href="#ch14_figure_3_1734552292664216">#ch14_figure_3_1734552292664216</a>所示。</p>
+        <p>这里有一个关键点<a contenteditable="false" data-type="indexterm" data-primary="unique ID generation" id="unique-id">&nbsp;</a>：长 URL 和短 URL 的内容不必存在直接关联。本质上，我们只需要一个唯一 ID 生成系统，将生成的 ID 映射到相应的长 URL。</p>
+        <p>接下来讨论几种生成唯一 ID 的方法。可以使用一个简单的计数器，每收到一个用户请求就将其递增，也可以利用数据库的<a href="https://oreil.ly/WtqwQ"><code>AUTO_INCREMENT</code></a>等功能。如果由系统自行生成 ID，而不依赖数据库参与 ID 生成，就能避免 ID 碰撞以及为生成 ID 而进行的数据库查询。例如，服务器可以将计数器初始化为“1”，然后每收到一个新请求就将其递增。系统随后将映射关系存入数据库，并向用户返回短 URL，如<a data-type="xref" href="#ch14_figure_3_1734552292664216">#ch14_figure_3_1734552292664216</a>所示。</p>
         <figure id="ch14_figure_3_1734552292664216">
           <img src="images/sdoa_1403.png"/>
           <figcaption>通过维护计数器生成短 URL</figcaption>
         </figure>
-        <p>由 0 到 9、a 到 z 以及 A 到 Z 组成的字母数字字符序列在用于编码时，被<a contenteditable="false" data-type="indexterm" data-primary="base62 encoding">&nbsp;</a>称为 <em>Base62 编码</em>。请注意，对计数器值（十进制数）进行 Base62 编码后，生成的短 URL 是唯一的，但长度不一定总是 7。例如：</p>
+        <p>使用数字 0–9、小写字母 a–z 和大写字母 A–Z 这 62 个字符进行编码的方式<a contenteditable="false" data-type="indexterm" data-primary="base62 encoding">&nbsp;</a>称为 <em>Base62 编码</em>。需要注意的是，将计数器的值（十进制数）转换为 Base62 编码后，生成的短 URL 虽然是唯一的，但不一定始终为 7 个字符。例如：</p>
         <div data-type="equation">
           <p>Base62(1) = 1</p>
           <p>Base62(10) = A</p>
