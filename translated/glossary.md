@@ -1142,3 +1142,19 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | size and time buffering | 缓冲区大小；缓冲区间隔 | Keep numeric values exactly as in English pending Author TBC and final units audit. |
 
 **Reviewer clarification:** P67 was selected Retain AS-IS. Reviewer considered alternatives for its opening clause but did not explicitly approve a P67 wording change; it remains unchanged, pending optional retrospective approval.
+
+
+## Chapter 12 — Batch 08 terminology and retrospective decisions (2026-11-21)
+
+| English | Chinese preferred form | Reviewer decision |
+|---|---|---|
+| Amazon Kinesis Video Streams (KVS) | Amazon KVS | Retain official AWS service names; P72 approved. |
+| machine learning (ML) | 机器学习（ML） | P72 approved expanded technical phrase. |
+| encryption at rest / in transit | 静态数据加密 / 传输中加密 | P75 approved; do not conflate states. |
+| KVS Producer libraries | KVS Producer 库 | P73 approved; identifies camera-side producer component. |
+| KVS parser library | 解析器库 | P77 approved, including Matroska Video（MKV）format. |
+| Amazon SQS | Amazon SQS | P80 approved; consistent with retrospective P2 approval. |
+| SNS topics / SQS queues | SNS 主题 / SQS 队列 | P79 approved with author TBC for English-source conflation. |
+| Redshift data destination | 当配置的数据目标为 Amazon Redshift 时 | **Retrospective P67 wording explicitly approved** in Batch 08. |
+
+**Reviewer workflow clarification:** There are only AS-IS and TO-BE choices for a paragraph. A specific free-text reviewer correction supersedes the selected option for that paragraph; apply that correction without changing unrelated content. Review prior batches for already approved amendments, but do not silently revise other paragraphs.
