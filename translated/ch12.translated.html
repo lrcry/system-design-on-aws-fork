@@ -30,34 +30,34 @@
       </section>
       <section data-type="sect1" id="ch12_amazon_kinesis_1734552291639391">
         <h1>Amazon Kinesis</h1>
-        <p>Amazon Kinesis<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="pub/sub model" data-tertiary="Kinesis" id="comms-pubsub-Kinesis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="pub/sub (publisher-subscriber) architecture" data-secondary="Kinesis" id="pubsub-Kinesis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="orchestration" data-secondary="Kinesis" id="orch-Kinesis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Kinesis" id="Kinesis-ch12">&nbsp;</a>可支持多种围绕流处理、分析和 ETL 的使用场景。Kinesis 旗下提供四项子服务：Kinesis Data Streams（KDS）、Kinesis Data Firehose（KDF）、Kinesis Data Analytics（KDA）和 Kinesis Video Streams（KVS）。我们先从 KDS 开始介绍。</p>
+        <p>Amazon Kinesis<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="pub/sub model" data-tertiary="Kinesis" id="comms-pubsub-Kinesis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="pub/sub (publisher-subscriber) architecture" data-secondary="Kinesis" id="pubsub-Kinesis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="orchestration" data-secondary="Kinesis" id="orch-Kinesis">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Kinesis" id="Kinesis-ch12">&nbsp;</a>可用于流数据处理、数据分析和 ETL 等多种场景。Kinesis 包含四项子服务：Kinesis Data Streams（KDS）、Kinesis Data Firehose（KDF）、Kinesis Data Analytics（KDA）和 Kinesis Video Streams（KVS）。我们先介绍 KDS。</p>
         <section data-type="sect2" id="ch12_amazon_kinesis_data_streams_1734552291639482">
           <h2>Amazon Kinesis Data Streams</h2>
-          <p>延续实时捕获用户交互的示例，<a contenteditable="false" data-type="indexterm" data-primary="Kinesis Data Streams (KDS)" id="kinesis-data-stream">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="KDS (Kinesis Data Streams)" id="kds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data streaming" data-secondary="KDS (Kinesis Data Streams)" id="data-stream-kds">&nbsp;</a>您有多台由用户操作的设备，这些设备被称为<a contenteditable="false" data-type="indexterm" data-primary="sources (KDS)">&nbsp;</a><em>数据源</em>。该交互流随后被 KDS 采集并存储。由于数据流现已在 Kinesis 中可用，可根据需求进行处理，例如在 EMR 集群上运行 Spark。最终，处理结果可以写入 DynamoDB 等目标存储，或使用任意分析工具进行分析，如<a data-type="xref" href="#ch12_figure_1_1734552291610648">#ch12_figure_1_1734552291610648</a>所示。简而言之，基于 Kinesis 的数据流处理使我们能够在不承担任何管理开销的情况下，大规模采集、处理和分析海量数据。</p>
+          <p>延续实时捕获用户交互的示例，假设<a contenteditable="false" data-type="indexterm" data-primary="Kinesis Data Streams (KDS)" id="kinesis-data-stream">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="KDS (Kinesis Data Streams)" id="kds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data streaming" data-secondary="KDS (Kinesis Data Streams)" id="data-stream-kds">&nbsp;</a>有多台由用户操作的设备，这些设备称为<a contenteditable="false" data-type="indexterm" data-primary="sources (KDS)">&nbsp;</a><em>数据源</em>。KDS 随后采集并存储这些设备产生的交互数据流。数据流进入 Kinesis 后，可以根据需求进行处理，例如使用 EMR 集群上的 Spark。最终，处理结果可以写入 DynamoDB 等目标，也可以使用任意分析工具进行分析，如<a data-type="xref" href="#ch12_figure_1_1734552291610648">#ch12_figure_1_1734552291610648</a>所示。简而言之，借助 Kinesis 数据流处理，我们无需承担任何管理开销，就能大规模采集、处理和分析海量数据。</p>
           <figure id="ch12_figure_1_1734552291610648">
             <img src="images/sdoa_1201.png"/>
             <figcaption>Amazon Kinesis Data Streams</figcaption>
           </figure>
-          <p><em>分片（shard）</em>是<a contenteditable="false" data-type="indexterm" data-primary="shards" id="shard-ch12">&nbsp;</a>KDS 的基本吞吐量单位，是数据流中具有唯一标识的数据记录序列。一个分片每秒最多可采集 1 MB 数据，支持每秒最多 1,000 次事务（TPS），并可每秒向消费者输出最多 2 MB 数据。如果这些限制影响到您的业务场景解决方案，请考虑替代方案（例如 Apache Kafka）。您可以参考分片所支持的 TPS 以及业务场景的生产和消费速率来<a href="https://oreil.ly/Qz1eD">配置分片数量</a>。此配置适用于 KDS 的预置模式。您也可以选择按需模式，AWS 将自动进行容量管理并按需扩展。</p>
+          <p><em>分片（shard）</em>是<a contenteditable="false" data-type="indexterm" data-primary="shards" id="shard-ch12">&nbsp;</a>KDS 的基本吞吐量单位，也是数据流中具有唯一标识的数据记录序列。一个分片每秒最多可采集 1 MB 数据，支持每秒最多 1,000 条记录，并可每秒向消费者输出最多 2 MB 数据。如果这些限制影响业务需求，可以考虑 Apache Kafka 等替代方案。您可以根据单个分片支持的记录写入速率，以及业务场景中的数据生产和消费速率来<a href="https://oreil.ly/Qz1eD">配置分片数量</a>。KDS 的预置模式需要进行此项配置。您也可以考虑按需模式，由 AWS 负责容量管理并根据需求自动扩展。</p>
           <p>生产者将数据记录发布到数据流，每条数据记录由序列号、分区键和数据块组成：</p>
           <dl>
             <dt>序列号</dt>
             <dd>
-              <p>由 KDS 自动分配，在其所属分片内对每个分区键具有唯一性。</p>
+              <p>序列号由 KDS 自动分配，在所属分片内，对同一分区键的每条记录都是唯一的。</p>
             </dd>
             <dt>分区键</dt>
             <dd>
-              <p>在分片级别对数据进行分组，即决定一条数据记录属于哪个分片。应选择能在可用分片之间实现均匀数据分布的键。</p>
+              <p>分区键用于在分片级别对数据进行分组，决定每条数据记录归属哪个分片。选择分区键时，应尽量使数据均匀分布在各个可用分片之间。</p>
             </dd>
             <dt>数据块（blob）</dt>
             <dd>
-              <p>由内容或信息构成的不可变字节序列，允许的最大大小为 1 MB。</p>
+              <p>数据块是承载数据内容的不可变字节序列，大小不得超过 1 MB。</p>
             </dd>
           </dl>
           <p>以下是使用 KDS 的主要注意事项：</p>
           <ul>
             <li>
-              <p>为突破分片级别 2 MB/s 的扇出限制，KDS 提供了一项附加功能：<a href="https://oreil.ly/833ah">增强型扇出（EFO）</a>。该功能可为每个消费者提供专用管道，从而实现 2 MB/s 的读取吞吐量。</p>
+              <p>为解决分片级别 2 MB/s 的共享读取吞吐量限制，KDS 提供了<a href="https://oreil.ly/833ah">增强型扇出（EFO）</a>功能。该功能为每个消费者提供独立的数据传输通道，使其在每个分片上都能获得最高 2 MB/s 的专用读取吞吐量。</p>
             </li>
             <li>
               <p>KDS 会临时存储数据，保留时间为 24 小时至 7 天；在此期间，数据可被重放以支持任意重试策略。</p>
