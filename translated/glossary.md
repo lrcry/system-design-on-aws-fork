@@ -1127,3 +1127,18 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | unbounded stream processing | 无界流处理 | Keep distinct from real-time processing execution mode; source-level simplification P54 Author TBC. |
 
 **Reviewer comment:** Translate service-feature names such as Data Catalog / Schema Registry where AWS has an established Chinese rendition, but retain the service prefix AWS Glue in English. This is terminology guidance for future approved edits, not blanket approval to change unreviewed or retained paragraphs.
+
+
+## Chapter 12 — Batch 07 terminology and retrospective corrections (2026-11-21)
+
+| English | Preferred Chinese | Status / reviewer instruction |
+|---|---|---|
+| AWS Glue Schema Registry | AWS Glue 架构注册表 | **Approved retrospective correction P56** following Batch 06 discussion, consistent with AWS official Simplified Chinese docs. https://docs.aws.amazon.com/zh_cn/glue/latest/dg/schema-registry.html |
+| AWS Glue Data Catalog | AWS Glue 数据目录 | P58 already consistent; remains unchanged. |
+| notebook | 笔记本（Notebook） at first formal definition; 笔记本 thereafter | **Approved retrospective correction P60**, retaining the exact <em> element and original indexterm position; P59 already uses 笔记本. |
+| delivery stream | 传输流 | Retain historical KDF terminology used in English original and this chapter. |
+| at-least-once data delivery semantics | 至少一次（at-least-once）数据交付语义 | P70 approved; distinguish from generic data transmission. |
+| Firehose primary destination | 单个传输流的一个主要目标；以下目标之一 | P69 reviewer explicitly approved “and” → “or” clarification in Chinese; English source unchanged, Author TBC recorded. |
+| size and time buffering | 缓冲区大小；缓冲区间隔 | Keep numeric values exactly as in English pending Author TBC and final units audit. |
+
+**Reviewer clarification:** P67 was selected Retain AS-IS. Reviewer considered alternatives for its opening clause but did not explicitly approve a P67 wording change; it remains unchanged, pending optional retrospective approval.
