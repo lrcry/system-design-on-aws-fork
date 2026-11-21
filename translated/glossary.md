@@ -1196,3 +1196,16 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | SQS polling | 通过轮询从 SQS 获取消息 | P107 approved, in contrast to SNS 推送. |
 | Cafe Delhi Heights | Cafe Delhi Heights | Preserve restaurant proper name as written in source in P104; do not invent literal Chinese proper-name translation. |
 | FIFO price premium | 比标准队列贵约 25% | P102 retained AS-IS; applicability and assumptions recorded as Medium Author TBC. |
+
+
+## Chapter 12 — Batch 12 terminology decisions (2026-11-21)
+
+| English | Preferred Chinese | Reviewer decision |
+|---|---|---|
+| poll SQS | 轮询 SQS 以获取消息 | P113 approved; consistent with P107, distinct from SNS push. |
+| latency SLA | 消息传递延迟的 SLA 保证 | P114 approved with specific reviewer amendment: “SNS 不对消息传递延迟提供 SLA 保证”; do not construe push as guaranteed instantaneous delivery. |
+| SNS message attributes | 消息属性 | P116 approved; key, value and type; supports String, String.Array, Binary and Number. |
+| SNS subscription filter policy | 订阅过滤策略 | P117 approved; supports message attributes and JSON message body. |
+| message durability | 消息持久性 | P118 retained AS-IS; multi-AZ durability. |
+| SNS dead-letter queue | 死信队列（DLQ） | P119 approved: undelivered messages remain retrievable for subsequent processing. |
+| SNS server-side encryption | SNS 服务器端加密 | P120 approved; protect body rather than topic or message metadata. |
