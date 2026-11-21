@@ -1,11 +1,11 @@
 <section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch14_designing_a_url_shortener_service_1734552292687677">
   <h1>设计短网址服务</h1>
-  <p>我们<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="use cases" data-see="use cases">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" id="use-case-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" id="url-short">&nbsp;</a>在<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>中探讨了 DNS 的概念，指出记住网站的 URL 比记住其 IP 地址更容易——但对于那些很长的 URL 又该怎么办呢？记住 URL 的根部分很容易（例如 <a href="https://learning.oreilly.com/library/view/system-design-on/9781098146887"><em>https://learning.oreilly.com/library/view/system-design-on/9781098146887</em></a> 中的 <em>learning.oreilly.com</em>），但很难记住整个长 URL。我们经常<a href="https://oreil.ly/SystemDesignOnAWS">在文本中嵌入链接</a>，因为这样可以提高可读性。</p>
-  <p>分享长 URL 的另一种方式是将其缩短。例如，LinkedIn 会自动缩短帖子中包含的任何 URL，因为这有助于提升帖子的可读性和用户互动率。在 Twitter（现更名为 X）等微博客应用中，单条帖子有字符数限制，因此为了减少文本长度，您可以通过 <a href="https://tinyurl.com/app">TinyURL</a> 或 <a href="https://bitly.com">Bitly</a> 等短网址服务缩短 URL，然后将其附加到帖子中，而不是使用完整的长 URL。</p>
+  <p>我们<a contenteditable="false" data-type="indexterm" data-primary="system design" data-secondary="use cases" data-see="use cases">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" id="use-case-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" id="url-short">&nbsp;</a>在<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>中探讨了 DNS 的概念，指出网站的 URL 比 IP 地址更容易记住——但如果 URL 很长呢？URL 的域名部分通常容易记住（例如 <a href="https://learning.oreilly.com/library/view/system-design-on/9781098146887"><em>https://learning.oreilly.com/library/view/system-design-on/9781098146887</em></a> 中的 <em>learning.oreilly.com</em>），但完整的长 URL 却容易被忘记。我们经常<a href="https://oreil.ly/SystemDesignOnAWS">在文本中嵌入链接</a>，以提高可读性。</p>
+  <p>分享长 URL 的另一种方式是将其缩短。例如，LinkedIn 会自动缩短帖子中的 URL，以提高帖子的可读性并促进用户互动。在 Twitter（现称 X）等微博客应用中，单条帖子的字符数有限，因此可以使用 <a href="https://tinyurl.com/app">TinyURL</a> 或 <a href="https://bitly.com">Bitly</a> 等短网址服务缩短 URL，再将短 URL 添加到帖子中，而不必使用完整的长 URL。</p>
   <p>本章将探讨短网址服务的设计，并讨论如何在 AWS 云上部署该系统。我们将从需求收集和系统预期开始，随后深入探讨系统的具体细节。</p>
   <section data-type="sect1" id="ch14_system_requirements_1734552292687935">
     <h1>系统需求</h1>
-    <p>您应该<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="system requirements" id="use-case-url-short-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="system requirements" id="url-short-require">&nbsp;</a>对需要解决的问题有一个明确的目标。在此基础上，设计任何系统（无论大小）的下一步就是收集需求。这些需求包括：</p>
+    <p>首先，应明确<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="system requirements" id="use-case-url-short-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="system requirements" id="url-short-require">&nbsp;</a>需要解决的问题及其目标。在此基础上，无论设计的系统规模大小，下一步都是收集需求。这些需求包括：</p>
     <ul>
       <li>
         <p>为什么需要这个系统？它要解决的业务用例是什么？</p>
@@ -14,13 +14,13 @@
         <p>该系统的用户是谁？有多少用户？</p>
       </li>
       <li>
-        <p>是否已经有可以直接使用的系统，而不必从头设计一个新系统？像 Bitly 这样的系统已向企业客户开放了短网址 API，那么我们为什么要自己构建系统，而不是使用 Bitly 的系统 API 呢？</p>
+        <p>是否已有可以利用的现成系统，而不必从零开始设计新系统？Bitly 等服务向企业客户提供 URL 缩短 API，那么为什么不直接使用 Bitly 的 API，而要自行构建系统呢？</p>
       </li>
       <li>
         <p>系统的延迟是否至关重要？</p>
       </li>
     </ul>
-    <p>需求列表可能非常庞大，收集需求也可能耗费大量时间，但这是非常重要的一步。在第<a data-type="xref" href="#part1" data-xrefstyle="select:labelnumber">#part1</a>部分和第<a data-type="xref" href="#part2" data-xrefstyle="select:labelnumber">#part2</a>部分，我们多次讨论了如何比较两种技术并根据对业务用例的理解选出最优方案。如果需求不明确，就无法权衡各个选项的利弊。任何系统的需求通常分为两类：功能性需求和非功能性需求（NFR）。</p>
+    <p>需求列表可能很长，整理这些需求也可能十分耗时，但这一步至关重要。在第<a data-type="xref" href="#part1" data-xrefstyle="select:labelnumber">#part1</a>部分和第<a data-type="xref" href="#part2" data-xrefstyle="select:labelnumber">#part2</a>部分，我们多次讨论了如何根据对业务用例的理解，比较两种技术并选择最佳方案。如果需求没有明确定义，就无法权衡不同方案的利弊。系统需求通常分为两类：功能性需求和非功能性需求（NFR）。</p>
     <section data-type="sect2" id="ch14_functional_and_nonfunctional_requirements_1734552292688021">
       <h2>功能性需求与非功能性需求</h2>
       <p><em>功能性需求</em>是<a contenteditable="false" data-type="indexterm" data-primary="functional requirements" data-secondary="URL shortener service">&nbsp;</a>系统向最终用户提供的功能或特性。对短网址服务的主要期望很简单：</p>
