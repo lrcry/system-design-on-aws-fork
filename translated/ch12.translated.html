@@ -182,7 +182,7 @@
           <p>应用部署和基础设施管理可能给客户带来很大负担，而且需要掌握 Flink 的核心概念。KDA 是一项无服务器服务，让客户能够专注于业务逻辑，而端到端的管理工作则由 AWS 负责。以下是 KDA 的一些特有功能：</p>
           <ul>
             <li>
-              <p>由于 KDA 在 AWS 环境中运行，它可与其他 AWS 服务轻松集成，例如 Amazon KDS、Amazon MSK、Amazon S3、Amazon OpenSearch、Amazon CloudWatch、Amazon DynamoDB、Amazon KDF 和 AWS Glue Schema Registry。</p>
+              <p>由于 KDA 在 AWS 环境中运行，它可与其他 AWS 服务轻松集成，例如 Amazon KDS、Amazon MSK、Amazon S3、Amazon OpenSearch、Amazon CloudWatch、Amazon DynamoDB、Amazon KDF 和 AWS Glue 架构注册表。</p>
             </li>
             <li>
               <p>KDA 可通过 <a href="https://oreil.ly/wcsTj">Apache Flink 连接器</a>与开源工具轻松集成，并支持为当前尚未支持的使用场景构建自定义连接器。</p>
@@ -195,35 +195,35 @@
             </li>
           </ul>
           <div data-type="note">
-            <p><em>Notebook</em> 是<a contenteditable="false" data-type="indexterm" data-primary="notebooks">&nbsp;</a>一种基于 Web、可在浏览器中运行的交互式开发环境。开发人员可以使用受支持的编程语言编写查询或代码，完成数据转换、可视化和分析等任务。</p>
+            <p><em>笔记本（Notebook）</em> 是<a contenteditable="false" data-type="indexterm" data-primary="notebooks">&nbsp;</a>一种基于 Web、可在浏览器中运行的交互式开发环境。开发人员可以使用受支持的编程语言编写查询或代码，完成数据转换、可视化和分析等任务。</p>
           </div>
-          <p>KDA 本质上是 Apache Flink 的全托管版本，由于它是 AWS 云服务的一部分，您可以轻松将其与其他 AWS 服务集成。现在，让我们讨论另一个仅需将实时流数据加载到目标位置的使用场景。该需求<a contenteditable="false" data-type="indexterm" data-primary="Kinesis Data Analytics (KDA)" data-startref="kinesis-data-analytics">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="KDA (Kinesis Data Analytics)" data-startref="kda">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data streaming" data-secondary="KDA (Kinesis Data Analytics)" data-startref="data-stream-kda">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Flink" data-startref="flink">&nbsp;</a>可通过 Amazon KDF 来满足。</p>
+          <p>KDA 本质上是 Apache Flink 的全托管版本。作为一项 AWS 云服务，它可以轻松与其他 AWS 服务集成。接下来，我们讨论另一种使用场景：只需将实时流数据加载到目标位置。这一需求<a contenteditable="false" data-type="indexterm" data-primary="Kinesis Data Analytics (KDA)" data-startref="kinesis-data-analytics">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="KDA (Kinesis Data Analytics)" data-startref="kda">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data streaming" data-secondary="KDA (Kinesis Data Analytics)" data-startref="data-stream-kda">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Flink" data-startref="flink">&nbsp;</a>可以通过 Amazon KDF 来满足。</p>
         </section>
         <section data-type="sect2" id="ch12_amazon_kinesis_data_firehose_1734552291639621">
           <h2>Amazon Kinesis Data Firehose</h2>
-          <p>Amazon KDF<a contenteditable="false" data-type="indexterm" data-primary="Kinesis Data Firehose (KDF)" id="kinesis-data-firehose">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="KDF (Kinesis Data Firehose)" id="kdf">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data streaming" data-secondary="KDF (Kinesis Data Firehose)" id="data-stream-kdf">&nbsp;</a>是一项将实时流数据传输到不同目标的服务，支持的目标包括 Amazon S3、Amazon OpenSearch、Amazon Redshift、<a href="https://oreil.ly/GLF03">Splunk</a> 或任意自定义 HTTP/HTTPS 端点，以便轻松集成第三方数据存储提供商。KDF 是全托管服务，客户无需担心基础设施和服务维护问题。KDF 本身不提供存储能力，因此不具备像 KDS 那样重放消息的功能。您可以配置 KDF 在交付数据前对其进行转换。KDF 提供了一些内置转换功能，例如转换为 Apache Parquet 格式。您也可以使用 AWS Lambda 函数添加自定义转换。</p>
+          <p>Amazon KDF<a contenteditable="false" data-type="indexterm" data-primary="Kinesis Data Firehose (KDF)" id="kinesis-data-firehose">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="KDF (Kinesis Data Firehose)" id="kdf">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data streaming" data-secondary="KDF (Kinesis Data Firehose)" id="data-stream-kdf">&nbsp;</a>是一项将实时流数据传输到不同目标的服务，支持的目标包括 Amazon S3、Amazon OpenSearch、Amazon Redshift、<a href="https://oreil.ly/GLF03">Splunk</a>，以及用于集成第三方数据存储服务的自定义 HTTP/HTTPS 端点。KDF 是一项全托管服务，因此客户无需负责基础设施和服务维护。KDF 本身不提供独立的数据存储功能，因此无法像 KDS 那样重放消息。您可以配置 KDF，在交付数据前对其进行转换。KDF 提供一些内置转换功能，例如将数据转换为 Apache Parquet 格式。您也可以通过 AWS Lambda 函数添加自定义转换。</p>
           <p>以下是使用 KDF 的注意事项：</p>
           <ul>
             <li>
-              <p>生产者发送到 KDF 传输流的数据记录不应超过 1,000 KB。</p>
+              <p>生产者向 KDF 传输流发送的单条数据记录不应超过 1,000 KB。</p>
             </li>
             <li>
-              <p>为提高安全性并减少目标数据存储的占用空间，您可以在加载前对数据进行批量处理、压缩和加密。</p>
+              <p>为提高安全性并减少目标存储系统中的空间占用，您可以在加载数据前对其进行批量处理、压缩和加密。</p>
             </li>
             <li>
-              <p>KDF 会在将传入的流数据传输到数据目标之前，先将其缓冲至一定大小（缓冲区大小）或一定时间（缓冲区间隔）。S3 的缓冲区大小范围为 1 至 128 MB，Amazon OpenSearch 为 1 至 100 MB，AWS Lambda 为 0.2 至 3 MB。所有这些服务集成的缓冲区间隔范围均为 60 至 900 秒。</p>
+              <p>KDF 会先缓冲传入的流数据，当数据量达到指定大小（缓冲区大小）或经过指定时间（缓冲区间隔）后，再将其传输到目标。对于 S3，缓冲区大小范围为 1 至 128 MB；对于 Amazon OpenSearch，为 1 至 100 MB；对于 AWS Lambda，为 0.2 至 3 MB。这些服务集成的缓冲区间隔范围均为 60 至 900 秒。</p>
             </li>
             <li>
               <p>当 Amazon Redshift 配置为数据目标时，KDF 会先将数据传输到 S3 存储桶，然后发出 <a href="https://oreil.ly/GcX-t">COPY 命令</a>将数据从 S3 存储桶加载到 Redshift 集群。</p>
             </li>
             <li>
-              <p>当选择 S3 作为传输目标时，您还可以启用数据动态分区。这在两个方面有所帮助：一是便于在 S3 中访问数据以进行查询，二是无需在数据源端或数据存储后进行分区处理。您可以指定特定键或运行时计算的表达式来标识用于分区的键。</p>
+              <p>选择 S3 作为数据传输目标时，您还可以启用动态分区功能。这样有两个好处：一是便于访问 S3 中的数据并进行查询；二是无需在数据源端或数据存储后另行执行分区操作。您可以指定某个键，或使用在运行时求值的表达式来确定分区键。</p>
             </li>
             <li>
-              <p>在将数据传输到多个目标时，KDF 存在一定限制。单个传输流目前只能将数据传输到单个 Amazon Redshift 集群或表、单个 S3 存储桶以及单个 Amazon OpenSearch 集群或索引。若需传输到多个目标，应创建多个独立的传输流。</p>
+              <p>KDF 在向多个目标传输数据时存在一定限制。单个传输流目前只能将数据传输至以下目标之一：一个 Amazon Redshift 集群或表、一个 S3 存储桶，或一个 Amazon OpenSearch 集群或索引。若需向多个目标传输数据，应分别创建独立的传输流。</p>
             </li>
             <li>
-              <p>KDF 支持至少一次数据传输语义。由于为处理故障而设置的重试机制，传输目标处存在数据重复的可能性。</p>
+              <p>KDF 支持至少一次（at-least-once）数据交付语义。由于故障处理过程中可能触发重试，目标位置可能收到重复数据。</p>
             </li>
           </ul>
           <p>总而言之，Amazon KDF 是由 AWS 为客户提供的全托管流式 ETL 服务。现在让我们转向另一项 Kinesis 服务<a contenteditable="false" data-type="indexterm" data-primary="Kinesis Data Firehose (KDF)" data-startref="kinesis-data-firehose">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="KDF (Kinesis Data Firehose)" data-startref="kdf">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data streaming" data-secondary="KDF (Kinesis Data Firehose)" data-startref="data-stream-kdf">&nbsp;</a>——Amazon KVS。</p>
