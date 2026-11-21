@@ -758,7 +758,7 @@
           </dd>
           <dt><a href="https://oreil.ly/Gw-eW"><em>IAM 策略</em></a></dt>
           <dd>
-            <p>IAM 策略是一个 JSON 对象（此前在第 10 章讨论过的 <a href="https://oreil.ly/FykRj">ACL</a> 策略类型除外，其结构采用 <a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a> 中所述的 <a href="https://oreil.ly/4wmQE">XML 结构</a>），用于定义一组权限，并附加到 IAM 身份（用户、用户组或角色）或 AWS 资源。回顾之前授予 EC2 从 S3 下载对象权限的示例。要让相应角色拥有从 S3 下载对象的权限，需要为该角色附加如下 IAM 策略：</p>
+            <p>IAM 策略是一个 JSON 对象（<a href="https://oreil.ly/FykRj">ACL</a> 策略类型除外，我们曾在 <a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a> 中讨论过这种基于 <a href="https://oreil.ly/4wmQE">XML 结构</a> 的策略），用于定义一组权限，并附加到 IAM 身份（用户、用户组或角色）或 AWS 资源。回顾之前授予 EC2 从 S3 下载对象权限的示例。要让相应角色拥有从 S3 下载对象的权限，需要为该角色附加如下 IAM 策略：</p>
             <pre data-type="programlisting">{
   "Version": "2012-10-17",
   "Statement": [
