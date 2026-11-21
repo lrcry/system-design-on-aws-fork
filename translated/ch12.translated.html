@@ -1,10 +1,10 @@
 <section xmlns="http://www.w3.org/1999/xhtml" data-type="chapter" id="ch12_aws_messaging_orchestration_monitoring_and_acce_1734552291639018">
       <h1>AWS 消息传递、编排、监控与访问<span class='keep-together'>管理服务</span></h1>
       <p>在大规模系统中，多个组件通过交互与协调来完成任务，<a contenteditable="false" data-type="indexterm" data-primary="orchestration">&nbsp;</a>这称为<em>编排</em>。应用程序组件之间的通信与协调可由不同的 AWS 服务管理，我们可以根据具体使用场景选择合适的服务。本章将深入介绍核心编排服务，例如 Amazon Simple Notification Service（SNS），它可向多个订阅者广播消息；以及 AWS Step Functions，它可按特定顺序协调和执行不同的 AWS 服务或自定义服务。</p>
-      <p>我们将首先讨论有助于在 AWS 云环境中实现发布/订阅设计模式的 AWS 服务，例如 Amazon Managed Streaming for Apache Kafka（MSK）、Amazon Kinesis、亚马逊简单队列服务（Amazon SQS）和 Amazon SNS。随后，我们将介绍监控、授权与身份验证服务，如 Amazon CloudWatch、AWS IAM 以及 Amazon Cognito。</p>
+      <p>我们将首先讨论有助于在 AWS 云环境中实现发布/订阅设计模式的 AWS 服务，例如 Amazon Managed Streaming for Apache Kafka（MSK）、Amazon Kinesis、Amazon SQS和 Amazon SNS。随后，我们将介绍监控、授权与身份验证服务，如 Amazon CloudWatch、AWS IAM 以及 Amazon Cognito。</p>
       <section data-type="sect1" id="ch12_amazon_managed_streaming_for_apache_kafka_1734552291639300">
         <h1>Amazon Managed Streaming for Apache Kafka</h1>
-        <p>我们<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="pub/sub model" data-tertiary="MSK (Managed Streaming for Apache Kafka)" id="comms-pubsub-msk">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="pub/sub (publisher-subscriber) architecture" data-secondary="MSK (Managed Streaming for Apache Kafka)" id="pubsub-msk">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="orchestration" data-secondary="MSK (Managed Streaming for Apache Kafka)" id="orch-msk">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MSK (Managed Streaming for Apache Kafka)" id="msk">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Managed Streaming for Apache Kafka (MSK)" id="managed-streaming-kafka">&nbsp;</a>在<a data-type="xref" href="#ch08_architectural_designs_and_patterns_1734552289324317">#ch08_architectural_designs_and_patterns_1734552289324317</a>中讨论了发布/订阅架构、消息代理和消息队列；本章将介绍 AWS 在这些概念基础上所提供的各类服务。Apache Kafka 是<a contenteditable="false" data-type="indexterm" data-primary="Kafka">&nbsp;</a>一种开源消息代理和事件流平台，被广泛用于设计事件驱动架构。AWS 提供了 Apache Kafka 的托管服务——亚马逊 MSK（Amazon Managed Streaming for Apache Kafka），以降低运维负担。MSK 向客户提供控制平面操作（如创建、更新和删除集群）以及数据平面操作（如生产和消费事件）。</p>
+        <p>我们<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="pub/sub model" data-tertiary="MSK (Managed Streaming for Apache Kafka)" id="comms-pubsub-msk">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="pub/sub (publisher-subscriber) architecture" data-secondary="MSK (Managed Streaming for Apache Kafka)" id="pubsub-msk">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="orchestration" data-secondary="MSK (Managed Streaming for Apache Kafka)" id="orch-msk">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MSK (Managed Streaming for Apache Kafka)" id="msk">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Managed Streaming for Apache Kafka (MSK)" id="managed-streaming-kafka">&nbsp;</a>在<a data-type="xref" href="#ch08_architectural_designs_and_patterns_1734552289324317">#ch08_architectural_designs_and_patterns_1734552289324317</a>中讨论了发布/订阅架构、消息代理和消息队列；本章将介绍 AWS 在这些概念基础上所提供的各类服务。Apache Kafka 是<a contenteditable="false" data-type="indexterm" data-primary="Kafka">&nbsp;</a>一种开源消息代理和事件流平台，被广泛用于设计事件驱动架构。AWS 提供了 Apache Kafka 的托管服务——Amazon MSK（Amazon Managed Streaming for Apache Kafka），以降低运维负担。MSK 向客户提供控制平面操作（如创建、更新和删除集群）以及数据平面操作（如生产和消费事件）。</p>
         <p>在<a href="https://oreil.ly/WVNoA">配置 MSK 集群</a>时，您需要指定代理节点的数量和类型，以及每个可用区的存储容量。为确保集群高可用性，至少需要选择两个可用区。MSK 会自动检测代理节点故障，并用具有相同 IP 地址的健康节点替换故障节点。与 AWS 环境中的许多其他服务一样，MSK 提供两种容量模式：无服务器模式和预置模式。您可以选择无服务器模式，将基础设施配置交由 AWS 负责；预置模式则允许您自行选择节点和存储配置。代理节点之间的协调与同步通过 <a href="https://oreil.ly/ws1R8">ZooKeeper</a> 节点管理，MSK 会为我们创建这些节点。MSK 还在较新的 <a href="https://oreil.ly/tvuc3">3.7.x</a> 版本中支持 <a href="https://oreil.ly/okRt4">KRaft 模式</a>，KRaft 可承担 ZooKeeper 的功能。</p>
         <p>配置 MSK 集群的下一组设置与网络、安全性和监控相关。您应选择启动代理节点所在的可用区和子网，然后定义安全措施。首先，让我们讨论客户端访问 MSK 集群的方式：</p>
         <dl>
@@ -60,17 +60,17 @@
               <p>为解决分片级别 2 MB/s 的共享读取吞吐量限制，KDS 提供了<a href="https://oreil.ly/833ah">增强型扇出（EFO）</a>功能。该功能为每个消费者提供独立的数据传输通道，使其在每个分片上都能获得最高 2 MB/s 的专用读取吞吐量。</p>
             </li>
             <li>
-              <p>KDS 会临时存储数据，保留时间为 24 小时至 7 天；在此期间，数据可被重放以支持任意重试策略。</p>
+              <p>KDS 会临时存储数据，保留期限为 24 小时至 7 天。在此期间，可以重放数据以支持不同的重试策略。</p>
             </li>
             <li>
               <p>可使用 <a href="https://oreil.ly/pJji-">AWS KMS</a> 对进入 KDS 的敏感数据进行加密。</p>
             </li>
             <li>
-              <p>KDS 提供多种分片操作，如<a href="https://oreil.ly/T_6WN">更新分片数量</a>、<a href="https://oreil.ly/yd5oy">分裂分片</a>或<a href="https://oreil.ly/jQ2OU">合并分片</a>，有助于确保分片容量的充分利用。更新分片操作可在内部合并已分裂的分片，以配置更新后的分片数量。当分片过"热"或过"冷"（即接收流量过多或过少）时，分裂或合并分片非常有用。若流量过高，拆分分片有助于均衡流量；若流量过低，合并分片有助于优化分片<a contenteditable="false" data-type="indexterm" data-primary="shards" data-startref="shard-ch12">&nbsp;</a>数量。</p>
+              <p>KDS 支持多种分片操作，例如<a href="https://oreil.ly/T_6WN">更新分片数量</a>、<a href="https://oreil.ly/yd5oy">拆分分片</a>或<a href="https://oreil.ly/jQ2OU">将多个分片合并为一个</a>，从而提高分片容量的利用率。更新分片数量时，系统可以在内部执行分片合并操作，以达到所需的分片数量。当某个分片过“热”或过“冷”，即接收的流量过高或过低时，拆分或合并分片会很有帮助。如果流量过高，可以拆分分片以均衡负载；如果流量过低，则可以合并分片，优化分片<a contenteditable="false" data-type="indexterm" data-primary="shards" data-startref="shard-ch12">&nbsp;</a>数量。</p>
             </li>
           </ul>
-          <p>上一节介绍的亚马逊 MSK<a contenteditable="false" data-type="indexterm" data-primary="MSK (Managed Streaming for Apache Kafka)" id="msk-compare-kds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Managed Streaming for Apache Kafka (MSK)" id="managed-streaming-kafka-compare-kds">&nbsp;</a>也提供与 KDS 类似的流处理能力。最终选择哪种技术取决于具体的业务使用场景。没有哪种技术天然优于其他技术——每种工具都有其优缺点。基于此，我们将在<a data-type="xref" href="#ch12_table_1_1734552291620322">#ch12_table_1_1734552291620322</a>中梳理这两种技术的差异。</p>
-          <p><a data-type="xref" href="#ch12_table_1_1734552291620322">#ch12_table_1_1734552291620322</a>有助于为未来使用场景的方案选择提供参考。现在让我们转向另一项 Kinesis 服务——KDA，它可对经由 KDS<a contenteditable="false" data-type="indexterm" data-primary="Kinesis Data Streams (KDS)" data-startref="kinesis-data-stream">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="KDS (Kinesis Data Streams)" data-startref="kds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data streaming" data-secondary="KDS (Kinesis Data Streams)" data-startref="data-stream-kds">&nbsp;</a>或 MSK 处理的数据进行近实时分析。</p>
+          <p>上一节介绍的 Amazon MSK<a contenteditable="false" data-type="indexterm" data-primary="MSK (Managed Streaming for Apache Kafka)" id="msk-compare-kds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Managed Streaming for Apache Kafka (MSK)" id="managed-streaming-kafka-compare-kds">&nbsp;</a>也具备与 KDS 类似的流数据处理能力。选择哪种技术取决于具体的业务场景。两种技术各有优缺点，并不存在绝对更好的选择。下面我们通过<a data-type="xref" href="#ch12_table_1_1734552291620322">#ch12_table_1_1734552291620322</a>比较它们之间的差异。</p>
+          <p><a data-type="xref" href="#ch12_table_1_1734552291620322">#ch12_table_1_1734552291620322</a>可帮助我们判断未来不同业务场景更适合采用哪种方案。接下来介绍另一项 Kinesis 服务——KDA，它可对通过 KDS<a contenteditable="false" data-type="indexterm" data-primary="Kinesis Data Streams (KDS)" data-startref="kinesis-data-stream">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="KDS (Kinesis Data Streams)" data-startref="kds">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data streaming" data-secondary="KDS (Kinesis Data Streams)" data-startref="data-stream-kds">&nbsp;</a>或 MSK 处理的流数据进行近实时分析。</p>
           <table id="ch12_table_1_1734552291620322">
             <caption>Amazon MSK 与 Amazon KDS 对比</caption>
             <thead>
@@ -83,10 +83,10 @@
             <tbody>
               <tr>
                 <td>
-                  <p>业务使用场景</p>
+                  <p>业务场景</p>
                 </td>
                 <td>
-                  <p>随着时间推移，MSK 与 KDS 之间的功能差距已大幅缩小，MSK 生态系统也演进为无需连接器即可直接与 AWS 服务集成。例如，MSK 主题可定义为 <a href="https://oreil.ly/syb7f">Lambda</a> 的事件源，通过 KDF 与 <a href="https://oreil.ly/EAF3i">S3</a> 集成，以及在 <a href="https://oreil.ly/y10TW">Redshift</a> 和 <a href="https://oreil.ly/dVTNW">OpenSearch</a> 中消费数据流。</p>
+                  <p>随着时间推移，MSK 与 KDS 的功能差距逐渐缩小，MSK 生态系统也不断发展，能够在无需连接器的情况下直接集成 AWS 服务。例如，可以将 MSK 主题配置为 <a href="https://oreil.ly/syb7f">Lambda</a> 的事件源，通过 KDF 与 <a href="https://oreil.ly/EAF3i">S3</a> 集成，并在 <a href="https://oreil.ly/y10TW">Redshift</a> 和 <a href="https://oreil.ly/dVTNW">OpenSearch</a> 中消费数据流。</p>
                 </td>
                 <td>
                   <p>Kinesis 同样提供与多种 AWS 服务的直接集成。选择 MSK 还是 KDS，主要取决于团队此前的技术积累。</p>
@@ -97,7 +97,7 @@
                   <p>运维操作</p>
                 </td>
                 <td>
-                  <p>基本逻辑单元是分区，启动集群时需要配置代理节点的数量。无服务器计算选项无需客户配置代理节点的数量和类型，由 AWS 全权管理。</p>
+                  <p>MSK 的基本逻辑单元是分区，启动集群时需要配置代理节点的数量。采用无服务器计算选项时，客户无需配置代理节点的数量和类型，相关资源由 AWS 全面托管。</p>
                 </td>
                 <td>
                   <p>基本逻辑单元是分片，需要根据工作负载指定分片数量。此外还提供按需容量选项，无需客户指定分片配置，由 AWS 管理。</p>
