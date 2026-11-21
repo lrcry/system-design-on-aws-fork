@@ -1209,3 +1209,16 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | message durability | 消息持久性 | P118 retained AS-IS; multi-AZ durability. |
 | SNS dead-letter queue | 死信队列（DLQ） | P119 approved: undelivered messages remain retrievable for subsequent processing. |
 | SNS server-side encryption | SNS 服务器端加密 | P120 approved; protect body rather than topic or message metadata. |
+
+
+## Chapter 12 — Batch 13 terminology decisions (2026-11-21)
+
+| English | Chinese preferred form | Reviewer notes |
+|---|---|---|
+| workflow orchestration | 工作流编排 | P123 approved: preserve event-driven orchestration. |
+| Amazon Managed Workflows for Apache Airflow (Amazon MWAA) | Amazon Managed Workflows for Apache Airflow（Amazon MWAA） | P124 approved; correct official plural Workflows, retain English service name; source-level error recorded. |
+| AWS Batch | AWS Batch | P124 approved; not Amazon Batch or 亚马逊批处理服务. |
+| Step Functions state machine | 状态机 | P127 approved; series of states and input/output relationships. |
+| Task state | Task 状态／任务状态 | P128 retained AS-IS; distinguish Activity-backed Task from Lambda/service integrations. |
+| activity | 活动（activity） | P129 approved; externally polling worker uses GetActivityTask and sends task callback. |
+| Amazon States Language (ASL) | Amazon States Language（ASL） | P130 retained, exact hyperlink and indexterm positions unchanged. |
