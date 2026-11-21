@@ -1222,3 +1222,17 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | Task state | Task 状态／任务状态 | P128 retained AS-IS; distinguish Activity-backed Task from Lambda/service integrations. |
 | activity | 活动（activity） | P129 approved; externally polling worker uses GetActivityTask and sends task callback. |
 | Amazon States Language (ASL) | Amazon States Language（ASL） | P130 retained, exact hyperlink and indexterm positions unchanged. |
+
+
+## Chapter 12 — Batch 14 terminology decisions (2026-11-21)
+
+| English | Preferred Chinese | Reviewer decision |
+|---|---|---|
+| Step Functions encryption at rest | 静态数据加密 | P131 approved; distinct from TLS encryption in transit. |
+| TLS encryption in transit | 传输中的数据加密 | P131 approved; do not mix with authentication. |
+| Pass / Choice / Parallel state | Pass / Choice / Parallel 状态 | P132, P134, P138 retained AS-IS. |
+| Task state | Task 状态 | P133 approved; activity (activity) distinguished from Lambda/API work. |
+| Wait state | Wait 状态 | P135 approved; 等待时间, relative seconds or absolute timestamp. |
+| Succeed state | Succeed 状态 | P136 approved: successful terminal outcome. |
+| Fail state | Fail 状态 | P137 approved; source-level terminal-state caveat is Medium Author TBC. |
+| Map state / Inline Map | Map 状态／内联模式 | P139–P140 approved: 40 concurrently processed elements, 25,000 history entries. |
