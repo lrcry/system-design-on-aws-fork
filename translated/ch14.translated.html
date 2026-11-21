@@ -531,23 +531,23 @@ Location: https://www.oreilly.com/library/view/system-design-on/9781098146887
           </div>
         </li>
         <li>
-          <p>该架构展示的是在单个 AWS 区域中的部署。我们建议通过代码创建所有基础设施，以便在需要时轻松复制到其他区域。系统资源部署在多个可用区，以确保在某个可用区发生故障时提高冗余度。</p>
+          <p>该架构展示了在单个 AWS 区域中的部署方式。我们建议采用基础设施即代码的方式创建所有基础设施，以便在需要时将其复制到其他区域。系统资源分布在多个可用区，以提高冗余能力，应对可用区故障。</p>
         </li>
         <li>
-          <p>将 URL 创建服务和 URL 读取服务分开的主要原因是两者流量模式差异悬殊。独立服务确保了各自的独立扩缩和清晰的职责分离。</p>
+          <p>将 URL 创建服务与 URL 读取服务分离，主要是因为两者的流量模式差异很大。拆分为独立服务后，可以分别扩缩容，并明确各自的职责边界。</p>
         </li>
         <li>
-          <p>系统架构应确保增加的流量来自真实用户，并通过 AWS 服务（如 <a href="https://oreil.ly/zz2xp">AWS WAF</a> 和 <a href="https://oreil.ly/mqEJ8">AWS Shield</a>）或自定义解决方案，在 API Gateway 或 ELB 层面对非预期流量进行限流。这可以在前端服务中处理。</p>
+          <p>系统架构应确保新增流量来自真实用户，并在 API Gateway 或 ELB 层使用 <a href="https://oreil.ly/zz2xp">AWS WAF</a>、<a href="https://oreil.ly/mqEJ8">AWS Shield</a> 等 AWS 服务，或采用自定义方案，对不需要的流量进行限流。这项工作可以由前端服务负责。</p>
         </li>
       </ul>
-      <p>这并不是服务客户时需要关注的全部问题。我们将在<a data-type="xref" href="#part3">#part3</a>的其余部分涵盖更多主题。在将系统部署到生产环境时，请从<a data-type="xref" href="#part3">#part3</a>中汲取全面的经验教训，以确保<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="Day N architecture" data-startref="use-case-url-short-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="Day N architecture" data-startref="url-short-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="dayn-url-short">&nbsp;</a>高标准。</p>
+      <p>以上并未涵盖系统为用户提供服务时需要考虑的所有问题。我们将在<a data-type="xref" href="#part3">#part3</a>的后续章节中讨论更多主题。将系统部署到生产环境时，应综合运用<a data-type="xref" href="#part3">#part3</a>中介绍的知识与经验，确保系统达到<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="Day N architecture" data-startref="use-case-url-short-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="Day N architecture" data-startref="url-short-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="dayn-url-short">&nbsp;</a>较高标准。</p>
     </section>
   </section>
   <section data-type="sect1" id="ch14_conclusion_1734552292689496">
     <h1>总结</h1>
-    <p>我们以短网址系统开启了<a href="#part3" data-type="xref">#part3</a>的旅程，这是面试中的经典题目，也是我们日常生活中频繁使用的系统。任何新系统设计的核心要义在于：从需求澄清和系统边界划定入手。您应该清晰地知道一个系统应该做什么，以及永远不会做什么——这有助于做出更好的设计决策。</p>
-    <p>一旦明确了需求和系统范围，我们就进入高层组件的识别阶段。系统所需承载的规模是识别这些组件的重要因素，业务用例同样如此。一个<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="scaling overview" id="use-case-url-short-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="scaling overview" id="url-short-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scaling" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="scale-url-short2">&nbsp;</a>承载 10,000 用户的系统，在面对 100,000 用户时可能无法以同样的方式运行。<a data-type="xref" href="#ch14_table_1_1734552292671860">#ch14_table_1_1734552292671860</a>总结了将应用架构从零用户扩展到数百万用户的演进过程。</p>
-    <p>我们经历了构建短网址服务的多种可能方案，讨论了每种方案的优缺点，以及可以使用的潜在 AWS 云组件。我们引入了许多在<a href="#part2" data-type="xref">#part2</a>中讨论过的 AWS 服务，并意识到在特定用例中判断该选择哪个可能并不容易。我们建议选择理解和部署所需时间最短的技术——日后如有需要，它可以被修改或替换为其他技术<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-startref="use-case-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-startref="url-short">&nbsp;</a>。</p>
+    <p>我们以短网址服务作为<a href="#part3" data-type="xref">#part3</a>的开篇案例。它不仅是系统设计面试中的常见题目，也是日常生活中经常使用的系统。设计任何新系统，都应先明确需求和系统边界：系统需要完成哪些任务，以及哪些任务不在其职责范围内。明确这些问题有助于做出更合理的设计决策。</p>
+    <p>明确系统需求和范围后，就可以着手确定系统的高层组件。除了业务用例，系统预期承载的规模也是决定这些组件的重要因素。能够服务 <a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="scaling overview" id="use-case-url-short-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="scaling overview" id="url-short-scale">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scaling" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="scale-url-short2">&nbsp;</a>10,000 名用户的系统，未必能以同样的方式服务 100,000 名用户。<a data-type="xref" href="#ch14_table_1_1734552292671860">#ch14_table_1_1734552292671860</a>总结了应用程序架构从零用户逐步扩展到数百万用户的过程。</p>
+    <p>本章探讨了构建短网址服务的多种方案，比较了各自的优缺点，以及可供选择的 AWS 云服务。我们也介绍了许多在<a href="#part2" data-type="xref">#part2</a>中讨论过的 AWS 服务，但要为特定业务用例选择合适的技术并不容易。我们建议优先选择容易理解、部署耗时较短的技术；日后有需要时，可以对其进行调整或用其他技术<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-startref="use-case-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-startref="url-short">&nbsp;</a>替代。</p>
     <p>系统设计是一个迭代过程，要从小处着手，随需求演进持续完善。不要想得太远——5 年或 10 年后，您的优先级可能已截然不同。在下一章，我们将使用 AWS 组件设计类似 Google 搜索的网络爬虫和搜索引擎系统。</p>
     <table class="pagebreak-before less_space" id="ch14_table_1_1734552292671860">
       <caption>从零用户扩展到数百万用户</caption>
