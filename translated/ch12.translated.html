@@ -805,19 +805,19 @@
         <dl>
           <dt>身份提供程序</dt>
           <dd>
-            <p>身份提供程序（IdP）<a contenteditable="false" data-type="indexterm" data-primary="identity providers (IdPs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IdPs (identity providers)">&nbsp;</a>存储和管理用户的数字身份。Cognito 本身可充当身份提供程序（IdP），您也可以将其与第三方 IdP（如 Google、Amazon 和 Facebook）集成（支持的协议包括 <a href="https://oauth.net/2">OAuth 2.0</a>、<a href="https://oreil.ly/_j7xb">SAML</a> 和 <a href="https://oreil.ly/KU3m5">OpenID</a>）。例如，您可能会在日常使用的许多应用程序中看到 Google 作为登录选项。IdP 也称为<em>联合身份</em>，因为它可以跨平台用于用户身份验证。在 AWS 与外部 IdP 之间建立信任关系的过程称为<em>联合身份验证</em>。</p>
+            <p>身份提供程序（IdP）<a contenteditable="false" data-type="indexterm" data-primary="identity providers (IdPs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IdPs (identity providers)">&nbsp;</a>负责存储和管理用户的数字身份。Cognito 本身也可以充当 IdP，并可与 Google、Amazon 和 Facebook 等第三方 IdP 集成（支持 <a href="https://oauth.net/2">OAuth 2.0</a>、<a href="https://oreil.ly/_j7xb">SAML</a> 和 <a href="https://oreil.ly/KU3m5">OpenID</a> 等协议）。例如，您在日常使用的许多应用程序中，都可能看到通过 Google 登录的选项。IdP 也称为<em>联合身份</em>，因为它可以跨平台用于用户身份验证。在 AWS 与外部 IdP 之间建立信任关系的过程称为<em>身份联合</em>。</p>
           </dd>
           <dt>用户池</dt>
           <dd>
-            <p>用户池<a contenteditable="false" data-type="indexterm" data-primary="user pools">&nbsp;</a>是作为身份提供程序（IdP）的用户目录。无论是通过 Cognito 还是第三方集成 IdP 登录的用户，其用户记录均存储在用户池目录中。它还支持注册、忘记密码、登录、密码长度和策略以及多重身份验证（MFA）等所有功能。</p>
+            <p>用户池<a contenteditable="false" data-type="indexterm" data-primary="user pools">&nbsp;</a>是一个充当身份提供程序（IdP）的用户目录。无论用户通过 Cognito 还是集成的第三方 IdP 登录，其用户记录都会存储在用户池目录中。用户池还支持注册、忘记密码、登录、密码长度要求、密码策略以及多重身份验证（MFA）等功能。</p>
           </dd>
           <dt>身份池</dt>
           <dd>
-            <p>身份池<a contenteditable="false" data-type="indexterm" data-primary="identity pools">&nbsp;</a>通过接受有效令牌（例如 JSON Web 令牌（JWT）或 SAML 令牌）作为输入，为已认证和未认证用户提供应用程序访问的临时凭证。可根据您指定的不同标签为用户分配临时角色。以我们在线点餐的示例为例，用户无需登录即可浏览食物并选择商品，但下单时必须登录。当用户点击"下单"时，可通过重定向到 Amazon Cognito 托管用户界面来实现这一点，然后再重定向到付款页面确认订单。</p>
+            <p>身份池<a contenteditable="false" data-type="indexterm" data-primary="identity pools">&nbsp;</a>通过接收 JSON Web 令牌（JWT）或 SAML 令牌等有效令牌，为已认证和未认证用户提供访问应用程序所需的临时凭证。可以根据您指定的不同标签，为用户分配临时角色。以在线点餐为例，用户无需登录即可浏览餐品和选择商品，但必须登录后才能下单。当用户点击“下单”时，可以将其重定向到 Amazon Cognito 托管用户界面，待登录后再重定向到支付页面完成订单确认。</p>
           </dd>
           <dt>用户池托管用户界面</dt>
           <dd>
-            <p>我们需要<a contenteditable="false" data-type="indexterm" data-primary="user pool hosted UIs">&nbsp;</a>某种用户界面供用户在我们的应用程序中注册或登录。Cognito 提供一个由 AWS 托管的 URL，用于用户与应用程序之间的交互。该界面可包含电子邮件、密码登录，或任何集成的第三方 IdP，如<a data-type="xref" href="#ch12_figure_5_1734552291610743">#ch12_figure_5_1734552291610743</a>所示。用户通过身份验证后，将被引导至指定为重定向 URL 的特定应用程序页面。我们也可以根据需要自定义界面页面，例如添加自定义徽标或 CSS。</p>
+            <p>我们需要<a contenteditable="false" data-type="indexterm" data-primary="user pool hosted UIs">&nbsp;</a>一个用户界面，供用户注册或登录应用程序。Cognito 提供由 AWS 托管的 URL，供用户通过托管界面与应用程序交互。该界面可以支持电子邮件和密码登录，也可以集成第三方 IdP，如<a data-type="xref" href="#ch12_figure_5_1734552291610743">#ch12_figure_5_1734552291610743</a>所示。用户通过身份验证后，会被重定向至预先指定的应用程序页面。我们还可以根据需要自定义界面，例如添加自定义徽标或 CSS。</p>
             <figure id="ch12_figure_5_1734552291610743">
               <img alt="登录表单截图（自动生成描述）" src="images/sdoa_1205.png"/>
               <figcaption>Amazon Cognito 托管用户界面</figcaption>
@@ -825,16 +825,16 @@
           </dd>
           <dt>触发器</dt>
           <dd>
-            <p>您<a contenteditable="false" data-type="indexterm" data-primary="triggers">&nbsp;</a>可以通过触发器消费 <a href="https://oreil.ly/j1uvf">Cognito 事件</a>（例如用户预身份验证或后身份验证），并基于这些事件运行 AWS Lambda 函数。Lambda 触发器为底层应用程序的用户 AuthN 和 AuthZ 运行额外逻辑。例如，您可以运行一组自定义验证规则，例如要求用户访问特定网页的位置必须在印度，用户才能注册该应用程序。</p>
+            <p>您<a contenteditable="false" data-type="indexterm" data-primary="triggers">&nbsp;</a>可以通过触发器处理 <a href="https://oreil.ly/j1uvf">Cognito 事件</a>，例如用户身份验证前或身份验证后的事件，并据此运行 AWS Lambda 函数。这些 Lambda 触发器可执行额外的逻辑，为底层应用程序提供用户身份验证（AuthN）和授权（AuthZ）支持。例如，可以执行自定义验证规则，要求用户从印度访问特定网页，才能注册该应用程序。</p>
           </dd>
         </dl>
         <p>软件应用程序可通过多种方式借助 Cognito 完成身份验证（AuthN）和授权（AuthZ）：</p>
         <ul>
           <li>
-            <p>用户通过前端应用程序与 Cognito 交互以获取令牌，并在后续 API 调用中使用相同的令牌。后端应用程序可通过 AWS SDK Amazon Cognito API 与 Cognito 交互，针对用户验证这些令牌。</p>
+            <p>用户通过前端应用程序与 Cognito 交互以获取令牌，并在后续 API 调用中继续使用该令牌。后端应用程序可以通过 AWS SDK 调用 Amazon Cognito API，与 Cognito 交互并验证用户令牌。</p>
           </li>
           <li>
-            <p>Cognito 提供与 Amazon API Gateway 的原生集成，无需客户进行任何额外工作。当应用程序 API 通过 Amazon API Gateway 提供时，无需手动验证令牌，验证可根据配置自动完成。</p>
+            <p>Cognito 可与 Amazon API Gateway 原生集成，无需客户投入额外工作。当应用程序通过 Amazon API Gateway 提供 API 时，可以根据相关配置自动完成令牌验证，无需手动验证。</p>
           </li>
           <li>
             <p>为减少您的手动配置工作，可以使用 AWS Amplify 自动创建所需基础设施，然后使用 AWS SDK 与 Cognito 交互。</p>
