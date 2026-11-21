@@ -1236,3 +1236,17 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | Succeed state | Succeed 状态 | P136 approved: successful terminal outcome. |
 | Fail state | Fail 状态 | P137 approved; source-level terminal-state caveat is Medium Author TBC. |
 | Map state / Inline Map | Map 状态／内联模式 | P139–P140 approved: 40 concurrently processed elements, 25,000 history entries. |
+
+
+## Chapter 12 — Batch 15 terminology decisions (2026-11-21)
+
+| English | Chinese preferred form | Reviewer decision |
+|---|---|---|
+| Distributed Map | 分布式模式 | P141 approved; clarify child workflow parallel executions and history scoping. |
+| redrive | 重新驱动（redrive） | P143 approved; preserve the original redrive hyperlink. |
+| Standard Workflows | 标准工作流（Standard） | P144 approved; distinguish from Express. |
+| Express Workflows | 快速工作流（Express） | P144 approved; distinct modes and execution semantics. |
+| long-running workflow | 长时间运行的工作负载 | P146 approved; retains up-to-one-year limit. |
+| short-lived high-volume workflow | 执行时间较短、处理量较大的事件处理工作负载 | P147 approved; retains five-minute limit. |
+| asynchronous Express executions | 异步 Express 工作流；至少一次（at-least-once）执行语义 | P150 approved. |
+| synchronous Express executions | 同步 Express 工作流；最多一次（at-most-once）执行语义 | P150 approved. |
