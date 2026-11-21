@@ -1158,3 +1158,16 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | Redshift data destination | 当配置的数据目标为 Amazon Redshift 时 | **Retrospective P67 wording explicitly approved** in Batch 08. |
 
 **Reviewer workflow clarification:** There are only AS-IS and TO-BE choices for a paragraph. A specific free-text reviewer correction supersedes the selected option for that paragraph; apply that correction without changing unrelated content. Review prior batches for already approved amendments, but do not silently revise other paragraphs.
+
+
+## Chapter 12 — Batch 09 terminology decisions (2026-11-21)
+
+| English term | Chinese preferred term | Reviewer notes |
+|---|---|---|
+| service decoupling | 服务解耦／避免服务之间的直接依赖 | P81 approved: avoid claiming removal of all failure dependencies. |
+| visibility timeout | 可见性超时 | P84 approved; preserve 0 秒至 12 小时 value. |
+| message retention period | 消息保留期限 | P82 approved; P85 retained AS-IS; source semantics under Author TBC. |
+| dead-letter queue (DLQ) | 死信队列（DLQ） | P86 approved; redrive-policy mechanism raised as author TBC. |
+| maximum SQS message size | 单条消息的大小上限 | P87 explicit wording override, retain historical 256 KB pending author. |
+| idempotency | 幂等性 | Important for at-least-once SQS processing; distinguish duplicate receipt from strict one-consumer exclusivity. |
+| SNS/SQS fan-out | 消息扇出 | P90 approved: SNS 主题 with multiple SQS 队列 subscribers, independent processing of copies. |
