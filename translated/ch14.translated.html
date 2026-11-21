@@ -470,18 +470,18 @@ Location: https://www.oreilly.com/library/view/system-design-on/9781098146887
             <p>系统应配置自动扩缩容，以应对高峰时段增加的负载。自动扩缩组（ASG）应跨多个可用区（AZ）部署，以应对单个可用区发生故障的情况。对于 ECS Fargate 等托管计算服务，AWS 会负责将系统部署到多个可用区，以提高可用性。如果自行管理计算资源，也应考虑这种跨可用区部署方式。</p>
           </li>
         </ul>
-        <p>现在，让我们整合所有这些概念，呈现<a contenteditable="false" data-type="indexterm" data-primary="compute services (AWS)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="compute-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="Day 0 architecture" data-startref="use-case-url-short-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="Day 0 architecture" data-startref="url-short-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="dayzero-url-short">&nbsp;</a>AWS 上的最终架构。</p>
+        <p>现在，我们将上述设计思路整合起来，展示<a contenteditable="false" data-type="indexterm" data-primary="compute services (AWS)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="compute-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="Day 0 architecture" data-startref="use-case-url-short-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="Day 0 architecture" data-startref="url-short-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="dayzero-url-short">&nbsp;</a>部署在 AWS 上的最终架构。</p>
       </section>
     </section>
     <section data-type="sect2" id="ch14_day_n_architecture_1734552292689422">
       <h2>Day N 架构</h2>
-      <p>我们目前<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="Day N architecture" id="use-case-url-short-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="Day N architecture" id="url-short-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="dayn-url-short">&nbsp;</a>使用单个 AWS 账户来托管架构中的所有服务——这可以根据需要进一步演进，将服务托管在不同的 AWS 账户中，或采用我们在<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>的<a data-type="xref" href="#ch09_getting_started_with_aws_1734552289953522">#ch09_getting_started_with_aws_1734552289953522</a>节中讨论的其他账户隔离方式。需要注意的是，使用多个 AWS 账户会增加服务间数据流转的成本，共享数据库也会变得难以管理，尽管这可以使每个账户的职责更清晰，边界更明确。</p>
-      <p>延伸<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>中的讨论，另一个隔离维度是在<a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service">&nbsp;</a>VPC 层面。如果所有应用都创建在同一个 AWS 账户中，它们是位于同一个 VPC 还是不同的 VPC？如果在同一个 VPC 中，是在同一个子网还是不同的子网？即使对于单个应用，也应将资源部署在不同的子网中（跨可用区），以确保高可用性。将所有应用放在同一个 VPC 中有助于降低网络成本，但需要更加谨慎地管理应用间通信的安全性。安全规则可以通过网络 ACL 来管理，建议将规则数量保持在较少范围内。规则是逐条评估的，规则数量过多会因评估耗时增加而影响网络效率（相比所有规则并行评估而言）。</p>
+      <p>目前，我们<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="Day N architecture" id="use-case-url-short-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="Day N architecture" id="url-short-dayn">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day N architecture" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="dayn-url-short">&nbsp;</a>使用一个 AWS 账户承载架构中的所有服务。随着需求变化，也可以将服务部署到不同的 AWS 账户，或采用我们在<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>的<a data-type="xref" href="#ch09_getting_started_with_aws_1734552289953522">#ch09_getting_started_with_aws_1734552289953522</a>节中讨论过的其他账户隔离方案。使用多个 AWS 账户可能增加服务间的数据传输成本，也可能使共享数据库更难管理，但能通过明确的职责边界简化各账户的管理。</p>
+      <p>继续<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>中的讨论，<a contenteditable="false" data-type="indexterm" data-primary="VPC service" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service">&nbsp;</a>VPC 是另一个需要考虑的隔离层级。如果所有应用程序都部署在同一个 AWS 账户中，它们应位于同一个 VPC，还是分别位于不同的 VPC？如果使用同一个 VPC，应该将应用部署在同一子网还是不同子网？即使是单个应用程序，也应将资源分布在不同可用区的子网中，以确保跨可用区的高可用性。将所有应用部署在同一个 VPC 中有助于降低网络成本，但需要更加谨慎地保护应用之间的通信。可以使用网络访问控制列表（NACL）管理相关规则，并建议限制规则数量。NACL 规则按顺序逐条评估；规则过多可能增加评估时间，影响网络效率，而不是像并行评估所有规则那样处理。</p>
       <p>我们的短网址系统架构可以包含五个微服务，以满足基本的功能需求：</p>
       <dl>
         <dt>前端服务</dt>
         <dd>
-          <p>接收客户流量，并根据操作类型将其重定向到相应的服务 VPC</p>
+          <p>接收客户端流量，并根据请求执行的操作，将流量转发到相应服务所在的 VPC</p>
         </dd>
         <dt>URL 创建服务</dt>
         <dd>
@@ -493,11 +493,11 @@ Location: https://www.oreilly.com/library/view/system-design-on/9781098146887
         </dd>
         <dt>KGS</dt>
         <dd>
-          <p>生成用作短 URL 的唯一密钥</p>
+          <p>生成用作短 URL 的唯一键</p>
         </dd>
         <dt>数据管理服务</dt>
         <dd>
-          <p>位于数据库与架构中各服务之间的薄 CRUD API 层。引入此服务是因为 DynamoDB 和 ElastiCache 会被两个系统访问。</p>
+          <p>在数据库与架构中的其他服务之间提供一层轻量级 CRUD API。之所以引入这一服务，是因为有两个系统需要访问 DynamoDB 和 ElastiCache。</p>
         </dd>
       </dl>
       <p>应定期评估架构，判断是否应进一步拆分应用（采用微服务架构）以应对不断增长的规模。</p>
