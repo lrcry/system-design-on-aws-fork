@@ -1114,3 +1114,16 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | on-demand | 按需模式 | For KDS pricing P45 approved; avoid conflating with pre-provisioned shard-hour billing. |
 | data retention | 数据保留 | P46 retained as table label; P47 use 数据保留量 when referring to storage capacity rather than retention duration. |
 | archival storage | 归档存储 | P48 approved: AWS 提供的归档存储方案. |
+
+
+## Chapter 12 — Batch 06 terminology decisions (2026-11-21)
+
+| English term | Preferred Simplified Chinese | Source / reviewer scope |
+|---|---|---|
+| AWS Glue Data Catalog | AWS Glue 数据目录 | AWS Chinese docs use 数据目录 as the feature label; P58 retained AS-IS. https://docs.aws.amazon.com/zh_cn/glue/latest/dg/catalog-and-crawler.html |
+| AWS Glue Schema Registry | AWS Glue 架构注册表 | AWS Chinese docs use 架构注册表; P56 retained AS-IS, so no unapproved retrospective change. Recommend consistently translating the feature label when reviewed. https://docs.aws.amazon.com/zh_cn/glue/latest/dg/schema-registry.html |
+| notebook (interactive development environment) | 笔记本；first mention 笔记本（Notebook） where useful | AWS Chinese Flink documentation uses Studio 笔记本. P59 retained AS-IS and P60 accepted the proposed wording with its italicised Notebook label unchanged. Retrospective changes require explicit paragraph approval. https://docs.aws.amazon.com/zh_cn/managed-flink/latest/java/example-notebook.html |
+| bounded stream processing | 有界流处理 | Keep distinct from 批处理 execution mode; source-level simplification P54 Author TBC. |
+| unbounded stream processing | 无界流处理 | Keep distinct from real-time processing execution mode; source-level simplification P54 Author TBC. |
+
+**Reviewer comment:** Translate service-feature names such as Data Catalog / Schema Registry where AWS has an established Chinese rendition, but retain the service prefix AWS Glue in English. This is terminology guidance for future approved edits, not blanket approval to change unreviewed or retained paragraphs.
