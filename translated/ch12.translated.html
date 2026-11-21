@@ -388,10 +388,10 @@
                 <p>消息传递延迟</p>
               </td>
               <td>
-                <p>由于应用程序负责从 SQS 拉取消息，传递延迟取决于客户端的轮询机制。</p>
+                <p>由于应用程序需要主动轮询 SQS 以获取消息，消息传递延迟取决于客户端的轮询机制。</p>
               </td>
               <td>
-                <p>文档中未保证延迟 SLA。发布到 SNS 主题的消息会<a href="https://oreil.ly/vhWUg">即时</a>传递给消费者，并在传递失败时应用<a href="https://oreil.ly/621Zj">重试策略</a>。</p>
+                <p>根据服务文档，SNS 不对消息传递延迟提供 SLA 保证。发布到 SNS 主题的消息会<a href="https://oreil.ly/vhWUg">立即推送</a>给消费者；如果消息传递失败，则会按照相应的<a href="https://oreil.ly/621Zj">重试策略</a>进行重试。</p>
               </td>
             </tr>
           </tbody>
@@ -400,11 +400,11 @@
         <dl>
           <dt>消息属性</dt>
           <dd>
-            <p>消息属性<a contenteditable="false" data-type="indexterm" data-primary="message attributes">&nbsp;</a>是可随消息主体一起发送的可选元数据项，由键、值和类型表示，支持的类型包括字符串、字符串数组、二进制和数字。这些属性可用于在不处理消息主体的情况下对消息采取适当操作。消息属性还可选择性地用于在订阅者层面过滤消息。例如，某个 SNS 主题发布整个亚洲大陆的天气状况消息，并在消息属性中包含国家代码。因此，如果应用程序只想处理印度的消息，可以直接过滤掉其他消息，甚至无需读取消息内容。</p>
+            <p>消息属性<a contenteditable="false" data-type="indexterm" data-primary="message attributes">&nbsp;</a>是随消息主体一起发送的可选元数据，每个属性由键、值和类型组成。支持的类型包括字符串、字符串数组、二进制和数字。应用程序可以利用这些属性，在不处理消息主体的情况下对消息采取相应操作。消息属性还可以用于在订阅者层面过滤消息。例如，某个 SNS 主题发布亚洲各国的天气状况消息，并在消息属性中包含国家代码。如果应用程序只需处理印度的消息，就可以直接过滤掉其他国家的消息，而无需读取消息内容。</p>
           </dd>
           <dt>消息过滤</dt>
           <dd>
-            <p>上面的示例展示了<a contenteditable="false" data-type="indexterm" data-primary="message filtering">&nbsp;</a>消息属性在过滤消息时的作用。这通过为主题订阅分配过滤策略来实现，从而只将目标消息传递给订阅者。过滤策略也可应用于消息主体，但消息主体必须是格式正确的 JSON 对象。</p>
+            <p>上面的示例说明了<a contenteditable="false" data-type="indexterm" data-primary="message filtering">&nbsp;</a>消息属性如何用于消息过滤。通过为主题订阅配置过滤策略，可以只向订阅者传递符合条件的消息。过滤策略也可以针对消息主体进行匹配，但此时消息主体必须是格式正确的 JSON 对象。</p>
           </dd>
           <dt>消息持久性</dt>
           <dd>
@@ -412,11 +412,11 @@
           </dd>
           <dt>消息传递失败处理</dt>
           <dd>
-            <p>在某些场景下，<a contenteditable="false" data-type="indexterm" data-primary="message delivery failure handling">&nbsp;</a>订阅者可能无法接收消息，因此 SNS 根据传递协议设有重试策略以应对不可用情况。若经过重试仍无法传递消息，可配置死信队列（DLQ），将消息推送至该队列，待系统恢复在线后再进行拉取。</p>
+            <p>当<a contenteditable="false" data-type="indexterm" data-primary="message delivery failure handling">&nbsp;</a>订阅者暂时无法接收消息时，SNS 会根据相应的传递协议执行重试策略。如果重试后仍无法成功传递消息，可以配置死信队列（DLQ）来接收这些消息，待系统恢复后再从中获取并处理。</p>
           </dd>
           <dt>消息安全性</dt>
           <dd>
-            <p>为<a contenteditable="false" data-type="indexterm" data-primary="encryption">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="security" data-secondary="of messages" data-secondary-sortas="messages">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="message security">&nbsp;</a>确保数据安全或处理敏感数据，您可以通过指定 AWS KMS 密钥为 SNS 主题<a href="https://oreil.ly/o9GTg">启用服务器端加密</a>。启用后，SNS 会对接收到的消息加密并以加密形式存储。消息在转发给主题订阅者时才会解密。此加密仅针对消息主体，因此请避免在主题和消息元数据中存储任何敏感信息。</p>
+            <p>为<a contenteditable="false" data-type="indexterm" data-primary="encryption">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="security" data-secondary="of messages" data-secondary-sortas="messages">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="message security">&nbsp;</a>保护数据安全或处理敏感数据，您可以指定 AWS KMS 密钥，为 SNS 主题<a href="https://oreil.ly/o9GTg">启用服务器端加密</a>。启用后，SNS 会加密收到的消息并以加密形式存储，在向主题订阅者转发消息时再进行解密。由于这种加密仅保护消息主体，因此应避免在主题元数据和消息元数据中存放敏感信息。</p>
           </dd>
           <dt>消息顺序</dt>
           <dd>
