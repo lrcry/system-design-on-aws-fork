@@ -758,7 +758,7 @@
           </dd>
           <dt><a href="https://oreil.ly/Gw-eW"><em>IAM 策略</em></a></dt>
           <dd>
-            <p>IAM 策略是一个 JSON 对象（<a href="https://oreil.ly/FykRj">ACL</a> 策略类型除外，我们在<a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a>中讨论过，它基于 <a href="https://oreil.ly/4wmQE">XML 结构</a>），表示一组权限，附加到 IAM 身份（用户、用户组或角色）或 AWS 资源。回顾一下之前关于如何授予 EC2 从 S3 下载对象权限的示例。要使该角色具有 S3 下载权限，您需要附加如下 IAM 策略：</p>
+            <p>IAM 策略是一个 JSON 对象（此前在第 10 章讨论过的 <a href="https://oreil.ly/FykRj">ACL</a> 策略类型除外，其结构采用 <a data-type="xref" href="#ch10_aws_storage_services_1734552290474903">#ch10_aws_storage_services_1734552290474903</a> 中所述的 <a href="https://oreil.ly/4wmQE">XML 结构</a>），用于定义一组权限，并附加到 IAM 身份（用户、用户组或角色）或 AWS 资源。回顾之前授予 EC2 从 S3 下载对象权限的示例。要让相应角色拥有从 S3 下载对象的权限，需要为该角色附加如下 IAM 策略：</p>
             <pre data-type="programlisting">{
   "Version": "2012-10-17",
   "Statement": [
@@ -776,10 +776,10 @@
     }
   ]
 }</pre>
-            <p><a href="https://oreil.ly/YoG29">IAM 策略的 JSON 文档</a>本质上包含 <code>Effect</code>（值为 <code>Allow</code> 或 <code>Deny</code>），以及 <code>Action</code>（指定所有资源操作）和 <code>Resource</code>（指定相关资源），以及 <code>Condition</code>、<code>Principal</code> 和 <code>Sid</code> 等附加元素。</p>
+            <p><a href="https://oreil.ly/YoG29">IAM 策略的 JSON 文档</a>通常包含 <code>Effect</code>（取值为 <code>Allow</code> 或 <code>Deny</code>）、<code>Action</code>（指定资源操作）和 <code>Resource</code>（指定目标资源），以及 <code>Condition</code>、<code>Principal</code> 和 <code>Sid</code> 等其他元素。</p>
           </dd>
         </dl>
-        <p>在<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>中，我们讨论了在不同 AWS 存储服务的背景下将德里高地咖啡馆上线的过程。假设我们已创建了一个 AWS 账户用于托管和运营这家在线餐厅，并雇用了许多人员协助运营。所有参与软件应用程序开发和测试的人员都需要访问 AWS 账户。提供访问权限的方式有多种：</p>
+        <p>在<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>中，我们讨论了如何利用不同的 AWS 存储服务，让 Cafe Delhi Heights 开展线上业务。现在，我们已经创建了一个 AWS 账户，用于托管和运营这家线上餐厅，并聘请了许多人提供协助。所有参与软件应用程序开发和测试的人员都需要访问该 AWS 账户。我们可以通过多种方式提供访问权限：</p>
         <ul>
           <li>
             <p>与团队所有成员共享根凭证。我们不推荐此选项，因为它向所有人提供了完整访问权限。这并非必要，且可能被有意或无意地滥用。</p>
@@ -788,15 +788,15 @@
             <p>创建 IAM 用户并将其关联到 developer-group、devops-group 和 support-group 等用户组。这可以视为一种较佳选项，但如前所述存在一些缺点。</p>
           </li>
           <li>
-            <p>我们可能已通过某个身份提供程序（IdP）（例如 Google、Facebook 或 Amazon）管理团队。我们可以创建一个 IAM 身份提供程序实体，在 IdP 与 AWS 账户之间建立信任关系。这使所有用户能够以有限权限临时担任 IAM 角色，而无需暴露 AWS 访问密钥。</p>
+            <p>我们可能已经通过 Google、Facebook 或 Amazon 等身份提供程序（IdP）管理团队成员的身份。我们可以创建 IAM 身份提供程序实体，在 IdP 与 AWS 账户之间建立信任关系。这样，所有用户都可以在有限时间内以受限权限担任 IAM 角色，而无需暴露 AWS 访问密钥。</p>
           </li>
         </ul>
-        <p>随着不同团队协同工作，始终会存在一个团队需要访问另一个团队 AWS 账户资源的使用场景，或者多个团队在同一账户中共享资源。对于这些场景，可通过信任策略和权限策略来管理访问，这被称为<a contenteditable="false" data-type="indexterm" data-primary="delegation">&nbsp;</a><em>委派权限</em>。信任策略指定允许担任角色的受信任账户成员，权限策略指定受信任用户执行任务所具有的权限。</p>
-        <p>AWS IAM 有助于保护和管理对不同 AWS 资源的访问。AWS 还提供另一项服务——Amazon Cognito，用于用户池管理，作为身份提供程序（IdP）使用，并为<a contenteditable="false" data-type="indexterm" data-primary="Identity and Access Management (IAM)" data-startref="identity-access-mgmt">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IAM (Identity and Access Management)" data-startref="iam">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="authentication" data-secondary="IAM" data-startref="auth-iam">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="access control" data-secondary="IAM" data-startref="access-control-iam">&nbsp;</a>用户身份验证提供许多其他功能。</p>
+        <p>在不同团队协作时，一个团队可能需要访问另一个团队 AWS 账户中的资源，也可能由多个团队共同拥有同一账户中的资源。对于这些场景，可以通过信任策略和权限策略来管理访问，这种方式称为<a contenteditable="false" data-type="indexterm" data-primary="delegation">&nbsp;</a><em>权限委派</em>。信任策略指定允许担任角色的受信任账户成员，权限策略则指定受信任用户为执行任务而拥有的权限。</p>
+        <p>AWS IAM 有助于保护 AWS 资源并管理对这些资源的访问。AWS 还提供 Amazon Cognito 服务，用于管理用户池、充当身份提供程序（IdP），并提供多种<a contenteditable="false" data-type="indexterm" data-primary="Identity and Access Management (IAM)" data-startref="identity-access-mgmt">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IAM (Identity and Access Management)" data-startref="iam">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="authentication" data-secondary="IAM" data-startref="auth-iam">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="access control" data-secondary="IAM" data-startref="access-control-iam">&nbsp;</a>用户身份验证功能。</p>
       </section>
       <section data-type="sect1" id="ch12_amazon_cognito_1734552291640698">
         <h1>Amazon Cognito</h1>
-        <p>Amazon Cognito<a contenteditable="false" data-type="indexterm" data-primary="Cognito" id="cognito">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="authentication" data-secondary="Cognito" id="auth-cognito">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="access control" data-secondary="Cognito" id="access-control-cognito">&nbsp;</a>是一项全托管、高度可扩展的客户身份和访问管理（CIAM）服务，使客户能够建立和管理用于身份验证（AuthN）和授权（AuthZ）的身份池。Cognito 全权负责管理支持此功能所需的计算和存储。您可以使用 Cognito 进行新用户注册、现有用户登录、访客用户维护和访问控制定义。来看一个简单的示例：我们希望在线餐厅的顾客能够在提交食品评价时上传图片。为了允许顾客直接将图片上传到我们 AWS 账户的 S3 存储桶，我们可以通过 Cognito 提供临时写入权限。</p>
+        <p>Amazon Cognito<a contenteditable="false" data-type="indexterm" data-primary="Cognito" id="cognito">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="authentication" data-secondary="Cognito" id="auth-cognito">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="access control" data-secondary="Cognito" id="access-control-cognito">&nbsp;</a>是一项全托管、高度可扩展的客户身份与访问管理（CIAM）服务，允许客户创建和管理用于身份验证（AuthN）和授权（AuthZ）的身份池。Cognito 全面负责管理支持这些功能所需的计算和存储资源。您可以使用 Cognito 实现新用户注册、现有用户登录、访客用户管理以及访问权限控制。举个简单的例子：我们希望在线餐厅的顾客在提交美食评价时能够上传图片。为了让顾客直接将图片上传到我们 AWS 账户中的 S3 存储桶，可以通过 Cognito 授予临时写入权限。</p>
         <div data-type="note">
           <p>AuthN 用于确认实体的身份，AuthZ 用于确定该实体可以访问哪些资源。</p>
           <p>在 AWS 账户访问方面，AuthN 确认您是否可以登录 AWS 账户，AuthZ 确认您是否可以访问特定的 AWS 资源。</p>
