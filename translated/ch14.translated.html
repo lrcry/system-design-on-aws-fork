@@ -443,31 +443,31 @@ Location: https://www.oreilly.com/library/view/system-design-on/9781098146887
         <div data-type="note">
           <p>在 2024 年 re:Invent 大会上，<a href="https://oreil.ly/29MT2">Amazon DynamoDB 宣布</a>将为多区域全局表提供强一致性读取支持。与最终一致性相比，强一致性模式的读写延迟通常更高，但如果业务需要强一致性，这一功能就很有价值。</p>
         </div>
-        <p>对于热门用户生成的 URL，读流量可能非常巨大，因此没有必要将所有读查询直接路由到数据库。DynamoDB 保证直接键操作的个位数毫秒级延迟，但为了进一步提升体验、将延迟降至微秒级，可以在 DynamoDB 上层添加缓存层（如 Amazon ElastiCache 或 Amazon DAX）以改善读取性能。延迟的改善程度还取决于网络延迟。实际上，加入缓存解决方案后，延迟可能在 5–10 毫秒左右。数据库上层的缓存层还有助于降低数据库负载，优化成本。</p>
-        <p>在设计以 DynamoDB 为存储方案的系统时，一个关键考虑因素是：如何证明使用 DAX 或 ElastiCache 进行缓存的合理性——应该选哪个？理想选择可能是 DAX，因为它专为 DynamoDB 而生，能够改善查询读取性能；但如果某个用例已经在使用 ElastiCache，或者您对 ElastiCache 更为熟悉，那么它可能是更好的选择。这样可以减少对新技术的集成成本，节省实施资源。进行基准测试以比较两种技术始终是一个好主意，因为最终我们需要一个兼顾低延迟和高性价比的方案。对于流量较大的场景，我们建议使用分布式缓存（如 Redis 集群模式）来分散缓存的工作负载，提升响应速度。</p>
+        <p>对于热门用户生成的 URL，读取请求量可能非常大，因此没有必要让所有读取请求都直接访问数据库。DynamoDB 对直接按键访问的操作提供个位数毫秒级延迟，但为了进一步降低延迟、将其缩短至微秒级，可以在 DynamoDB 前增加缓存层，例如 Amazon ElastiCache 或 Amazon DAX，以提升读取性能。延迟改善的程度还取决于网络延迟。实际采用缓存方案后，延迟可能在 5–10 毫秒左右。缓存层还有助于降低数据库负载并优化成本。</p>
+        <p>使用 DynamoDB 作为数据存储时，一个关键问题是评估是否需要 DAX 或 ElastiCache 缓存，以及应该选择哪一种。DAX 专为 DynamoDB 设计，能够提升读取查询性能，因此可能是理想选择。但如果其他用例已经使用 ElastiCache，或者团队更熟悉这一技术，那么 ElastiCache 可能更合适，因为这样可以减少引入新技术的集成工作量，节省开发资源。应通过基准测试比较这两种技术，为技术选型提供依据，最终选择兼顾低延迟和成本效益的方案。当流量增加时，建议使用分布式缓存（例如采用集群模式的 Redis）分散缓存负载，提高响应速度。</p>
         <div data-type="note">
-          <p>缓存的理念适用于任何数据库类型，用于处理频繁查询。除此之外，还应重新评估数据访问模式，以及是否存在改善空间（例如优化慢查询或 API 请求，处理查询超时）。对于关系型数据库，在规模不断增大时，数据库联邦和分片也变得越来越重要。</p>
+          <p>缓存适用于各种类型的数据库，可以用来加速频繁执行的查询。此外，还应重新评估数据访问模式，寻找优化机会，例如改善执行缓慢的数据库查询或 API 请求，以及查询超时的处理方式。对于关系型数据库，随着系统规模扩大，数据库联合和分片也会变得更加重要。</p>
         </div>
       </section>
       <section data-type="sect3" id="ch14_compute_layer_1734552292689359">
         <h3>计算层</h3>
-        <p>对于<a contenteditable="false" data-type="indexterm" data-primary="compute services (AWS)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="compute-url-short">&nbsp;</a>计算层，我们在图<a data-type="xref" href="#ch14_figure_9_1734552292664338">#ch14_figure_9_1734552292664338</a>中选择了 AWS Lambda，在图<a data-type="xref" href="#ch14_figure_10_1734552292664358">#ch14_figure_10_1734552292664358</a>中选择了 AWS App Runner，以避免搭建 Amazon EC2 并降低运维负担——但 Lambda 或 App Runner 能否扩展到百万用户规模呢？Lambda<a contenteditable="false" data-type="indexterm" data-primary="Lambda" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener">&nbsp;</a>可以根据流量需求自动扩缩，无需任何人工干预。然而，我们可能面临的问题是 P100 延迟会不时升高，这是由于冷启动问题导致的。我们在<a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a>中讨论了解决冷启动问题的几种方案，例如预置并发，有助于解决延迟瓶颈。</p>
-        <p>App Runner<a contenteditable="false" data-type="indexterm" data-primary="App Runner">&nbsp;</a>每个服务最多支持 25 个实例，每个实例最多支持 200 个并发请求，因此每个服务最多支持 5,000 个并发请求。有关服务配额的最新信息，请参阅 <a href="https://oreil.ly/08gMc">AWS 限制文档</a>。按照我们在<a data-type="xref" href="#ch14_system_scale_1734552292688092">#ch14_system_scale_1734552292688092</a>中的规模考量，请求数量限制可能成为瓶颈。</p>
+        <p>在<a contenteditable="false" data-type="indexterm" data-primary="compute services (AWS)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="compute-url-short">&nbsp;</a>计算层，我们分别在图<a data-type="xref" href="#ch14_figure_9_1734552292664338">#ch14_figure_9_1734552292664338</a>和图<a data-type="xref" href="#ch14_figure_10_1734552292664358">#ch14_figure_10_1734552292664358</a>中选择了 AWS Lambda 和 AWS App Runner，以免自行部署 Amazon EC2 并减轻运维负担。但 Lambda 和 App Runner 能否扩展到数百万用户的规模？Lambda<a contenteditable="false" data-type="indexterm" data-primary="Lambda" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener">&nbsp;</a> 可以根据流量需求自动扩缩容，无需用户干预。不过，冷启动可能不时导致 p100 延迟升高。我们在<a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a>中讨论过应对冷启动的几种方案，例如预置并发，它可以帮助缓解延迟瓶颈。</p>
+        <p>App Runner<a contenteditable="false" data-type="indexterm" data-primary="App Runner">&nbsp;</a> 每个服务最多支持 25 个实例，每个实例最多处理 200 个并发请求，因此每个服务最多可处理 5,000 个并发请求。有关服务配额的最新信息，请参阅 <a href="https://oreil.ly/08gMc">AWS 服务配额文档</a>。根据<a data-type="xref" href="#ch14_system_scale_1734552292688092">#ch14_system_scale_1734552292688092</a>中的规模估算，请求并发数限制可能成为系统瓶颈。</p>
         <div data-type="note">
           <p>每个实例的并发请求数不同于每秒请求数。本质上，如果一个 API 的执行时间为 100 毫秒，那么一个实例每秒可以处理 10 个请求。我们建议在关注托管服务配额的同时，也对应用代码进行优化。</p>
         </div>
-        <p>这里需要考虑的一点是：AWS 未来可能会提升这些限制，这不应阻止我们发布产品的第一个版本。AWS 云服务和开源解决方案在不断演进，云服务商会代表客户持续创新，因此 App Runner 未来有可能以更低的成本支持更大的规模。记住，没有任何架构是最终定论，一旦发现瓶颈，我们随时可以重新评估并迭代，如<a data-type="xref" href="#ch14_figure_11_1734552292664379">#ch14_figure_11_1734552292664379</a>中的软件生命周期所示。</p>
+        <p>需要考虑的是，AWS 未来可能提高这些限制，因此不应让当前限制阻碍产品首个版本的发布。AWS 云服务和开源解决方案都在不断发展，云服务提供商也会持续为客户创新，因此 App Runner 未来有可能以更低的成本支持更大的系统规模。任何架构都不是一成不变的；一旦出现瓶颈，我们就可以重新评估并持续迭代，如<a data-type="xref" href="#ch14_figure_11_1734552292664379">#ch14_figure_11_1734552292664379</a>所示的软件生命周期。</p>
         <figure id="ch14_figure_11_1734552292664379">
           <img src="images/sdoa_1411.png"/>
           <figcaption>软件生命周期</figcaption>
         </figure>
-        <p>以下是扩展系统计算部分时需要考虑的几点：</p>
+        <p>扩展系统的计算层时，还需要考虑以下几个方面：</p>
         <ul>
           <li>
-            <p>考虑迁移至非托管版本的服务，例如从 Amazon ECS Fargate 迁移至 Amazon ECS EC2，以对硬件配置拥有更多控制权。在大规模运营时，这从长远来看可能是更经济的选择。</p>
+            <p>可以考虑迁移到需要自行管理底层计算资源的部署方式，例如从 Amazon ECS Fargate 迁移到 Amazon ECS EC2，以获得对硬件配置的更多控制权。在大规模运行的情况下，这种方案从长远来看可能更具成本优势。</p>
           </li>
           <li>
-            <p>系统将部署自动扩缩，以应对峰值时期的流量增加。自动扩缩组（ASG）应分布在不同的可用区，以应对可用区故障。对于 ECS Fargate 等托管系统，AWS 会负责将系统部署到多个可用区以确保可用性。如果您自行管理系统，请将此纳入考量。</p>
+            <p>系统应配置自动扩缩容，以应对高峰时段增加的负载。自动扩缩组（ASG）应跨多个可用区（AZ）部署，以应对单个可用区发生故障的情况。对于 ECS Fargate 等托管计算服务，AWS 会负责将系统部署到多个可用区，以提高可用性。如果自行管理计算资源，也应考虑这种跨可用区部署方式。</p>
           </li>
         </ul>
         <p>现在，让我们整合所有这些概念，呈现<a contenteditable="false" data-type="indexterm" data-primary="compute services (AWS)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="compute-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="Day 0 architecture" data-startref="use-case-url-short-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="Day 0 architecture" data-startref="url-short-dayzero">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Day 0 architecture" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="dayzero-url-short">&nbsp;</a>AWS 上的最终架构。</p>
