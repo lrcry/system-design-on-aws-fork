@@ -872,11 +872,11 @@
           </dd>
           <dt>解析器</dt>
           <dd>
-            <p>在架构与不同数据源之间提供链接的组件。它们将 GraphQL 载荷转换为底层系统协议，并在具备相应 IAM 权限的前提下执行操作。</p>
+            <p>这些组件连接 GraphQL 架构与不同的数据源。它们将 GraphQL 请求载荷转换为底层系统所需的协议格式，并在具备相应 IAM 权限时执行操作。</p>
           </dd>
           <dt>数据源</dt>
           <dd>
-            <p>解析器可使用访问凭证从中获取数据的数据目标，例如 Amazon DynamoDB、Amazon RDS、AWS Lambda 和 HTTP 端点。<a data-type="xref" href="#ch12_figure_6_1734552291610763">#ch12_figure_6_1734552291610763</a>中显示的数据源可位于同一 AWS 账户或不同 AWS 账户中。</p>
+            <p>数据源是解析器使用访问凭证获取数据的目标，例如 Amazon DynamoDB、Amazon RDS、AWS Lambda 和 HTTP 端点。<a data-type="xref" href="#ch12_figure_6_1734552291610763">#ch12_figure_6_1734552291610763</a>中展示的数据源可以位于同一个 AWS 账户中，也可以分布在不同的 AWS 账户中。</p>
             <figure id="ch12_figure_6_1734552291610763">
               <img alt="示意图（自动生成描述）" src="images/sdoa_1206.png"/>
               <figcaption>AppSync 与多数据源的集成</figcaption>
@@ -884,16 +884,16 @@
           </dd>
           <dt>合并 API</dt>
           <dd>
-            <p>由多个源 API、GraphQL 架构、解析器和数据源合并操作构建而成的单个 AppSync API。源 API 可由独立团队管理，并通过合并 API 进行协作。</p>
+            <p>将多个源 API 及其 GraphQL 架构、解析器和数据源合并，构建成单个 AppSync API。各源 API 可以由不同团队独立管理，这些团队再通过合并后的 API 进行协作。</p>
           </dd>
         </dl>
-        <p>您可能会问：为什么要使用 AppSync，而不是自行部署 GraphQL 基础设施？主要原因是将 AuthN 和 AuthZ、缓存和加密等功能的运维开销从客户身上卸下。AppSync 还简化了聊天应用程序、基于位置的通知、实时游戏计分板以及<a href="https://oreil.ly/QyLfn">结合 AWS Amplify 的离线支持</a>等高级使用场景的构建。为提供这些优势，AppSync 是一项全托管无服务器服务，提供<a href="https://oreil.ly/UmTf2">构建时合并 API 的组合</a>，以及与 AWS WAF（网站防火墙）、Amazon CloudWatch、Amazon Cognito 和 TLS 加密<a contenteditable="false" data-type="indexterm" data-primary="GraphQL" data-startref="graphql-ch12">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AppSync" data-startref="appsync">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scalability" data-secondary="with AppSync" data-secondary-sortas="AppSync" data-startref="scalability-appsync">&nbsp;</a>等 AWS 服务的便捷集成。</p>
+        <p>您可能会问：为什么要使用 AppSync，而不是自行部署 GraphQL 基础设施？主要原因是，AppSync 可以减轻客户管理身份验证（AuthN）、授权（AuthZ）、缓存和加密等功能的运维负担。AppSync 还简化了聊天应用程序、基于位置的通知、实时游戏比分更新，以及<a href="https://oreil.ly/QyLfn">结合 AWS Amplify 实现离线支持</a>等高级使用场景的开发。为提供这些优势，AppSync 作为一项完全无服务器服务，支持<a href="https://oreil.ly/UmTf2">在构建时组合合并 API</a>，并能便捷地集成 AWS WAF、Amazon CloudWatch、Amazon Cognito 等 AWS 服务，同时支持 TLS 加密<a contenteditable="false" data-type="indexterm" data-primary="GraphQL" data-startref="graphql-ch12">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="AppSync" data-startref="appsync">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scalability" data-secondary="with AppSync" data-secondary-sortas="AppSync" data-startref="scalability-appsync">&nbsp;</a>。</p>
       </section>
       <section class="pagebreak-before" data-type="sect1" id="ch12_conclusion_1734552291640814">
         <h1 class="less_space">总结</h1>
-        <p>到目前为止，您已了解 AWS 提供了种类繁多的服务，充分理解业务需求以利用最适合的服务实现目标至关重要。您会注意到，某些服务具有类似的功能，例如将 MSK 与 SQS-SNS 或 KDS 进行比较时。</p>
-        <p>或者考虑这样一点：像 AWS Step Functions 这样的全托管无服务器应用程序不会让我们完全了解工作流在幕后如何编排，但重要的问题是：我们真的需要了解吗？因为 Step Functions 为我们节省了大量的管理和运维成本，同时还提供了通过可视化工作流进行调试的额外能力。</p>
-        <p>我们还强调了应用程序监控作为确保高可用性的重要方面，以及如何通过在 Amazon CloudWatch 中设置指标、日志和告警来实现这一点。随后，我们深入探讨了 AuthN 和 AuthZ 服务如何帮助保护我们的应用程序，以及 AWS 基础设施环境中的不同组件如何以安全受控的方式相互通信。我们建议遵循最小权限原则：仅为应用程序、用户或另一个 AWS 账户提供执行操作所需的最小权限集。</p>
-        <p>在下一章中，我们将探索如何在 AWS 云上运行大数据和 ML 工作负载，并以大规模运营为客户提供服务。</p>
+        <p>到这里，您已经了解到 AWS 提供了种类繁多的服务。要选择最合适的服务来实现目标，充分理解业务需求至关重要。您也会发现，某些服务具有相似的功能，例如比较 MSK、SQS-SNS 和 KDS 时就会发现这一点。</p>
+        <p>再以 AWS Step Functions 这样的全托管无服务器应用程序为例。虽然我们无法完全了解工作流在后台如何编排，但更重要的问题是：我们真的需要了解这些细节吗？Step Functions 不仅能为我们节省大量管理和运维成本，还提供了通过可视化工作流进行调试的能力。</p>
+        <p>我们还强调了应用程序监控对于确保高可用性的重要性，以及如何通过在 Amazon CloudWatch 中配置指标、日志和告警来实现监控。随后，我们探讨了身份验证（AuthN）和授权（AuthZ）服务如何帮助保护应用程序，以及 AWS 基础设施中的不同组件如何以安全、受控的方式相互通信。我们建议遵循最小权限原则：只向应用程序、用户或其他 AWS 账户授予执行操作所需的最低权限。</p>
+        <p>下一章将介绍如何在 AWS 云上部署和运行大数据与机器学习（ML）工作负载，并实现大规模运营，为客户提供服务。</p>
       </section>
     </section>
