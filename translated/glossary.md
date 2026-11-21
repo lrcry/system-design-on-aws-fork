@@ -1250,3 +1250,16 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | short-lived high-volume workflow | 执行时间较短、处理量较大的事件处理工作负载 | P147 approved; retains five-minute limit. |
 | asynchronous Express executions | 异步 Express 工作流；至少一次（at-least-once）执行语义 | P150 approved. |
 | synchronous Express executions | 同步 Express 工作流；最多一次（at-most-once）执行语义 | P150 approved. |
+
+
+## Chapter 12 — Batch 16 terminology decisions (2026-11-21)
+
+| English | Preferred Chinese | Reviewer decision |
+|---|---|---|
+| synchronous Express workflow | 同步 Express 工作流 | P151 approved; use StartSyncExecution API unchanged within link. |
+| AWS Step Functions Activity | AWS Step Functions 活动（Activity） | P152 approved; use 活动 rather than untranslated Activity in Chinese headings. |
+| activity poller | 轮询程序 | P153 approved, retains 1,000 and ARN pending source-level quota verification. |
+| execution event history | 执行事件历史记录 | P156 approved, 25,000-entry Standard Workflow limit. |
+| workflow debugging | 排查工作流故障 | P159 approved; preserve execution time, input/output, failure reason and retries. |
+| directed acyclic graph (DAG) | 有向无环图（DAG） | P160 approved; directed dependency relationships without cycles, not necessarily a linear sequence. |
+| Airflow workers | 工作进程 | P160 approved; scale according to requirements, avoiding unconditional unlimited claim. |
