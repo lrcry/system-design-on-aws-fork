@@ -166,7 +166,7 @@
                   <p>迁移工作量</p>
                 </td>
                 <td>
-                  <p>如果您已在 Amazon EC2 实例或本地数据中心自行管理 Kafka 集群，MSK 可能是绝佳选择，有助于减少迁移到不同流处理方案的工作量。</p>
+                  <p>如果您已在 Amazon EC2 实例或本地数据中心自行管理 Kafka 集群，那么迁移到 MSK 可能是不错的选择，有助于减少切换到其他流处理方案所需的迁移工作量。</p>
                 </td>
                 <td>
                   <p>对两种服务均不熟悉的团队，应参考其他参数来决定哪种服务更能满足业务需求。</p>
@@ -177,9 +177,9 @@
         </section>
         <section data-type="sect2" id="ch12_amazon_kinesis_data_analytics_1734552291639557">
           <h2>Amazon Kinesis Data Analytics</h2>
-          <p>Amazon KDA<a contenteditable="false" data-type="indexterm" data-primary="Kinesis Data Analytics (KDA)" id="kinesis-data-analytics">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="KDA (Kinesis Data Analytics)" id="kda">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data streaming" data-secondary="KDA (Kinesis Data Analytics)" id="data-stream-kda">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Flink" id="flink">&nbsp;</a>是一项基于 <a href="https://oreil.ly/3IWh_">Apache Flink 功能</a>的全托管服务，客户无需承担任何管理开销，服务可根据所需吞吐量自动扩展。KDA 可近实时地处理、查询和分析流数据，并将结果发送至配置好的数据目标，如 KDS、MSK、S3 和 OpenSearch。</p>
-          <p>在介绍 KDA 之前，让我们先大致了解 Apache Flink。Apache Flink 是一个用于实时数据流处理的开源分布式处理引擎框架，支持<a contenteditable="false" data-type="indexterm" data-primary="bounded stream processing">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="unbounded stream processing">&nbsp;</a>有界和无界流处理。<em>有界（Bounded）</em>指批量处理；<em>无界（Unbounded）</em>指实时处理流数据。Flink 在内存中执行有状态计算以实现低延迟。其有状态特性确保了对流数据事件的恰好一次处理。Flink 通过将状态异步检查点写入持久存储来确保系统崩溃后状态得以恢复。它支持 <a href="https://oreil.ly/WwHba">SQL 和 Table API</a>、<a href="https://oreil.ly/jEsqs">DataStream API</a> 以及<a href="https://oreil.ly/LiIyC">有状态函数</a>，便于数据访问。SQL 和 Table API 抽象程度最高，而 DataStream API 和有状态函数则为客户提供更细粒度的控制和可见性。此外，Flink 支持 Java、Scala、Python 和 SQL 语言。</p>
-          <p>对于客户而言，部署和基础设施管理可能是巨大的痛点，而深入掌握 Flink 核心概念也需要较高门槛。KDA 是一项无服务器产品，使客户能够专注于业务逻辑，AWS 负责端到端的全部管理。以下是 KDA 的一些特有功能：</p>
+          <p>Amazon KDA<a contenteditable="false" data-type="indexterm" data-primary="Kinesis Data Analytics (KDA)" id="kinesis-data-analytics">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="KDA (Kinesis Data Analytics)" id="kda">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data streaming" data-secondary="KDA (Kinesis Data Analytics)" id="data-stream-kda">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Flink" id="flink">&nbsp;</a>是一项提供 <a href="https://oreil.ly/3IWh_">Apache Flink 功能</a>的全托管服务，客户无需承担管理开销，并可根据传入数据所需的吞吐量自动扩展。KDA 能够近实时地处理、查询和分析流数据，并将结果发送到配置好的数据目标，例如 KDS、MSK、S3 和 OpenSearch。</p>
+          <p>在介绍 KDA 之前，我们先简要了解 Apache Flink。Apache Flink 是一个用于实时数据流处理的开源分布式处理引擎框架，支持<a contenteditable="false" data-type="indexterm" data-primary="bounded stream processing">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="unbounded stream processing">&nbsp;</a>有界和无界流处理。<em>有界（Bounded）</em>指批处理；<em>无界（Unbounded）</em>指实时流数据处理。Flink 在内存中执行有状态计算，以实现低延迟。有状态计算使 Flink 能够保证对流数据事件进行恰好一次处理。通过将状态异步保存为检查点并写入持久存储，Flink 能够在系统发生故障后恢复状态。Flink 支持 <a href="https://oreil.ly/WwHba">SQL 和 Table API</a>、<a href="https://oreil.ly/jEsqs">DataStream API</a> 以及<a href="https://oreil.ly/LiIyC">有状态函数</a>，便于访问数据。SQL 和 Table API 提供最高程度的抽象，而 DataStream API 和有状态函数则为用户提供更细粒度的控制和更高的可见性。此外，Flink 支持 Java、Scala、Python 和 SQL。</p>
+          <p>应用部署和基础设施管理可能给客户带来很大负担，而且需要掌握 Flink 的核心概念。KDA 是一项无服务器服务，让客户能够专注于业务逻辑，而端到端的管理工作则由 AWS 负责。以下是 KDA 的一些特有功能：</p>
           <ul>
             <li>
               <p>由于 KDA 在 AWS 环境中运行，它可与其他 AWS 服务轻松集成，例如 Amazon KDS、Amazon MSK、Amazon S3、Amazon OpenSearch、Amazon CloudWatch、Amazon DynamoDB、Amazon KDF 和 AWS Glue Schema Registry。</p>
@@ -195,7 +195,7 @@
             </li>
           </ul>
           <div data-type="note">
-            <p><em>Notebook</em> 是<a contenteditable="false" data-type="indexterm" data-primary="notebooks">&nbsp;</a>一种在浏览器中运行的基于 Web 的交互式开发环境。开发人员可以用支持的语言编写查询或代码，用于数据转换、可视化和分析等各种场景。</p>
+            <p><em>Notebook</em> 是<a contenteditable="false" data-type="indexterm" data-primary="notebooks">&nbsp;</a>一种基于 Web、可在浏览器中运行的交互式开发环境。开发人员可以使用受支持的编程语言编写查询或代码，完成数据转换、可视化和分析等任务。</p>
           </div>
           <p>KDA 本质上是 Apache Flink 的全托管版本，由于它是 AWS 云服务的一部分，您可以轻松将其与其他 AWS 服务集成。现在，让我们讨论另一个仅需将实时流数据加载到目标位置的使用场景。该需求<a contenteditable="false" data-type="indexterm" data-primary="Kinesis Data Analytics (KDA)" data-startref="kinesis-data-analytics">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="KDA (Kinesis Data Analytics)" data-startref="kda">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="data streaming" data-secondary="KDA (Kinesis Data Analytics)" data-startref="data-stream-kda">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Flink" data-startref="flink">&nbsp;</a>可通过 Amazon KDF 来满足。</p>
         </section>
