@@ -841,29 +841,29 @@
           </li>
         </ul>
         <div data-type="note">
-          <p>您始终可以自行构建自定义的 AuthN 和 AuthZ 解决方案，而无需使用 Cognito。我们将在<a data-type="xref" href="#ch16_designing_a_social_network_and_newsfeed_system_1734552293547861">#ch16_designing_a_social_network_and_newsfeed_system_1734552293547861</a>中对这些选项进行更详细的比较。</p>
+          <p>您也可以不使用 Cognito，而是自行构建身份验证（AuthN）和授权（AuthZ）解决方案。我们将在<a data-type="xref" href="#ch16_designing_a_social_network_and_newsfeed_system_1734552293547861">#ch16_designing_a_social_network_and_newsfeed_system_1734552293547861</a>中更详细地比较这些方案。</p>
         </div>
-        <p>让我们回到使用 Cognito 为上传对象到 Amazon S3 分配临时凭证的示例。本质上有两种实现方式：</p>
+        <p>让我们回到之前的示例：通过 Cognito 分配临时凭证，以便向 Amazon S3 上传对象。实现这一需求主要有两种方式：</p>
         <dl>
           <dt>
             <a href="https://oreil.ly/IlTgK">S3 预签名 URL</a>
           </dt>
           <dd>
-            <p>预签名 URL 可针对 S3 存储桶或特定对象创建特定权限——请注意，创建预签名 URL 的用户必须拥有相应权限。这种方式的一个缺点是需要预先定义对象键名，因此要在运行时创建预签名 URL，需要在中间添加一个计算层。例如，AWS Lambda 从客户端捕获文件名，创建 S3 预签名 URL，并响应客户端以供进一步上传对象。</p>
+            <p>可以创建具有特定访问权限的预签名 URL，用于访问 S3 存储桶或特定对象。请注意，创建预签名 URL 的用户必须拥有相应权限。这种方式的一个缺点可能是需要预先确定对象键名，因此，如果要在运行时生成预签名 URL，就需要一个中间计算层。例如，AWS Lambda 函数可以从客户端获取文件名，生成 S3 预签名 URL，再将其返回给客户端，以便客户端上传对象。</p>
           </dd>
           <dt>Amazon Cognito</dt>
           <dd>
-            <p>您可以使用 Cognito 的身份池为用户分配临时凭证，允许他们直接将文件上传到 S3。使用此方式取决于您正在处理的使用场景类型，因为此选项需要完成 Cognito 的配置。如果已经为用户 AuthN 和 AuthZ 设置好相关配置，这可能会简化我们的工作。</p>
+            <p>您可以通过 Cognito 身份池向用户提供临时凭证，使他们能够直接将文件上传到 S3。是否采用这种方式取决于具体使用场景，因为它需要配置 Cognito。如果已经建立了用户身份验证（AuthN）和授权（AuthZ）机制，这种方式可能会简化我们的工作。</p>
           </dd>
         </dl>
         <p>这两种方式也可以结合使用：Cognito 负责用户身份验证，AWS Lambda 负责生成预签名 URL。</p>
-        <p>我们讨论了身份池中基于不同标签的临时角色分配——角色也可以基于令牌和 IAM 策略来分配，即将角色相关信息作为令牌的一部分获取，并用其来分配角色。对于需要动态角色创建的需求，IAM 策略中的<a href="https://oreil.ly/jVBb0">访问控制属性</a>可能会有所帮助。</p>
+        <p>前面讨论了如何在身份池中根据不同标签分配临时角色。也可以根据令牌和 IAM 策略来分配角色：从令牌中获取角色相关信息，再利用这些信息确定要分配的角色。对于需要动态创建角色的场景，可以利用 IAM 策略中的<a href="https://oreil.ly/jVBb0">访问控制属性</a>。</p>
         <p>AWS 提供 IAM、Cognito 等 AuthN 和 AuthZ 服务，使开发团队无需从头构建相关解决方案，大幅加快了开发节奏。AWS AppSync 是另一项服务，有助于前后端团队在大规模 API 开发中独立扩展。让我们来看看 AWS AppSync<a contenteditable="false" data-type="indexterm" data-primary="Cognito" data-startref="cognito">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="authentication" data-secondary="Cognito" data-startref="auth-cognito">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="access control" data-secondary="Cognito" data-startref="access-control-cognito">&nbsp;</a>的功能。</p>
       </section>
       <section data-type="sect1" id="ch12_aws_appsync_1734552291640757">
         <h1>AWS AppSync</h1>
-        <p>要充分<a contenteditable="false" data-type="indexterm" data-primary="AppSync" id="appsync">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scalability" data-secondary="with AppSync" data-secondary-sortas="AppSync" id="scalability-appsync">&nbsp;</a>理解 AWS AppSync 的工作原理，我们首先来思考如何在在线点餐平台上向顾客展示食品信息。前端应用程序展示食品信息、价格、餐厅优惠券、评价等内容。这些数据由后端微服务架构中的不同应用程序维护。前端应用程序有两种选择：分别调用每项服务的 API 并收集数据，或使用单个 API 从所有这些不同的后端服务收集数据并返回给前端。</p>
-        <p>回想<a contenteditable="false" data-type="indexterm" data-primary="GraphQL" id="graphql-ch12">&nbsp;</a>一下，我们在<a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a>中讨论了 GraphQL。AppSync 本质上是一个单一的 GraphQL 端点，可在单次网络调用中查询多个数据库、微服务和 API。在我们的示例中，可以使用 AppSync 向前端暴露单个端点，从不同微服务收集数据。AppSync 也可用于创建发布/订阅 API，通过全托管无服务器 WebSocket 连接向订阅客户端发布通知，例如实时体育赛事更新。</p>
+        <p>要充分<a contenteditable="false" data-type="indexterm" data-primary="AppSync" id="appsync">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scalability" data-secondary="with AppSync" data-secondary-sortas="AppSync" id="scalability-appsync">&nbsp;</a>理解 AWS AppSync 的工作原理，首先考虑在线点餐平台如何向顾客展示餐品。前端应用程序会展示餐品及其价格、餐厅优惠券、评价等信息。这些数据由后端微服务架构中的不同应用程序维护。前端应用程序有两种选择：分别调用各项服务的 API 来收集数据，或者通过单个 API 汇总不同后端服务的数据，再返回给前端。</p>
+        <p>回想<a contenteditable="false" data-type="indexterm" data-primary="GraphQL" id="graphql-ch12">&nbsp;</a>一下，我们在<a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a>中讨论过 GraphQL。AppSync 本质上提供一个统一的 GraphQL 端点，可通过单次网络调用查询多个数据库、微服务和 API。在我们的示例中，可以通过 AppSync 向前端提供统一端点，汇总来自不同微服务的数据。AppSync 还可以用于创建发布/订阅 API，通过全托管的无服务器 WebSocket 连接向订阅客户端推送通知，例如实时体育赛事更新。</p>
         <p>以下是开始使用 AppSync 需要了解的基础组件：</p>
         <dl>
           <dt>GraphQL 架构</dt>
