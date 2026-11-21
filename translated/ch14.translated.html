@@ -322,16 +322,16 @@ Location: https://www.oreilly.com/library/view/system-design-on/9781098146887
             <p>获取某用户在特定时间段内创建的所有 URL。这是辅助查询模式，仅适用于已登录用户。</p>
           </li>
         </ul>
-        <p>这些查询模式既可以用关系型数据库，也可以用非关系型数据库来满足，您可以根据自身的技术积累来选择。如果选择关系型数据库进行部署，我们建议从一开始就采用逻辑分区策略。在本章的上下文中，我们将选择<a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service">&nbsp;</a>AWS 键值数据库：Amazon DynamoDB。DynamoDB 提供了很多开箱即用的优势，例如水平扩展、无需操心基础设施管理（无需手动扩缩读写副本）、TTL 配置，以及用于数据分析的 DynamoDB Streams。</p>
+        <p>关系型数据库和非关系型数据库都能支持这些查询模式，可以根据已有的技术经验进行选择。如果决定采用关系型数据库，我们建议从一开始就规划逻辑分区策略。在本章中，我们选择 AWS 提供的键值数据库 <a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service">&nbsp;</a>Amazon DynamoDB。DynamoDB 具有多项开箱即用的优势，例如水平扩展、托管式基础设施管理（无需自行扩缩容读写副本）、TTL 配置，以及可用于数据分析的 DynamoDB Streams。</p>
         <div data-type="note">
-          <p>DynamoDB 根据客户配置的容量模式<a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-secondary="scaling">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scaling" data-secondary="in DynamoDB" data-secondary-sortas="DynamoDB">&nbsp;</a>进行水平扩展。初期可使用按需容量模式来了解流量模式，如果流量可预测，再迁移至预置模式。对于流量峰值突出的工作负载，按需和预置两种自动扩缩容量模式都可能出现限流问题。提前规划容量有助于<a href="https://oreil.ly/Z3Ait">解决预置模式下的限流问题</a>，而<a href="https://oreil.ly/8Jr1K">按需容量模式</a>的限流问题则会自动恢复。按需模式在账户级别还有 40,000 个 RCU 和 WCU 的配额限制，可通过<a href="https://oreil.ly/7cdFS">在 AWS 控制台提交配额提升申请</a>来增加。</p>
+          <p>DynamoDB 根据客户配置的容量模式<a contenteditable="false" data-type="indexterm" data-primary="DynamoDB" data-secondary="scaling">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="scaling" data-secondary="in DynamoDB" data-secondary-sortas="DynamoDB">&nbsp;</a>进行水平扩展。可以先使用按需容量模式了解流量特征，再在流量变得可预测时切换到预置容量模式。对于流量突增的工作负载，按需模式和启用自动扩缩容的预置容量模式都可能出现限流。提前规划容量有助于<a href="https://oreil.ly/Z3Ait">解决预置容量模式下的限流问题</a>，而<a href="https://oreil.ly/8Jr1K">按需容量模式</a>下的限流问题则会自动恢复。此外，按需模式还有账户级别的配额限制，读写容量单位（RCU 和 WCU）分别为 40,000；可以通过<a href="https://oreil.ly/7cdFS">AWS 控制台申请提高配额</a>。</p>
         </div>
         <p>我们可以将 DynamoDB 的分区键和排序键定义为：</p>
         <div data-type="equation">
           <p>分区键 = {短 URL}</p>
           <p>排序键 = SU</p>
         </div>
-        <p>在上述模式中，我们可以省略排序键的定义，因为排序键始终是一个常量字符串。建议使用常量是因为它有助于在 DynamoDB 中以短 URL 作为分区键存储其他条目（除长 URL 映射之外的数据）。我们需要 GSI 来检索某用户创建的所有 URL，可以使用以下模式：</p>
+        <p>在上述数据模型中，可以不定义排序键，因为它始终是一个固定字符串。建议使用固定值作为排序键，是为了能够在 DynamoDB 中以短 URL 为分区键存储其他数据项，而不只是长 URL 的映射关系。为了检索某个用户创建的所有 URL，我们需要使用全局二级索引（GSI），其键模式可以定义如下：</p>
         <div data-type="equation">
           <p>分区键 = {userId}</p>
           <p>排序键 = u#{timestamp}</p>
