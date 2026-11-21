@@ -1102,3 +1102,15 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | message ordering | 消息有序性 | P35 approved; applies to ordering guarantee category, not whole-stream ordering. |
 | exactly-once semantics | 恰好一次（exactly-once）消息传递语义 | P39 approved; source-level qualification recorded as Low informational TBC, not High. |
 | at-least-once semantics | 至少一次（at-least-once）消息传递语义 | P40 retained AS-IS. |
+
+
+## Chapter 12 — Batch 05 terminology decisions (2026-11-21)
+
+| English | Chinese preference | Reviewer decision |
+|---|---|---|
+| pricing | 定价 | P41 retained AS-IS table label. |
+| broker instance | 代理实例；代理节点 | For MSK provisioned broker pricing use 代理实例; for physical storage use 代理节点 as appropriate. |
+| serverless | 无服务器模式／无服务器选项 | Distinguish cluster, partition, I/O and storage billing; source-level billing distinctions in Author TBC. |
+| on-demand | 按需模式 | For KDS pricing P45 approved; avoid conflating with pre-provisioned shard-hour billing. |
+| data retention | 数据保留 | P46 retained as table label; P47 use 数据保留量 when referring to storage capacity rather than retention duration. |
+| archival storage | 归档存储 | P48 approved: AWS 提供的归档存储方案. |
