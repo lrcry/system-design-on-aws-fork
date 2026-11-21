@@ -1171,3 +1171,15 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | maximum SQS message size | 单条消息的大小上限 | P87 explicit wording override, retain historical 256 KB pending author. |
 | idempotency | 幂等性 | Important for at-least-once SQS processing; distinguish duplicate receipt from strict one-consumer exclusivity. |
 | SNS/SQS fan-out | 消息扇出 | P90 approved: SNS 主题 with multiple SQS 队列 subscribers, independent processing of copies. |
+
+
+## Chapter 12 — Batch 10 terminology decisions (2026-11-21)
+
+| English term | Preferred Chinese | Reviewer note |
+|---|---|---|
+| Standard SQS queue ordering | 尽力而为的消息顺序 | P92 retained AS-IS, no ordering guarantee. |
+| FIFO message ordering | FIFO 消息有序性（同一消息组内） | P93 retained AS-IS; qualification is Author TBC, not a silent translation change. |
+| SQS FIFO transactions per second (TPS) | 每秒事务数（TPS） | P96 uses historical rate of 300 TPS, distinct from count of batched messages. |
+| batched message throughput | 每秒处理的消息数 | P96 approved 10 messages/request and 3,000 messages/s rather than 3,000 TPS. |
+| at-least-once delivery | 至少一次（at-least-once）消息交付语义 | P98 approved: duplicate deliveries require idempotent application logic. |
+| exactly-once delivery | 恰好一次传递 | P99 retained AS-IS; scope and deduplication caveat recorded as Low Author TBC. |
