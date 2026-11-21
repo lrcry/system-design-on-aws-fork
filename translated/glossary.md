@@ -418,7 +418,7 @@ All AWS terminology and technical glossary terms identified from `ch12.html`.
 | 352 | AWS Amplify | Amplify | "To reduce manual setup at your end, you can use AWS Amplify to automatically create the required infrastructure. You can then use AWS SDK to interact with Cognito" / "AppSync also simplifies building advanced use cases such as chat applications, location-aware notifications, live gaming scoreboards, and offline support along with AWS Amplify" | https://docs.aws.amazon.com/amplify/latest/userguide/welcome.html | official | AWS Amplify | https://aws.amazon.com/cn/amplify/ | AWS official |
 | 353 | AWS WAF | WAF, Web Application Firewall | "AppSync is a fully serverless application that offers build-time composition of merged APIs and easy integration with AWS services like AWS WAF, Amazon CloudWatch, Amazon Cognito, and TLS encryption support" / "AppSync also simplifies building advanced use cases such as chat applications, location-aware notifications, live gaming scoreboards" | https://docs.aws.amazon.com/glossary/latest/reference/glos-chap.html | official | AWS WAF（网站防火墙） | https://aws.amazon.com/cn/waf/ | AWS official |
 | 354 | identity provider | IdP, IdPs, federated identity | "An IdP stores and manages users' digital identities. Cognito itself can act as an IdP, and you can integrate it with third-party IdPs like Google, Amazon, and Facebook (supported protocols are OAuth 2.0, SAML, and OpenID)" / "The IdP is also called the federated identity since it can be used across platforms for user authentication. Creating a trust relationship between AWS and an external IdP is called federation" | https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers.html | non-official | 身份提供程序（IdP） | https://docs.amazonaws.cn/IAM/latest/UserGuide/id_roles_providers.html | AWS official |
-| 355 | federation | identity federation, trust relationship | "Creating a trust relationship between AWS and an external IdP is called federation" / "We can create an IAM Identity Provider entity to establish trust between the IdP and the AWS account. This enables all users to assume an IAM role for a limited time with a limited set of permissions without exposing AWS access keys" | https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers.html | non-official | 联合身份验证 | https://docs.amazonaws.cn/singlesignon/latest/userguide/what-is.html | AWS official |
+| 355 | federation | identity federation, trust relationship | "Creating a trust relationship between AWS and an external IdP is called federation" / "We can create an IAM Identity Provider entity to establish trust between the IdP and the AWS account. This enables all users to assume an IAM role for a limited time with a limited set of permissions without exposing AWS access keys" | https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers.html | non-official | 身份联合 | https://docs.amazonaws.cn/singlesignon/latest/userguide/what-is.html | AWS official |
 | 356 | user pool | Cognito user pool, user pools | "A user pool is a user directory that acts as an IdP. The user records are stored in the user pool directory for users signed in via both Cognito or a third-party integrated IdP" / "It also supports all the features like signup, forgotten password, login, password lengths and policy, and MFA" | https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools.html | official | 用户池 | https://docs.amazonaws.cn/cognito/latest/developerguide/cognito-user-pools.html | AWS official |
 | 357 | identity pool | Cognito identity pool, identity pools | "Identity pools provide temporary credentials for application access for both authenticated and nonauthenticated users by taking valid tokens, such as a JSON Web Token (JWT) or SAML token, as input" / "You can use Cognito's identity pools to assign temporary credentials to users and allow them to directly upload files to S3" | https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-identity.html | official | 身份池 | https://docs.amazonaws.cn/cognito/latest/developerguide/cognito-identity.html | AWS official |
 | 358 | JSON Web Token | JWT | "Identity pools provide temporary credentials for application access for both authenticated and nonauthenticated users by taking valid tokens, such as a JSON Web Token (JWT) or SAML token, as input" / "Users interact with Cognito via the frontend application to get a token and use the same token in subsequent API calls. The backend application can interact with Cognito via AWS SDK Amazon Cognito APIs to validate those tokens against the users" | https://en.wikipedia.org/wiki/JSON_Web_Token | non-official | JSON Web 令牌（JWT） | https://docs.amazonaws.cn/cognito/latest/developerguide/what-is-amazon-cognito.html | AWS official |
@@ -1148,3 +1148,294 @@ These working decisions supplement the cross-chapter glossary. Final consistency
 | search criteria / identifiers | 搜索条件 / 标识符 | CH10 P201: name, location and rating are search criteria/attributes, not necessarily unique identifiers. |
 | archival retention / active retention | 归档后保留期限 / 活跃数据保留期限 | CH10 P203: 90 days before archival plus a year of retention is interpretation pending Author TBC; clarify total versus additional duration. |
 | compute resources / compute platforms | 计算资源 / 计算平台 | CH10 P206: includes serverless and managed compute, not only self-managed servers. |
+
+## Chapter 12 — Batch 01 terminology decisions (reviewed 2026-11-21)
+
+| English | Chinese preference | Notes |
+|---|---|---|
+| Amazon SQS | Amazon SQS | Preferred forward-looking service name; P2 retained AS-IS, no retrospective edit approved. |
+| Amazon MSK | Amazon MSK | Preferred forward-looking service name; P3 retained AS-IS, no retrospective edit approved. |
+| SASL/SCRAM / Salted Challenge Response Authentication Mechanism | SASL/SCRAM；加盐质询响应身份验证机制 | Verified AWS China wording is 加盐质询响应机制; P8 TO-BE includes terminology correction. https://docs.amazonaws.cn/msk/latest/developerguide/msk-password-howitworks.html |
+| mutual TLS (mTLS) client authentication | 双向 TLS 客户端身份验证 | Certificate-based identity verification, distinct from simple TLS encryption. https://docs.aws.amazon.com/zh_cn/msk/latest/developerguide/msk-authentication.html |
+| AWS Certificate Manager (ACM) | AWS Certificate Manager（ACM） | Retain English product name in prose. |
+| encryption at rest | 静态数据加密 | Data at rest. |
+| encryption in transit | 传输中加密 | Data in transit. |
+| plaintext traffic | 明文传输 | Not 纯文本加密. |
+
+
+## Chapter 12 — Batch 02 terminology decisions (reviewed 2026-11-21)
+
+| English | Chinese preference | Notes |
+|---|---|---|
+| Kinesis shard | 分片 | Distinguish from Kafka partition; throughput may be per shard. |
+| Kinesis sequence number | 序列号 | In definition-list prose P16 explicitly starts with 序列号; preserve per-partition-key scope of uniqueness. |
+| Kinesis partition key | 分区键 | In definition-list prose P17 explicitly starts with 分区键. |
+| data blob | 数据块 | In definition-list prose P18 explicitly starts with 数据块; 1 MB retained pending author TBC. |
+| Kinesis records per second | 条记录/秒；每秒最多 1,000 条记录 | Reviewer explicitly corrected English source's “TPS” in Chinese P14; author correction still open. |
+| enhanced fan-out (EFO) | 增强型扇出（EFO） | Up to 2 MB/s dedicated read throughput per consumer per shard, versus shared throughput. |
+
+
+## Chapter 12 — Batch 03 terminology decisions (2026-11-21)
+
+| English | Preferred Chinese / service rendering | Reviewer decision |
+|---|---|---|
+| Amazon Simple Queue Service (SQS) | Amazon SQS | Explicit retrospective approval for P2; apply consistently to subsequent reviewed paragraphs. |
+| Amazon Managed Streaming for Apache Kafka (MSK) | Amazon MSK | Explicit retrospective approval for P3; expanded name stays as originally present; use Amazon MSK in future reviewed prose. |
+| Kinesis shard split | 拆分分片 | Prefer over 分裂分片. |
+| Kinesis shard merge | 合并分片 | Distinguish merging multiple shards from splitting. |
+| Kinesis data retention | 数据保留期限 | Source's 24 h–7 d historical range remains pending Author TBC. |
+| provisioned / serverless mode | 预置模式 / 无服务器模式 | Distinguish MSK or KDS capacity management mode. |
+
+**Scope note:** P2 and P3 were retrospectively approved in Batch 03 despite earlier AS-IS approvals. Consistency throughout the chapter is the editorial target, not authorization to silently modify unreviewed paragraphs; apply other changes when those paragraphs are approved. 
+
+
+## Chapter 12 — Batch 04 terminology decisions (2026-11-21)
+
+| English | Chinese | Reviewer decision |
+|---|---|---|
+| on-demand capacity mode | 按需容量模式 | Contrasted with 预置模式 and managed KDS shard configuration in P31. |
+| latency | 延迟 | P32 retained; preserve the table label as 延迟. |
+| message ordering | 消息有序性 | P35 approved; applies to ordering guarantee category, not whole-stream ordering. |
+| exactly-once semantics | 恰好一次（exactly-once）消息传递语义 | P39 approved; source-level qualification recorded as Low informational TBC, not High. |
+| at-least-once semantics | 至少一次（at-least-once）消息传递语义 | P40 retained AS-IS. |
+
+
+## Chapter 12 — Batch 05 terminology decisions (2026-11-21)
+
+| English | Chinese preference | Reviewer decision |
+|---|---|---|
+| pricing | 定价 | P41 retained AS-IS table label. |
+| broker instance | 代理实例；代理节点 | For MSK provisioned broker pricing use 代理实例; for physical storage use 代理节点 as appropriate. |
+| serverless | 无服务器模式／无服务器选项 | Distinguish cluster, partition, I/O and storage billing; source-level billing distinctions in Author TBC. |
+| on-demand | 按需模式 | For KDS pricing P45 approved; avoid conflating with pre-provisioned shard-hour billing. |
+| data retention | 数据保留 | P46 retained as table label; P47 use 数据保留量 when referring to storage capacity rather than retention duration. |
+| archival storage | 归档存储 | P48 approved: AWS 提供的归档存储方案. |
+
+
+## Chapter 12 — Batch 06 terminology decisions (2026-11-21)
+
+| English term | Preferred Simplified Chinese | Source / reviewer scope |
+|---|---|---|
+| AWS Glue Data Catalog | AWS Glue 数据目录 | AWS Chinese docs use 数据目录 as the feature label; P58 retained AS-IS. https://docs.aws.amazon.com/zh_cn/glue/latest/dg/catalog-and-crawler.html |
+| AWS Glue Schema Registry | AWS Glue 架构注册表 | AWS Chinese docs use 架构注册表; P56 retained AS-IS, so no unapproved retrospective change. Recommend consistently translating the feature label when reviewed. https://docs.aws.amazon.com/zh_cn/glue/latest/dg/schema-registry.html |
+| notebook (interactive development environment) | 笔记本；first mention 笔记本（Notebook） where useful | AWS Chinese Flink documentation uses Studio 笔记本. P59 retained AS-IS and P60 accepted the proposed wording with its italicised Notebook label unchanged. Retrospective changes require explicit paragraph approval. https://docs.aws.amazon.com/zh_cn/managed-flink/latest/java/example-notebook.html |
+| bounded stream processing | 有界流处理 | Keep distinct from 批处理 execution mode; source-level simplification P54 Author TBC. |
+| unbounded stream processing | 无界流处理 | Keep distinct from real-time processing execution mode; source-level simplification P54 Author TBC. |
+
+**Reviewer comment:** Translate service-feature names such as Data Catalog / Schema Registry where AWS has an established Chinese rendition, but retain the service prefix AWS Glue in English. This is terminology guidance for future approved edits, not blanket approval to change unreviewed or retained paragraphs.
+
+
+## Chapter 12 — Batch 07 terminology and retrospective corrections (2026-11-21)
+
+| English | Preferred Chinese | Status / reviewer instruction |
+|---|---|---|
+| AWS Glue Schema Registry | AWS Glue 架构注册表 | **Approved retrospective correction P56** following Batch 06 discussion, consistent with AWS official Simplified Chinese docs. https://docs.aws.amazon.com/zh_cn/glue/latest/dg/schema-registry.html |
+| AWS Glue Data Catalog | AWS Glue 数据目录 | P58 already consistent; remains unchanged. |
+| notebook | 笔记本（Notebook） at first formal definition; 笔记本 thereafter | **Approved retrospective correction P60**, retaining the exact <em> element and original indexterm position; P59 already uses 笔记本. |
+| delivery stream | 传输流 | Retain historical KDF terminology used in English original and this chapter. |
+| at-least-once data delivery semantics | 至少一次（at-least-once）数据交付语义 | P70 approved; distinguish from generic data transmission. |
+| Firehose primary destination | 单个传输流的一个主要目标；以下目标之一 | P69 reviewer explicitly approved “and” → “or” clarification in Chinese; English source unchanged, Author TBC recorded. |
+| size and time buffering | 缓冲区大小；缓冲区间隔 | Keep numeric values exactly as in English pending Author TBC and final units audit. |
+
+**Reviewer clarification:** P67 was selected Retain AS-IS. Reviewer considered alternatives for its opening clause but did not explicitly approve a P67 wording change; it remains unchanged, pending optional retrospective approval.
+
+
+## Chapter 12 — Batch 08 terminology and retrospective decisions (2026-11-21)
+
+| English | Chinese preferred form | Reviewer decision |
+|---|---|---|
+| Amazon Kinesis Video Streams (KVS) | Amazon KVS | Retain official AWS service names; P72 approved. |
+| machine learning (ML) | 机器学习（ML） | P72 approved expanded technical phrase. |
+| encryption at rest / in transit | 静态数据加密 / 传输中加密 | P75 approved; do not conflate states. |
+| KVS Producer libraries | KVS Producer 库 | P73 approved; identifies camera-side producer component. |
+| KVS parser library | 解析器库 | P77 approved, including Matroska Video（MKV）format. |
+| Amazon SQS | Amazon SQS | P80 approved; consistent with retrospective P2 approval. |
+| SNS topics / SQS queues | SNS 主题 / SQS 队列 | P79 approved with author TBC for English-source conflation. |
+| Redshift data destination | 当配置的数据目标为 Amazon Redshift 时 | **Retrospective P67 wording explicitly approved** in Batch 08. |
+
+**Reviewer workflow clarification:** There are only AS-IS and TO-BE choices for a paragraph. A specific free-text reviewer correction supersedes the selected option for that paragraph; apply that correction without changing unrelated content. Review prior batches for already approved amendments, but do not silently revise other paragraphs.
+
+
+## Chapter 12 — Batch 09 terminology decisions (2026-11-21)
+
+| English term | Chinese preferred term | Reviewer notes |
+|---|---|---|
+| service decoupling | 服务解耦／避免服务之间的直接依赖 | P81 approved: avoid claiming removal of all failure dependencies. |
+| visibility timeout | 可见性超时 | P84 approved; preserve 0 秒至 12 小时 value. |
+| message retention period | 消息保留期限 | P82 approved; P85 retained AS-IS; source semantics under Author TBC. |
+| dead-letter queue (DLQ) | 死信队列（DLQ） | P86 approved; redrive-policy mechanism raised as author TBC. |
+| maximum SQS message size | 单条消息的大小上限 | P87 explicit wording override, retain historical 256 KB pending author. |
+| idempotency | 幂等性 | Important for at-least-once SQS processing; distinguish duplicate receipt from strict one-consumer exclusivity. |
+| SNS/SQS fan-out | 消息扇出 | P90 approved: SNS 主题 with multiple SQS 队列 subscribers, independent processing of copies. |
+
+
+## Chapter 12 — Batch 10 terminology decisions (2026-11-21)
+
+| English term | Preferred Chinese | Reviewer note |
+|---|---|---|
+| Standard SQS queue ordering | 尽力而为的消息顺序 | P92 retained AS-IS, no ordering guarantee. |
+| FIFO message ordering | FIFO 消息有序性（同一消息组内） | P93 retained AS-IS; qualification is Author TBC, not a silent translation change. |
+| SQS FIFO transactions per second (TPS) | 每秒事务数（TPS） | P96 uses historical rate of 300 TPS, distinct from count of batched messages. |
+| batched message throughput | 每秒处理的消息数 | P96 approved 10 messages/request and 3,000 messages/s rather than 3,000 TPS. |
+| at-least-once delivery | 至少一次（at-least-once）消息交付语义 | P98 approved: duplicate deliveries require idempotent application logic. |
+| exactly-once delivery | 恰好一次传递 | P99 retained AS-IS; scope and deduplication caveat recorded as Low Author TBC. |
+
+
+## Chapter 12 — Batch 11 terminology decisions (2026-11-21)
+
+| English | Preferred Chinese | Decision |
+|---|---|---|
+| Amazon SNS | Amazon SNS | Preserve English AWS service name. |
+| SNS subscription / subscriber | SNS 订阅；订阅者；订阅端点 | P103 approved: refer to the various supported destinations as 订阅端点, rather than treating each as a client application. |
+| Firehose delivery stream | Amazon KDF 传输流 | P103 approved; maintain established chapter terminology without historical-name modernisation. |
+| publish/subscribe | 发布/订阅 | A producer publishes to an SNS 主题, SNS pushes to subscribed endpoints. |
+| SQS polling | 通过轮询从 SQS 获取消息 | P107 approved, in contrast to SNS 推送. |
+| Cafe Delhi Heights | Cafe Delhi Heights | Preserve restaurant proper name as written in source in P104; do not invent literal Chinese proper-name translation. |
+| FIFO price premium | 比标准队列贵约 25% | P102 retained AS-IS; applicability and assumptions recorded as Medium Author TBC. |
+
+
+## Chapter 12 — Batch 12 terminology decisions (2026-11-21)
+
+| English | Preferred Chinese | Reviewer decision |
+|---|---|---|
+| poll SQS | 轮询 SQS 以获取消息 | P113 approved; consistent with P107, distinct from SNS push. |
+| latency SLA | 消息传递延迟的 SLA 保证 | P114 approved with specific reviewer amendment: “SNS 不对消息传递延迟提供 SLA 保证”; do not construe push as guaranteed instantaneous delivery. |
+| SNS message attributes | 消息属性 | P116 approved; key, value and type; supports String, String.Array, Binary and Number. |
+| SNS subscription filter policy | 订阅过滤策略 | P117 approved; supports message attributes and JSON message body. |
+| message durability | 消息持久性 | P118 retained AS-IS; multi-AZ durability. |
+| SNS dead-letter queue | 死信队列（DLQ） | P119 approved: undelivered messages remain retrievable for subsequent processing. |
+| SNS server-side encryption | SNS 服务器端加密 | P120 approved; protect body rather than topic or message metadata. |
+
+
+## Chapter 12 — Batch 13 terminology decisions (2026-11-21)
+
+| English | Chinese preferred form | Reviewer notes |
+|---|---|---|
+| workflow orchestration | 工作流编排 | P123 approved: preserve event-driven orchestration. |
+| Amazon Managed Workflows for Apache Airflow (Amazon MWAA) | Amazon Managed Workflows for Apache Airflow（Amazon MWAA） | P124 approved; correct official plural Workflows, retain English service name; source-level error recorded. |
+| AWS Batch | AWS Batch | P124 approved; not Amazon Batch or 亚马逊批处理服务. |
+| Step Functions state machine | 状态机 | P127 approved; series of states and input/output relationships. |
+| Task state | Task 状态／任务状态 | P128 retained AS-IS; distinguish Activity-backed Task from Lambda/service integrations. |
+| activity | 活动（activity） | P129 approved; externally polling worker uses GetActivityTask and sends task callback. |
+| Amazon States Language (ASL) | Amazon States Language（ASL） | P130 retained, exact hyperlink and indexterm positions unchanged. |
+
+
+## Chapter 12 — Batch 14 terminology decisions (2026-11-21)
+
+| English | Preferred Chinese | Reviewer decision |
+|---|---|---|
+| Step Functions encryption at rest | 静态数据加密 | P131 approved; distinct from TLS encryption in transit. |
+| TLS encryption in transit | 传输中的数据加密 | P131 approved; do not mix with authentication. |
+| Pass / Choice / Parallel state | Pass / Choice / Parallel 状态 | P132, P134, P138 retained AS-IS. |
+| Task state | Task 状态 | P133 approved; activity (activity) distinguished from Lambda/API work. |
+| Wait state | Wait 状态 | P135 approved; 等待时间, relative seconds or absolute timestamp. |
+| Succeed state | Succeed 状态 | P136 approved: successful terminal outcome. |
+| Fail state | Fail 状态 | P137 approved; source-level terminal-state caveat is Medium Author TBC. |
+| Map state / Inline Map | Map 状态／内联模式 | P139–P140 approved: 40 concurrently processed elements, 25,000 history entries. |
+
+
+## Chapter 12 — Batch 15 terminology decisions (2026-11-21)
+
+| English | Chinese preferred form | Reviewer decision |
+|---|---|---|
+| Distributed Map | 分布式模式 | P141 approved; clarify child workflow parallel executions and history scoping. |
+| redrive | 重新驱动（redrive） | P143 approved; preserve the original redrive hyperlink. |
+| Standard Workflows | 标准工作流（Standard） | P144 approved; distinguish from Express. |
+| Express Workflows | 快速工作流（Express） | P144 approved; distinct modes and execution semantics. |
+| long-running workflow | 长时间运行的工作负载 | P146 approved; retains up-to-one-year limit. |
+| short-lived high-volume workflow | 执行时间较短、处理量较大的事件处理工作负载 | P147 approved; retains five-minute limit. |
+| asynchronous Express executions | 异步 Express 工作流；至少一次（at-least-once）执行语义 | P150 approved. |
+| synchronous Express executions | 同步 Express 工作流；最多一次（at-most-once）执行语义 | P150 approved. |
+
+
+## Chapter 12 — Batch 16 terminology decisions (2026-11-21)
+
+| English | Preferred Chinese | Reviewer decision |
+|---|---|---|
+| synchronous Express workflow | 同步 Express 工作流 | P151 approved; use StartSyncExecution API unchanged within link. |
+| AWS Step Functions Activity | AWS Step Functions 活动（Activity） | P152 approved; use 活动 rather than untranslated Activity in Chinese headings. |
+| activity poller | 轮询程序 | P153 approved, retains 1,000 and ARN pending source-level quota verification. |
+| execution event history | 执行事件历史记录 | P156 approved, 25,000-entry Standard Workflow limit. |
+| workflow debugging | 排查工作流故障 | P159 approved; preserve execution time, input/output, failure reason and retries. |
+| directed acyclic graph (DAG) | 有向无环图（DAG） | P160 approved; directed dependency relationships without cycles, not necessarily a linear sequence. |
+| Airflow workers | 工作进程 | P160 approved; scale according to requirements, avoiding unconditional unlimited claim. |
+
+
+## Chapter 12 — Batch 17 terminology decisions (2026-11-21)
+
+| English | Preferred Chinese | Reviewer decision |
+|---|---|---|
+| Airflow architecture | Airflow 架构 | P161 approved with link order preserved before figure xref. |
+| scheduler | 调度器 | P162 approved: 触发按计划运行的工作流 and submit tasks to executor. |
+| executor | 执行器 | P163 retained AS-IS; architecture qualification tracked as Low TBC. |
+| Airflow metadata database | 元数据数据库 | P165 retained AS-IS, preserving PostgreSQL, MySQL and SQLite examples. |
+| Amazon MWAA | Amazon MWAA | P166 approved: managed Apache Airflow service distinguished from self-hosted open source. |
+| MWAA workers | 工作进程 | P167 retained AS-IS with configurable min/max capacity. |
+| AWS IAM Identity Center | AWS IAM Identity Center | P168 approved, correcting the existing “Amazon IAM Identity Center” visible name only; links unchanged. |
+| public/private webserver access | 公共访问模式／私有访问模式 | P168 approved; networking vs authentication in Medium Author TBC. |
+| managed patching and upgrades | 安全补丁；版本升级 | P169 approved; customer/shared responsibility is Author TBC. |
+
+
+## Chapter 12 — Batch 18 terminology decisions (2026-11-21)
+
+| English | Chinese preferred form | Reviewer decision |
+|---|---|---|
+| Amazon CloudWatch | Amazon CloudWatch | P171/P173 approved; keep official service name. |
+| application metrics | 应用程序指标 | P172 approved, distinguish API latency, request traffic and infrastructure health. |
+| CloudWatch Logs | CloudWatch Logs | P174 approved as feature name; otherwise use 日志 as generic term. |
+| CloudWatch Logs Insights | CloudWatch Logs Insights | P174/P178 approved, replace ambiguous shorthand 日志洞察. |
+| log stream | 日志流 | P175 approved, retain emphasis tags. |
+| log group | 日志组 | P175 approved, retain emphasis tags. |
+| personally identifiable information (PII) | 个人身份信息（PII） | P176 approved, protect sensitive content with CloudWatch data protection policy TBC. |
+| filter pattern / metric filter | 模式匹配／过滤器 | P177 approved; distinguish log identification from published metrics. |
+| CloudWatch metrics and alarms | CloudWatch 指标和告警 | P179/P180 approved; visualisation and alarm actions are distinct. |
+| HTTP 500 error | HTTP 500 错误 | P180 approved, retain numerical hypothetical: >10 errors per minute for 15 consecutive minutes. |
+
+
+## Chapter 12 — Batch 19 terminology decisions (2026-11-21)
+
+| English | Preferred Chinese | Decision |
+|---|---|---|
+| CloudWatch metric | 指标 | P181 approved; time-ordered data points. |
+| CloudWatch Metrics Insights | CloudWatch Metrics Insights（指标洞察） | P181 approved; original link and visible feature-name label retained while identifying official name. |
+| namespace | 命名空间 | P182 approved; exact AWS/EC2 identifier flagged Low Author TBC. |
+| dimension | 维度 | P183 retained AS-IS; name-value pairs, maximum 30. |
+| standard/high-resolution metrics | 标准分辨率／高分辨率 | P184 retained, one-minute/one-second granularity. |
+| statistic / statistics | 统计值／统计值类型 | P185 approved; distinguish unit from statistic type. |
+| shown (metric example) | 显示为 | P185 **explicit reviewer correction**: “可能显示为 75%”; omission of shown is not permitted. |
+| metric stream | 指标流 | P186 approved, retain JSON and OpenTelemetry 0.7.0 formats and limit 1,000. |
+| metric-stream destination | 指标传输目标 | P187–P188 approved; S3 and third-party provider use cases. |
+| CloudWatch alarm | CloudWatch 告警 | P189–P190 approved, distinct from metric visualisation. |
+
+
+## Chapter 12 — Batch 20 terminology decisions (2026-11-21)
+
+| English | Preferred Chinese | Reviewer decision |
+|---|---|---|
+| alarm threshold | 告警阈值 | P191–P192 approved: static thresholds and anomaly detection bands. |
+| datapoints to alarm | 触发告警所需的数据点数量 | P192 approved; separate from evaluated period. |
+| missing metric data treatment | 缺失数据处理方式 | P193 approved: normal, breaching, ignored, missing. |
+| alarm states | 正常（OK）、告警（ALARM）、数据不足（INSUFFICIENT_DATA） | P194 approved; preserve all distinct states. |
+| CloudWatch composite alarm | 复合告警 | P195 approved, emphasised term and rule expression preserved; action limitations flagged Low. |
+| CloudWatch Events | CloudWatch Events | P196–P199 approved; historically preserve name; current EventBridge distinctions are Author TBC. |
+| Amazon EventBridge | Amazon EventBridge | P198 approved; do not equate entire service with an event bus. |
+| EventBridge rules and targets | 规则／目标 | P198 approved, retain historical five targets. |
+| AWS Systems Manager Automation | AWS Systems Manager Automation | P197 approved English linked text, not generic 自动化. |
+| PagerDuty and SaaS networking | PagerDuty／SaaS 提供商 | P200 approved; private AWS networking scope flagged Medium. |
+
+
+## Chapter 12 — Batches 21–25 terminology reconciliation (2026-11-21)
+
+| English | Approved Chinese form | Reviewer decision / constraints |
+|---|---|---|
+| Cafe Delhi Heights | Cafe Delhi Heights | P213 explicit reviewer correction: retain restaurant's English proper name, consistent with CH09, CH10, and CH12 P104; no phonetic or literal translation. |
+| assume (an IAM) role | 担任（IAM）角色 | P210/P216/P217 approved. AWS Chinese materials also use 代入角色 for some API contexts; maintain 担任角色 in this chapter's running prose, and preserve `AssumeRole` as the API identifier where applicable. |
+| identity provider (IdP) | 身份提供程序（IdP） | P216/P218/P223 approved, consistent with existing glossary. Do not change to 身份提供商. |
+| federation | 身份联合 | P223 approved; distinguish the federation relationship from authentication, and avoid conflating an IdP with a federated identity (author question P223). |
+| federated identity | 联合身份 | P223 approved, with existing `<em>` markup retained. |
+| user pool / identity pool | 用户池／身份池 | P219/P224/P225 approved; retain separate Cognito concepts and do not silently alter source P219. |
+| S3 presigned URL | S3 预签名 URL | P234–P236 approved, existing glossary row 351 retained. |
+| GraphQL schema | GraphQL 架构 | P243–P245 approved, distinct from high-level system architecture. |
+| merged API | 合并 API | P245/P246 approved; P245 uses the final reviewer-supplied refined TO-BE. |
+| authentication / authorization | 身份验证（AuthN）／授权（AuthZ） | P229–P230/P249 approved; preserve separation between Cognito API access-token handling and JWT verification pending Author TBC P229. |
+
