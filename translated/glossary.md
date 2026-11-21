@@ -1263,3 +1263,18 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | workflow debugging | 排查工作流故障 | P159 approved; preserve execution time, input/output, failure reason and retries. |
 | directed acyclic graph (DAG) | 有向无环图（DAG） | P160 approved; directed dependency relationships without cycles, not necessarily a linear sequence. |
 | Airflow workers | 工作进程 | P160 approved; scale according to requirements, avoiding unconditional unlimited claim. |
+
+
+## Chapter 12 — Batch 17 terminology decisions (2026-11-21)
+
+| English | Preferred Chinese | Reviewer decision |
+|---|---|---|
+| Airflow architecture | Airflow 架构 | P161 approved with link order preserved before figure xref. |
+| scheduler | 调度器 | P162 approved: 触发按计划运行的工作流 and submit tasks to executor. |
+| executor | 执行器 | P163 retained AS-IS; architecture qualification tracked as Low TBC. |
+| Airflow metadata database | 元数据数据库 | P165 retained AS-IS, preserving PostgreSQL, MySQL and SQLite examples. |
+| Amazon MWAA | Amazon MWAA | P166 approved: managed Apache Airflow service distinguished from self-hosted open source. |
+| MWAA workers | 工作进程 | P167 retained AS-IS with configurable min/max capacity. |
+| AWS IAM Identity Center | AWS IAM Identity Center | P168 approved, correcting the existing “Amazon IAM Identity Center” visible name only; links unchanged. |
+| public/private webserver access | 公共访问模式／私有访问模式 | P168 approved; networking vs authentication in Medium Author TBC. |
+| managed patching and upgrades | 安全补丁；版本升级 | P169 approved; customer/shared responsibility is Author TBC. |
