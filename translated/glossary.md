@@ -1065,3 +1065,15 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | encryption at rest | 静态数据加密 | Data at rest. |
 | encryption in transit | 传输中加密 | Data in transit. |
 | plaintext traffic | 明文传输 | Not 纯文本加密. |
+
+
+## Chapter 12 — Batch 02 terminology decisions (reviewed 2026-11-21)
+
+| English | Chinese preference | Notes |
+|---|---|---|
+| Kinesis shard | 分片 | Distinguish from Kafka partition; throughput may be per shard. |
+| Kinesis sequence number | 序列号 | In definition-list prose P16 explicitly starts with 序列号; preserve per-partition-key scope of uniqueness. |
+| Kinesis partition key | 分区键 | In definition-list prose P17 explicitly starts with 分区键. |
+| data blob | 数据块 | In definition-list prose P18 explicitly starts with 数据块; 1 MB retained pending author TBC. |
+| Kinesis records per second | 条记录/秒；每秒最多 1,000 条记录 | Reviewer explicitly corrected English source's “TPS” in Chinese P14; author correction still open. |
+| enhanced fan-out (EFO) | 增强型扇出（EFO） | Up to 2 MB/s dedicated read throughput per consumer per shard, versus shared throughput. |
