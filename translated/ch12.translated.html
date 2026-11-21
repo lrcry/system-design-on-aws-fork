@@ -542,15 +542,15 @@
                 </td>
                 <td>
                   <p>同时支持同步和异步两种执行模式。异步 Express 工作流采用至少一次（at-least-once）执行语义，而同步 Express 工作流采用最多一次（at-most-once）执行语义。</p>
-                  <p>同步工作流可通过 API Gateway 或 Lambda 函数调用，或使用 <a href="https://oreil.ly/9dYkk">StartSyncExecution</a> API 调用。</p>
+                  <p>可以通过 API Gateway、Lambda 函数或 <a href="https://oreil.ly/9dYkk">StartSyncExecution</a> API 启动同步 Express 工作流。</p>
                 </td>
               </tr>
               <tr>
                 <td>
-                  <p>AWS Step Functions Activity 支持</p>
+                  <p>对 AWS Step Functions 活动（Activity）的支持</p>
                 </td>
                 <td>
-                  <p>支持，同一活动 Amazon 资源名称（ARN）上允许最多一千个轮询器。</p>
+                  <p>支持。同一活动的 Amazon 资源名称（ARN）最多允许 1,000 个轮询程序进行轮询。</p>
                 </td>
                 <td>
                   <p>不支持。</p>
@@ -561,7 +561,7 @@
                   <p>执行历史</p>
                 </td>
                 <td>
-                  <p>执行事件历史记录最多 25,000 条。为避免此限制，可探索使用分布式模式 Map 状态，或从 Task 状态启动新的状态机来运行状态机执行。</p>
+                  <p>执行事件历史记录最多包含 25,000 条记录。为避免达到这一上限，可以考虑使用分布式模式的 Map 状态，或通过 Task 状态启动新的状态机执行。</p>
                 </td>
                 <td>
                   <p>对事件数量没有硬性限制。</p>
@@ -572,11 +572,11 @@
           <div data-type="note">
             <p>类型选择应慎重考虑，因为工作流创建后无法更改类型。</p>
           </div>
-          <p>您可以使用 Step Functions 控制台对工作流进行故障调试或其他分析，例如执行时间、输入、输出、故障原因或重试机制，这有助于<a contenteditable="false" data-type="indexterm" data-primary="Step Functions" data-startref="step-functions">&nbsp;</a>轻松诊断生产问题。</p>
+          <p>您可以通过 Step Functions 控制台排查工作流故障，并查看执行时间、输入、输出、失败原因和重试情况等信息，从而更轻松地<a contenteditable="false" data-type="indexterm" data-primary="Step Functions" data-startref="step-functions">&nbsp;</a>诊断生产环境中的问题。</p>
         </section>
         <section data-type="sect2" id="ch12_amazon_managed_workflow_for_apache_airflow_1734552291640023">
           <h2>Amazon Managed Workflow for Apache Airflow</h2>
-          <p><a href="https://airflow.apache.org">Apache Airflow</a> 是一款开源工具，<a contenteditable="false" data-type="indexterm" data-primary="Managed Workflow for Apache Airflow (MWAA)" id="manage-workflow-apache-airflow">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MWAA (Managed Workflow for Apache Airflow)" id="mwaa">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Apache Airflow" id="apache-airflow">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Airflow" id="airflow">&nbsp;</a>用于以编程方式创建、调度和监控工作流。工作流可以创建为<a href="https://oreil.ly/ygivw"><em>有向无环图（DAG）</em></a>：<a contenteditable="false" data-type="indexterm" data-primary="Directed Acyclic Graphs (DAGs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DAGs (Directed Acyclic Graphs)">&nbsp;</a>一组沿单一方向执行且不存在循环的任务。Apache Airflow 使用消息队列将任意数量的工作进程编排到所需规模。一个简单的示例是 ETL 作业，从多个数据源加载数据、转换数据，然后将数据保存到目标数据存储以供分析和洞察。</p>
+          <p><a href="https://airflow.apache.org">Apache Airflow</a> 是一款开源工具，<a contenteditable="false" data-type="indexterm" data-primary="Managed Workflow for Apache Airflow (MWAA)" id="manage-workflow-apache-airflow">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MWAA (Managed Workflow for Apache Airflow)" id="mwaa">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Apache Airflow" id="apache-airflow">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Airflow" id="airflow">&nbsp;</a>用于通过编程创建、调度和监控工作流。工作流可以表示为<a href="https://oreil.ly/ygivw"><em>有向无环图（DAG）</em></a>，<a contenteditable="false" data-type="indexterm" data-primary="Directed Acyclic Graphs (DAGs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DAGs (Directed Acyclic Graphs)">&nbsp;</a>由一组具有明确依赖关系、且不形成循环的任务组成。Apache Airflow 使用消息队列来协调工作进程，并可根据需求扩展工作进程的数量。例如，在 ETL 作业中，可以从多个数据源加载数据，进行转换，再将结果保存到目标数据存储系统，以供后续分析。</p>
           <p>包含工作流执行涉及的所有组件的 <a href="https://oreil.ly/MCGeP">Airflow 架构</a>简化视图如<a data-type="xref" href="#ch12_figure_3_1734552291610704">#ch12_figure_3_1734552291610704</a>所示。让我们逐一了解各组件：</p>
           <dl>
             <dt>调度器</dt>
