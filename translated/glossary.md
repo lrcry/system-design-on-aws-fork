@@ -1310,3 +1310,19 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | metric stream | 指标流 | P186 approved, retain JSON and OpenTelemetry 0.7.0 formats and limit 1,000. |
 | metric-stream destination | 指标传输目标 | P187–P188 approved; S3 and third-party provider use cases. |
 | CloudWatch alarm | CloudWatch 告警 | P189–P190 approved, distinct from metric visualisation. |
+
+
+## Chapter 12 — Batch 20 terminology decisions (2026-11-21)
+
+| English | Preferred Chinese | Reviewer decision |
+|---|---|---|
+| alarm threshold | 告警阈值 | P191–P192 approved: static thresholds and anomaly detection bands. |
+| datapoints to alarm | 触发告警所需的数据点数量 | P192 approved; separate from evaluated period. |
+| missing metric data treatment | 缺失数据处理方式 | P193 approved: normal, breaching, ignored, missing. |
+| alarm states | 正常（OK）、告警（ALARM）、数据不足（INSUFFICIENT_DATA） | P194 approved; preserve all distinct states. |
+| CloudWatch composite alarm | 复合告警 | P195 approved, emphasised term and rule expression preserved; action limitations flagged Low. |
+| CloudWatch Events | CloudWatch Events | P196–P199 approved; historically preserve name; current EventBridge distinctions are Author TBC. |
+| Amazon EventBridge | Amazon EventBridge | P198 approved; do not equate entire service with an event bus. |
+| EventBridge rules and targets | 规则／目标 | P198 approved, retain historical five targets. |
+| AWS Systems Manager Automation | AWS Systems Manager Automation | P197 approved English linked text, not generic 自动化. |
+| PagerDuty and SaaS networking | PagerDuty／SaaS 提供商 | P200 approved; private AWS networking scope flagged Medium. |
