@@ -348,8 +348,8 @@
       </section>
       <section data-type="sect1" id="ch12_amazon_simple_notification_service_1734552291639812">
         <h1>Amazon Simple Notification Service</h1>
-        <p>Amazon SNS<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="pub/sub model" data-tertiary="SNS (Simple Notification Service)" id="comms-pubsub-sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="pub/sub (publisher-subscriber) architecture" data-secondary="SNS (Simple Notification Service)" id="pubsub-sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="push-based communication mechanisms" id="push-comms-sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="orchestration" data-secondary="SNS (Simple Notification Service)" id="orchestration-sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SNS (Simple Notification Service)" id="sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Simple Notification Service (SNS)" id="simple-notification-service">&nbsp;</a>是一种中间服务，用于实现生产者与消费者之间的通信。生产者将消息发布到 SNS 主题，SNS 随后通过推送机制将该消息转发给所有订阅者（即消费者）。支持的消费者类型包括：Amazon KDF 数据流、Amazon SQS、AWS Lambda、HTTP(S) 端点、电子邮件、移动推送通知和移动短信。</p>
-        <p>为进一步说明，让我们回到前几章中的德里高地咖啡馆（Cafe Delhi Heights）餐厅示例，思考一下我们手机上收到的各种优惠和优惠券。当您的手机号码保存到餐厅系统并同意接收短信后，餐厅会在有新优惠或折扣时向您发送消息。在这里，餐厅是消息生产者，将消息发布到折扣频道，而我们作为订阅者接收这些消息。</p>
+        <p>Amazon SNS<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="pub/sub model" data-tertiary="SNS (Simple Notification Service)" id="comms-pubsub-sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="pub/sub (publisher-subscriber) architecture" data-secondary="SNS (Simple Notification Service)" id="pubsub-sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="push-based communication mechanisms" id="push-comms-sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="orchestration" data-secondary="SNS (Simple Notification Service)" id="orchestration-sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SNS (Simple Notification Service)" id="sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Simple Notification Service (SNS)" id="simple-notification-service">&nbsp;</a>是一项连接生产者与消费者、实现消息通信的中间服务。生产者将消息发布到 SNS 主题后，SNS 通过推送机制将消息转发给该主题的所有订阅者（即消费者）。支持的订阅端点包括 Amazon KDF 传输流、Amazon SQS、AWS Lambda、HTTP(S) 端点、电子邮件、移动推送通知和手机短信。</p>
+        <p>为了进一步说明，我们回到前几章提到的 Cafe Delhi Heights 餐厅示例。想一想我们在手机上收到的各种优惠信息和优惠券：当您的手机号码已保存到餐厅系统中，且您同意接收短信时，餐厅就会在推出新优惠或折扣时向您发送消息。在这个例子中，餐厅是消息生产者，负责向优惠频道发布消息，而我们作为订阅者接收这些消息。</p>
         <p>我们将在<a data-type="xref" href="#ch12_table_3_1734552291620388">#ch12_table_3_1734552291620388</a>中对比 SQS 与 SNS 的主要区别。</p>
         <table id="ch12_table_3_1734552291620388">
           <caption>Amazon SQS 与 Amazon SNS 对比</caption>
@@ -366,7 +366,7 @@
                 <p>消息传递机制</p>
               </td>
               <td>
-                <p>应用程序需主动从 SQS 拉取消息。</p>
+                <p>应用程序需要通过轮询从 SQS 获取消息。</p>
               </td>
               <td>
                 <p>SNS 将消息推送给其订阅者。</p>
