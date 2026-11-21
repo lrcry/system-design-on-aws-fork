@@ -137,7 +137,7 @@
         <p>长度(8) = 62<sup>8</sup> = 218.3 万亿</p>
       </div>
       <p>根据上述计算，短 URL 的长度至少为 6 个字符时，系统便能满足所需的规模。考虑到未来的规模增长，我们可以最终将短 URL 的长度确定为 7 个字符。</p>
-      <p>现在，让我们回到最初的问题：所需的存储空间是多少？考虑一个简单的数据库模式（存储短 URL、长 URL、过期时间和元数据），我们可以如下计算存储需求：</p>
+      <p>现在回到最初的问题：系统需要多少存储空间？假设采用一个简单的数据库模式，存储短 URL、长 URL、过期时间和元数据，我们可以按以下方式估算存储需求：</p>
       <div data-type="equation">
         <p>短 URL（7 个字符）= 7 字节</p>
         <p>平均长 URL（100 个字符）= 100 字节</p>
@@ -147,10 +147,10 @@
       </div>
       <p>为简便起见，我们将单个 URL 的存储需求取为 1 KB：</p>
       <div data-type="equation">
-        <p>一年的总存储量 = 315.3 亿 × 1 KB = 29.37 TB</p>
+        <p>一年的总存储量 = 315.3 亿 × 1 KB = 31.53 TB</p>
       </div>
-      <p>系统还有其他存储需求，例如用于提升查询性能的缓存、分析数据，以及用户认证数据库（如果系统为已登录用户提供额外功能，例如自定义 URL 创建、查看分析报告等，则可能需要此数据库）。</p>
-      <p>有了上述所有需求，让我们继续设计<a contenteditable="false" data-type="indexterm" data-primary="storage capacity" data-secondary="URL shortener service" data-startref="store-cap-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="system requirements" data-startref="use-case-url-short-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="system requirements" data-startref="url-short-require">&nbsp;</a>短网址服务。</p>
+      <p>系统还有其他存储需求，例如用于提高查询性能的缓存、分析数据，以及用户身份验证数据库。如果系统为已登录用户提供额外功能，例如创建自定义 URL、查看分析数据等，就可能需要用户身份验证数据库。</p>
+      <p>明确了上述各项需求后，接下来我们开始设计<a contenteditable="false" data-type="indexterm" data-primary="storage capacity" data-secondary="URL shortener service" data-startref="store-cap-url-short">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="system requirements" data-startref="use-case-url-short-require">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="system requirements" data-startref="url-short-require">&nbsp;</a>短网址服务。</p>
     </section>
   </section>
   <section data-type="sect1" id="ch14_starting_with_the_design_1734552292688238">
