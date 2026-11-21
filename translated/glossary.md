@@ -1294,3 +1294,19 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | filter pattern / metric filter | 模式匹配／过滤器 | P177 approved; distinguish log identification from published metrics. |
 | CloudWatch metrics and alarms | CloudWatch 指标和告警 | P179/P180 approved; visualisation and alarm actions are distinct. |
 | HTTP 500 error | HTTP 500 错误 | P180 approved, retain numerical hypothetical: >10 errors per minute for 15 consecutive minutes. |
+
+
+## Chapter 12 — Batch 19 terminology decisions (2026-11-21)
+
+| English | Preferred Chinese | Decision |
+|---|---|---|
+| CloudWatch metric | 指标 | P181 approved; time-ordered data points. |
+| CloudWatch Metrics Insights | CloudWatch Metrics Insights（指标洞察） | P181 approved; original link and visible feature-name label retained while identifying official name. |
+| namespace | 命名空间 | P182 approved; exact AWS/EC2 identifier flagged Low Author TBC. |
+| dimension | 维度 | P183 retained AS-IS; name-value pairs, maximum 30. |
+| standard/high-resolution metrics | 标准分辨率／高分辨率 | P184 retained, one-minute/one-second granularity. |
+| statistic / statistics | 统计值／统计值类型 | P185 approved; distinguish unit from statistic type. |
+| shown (metric example) | 显示为 | P185 **explicit reviewer correction**: “可能显示为 75%”; omission of shown is not permitted. |
+| metric stream | 指标流 | P186 approved, retain JSON and OpenTelemetry 0.7.0 formats and limit 1,000. |
+| metric-stream destination | 指标传输目标 | P187–P188 approved; S3 and third-party provider use cases. |
+| CloudWatch alarm | CloudWatch 告警 | P189–P190 approved, distinct from metric visualisation. |
