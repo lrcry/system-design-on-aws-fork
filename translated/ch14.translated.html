@@ -236,12 +236,12 @@ auto-increment-offset = 2</pre>
         <div data-type="note">
           <p>2010 年，X<a contenteditable="false" data-type="indexterm" data-primary="Snowflake">&nbsp;</a>提出了另一种生成 64 位唯一 ID 的方案：Snowflake（雪花算法）。<a href="https://oreil.ly/ooF5v">Snowflake</a> 将时间戳（41 位，表示以毫秒为单位的纪元时间戳）、机器标识符（10 位，最多支持 1,024 台机器）和序列号（12 位，作为每台机器的本地计数器）组合起来，每毫秒可生成 4,096 个唯一 ID。剩余的 1 位是符号位，始终为 0。由于我们的短网址服务要求生成的字符串始终为 7 个字符，因此不能直接采用这种方案，但可以借鉴其设计思路。X 采用 Snowflake 是为了满足排序及顺序保证方面的要求。短网址服务不需要基于时间戳生成 ID，因此可以选择一种易于实现且能确保唯一性的方案。</p>
         </div>
-        <p>KGS 可以扩展为根据 API 中的客户端输入或客户端接入配置，支持多种类型的密钥生成。这使 KGS 成为生成任意类型标识符的统一系统。接下来我们来讨论<a contenteditable="false" data-type="indexterm" data-primary="key generation service" data-startref="key-generation-service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="algorithms for" data-startref="use-case-url-short-algorithm">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="algorithms for" data-startref="url-short-algorithm">&nbsp;</a>短网址服务需要支持的 API。</p>
+        <p>KGS 可以根据 API 请求中的客户端输入或客户端接入配置进行扩展，支持生成多种类型的键。这样，KGS 就能成为统一生成各类标识符的系统。接下来，我们将讨论<a contenteditable="false" data-type="indexterm" data-primary="key generation service" data-startref="key-generation-service">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="algorithms for" data-startref="use-case-url-short-algorithm">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="algorithms for" data-startref="url-short-algorithm">&nbsp;</a>短网址服务需要支持的 API。</p>
       </section>
     </section>
     <section data-type="sect2" id="ch14_system_apis_1734552292688604">
       <h2>系统 API</h2>
-      <p>API<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="APIs for" id="use-case-url-short-api">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="APIs for" id="url-short-api">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="api-url-short">&nbsp;</a>帮助客户端与系统集成，以使用所支持的功能。短网址服务应支持两个主要 API：创建短 URL 和通过短 URL 获取长 URL。以下代码片段展示了创建短 URL 的 API 签名：</p>
+      <p>API<a contenteditable="false" data-type="indexterm" data-primary="use cases" data-secondary="URL shortener service" data-tertiary="APIs for" id="use-case-url-short-api">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="URL shortener service use case" data-secondary="APIs for" id="url-short-api">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="APIs (application programming interfaces)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" id="api-url-short">&nbsp;</a>使客户端能够与系统集成，并使用系统提供的功能。短网址服务应支持两个主要 API：创建短 URL，以及根据短 URL 获取对应的长 URL。以下代码片段展示了创建短 URL 的 API 签名：</p>
       <pre data-type="programlisting">POST /v1/createShortUrl
 {
     longUrl,
@@ -255,7 +255,7 @@ auto-increment-offset = 2</pre>
           <code>customUrl</code>
         </dt>
         <dd>
-          <p>如果用户希望生成自定义 URL 而非随机 7 字符字符串，则使用此参数。处理该参数时，短网址服务会直接检查数据库中该自定义 URL 是否已存在；若不存在，则将该自定义 URL 与长 URL 的映射关系存入数据库。</p>
+          <p>如果用户希望创建自定义 URL，而不是使用随机生成的 7 个字符组成的字符串，这个参数就很有用。处理该参数时，短网址服务会先查询数据库，检查自定义 URL 是否已存在；如果不存在，就将该自定义 URL 与长 URL 的映射关系存入数据库。</p>
         </dd>
         <dt>
           <code>expiry</code>
@@ -267,13 +267,13 @@ auto-increment-offset = 2</pre>
           <code>userMetadata</code>
         </dt>
         <dd>
-          <p>用于收集用户的额外信息，例如 IP 地址、地理位置和浏览器信息，这些信息有助于驱动数据分析。</p>
+          <p>用于收集用户的其他信息，例如 IP 地址、地理位置和浏览器信息，以支持数据分析。</p>
         </dd>
       </dl>
       <div data-type="note">
-        <p>同一个自定义 URL 可能会被多个用户创建。Amazon DynamoDB 的默认 PutItem 行为是：如果主键已存在，则更新该条目，但这对短网址系统不适用。PutItem 请求应包含<a href="https://oreil.ly/wOVmO">条件表达式</a>，以在自定义 URL 已存在时使请求失败。</p>
+        <p>多个用户可能尝试创建相同的自定义 URL。Amazon DynamoDB 的 PutItem 操作在默认情况下会覆盖主键相同的现有数据项，但这不符合短网址服务的要求。因此，PutItem 请求应包含<a href="https://oreil.ly/wOVmO">条件表达式</a>，以便在自定义 URL 已存在时拒绝写入。</p>
       </div>
-      <p>API 的响应可以是成功或失败。您可能记得我们在<a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a>中对<a contenteditable="false" data-type="indexterm" data-primary="HTTP response status codes">&nbsp;</a>HTTP 状态码的讨论——状态码有助于判断客户端从服务器收到的 HTTP 响应类型。我们应为成功和失败两种响应都定义合理的处理机制，以便客户端能够理解失败场景下的响应，并采取进一步行动（如重试）。失败可能源于客户端参数无效，也可能源于后端应用的某个问题。</p>
+      <p>API 请求可能成功，也可能失败。我们在<a data-type="xref" href="#ch06_communication_networks_and_protocols_1734552288217584">#ch06_communication_networks_and_protocols_1734552288217584</a>中讨论过<a contenteditable="false" data-type="indexterm" data-primary="HTTP response status codes">&nbsp;</a> HTTP 状态码，它们可以帮助客户端判断服务器返回的 HTTP 响应类型。我们应为成功和失败两种情况定义适当的响应机制，使客户端能够理解失败原因，并采取重试等后续措施。请求失败可能是由于客户端传入的参数无效，也可能是后端应用程序出现问题。</p>
       <p>以下是一个成功响应示例：</p>
       <pre data-type="programlisting">HTTP/1.1 200 OK
 {
