@@ -390,19 +390,19 @@ Location: https://www.oreilly.com/library/view/system-design-on/9781098146887
         <img src="images/sdoa_1407.png"/>
         <figcaption>具备改进可用性的 Day 0 架构</figcaption>
       </figure>
-      <p>将 EC2 实例和数据库实例分布在多个可用区，使架构更具弹性，防止数据丢失和服务中断。随着用户群进一步增长（比如超过 10,000 名客户定期访问平台），EC2 实例和数据库的负载也会随之增加，使其性能下降。我们可以采用以下建议进一步横向扩展架构：</p>
+      <p>将 EC2 实例和数据库实例分布在多个可用区，可以提高架构的弹性，防止数据丢失和服务中断。随着用户规模进一步扩大，例如超过 10,000 名客户定期访问平台，EC2 实例和数据库的负载也会增加，导致性能下降。可以采用以下措施进一步横向扩展架构：</p>
       <dl>
         <dt>自动扩缩</dt>
         <dd>
-          <p>为 EC2 实例引入自动扩缩。自动扩缩可确保根据流量自动添加或移除实例，无需人工<span class='keep-together'>干预</span>。</p>
+          <p>为 EC2 实例引入自动扩缩容。自动扩缩容可以根据流量变化自动增加或减少实例，无需人工<span class='keep-together'>干预</span>。</p>
         </dd>
         <dt>数据库只读副本</dt>
         <dd>
-          <p>读请求数量（获取短 URL 对应的长 URL）远多于写请求数量（创建短 URL）。为数据库添加只读副本可以减轻主数据库实例的压力并分散负载。主实例专注于写操作，所有读流量由集群中的只读副本承担。</p>
+          <p>读请求（根据短 URL 获取对应的长 URL）的数量远多于写请求（创建短 URL）。为数据库添加只读副本可以减轻主实例的负载，并将读取压力分散到多个副本。主实例可以专注于处理写入操作，而集群中的只读副本则可以承担全部读取流量。</p>
         </dd>
         <dt>缓存</dt>
         <dd>
-          <p>有些 URL 被大量访问，对同一查询反复访问数据库没有意义。可以在只读副本前面引入缓存层，进一步优化系统。系统首先在缓存中查找短 URL 映射，如果未命中则再去数据库中查找。合理的过期策略和缓存失效策略（参见<a data-type="xref" href="#ch04_caching_policies_and_strategies_1734552287178593">#ch04_caching_policies_and_strategies_1734552287178593</a>）应确保：不常访问的 URL 从缓存中移除，同时缓存中的数据保持新鲜且相关。</p>
+          <p>有些 URL 的访问频率很高，因此没有必要反复向数据库发起相同的查询。可以在只读副本前增加一层缓存，进一步优化系统。系统首先从缓存中查找短 URL 的映射关系；如果缓存未命中，再查询数据库。合理的过期策略和缓存失效策略（参见<a data-type="xref" href="#ch04_caching_policies_and_strategies_1734552287178593">#ch04_caching_policies_and_strategies_1734552287178593</a>）应确保不常访问的 URL 被移出缓存，同时保持缓存数据的时效性和相关性。</p>
         </dd>
       </dl>
       <p>通过整合上述建议，可以改善<a data-type="xref" href="#ch14_figure_7_1734552292664298">#ch14_figure_7_1734552292664298</a>中的架构，如<a data-type="xref" href="#ch14_figure_8_1734552292664318">#ch14_figure_8_1734552292664318</a>所示。</p>
@@ -410,10 +410,10 @@ Location: https://www.oreilly.com/library/view/system-design-on/9781098146887
         <img src="images/sdoa_1408.png"/>
         <figcaption>面向超过 10,000 用户的架构扩展</figcaption>
       </figure>
-      <p>我们应该<a contenteditable="false" data-type="indexterm" data-primary="EC2 (Elastic Compute Cloud)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="ecs-url-short">&nbsp;</a>持续评估所使用服务的特性。AWS 云中提供了多种全托管解决方案（如 Amazon RDS 或 Amazon Aurora），我们可以根据自身的技术储备和组织能承受的运维负担来选择合适的方案。</p>
-      <p>在系统进一步增长的预期下，我们可以通过引入 CDN（如 Amazon CloudFront）将缓存层移近用户。访问频率较高的短 URL 可以直接从 CloudFront 提供服务，而无需将请求发送到后端服务器。CloudFront 还可用于为前端网站组件（如图片、CSS 和 JavaScript）等静态内容提供更快的加载速度。</p>
-      <p>AWS 云多年来持续演进，大幅简化了开发者体验，使产品无需太多专业知识即可发布。凭借众多的托管服务和无服务器产品，应用部署变得更加便捷，运维开销极低甚至为零。</p>
-      <p>一个简单的软件应用通常包含三个组件（或层）：前端、后端和数据库。在前端层，AWS 提供了 Amplify<a contenteditable="false" data-type="indexterm" data-primary="Amplify">&nbsp;</a>，用于构建 Web 和移动应用程序。AWS Amplify 通过提供身份验证、分析、推送通知等内置功能，大幅降低了运维开销，显著缩短了产品上市时间。完整的功能列表请参见 <a href="https://oreil.ly/YoGVL">AWS 文档</a>。</p>
+      <p>我们应<a contenteditable="false" data-type="indexterm" data-primary="EC2 (Elastic Compute Cloud)" data-secondary="for URL shortener service" data-secondary-sortas="URL shortener service" data-startref="ecs-url-short">&nbsp;</a>持续评估所使用的服务及其特点。AWS 云提供了多种全托管解决方案，例如 Amazon RDS 和 Amazon Aurora。可以根据自身的技术经验以及组织能够承担的运维负担，选择合适的方案。</p>
+      <p>随着系统进一步发展，可以引入 CDN（例如 Amazon CloudFront），将缓存层部署得更靠近用户。对于访问频繁的短 URL，CloudFront 可以直接响应请求，而不必每次都访问后端服务器。CloudFront 还可以加快静态内容的加载速度，例如前端网站使用的图片、CSS 和 JavaScript 文件。</p>
+      <p>AWS 云经过多年的发展，简化了产品发布流程，降低了对开发者专业知识的要求。随着托管服务和无服务器产品日益丰富，应用程序的部署变得更加容易，运维负担也可以降至很低，甚至接近于零。</p>
+      <p>一个简单的软件应用程序通常包含三个组件（或层）：前端、后端和数据库。对于前端，AWS 提供了 Amplify<a contenteditable="false" data-type="indexterm" data-primary="Amplify">&nbsp;</a>，用于构建 Web 应用和移动应用。AWS Amplify 提供身份验证、数据分析和推送通知等功能，可以减少大量运维工作，从而显著缩短产品上市时间。完整的功能列表请参见 <a href="https://oreil.ly/YoGVL">AWS 文档</a>。</p>
       <p>AWS 上提供了多种计算选项，如第<a data-type="xref" href="#ch11_aws_compute_services_1734552290903110">#ch11_aws_compute_services_1734552290903110</a>章所述，我们将为 Day 0 架构选择最简单的部署选项。其中一个选项是使用 AWS Lambda 来托管应用逻辑，无需担心基础设施管理，如<a data-type="xref" href="#ch14_figure_9_1734552292664338">#ch14_figure_9_1734552292664338</a>所示。</p>
       <figure id="ch14_figure_9_1734552292664338">
         <img src="images/sdoa_1409.png"/>
