@@ -1077,3 +1077,17 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | data blob | 数据块 | In definition-list prose P18 explicitly starts with 数据块; 1 MB retained pending author TBC. |
 | Kinesis records per second | 条记录/秒；每秒最多 1,000 条记录 | Reviewer explicitly corrected English source's “TPS” in Chinese P14; author correction still open. |
 | enhanced fan-out (EFO) | 增强型扇出（EFO） | Up to 2 MB/s dedicated read throughput per consumer per shard, versus shared throughput. |
+
+
+## Chapter 12 — Batch 03 terminology decisions (2026-11-21)
+
+| English | Preferred Chinese / service rendering | Reviewer decision |
+|---|---|---|
+| Amazon Simple Queue Service (SQS) | Amazon SQS | Explicit retrospective approval for P2; apply consistently to subsequent reviewed paragraphs. |
+| Amazon Managed Streaming for Apache Kafka (MSK) | Amazon MSK | Explicit retrospective approval for P3; expanded name stays as originally present; use Amazon MSK in future reviewed prose. |
+| Kinesis shard split | 拆分分片 | Prefer over 分裂分片. |
+| Kinesis shard merge | 合并分片 | Distinguish merging multiple shards from splitting. |
+| Kinesis data retention | 数据保留期限 | Source's 24 h–7 d historical range remains pending Author TBC. |
+| provisioned / serverless mode | 预置模式 / 无服务器模式 | Distinguish MSK or KDS capacity management mode. |
+
+**Scope note:** P2 and P3 were retrospectively approved in Batch 03 despite earlier AS-IS approvals. Consistency throughout the chapter is the editorial target, not authorization to silently modify unreviewed paragraphs; apply other changes when those paragraphs are approved. 
