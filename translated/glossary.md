@@ -1278,3 +1278,19 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | AWS IAM Identity Center | AWS IAM Identity Center | P168 approved, correcting the existing “Amazon IAM Identity Center” visible name only; links unchanged. |
 | public/private webserver access | 公共访问模式／私有访问模式 | P168 approved; networking vs authentication in Medium Author TBC. |
 | managed patching and upgrades | 安全补丁；版本升级 | P169 approved; customer/shared responsibility is Author TBC. |
+
+
+## Chapter 12 — Batch 18 terminology decisions (2026-11-21)
+
+| English | Chinese preferred form | Reviewer decision |
+|---|---|---|
+| Amazon CloudWatch | Amazon CloudWatch | P171/P173 approved; keep official service name. |
+| application metrics | 应用程序指标 | P172 approved, distinguish API latency, request traffic and infrastructure health. |
+| CloudWatch Logs | CloudWatch Logs | P174 approved as feature name; otherwise use 日志 as generic term. |
+| CloudWatch Logs Insights | CloudWatch Logs Insights | P174/P178 approved, replace ambiguous shorthand 日志洞察. |
+| log stream | 日志流 | P175 approved, retain emphasis tags. |
+| log group | 日志组 | P175 approved, retain emphasis tags. |
+| personally identifiable information (PII) | 个人身份信息（PII） | P176 approved, protect sensitive content with CloudWatch data protection policy TBC. |
+| filter pattern / metric filter | 模式匹配／过滤器 | P177 approved; distinguish log identification from published metrics. |
+| CloudWatch metrics and alarms | CloudWatch 指标和告警 | P179/P180 approved; visualisation and alarm actions are distinct. |
+| HTTP 500 error | HTTP 500 错误 | P180 approved, retain numerical hypothetical: >10 errors per minute for 15 consecutive minutes. |
