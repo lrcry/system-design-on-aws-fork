@@ -720,7 +720,7 @@
               </dd>
               <dt>自定义事件总线</dt>
               <dd>
-                <p>事件总线提供从事件发送方到接收方的通信方式。CloudWatch Events 中的所有事件都通过 AWS 账户中存在的默认事件总线进行路由，而 EventBridge 支持创建针对客户工作负载的<a href="https://oreil.ly/R9fiJ">自定义事件总线</a>并进行受控访问。</p>
+                <p>事件总线为事件发送方和接收方提供通信渠道。CloudWatch Events 中的所有事件都通过 AWS 账户中的默认事件总线进行路由，而 EventBridge 支持创建面向特定客户工作负载的<a href="https://oreil.ly/R9fiJ">自定义事件总线</a>，并对访问进行控制。</p>
               </dd>
               <dt>增强规则</dt>
               <dd>
@@ -728,25 +728,25 @@
               </dd>
               <dt>架构注册表</dt>
               <dd>
-                <p>EventBridge 存储 AWS 服务、集成的 SaaS 提供商以及您自定义事件的架构（Schema），便于开发过程中掌握事件结构。</p>
+                <p>EventBridge 存储 AWS 服务、集成的 SaaS 提供商以及自定义事件的架构（Schema），有助于在开发过程中推断事件结构。</p>
               </dd>
             </dl>
-            <p>CloudWatch 是一项极为重要的 AWS 服务，确保对其他 AWS 服务以及部署在 AWS 云环境中的自定义应用程序的健康监控。AWS 服务和资源的安全性是另一个需要考虑的重要方面，以防止任何滥用。下一节将探讨 AWS IAM 服务，您可以使用它为您的 AWS<a contenteditable="false" data-type="indexterm" data-primary="EventBridge" data-startref="eventbridge">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CloudWatch" data-secondary="events" data-startref="cloudwatch-event">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="events" data-startref="event-cloudwatch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CloudWatch" data-startref="cloudwatch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="monitoring" data-secondary="with CloudWatch" data-secondary-sortas="CloudWatch" data-startref="monitor-cloudwatch">&nbsp;</a>账户实施访问控制机制。</p>
+            <p>CloudWatch 是一项极为重要的 AWS 服务，可用于监控其他 AWS 服务以及部署在 AWS 云环境中的自定义应用程序的运行状况。为防止滥用，保障 AWS 服务和资源的安全也是需要考虑的重要方面。下一节将介绍 AWS IAM 服务，您可以使用它为 AWS<a contenteditable="false" data-type="indexterm" data-primary="EventBridge" data-startref="eventbridge">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CloudWatch" data-secondary="events" data-startref="cloudwatch-event">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="events" data-startref="event-cloudwatch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="CloudWatch" data-startref="cloudwatch">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="monitoring" data-secondary="with CloudWatch" data-secondary-sortas="CloudWatch" data-startref="monitor-cloudwatch">&nbsp;</a>账户实施访问控制。</p>
           </section>
         </section>
       </section>
       <section data-type="sect1" id="ch12_aws_identity_and_access_management_1734552291640635">
         <h1>AWS 身份和访问管理</h1>
-        <p>我们<a contenteditable="false" data-type="indexterm" data-primary="Identity and Access Management (IAM)" id="identity-access-mgmt">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IAM (Identity and Access Management)" id="iam">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="authentication" data-secondary="IAM" id="auth-iam">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="access control" data-secondary="IAM" id="access-control-iam">&nbsp;</a>在本书中多处提到了 IAM 的使用。IAM 针对不同 AWS 资源或整个 AWS 账户，在身份验证和授权方面实施访问控制并强制执行安全措施。首次创建 AWS 账户时，您通过根用户凭证（具有完整管理员权限）登录，但在访问不同资源或允许多人登录并访问 AWS 账户时，我们建议您仅提供所需的访问权限，以避免任何滥用。这种权限粒度通过 IAM 用户、用户组、角色和策略来定义。例如，支持工程师可能只有 CloudWatch 日志的只读权限，而 DevOps 工程师可能有权创建新的日志组或删除现有日志组。</p>
+        <p>我们<a contenteditable="false" data-type="indexterm" data-primary="Identity and Access Management (IAM)" id="identity-access-mgmt">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="IAM (Identity and Access Management)" id="iam">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="authentication" data-secondary="IAM" id="auth-iam">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="access control" data-secondary="IAM" id="access-control-iam">&nbsp;</a>在本书中已多次提及 IAM 的使用。IAM 通过身份验证和授权，为不同的 AWS 资源乃至整个 AWS 账户实施访问控制和安全措施。首次创建 AWS 账户时，您会使用具有完整管理权限的根用户凭证登录。但在访问不同资源或允许多人登录 AWS 账户时，我们建议仅授予必要的访问权限，以防止滥用。权限的细粒度控制通过 IAM 用户、用户组、角色和策略实现。例如，支持工程师可能只有 CloudWatch 日志的只读权限，而 DevOps 工程师则可能有权创建新日志组或删除现有日志组。</p>
         <p class="pagebreak-before less_space">在了解 IAM 的功能和优势之前，让我们先讨论基本术语：</p>
         <dl>
           <dt>根用户</dt>
           <dd>
-            <p>根用户<a contenteditable="false" data-type="indexterm" data-primary="root users">&nbsp;</a>是您使用电子邮件和密码凭证创建 AWS 账户时生成的用户。根用户本质上拥有在 AWS 账户中执行任何操作的所有权限，任何显式 IAM 策略均无法拒绝其访问。<a href="https://oreil.ly/urNZt">服务控制策略（SCP）</a>是一种组织策略，可用于限制成员账户根用户的权限。请创建单独的管理员用户以执行日常任务，并仅在需要执行<a href="https://oreil.ly/XtEH_">只有根用户才能完成的任务</a>时使用根用户凭证，例如删除账户、注册 AWS GovCloud（美国）以及注册成为卖家。</p>
+            <p>根用户<a contenteditable="false" data-type="indexterm" data-primary="root users">&nbsp;</a>是创建 AWS 账户时通过电子邮件地址和密码凭证生成的用户。根用户基本拥有在 AWS 账户中执行任何操作的权限，显式 IAM 策略无法拒绝其访问。<a href="https://oreil.ly/urNZt">服务控制策略（SCP）</a>是一种组织策略，可用于限制成员账户根用户的权限。请创建单独的管理员用户来处理日常任务，仅在执行<a href="https://oreil.ly/XtEH_">必须由根用户完成的任务</a>时才使用根用户凭证，例如删除账户、注册 AWS GovCloud（美国）以及注册成为卖家。</p>
           </dd>
           <dt>IAM 用户</dt>
           <dd>
-            <p>IAM 用户代表具有一组特定权限以执行任务的个人或服务。IAM 用户拥有长期凭证，不会随时间过期。凭证可以是用于登录 AWS 控制台的用户名和密码，或用于编程方式登录的访问密钥 ID（Access Key ID）和秘密访问密钥（Secret Access Key）组合。在可能的情况下，请避免创建 IAM 用户，转而使用具有临时凭证的 IAM 角色。如果必须创建 IAM 用户，请定期更新密码并<a href="https://oreil.ly/XyK35">轮换 AWS 密钥</a>。</p>
+            <p>IAM 用户代表具有特定任务执行权限的个人或服务。IAM 用户使用长期凭证，这些凭证不会随时间自动过期。凭证可以是用于登录 AWS 管理控制台的用户名和密码，也可以是用于编程访问的访问密钥 ID（Access Key ID）和秘密访问密钥（Secret Access Key）。应尽可能避免创建 IAM 用户，改用提供临时凭证的 IAM 角色。如果必须创建 IAM 用户，请定期更新密码并<a href="https://oreil.ly/XyK35">轮换 AWS 访问密钥</a>。</p>
           </dd>
           <dt>IAM 用户组</dt>
           <dd>
@@ -754,7 +754,7 @@
           </dd>
           <dt>IAM 角色</dt>
           <dd>
-            <p>IAM 角色类似于 IAM 用户，但不与特定的个人或服务绑定。角色由个人、服务或另一个 AWS 账户临时担任，以执行任何任务。例如，在 EC2 实例上运行的应用程序会担任角色，以对其他资源（例如从 S3 下载文件）进行 API 调用。这确保了仅在需要的时间内提供临时访问，并在之后自动撤销。IAM 角色可创建为限制访问权限，有助于防止对 AWS 资源环境的任何意外更改。我们建议在限定时间段内使用 IAM 角色而非 IAM 用户进行临时访问。某些使用场景可能明确需要 IAM 用户，例如无法担任 IAM 角色的第三方工作负载、AWS CodeCommit 访问、Amazon Keyspaces 访问，或为紧急情况创建的 IAM 用户；在这些情况下，您应确保启用<a href="https://oreil.ly/i_B6d">多重身份验证（MFA）</a>。</p>
+            <p>IAM 角色与 IAM 用户类似，但不与特定个人或服务绑定。个人、服务或另一个 AWS 账户可以临时担任角色来执行任务。例如，在 EC2 实例上运行的应用程序可以通过担任角色，对其他资源发起 API 调用，例如从 S3 下载文件。这样可以确保仅在所需时间内授予临时访问权限，并在期限结束后自动撤销。可以为 IAM 角色设置受限权限，以帮助防止对 AWS 资源环境进行意外更改。对于限定时间内的临时访问，我们建议使用 IAM 角色，而不是 IAM 用户。某些场景可能确实需要使用 IAM 用户，例如无法担任 IAM 角色的第三方工作负载、访问 AWS CodeCommit 或 Amazon Keyspaces，以及为应对紧急情况而创建 IAM 用户；在这些情况下，应确保启用<a href="https://oreil.ly/i_B6d">多重身份验证（MFA）</a>。</p>
           </dd>
           <dt><a href="https://oreil.ly/Gw-eW"><em>IAM 策略</em></a></dt>
           <dd>
