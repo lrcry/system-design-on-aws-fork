@@ -501,33 +501,33 @@ Location: https://www.oreilly.com/library/view/system-design-on/9781098146887
         </dd>
       </dl>
       <p>应定期评估架构，判断是否应进一步拆分应用（采用微服务架构）以应对不断增长的规模。</p>
-      <p>回到短网址系统设计，我们面对的是大规模场景，因此将应用部署在独立的 VPC 中有助于实现适当的隔离。组织中还有一种常见的架构模式：将多个微服务部署在同一个 EKS 集群中（同一 VPC 内）。这在规模有限时是合理的，但在 Day N 架构的背景下，我们建议使用<a href="https://oreil.ly/c9XMm">独立的 EKS 集群</a>部署各服务，以实现完整的资源隔离（回顾第<a data-type="xref" href="#ch07_containerization_orchestration_and_deployments_1734552288630240">#ch07_containerization_orchestration_and_deployments_1734552288630240</a>章了解 Kubernetes 架构）。</p>
+      <p>回到短网址服务的设计，对于这种大规模系统，可以将应用程序部署在不同的 VPC 中，以实现适当的隔离。另一种常见的架构模式是将多个微服务部署到同一个 EKS 集群（位于同一 VPC）中。这种方式适用于规模较小的系统，但在 Day N 架构中，我们建议为不同服务部署<a href="https://oreil.ly/c9XMm">独立的 EKS 集群</a>，以实现完整的资源隔离（有关 Kubernetes 架构，请回顾第<a data-type="xref" href="#ch07_containerization_orchestration_and_deployments_1734552288630240">#ch07_containerization_orchestration_and_deployments_1734552288630240</a>章）。</p>
       <div data-type="note">
-        <p>造成系统瓶颈的不一定是 AWS 云组件——也有可能是应用代码本身引入的 bug 和瓶颈。例如，某个 DynamoDB 键模式在 Day 0 时运行良好，但随着流量增加而表现不佳。我们可以使用 <a href="https://oreil.ly/-sTwn">Amazon CodeGuru Reviewer</a> 和 <a href="https://oreil.ly/kbPpu">Amazon DevOps Guru</a> 等工具来识别潜在瓶颈，并着手解决。</p>
+        <p>随着系统规模扩大，瓶颈未必来自 AWS 云服务组件，也可能是应用程序代码中的缺陷或性能问题。例如，某个 DynamoDB 键模式在 Day 0 阶段表现良好，但随着流量增加，性能可能下降。我们可以借助 <a href="https://oreil.ly/-sTwn">Amazon CodeGuru Reviewer</a> 和 <a href="https://oreil.ly/kbPpu">Amazon DevOps Guru</a> 等工具识别潜在问题，并进一步寻找解决方案。</p>
       </div>
       <p><a data-type="xref" href="#ch14_figure_12_1734552292664404">#ch14_figure_12_1734552292664404</a>展示了短网址系统架构的最终全貌。</p>
       <figure id="ch14_figure_12_1734552292664404">
         <img src="images/sdoa_1412.png"/>
         <figcaption>短网址系统</figcaption>
       </figure>
-      <p>以下是一些额外的注意事项，为保持图表简洁，我们将其省略：</p>
+      <p>还有一些需要注意的设计细节，为了使架构图更加简洁，我们没有在图中展示：</p>
       <ul>
         <li>
-          <p>前端服务需要公有子网，以便通过互联网网关（IGW）实现互联网连通性，或放置堡垒机等资源。</p>
+          <p>前端服务需要使用公有子网，以便通过互联网网关（IGW）连接互联网，或部署堡垒机等资源。</p>
         </li>
         <li>
-          <p>位于不同 VPC 中的服务需要一种机制来相互连接。AWS Transit Gateway 提供 VPC 间的双向通信；AWS PrivateLink 提供单向通信。使用 Transit Gateway 时，各 VPC 的 CIDR 块不能重叠，而 PrivateLink 则不受此限制。</p>
+          <p>位于不同 VPC 中的服务需要相应的网络连接机制。AWS Transit Gateway 可以实现 VPC 之间的双向通信，而 AWS PrivateLink 则提供单向的服务访问连接。使用 Transit Gateway 时，VPC 的 CIDR 地址段不应重叠，而 PrivateLink 不受这一限制。</p>
         </li>
         <li>
-          <p>微服务还需要与位于我们 VPC 中的 AWS 服务进行交互。这些服务应通过 <a href="https://oreil.ly/ha5qp">PrivateLink</a> 访问，而非通过 NAT 网关。这确保了流量不经过互联网，从而提升应用安全性并降低操作延迟。只有在需要显式连接互联网时，才应使用 NAT 网关。</p>
+          <p>微服务还需要访问位于我们自有 VPC 中的 AWS 服务。应通过 <a href="https://oreil.ly/ha5qp">PrivateLink</a> 访问这些服务，而不是使用 NAT 网关。这样可以让流量无需经过互联网，有助于提高应用程序的安全性并降低操作延迟。只有在明确需要访问互联网时，才应考虑使用 NAT 网关。</p>
         </li>
         <li>
           <p>运行在 Amazon ECS 上的微服务相互通信的其他方式包括：<a href="https://oreil.ly/F3hRO">ECS 服务发现</a>、<a href="https://oreil.ly/wa8D5">AWS App Mesh</a> 和 <a href="https://oreil.ly/dg7Iz">ECS 服务连接</a>。</p>
         </li>
         <li>
-          <p>Amazon ElastiCache 作为 DynamoDB 上层的缓存层，用于更快地响应读查询。ElastiCache 将根据缓存驱逐策略移除最少使用的数据。我们可以引入一个额外的 AWS Lambda 函数（在 DynamoDB 数据删除事件触发时调用），以确保数据从 DynamoDB 中删除时，也同步从缓存中移除。这种情况可能发生在用户为短 URL 设置了自定义过期时间时。除 Lambda 函数外，我们也可以在数据管理服务中实现一个消费者来承担这一职责。</p>
+          <p>Amazon ElastiCache 作为 DynamoDB 前端的缓存层，用于加快读取查询。ElastiCache 会根据缓存淘汰策略移除使用频率较低的数据。可以增加一个 AWS Lambda 函数，在 DynamoDB 发生数据删除事件时调用，以便在数据库删除相应数据后，将其从缓存中移除。例如，当用户为短 URL 设置自定义过期时间时，就可能触发这种情况。除了使用 Lambda 函数，也可以由数据管理服务中的消费者承担这一职责。</p>
           <div data-type="note">
-            <p>DDB 条目可能不会在 <a href="https://oreil.ly/p23Xd">TTL</a> 中指定的确切时间被删除。如果需要在指定时间精确删除，请考虑其他替代方案。</p>
+            <p>DynamoDB 数据项可能不会在 <a href="https://oreil.ly/p23Xd">TTL</a> 指定的时间立即被删除。如果需要在指定时间精确删除数据，应考虑其他方案。</p>
           </div>
         </li>
         <li>
