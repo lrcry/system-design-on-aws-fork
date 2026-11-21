@@ -655,7 +655,7 @@
           <p>CloudWatch 指标可用于监控应用程序，用户可以搜索指标、绘制指标图表，并根据指标设置告警。例如，可以绘制服务的自定义指标（如 HTTP 500 错误次数），并在连续 15 分钟内每分钟的 HTTP 500 错误次数均超过 10 次时触发告警。接下来，我们将进一步介绍指标和告警。</p>
           <section data-type="sect3" id="ch12_metrics_1734552291640279">
             <h3>指标</h3>
-            <p><em>指标</em>本质上<a contenteditable="false" data-type="indexterm" data-primary="CloudWatch" data-secondary="metrics" id="cloudwatch-metrics">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="metrics" id="metrics">&nbsp;</a>是按时间顺序排列、发送至 CloudWatch 以供可视化的一组数据点。如前所述，指标可以来自 AWS 资源，也可以是自定义应用程序指标。大多数 AWS 服务会免费发布一些默认指标，您还可以根据需要调整指标的粒度，例如采用分钟级粒度。与 CloudWatch Logs Insights 类似，CloudWatch Metrics Insights 可以<a href="https://oreil.ly/AV2JV">指标洞察</a>查询已发布的不同指标、发现其中的模式，并据此创建告警。下面介绍与指标相关的一些术语：</p>
+            <p><em>指标</em>本质上<a contenteditable="false" data-type="indexterm" data-primary="CloudWatch" data-secondary="metrics" id="cloudwatch-metrics">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="metrics" id="metrics">&nbsp;</a>是按时间顺序排列、发送至 CloudWatch 以供可视化的一组数据点。如前所述，指标可以来自 AWS 资源，也可以是自定义应用程序指标。大多数 AWS 服务会免费发布一些默认指标，您还可以根据需要调整指标的粒度，例如采用分钟级粒度。与 CloudWatch Logs Insights 类似，CloudWatch 的<a href="https://oreil.ly/AV2JV">Metrics Insights（指标洞察）</a>功能可以查询已发布的不同指标、发现其中的模式，并据此创建告警。下面介绍与指标相关的一些术语：</p>
             <dl>
               <dt>命名空间</dt>
               <dd>
@@ -671,7 +671,7 @@
               </dd>
               <dt>统计数据</dt>
               <dd>
-                <p>统计值<a contenteditable="false" data-type="indexterm" data-primary="statistics">&nbsp;</a>可用于汇总一段时间内的数据，例如过去一小时的最大延迟或 API 调用次数总和。您可以根据业务需求从<a href="https://oreil.ly/Vbaih">支持的统计值类型</a>中选择，例如最大值、最小值、样本数、总和、平均值和百分位数等。每种统计值还关联一个<a href="https://oreil.ly/6zm-B">关联的单位</a>，例如次数、百分比或秒。例如，过去一小时的平均 CPU 利用率可能显示为 75%。</p>
+                <p>统计值<a contenteditable="false" data-type="indexterm" data-primary="statistics">&nbsp;</a>可用于汇总一段时间内的数据，例如过去一小时的最大延迟或 API 调用次数总和。您可以根据业务需求从<a href="https://oreil.ly/Vbaih">支持的统计值类型</a>中选择，例如最大值、最小值、样本数、总和、平均值和百分位数等。每种统计值还有一个<a href="https://oreil.ly/6zm-B">关联的单位</a>，例如次数、百分比或秒。例如，过去一小时的平均 CPU 利用率可能显示为 75%。</p>
               </dd>
             </dl>
             <p>为进行进一步分析，可以将 CloudWatch 指标以 JSON 或 <a href="https://oreil.ly/bBKSR">OpenTelemetry 0.7.0 格式</a>近实时地传输到指定目标。单个指标流最多可包含 1,000 个过滤器，用于控制需要传输的指标。以下是一些适用场景：</p>
