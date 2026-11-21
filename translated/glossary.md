@@ -1051,3 +1051,17 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | write-around | 绕写（Write-Around，即绕过缓存写入） | Explicit descriptive explanation at first mention. |
 | slab class | slab 类别 | P103–P104 terminology pending author technical confirmation. |
 | append-only file (AOF) | 仅追加文件（AOF） | Distinguish from generic write-ahead logging (WAL). |
+
+
+## Chapter 12 — Batch 01 terminology decisions (reviewed 2026-11-21)
+
+| English | Chinese preference | Notes |
+|---|---|---|
+| Amazon SQS | Amazon SQS | Preferred forward-looking service name; P2 retained AS-IS, no retrospective edit approved. |
+| Amazon MSK | Amazon MSK | Preferred forward-looking service name; P3 retained AS-IS, no retrospective edit approved. |
+| SASL/SCRAM / Salted Challenge Response Authentication Mechanism | SASL/SCRAM；加盐质询响应身份验证机制 | Verified AWS China wording is 加盐质询响应机制; P8 TO-BE includes terminology correction. https://docs.amazonaws.cn/msk/latest/developerguide/msk-password-howitworks.html |
+| mutual TLS (mTLS) client authentication | 双向 TLS 客户端身份验证 | Certificate-based identity verification, distinct from simple TLS encryption. https://docs.aws.amazon.com/zh_cn/msk/latest/developerguide/msk-authentication.html |
+| AWS Certificate Manager (ACM) | AWS Certificate Manager（ACM） | Retain English product name in prose. |
+| encryption at rest | 静态数据加密 | Data at rest. |
+| encryption in transit | 传输中加密 | Data in transit. |
+| plaintext traffic | 明文传输 | Not 纯文本加密. |
