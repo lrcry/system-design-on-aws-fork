@@ -1183,3 +1183,16 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | batched message throughput | 每秒处理的消息数 | P96 approved 10 messages/request and 3,000 messages/s rather than 3,000 TPS. |
 | at-least-once delivery | 至少一次（at-least-once）消息交付语义 | P98 approved: duplicate deliveries require idempotent application logic. |
 | exactly-once delivery | 恰好一次传递 | P99 retained AS-IS; scope and deduplication caveat recorded as Low Author TBC. |
+
+
+## Chapter 12 — Batch 11 terminology decisions (2026-11-21)
+
+| English | Preferred Chinese | Decision |
+|---|---|---|
+| Amazon SNS | Amazon SNS | Preserve English AWS service name. |
+| SNS subscription / subscriber | SNS 订阅；订阅者；订阅端点 | P103 approved: refer to the various supported destinations as 订阅端点, rather than treating each as a client application. |
+| Firehose delivery stream | Amazon KDF 传输流 | P103 approved; maintain established chapter terminology without historical-name modernisation. |
+| publish/subscribe | 发布/订阅 | A producer publishes to an SNS 主题, SNS pushes to subscribed endpoints. |
+| SQS polling | 通过轮询从 SQS 获取消息 | P107 approved, in contrast to SNS 推送. |
+| Cafe Delhi Heights | Cafe Delhi Heights | Preserve restaurant proper name as written in source in P104; do not invent literal Chinese proper-name translation. |
+| FIFO price premium | 比标准队列贵约 25% | P102 retained AS-IS; applicability and assumptions recorded as Medium Author TBC. |
