@@ -205,7 +205,7 @@
         <p>现在，让我们更详细地了解 KGS。</p>
       </section>
       <section data-type="sect3" id="ch14_key_generation_service_1734552292688540">
-        <h3>密钥生成服务</h3>
+        <h3>键生成服务</h3>
         <p>KGS<a contenteditable="false" data-type="indexterm" data-primary="key generation service" id="key-generation-service">&nbsp;</a>的职责很简单：根据短网址服务的请求提供唯一 ID。为了控制 KGS 的请求负载并提高短网址服务的效率，每次可以批量提供一组 ID，例如一次提供 1,000 个。短网址服务用完这批 ID 后，再向 KGS 请求下一批。接下来进一步探讨 KGS 的工作原理：这些唯一 ID 应如何生成？</p>
         <p>我们可以<a contenteditable="false" data-type="indexterm" data-primary="databases" data-secondary="auto-increment feature">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="auto-increment feature (databases)">&nbsp;</a>考虑使用数据库的自增功能，例如 MySQL 的 <code>AUTO_INCREMENT</code>，或 PostgreSQL 的 <a href="https://oreil.ly/nzd_o"><code>SERIAL</code></a>、<a href="https://oreil.ly/HnVc_"><code>SEQUENCE</code></a>。在采用多数据库实例的架构中，这种功能可以由主节点提供，但用于维护 ID 的主节点可能成为单点故障，影响整个系统的可用性。此外，在水平扩展的多实例数据库架构（例如 NoSQL 数据库）中，实现这类功能可能非常困难。我们可以借鉴 <a href="https://oreil.ly/uwx2W">Flickr 的架构</a>：它结合使用 MySQL 的自增功能和 <code>REPLACE INTO</code> 查询，每执行一次查询便获得一个新的全局唯一 ID：</p>
         <pre data-type="programlisting">CREATE TABLE `Tickets64` (
@@ -230,7 +230,7 @@ auto-increment-offset = 2</pre>
         <p><a data-type="xref" href="#ch14_figure_5_1734552292664259">#ch14_figure_5_1734552292664259</a>展示了 KGS 与票据服务器（Ticket Server）协同生成 ID 的过程。</p>
         <figure id="ch14_figure_5_1734552292664259">
           <img src="images/sdoa_1405.png"/>
-          <figcaption>通过 Ticket 服务器生成唯一 ID</figcaption>
+          <figcaption>通过票据服务器生成唯一 ID</figcaption>
         </figure>
         <p>两台票据服务器分别生成偶数和奇数 ID。如果将票据服务器部署到多个区域，而不只是在单个区域内部署，管理开销就会增加。确保跨区域唯一性的一种可能方案是为短 URL 添加数据中心前缀，例如用 1 表示 us-east-1、用 2 表示 eu-west-1，以此类推。这样，短 URL 的长度就会从 7 个字符增加到 8 个字符。</p>
         <div data-type="note">
