@@ -502,7 +502,7 @@
                 <p>内联模式支持以此前步骤输出的 JSON 数组作为输入，最多可并发处理 40 个元素；执行历史记录不得超过 25,000 条。</p>
               </li>
               <li>
-                <p>分布式模式支持存储在 Amazon S3 中的 JSON 或 CSV 文件，或来自上一步骤的 JSON 数组。与内联模式相比，该模式支持更高并发度，最多支持 10,000 个并行执行，且对执行历史记录数量没有硬性限制。</p>
+                <p>分布式模式支持将存储在 Amazon S3 中的 JSON 或 CSV 文件，或上一步骤传入的 JSON 数组作为输入。与内联模式相比，它支持更高的并发度，最多可并行运行 10,000 个子工作流，且执行历史记录不受统一的数量上限约束。</p>
               </li>
             </ul>
              </dd>
@@ -510,8 +510,8 @@
           <div data-type="note">
             <p>Parallel 状态与 Map 状态的<a contenteditable="false" data-type="indexterm" data-primary="state machines" data-startref="state-machine">&nbsp;</a>区别在于对动态并行的支持。Parallel 状态需预先定义多个并行执行的分支，而 Map 状态可根据输入动态创建并行子分支。</p>
           </div>
-          <p>您应始终为服务中断做好准备，以应对各类故障场景。在 Step Functions 中，我们建议根据实际情况添加<a href="https://oreil.ly/fDFvd">错误处理和重试机制</a>、<a href="https://oreil.ly/q2DqA">重驱动机制</a>以及告警机制，以提高状态机的成功率。</p>
-          <p>不同使用场景的业务需求各有差异，例如事件处理量、系统持久性、工作流执行时间、幂等性等。为满足这些不同的需求，Step Functions 提供两种类型：标准工作流和快速工作流。这两种类型的详细对比见<a data-type="xref" href="#ch12_table_4_1734552291620411">#ch12_table_4_1734552291620411</a>。</p>
+          <p>您应始终做好应对服务中断及其他故障的准备。在 Step Functions 中，我们建议根据实际需求配置<a href="https://oreil.ly/fDFvd">错误处理和重试</a>、<a href="https://oreil.ly/q2DqA">重新驱动（redrive）</a>和告警机制，以提高状态机执行的成功率。</p>
+          <p>不同业务场景在事件处理量、系统持久性、工作流执行时间和幂等性等方面有不同要求。为满足这些需求，Step Functions 提供两种工作流类型：标准工作流（Standard）和快速工作流（Express）。两者的详细对比见<a data-type="xref" href="#ch12_table_4_1734552291620411">#ch12_table_4_1734552291620411</a>。</p>
           <table id="ch12_table_4_1734552291620411">
             <caption>AWS Step Functions 标准工作流与快速工作流对比</caption>
             <thead>
@@ -527,10 +527,10 @@
                   <p>主要使用场景</p>
                 </td>
                 <td>
-                  <p>用于长时间运行的工作负载（最长一年）以及持久且可审计的工作流，例如 ETL 工作负载。</p>
+                  <p>适用于长时间运行的工作负载（最长一年），以及需要持久性和可审计性的工作流，例如 ETL 工作负载。</p>
                 </td>
                 <td>
-                  <p>用于短时（最长五分钟）、高吞吐量的事件处理工作负载，例如流数据处理。</p>
+                  <p>适用于执行时间较短（最长五分钟）、处理量较大的事件处理工作负载，例如流数据处理。</p>
                 </td>
               </tr>
               <tr>
@@ -541,7 +541,7 @@
                   <p>除非设置了显式重试行为，否则工作流恰好执行一次。</p>
                 </td>
                 <td>
-                  <p>同时支持同步和异步执行模型。异步执行为至少一次，同步执行为最多一次。</p>
+                  <p>同时支持同步和异步两种执行模式。异步 Express 工作流采用至少一次（at-least-once）执行语义，而同步 Express 工作流采用最多一次（at-most-once）执行语义。</p>
                   <p>同步工作流可通过 API Gateway 或 Lambda 函数调用，或使用 <a href="https://oreil.ly/9dYkk">StartSyncExecution</a> API 调用。</p>
                 </td>
               </tr>
