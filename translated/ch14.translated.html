@@ -120,15 +120,15 @@
         </li>
       </ul>
       <p>在评估系统规模时，还需要考虑部署在 Amazon EC2 实例上的应用程序应使用何种实例类型、需要多少个实例，以及 AWS Lambda 的内存需求。在系统投入生产环境并开始处理真实用户流量之前，很难获得准确的数据。因此，应先做出合理假设，再根据实际经验不断优化。</p>
-      <p>一个关键考虑因素是系统负载测试；负载测试有助于建立信心，确认系统在流量增长时能够按预期运行（即系统是可靠的）。接下来我们来讨论<a contenteditable="false" data-type="indexterm" data-primary="scale (of system)" data-secondary="URL shortener service" data-startref="scale-url-short">&nbsp;</a>存储空间需求。</p>
+      <p>负载测试是系统设计中的一项重要工作。通过负载测试，我们可以更有把握地确认系统在流量增长时仍能按预期运行（即系统具有可靠性）。接下来讨论<a contenteditable="false" data-type="indexterm" data-primary="scale (of system)" data-secondary="URL shortener service" data-startref="scale-url-short">&nbsp;</a>存储空间需求。</p>
     </section>
     <section data-type="sect2" id="ch14_storage_space_1734552292688159">
       <h2>存储空间</h2>
-      <p>实际所需的存储空间<a contenteditable="false" data-type="indexterm" data-primary="storage capacity" data-secondary="URL shortener service" id="store-cap-url-short">&nbsp;</a>会因所使用的数据存储方案类型而有所不同，因为每种数据库的数据存储和访问模式各不相同。存储空间的近似计算取决于 URL 的数量、短 URL 和长 URL 的长度、用户元数据，以及 URL 元数据（如过期时间和创建时间）。一年内生成的 URL 数量可以从假定流量 1,000 RPS 推算得出：</p>
+      <p>实际所需的存储空间<a contenteditable="false" data-type="indexterm" data-primary="storage capacity" data-secondary="URL shortener service" id="store-cap-url-short">&nbsp;</a>因采用的数据存储方案而异，因为不同数据库的数据存储方式和访问模式各不相同。估算存储空间时，需要考虑 URL 数量、短 URL 和长 URL 的长度、用户元数据，以及过期时间和创建时间等 URL 元数据。根据假设的请求速率 1,000 RPS，可以推算出一年内生成的 URL 数量：</p>
       <div data-type="equation">
         <p>一年内的 URL 总量 = (1,000 请求/秒) × 60（每分钟）× 60（每小时）× 24（每天）× 365（每年）≈ 315.3 亿</p>
       </div>
-      <p>在继续进行存储计算之前，我们需要确定短 URL 的理想长度。该长度应保证系统不会耗尽唯一短 URL 的供给，并能支持每年 315 亿个唯一 URL 的规模要求。在<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>中，我们讨论了用 IPv6 地址替代 IPv4 地址的问题，因为全球的唯一 IP 地址正在耗尽。我们绝对不希望短网址系统出现类似问题，因此从一开始就应经过充分考量来计算 URL 长度。您可能会建议取 12 或 15 的长度以保险，但这样做违背了缩短 URL 的初衷。</p>
+      <p>在继续计算存储空间之前，我们需要确定短 URL 的理想长度。这个长度既要保证系统有足够的唯一短 URL 可供使用，又要支持每年生成 315 亿个唯一 URL 的规模要求。在<a data-type="xref" href="#ch09_aws_network_services_1734552289953244">#ch09_aws_network_services_1734552289953244</a>中，我们讨论了用 IPv6 地址替代 IPv4 地址，因为全球可用的唯一 IP 地址正在耗尽。我们当然不希望短网址服务遇到类似问题，因此必须从一开始就充分考虑 URL 的长度。为了保险起见，您可能会建议使用 12 或 15 个字符，但这又违背了缩短 URL 的初衷。</p>
       <p>我们可以考虑用数字 0−9、字母 a−z 和 A−Z 来生成短 URL。对于给定长度，使用这 62 个唯一字符最多可以生成多少个唯一 URL？</p>
       <div data-type="equation">
         <p>长度(1) = 62<sup>1</sup> = 62</p>
@@ -136,7 +136,7 @@
         <p>长度(7) = 62<sup>7</sup> = 3.5 万亿</p>
         <p>长度(8) = 62<sup>8</sup> = 218.3 万亿</p>
       </div>
-      <p>从这些计算可以看出，当 URL 长度大于等于 6 时，系统就能支持所需的规模。考虑到未来的扩展，我们可以将 URL 长度最终确定为 7。</p>
+      <p>根据上述计算，短 URL 的长度至少为 6 个字符时，系统便能满足所需的规模。考虑到未来的规模增长，我们可以最终将短 URL 的长度确定为 7 个字符。</p>
       <p>现在，让我们回到最初的问题：所需的存储空间是多少？考虑一个简单的数据库模式（存储短 URL、长 URL、过期时间和元数据），我们可以如下计算存储需求：</p>
       <div data-type="equation">
         <p>短 URL（7 个字符）= 7 字节</p>
