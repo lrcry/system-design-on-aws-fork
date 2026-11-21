@@ -1091,3 +1091,14 @@ These notes supplement the shared glossary; existing canonical entries above rem
 | provisioned / serverless mode | 预置模式 / 无服务器模式 | Distinguish MSK or KDS capacity management mode. |
 
 **Scope note:** P2 and P3 were retrospectively approved in Batch 03 despite earlier AS-IS approvals. Consistency throughout the chapter is the editorial target, not authorization to silently modify unreviewed paragraphs; apply other changes when those paragraphs are approved. 
+
+
+## Chapter 12 — Batch 04 terminology decisions (2026-11-21)
+
+| English | Chinese | Reviewer decision |
+|---|---|---|
+| on-demand capacity mode | 按需容量模式 | Contrasted with 预置模式 and managed KDS shard configuration in P31. |
+| latency | 延迟 | P32 retained; preserve the table label as 延迟. |
+| message ordering | 消息有序性 | P35 approved; applies to ordering guarantee category, not whole-stream ordering. |
+| exactly-once semantics | 恰好一次（exactly-once）消息传递语义 | P39 approved; source-level qualification recorded as Low informational TBC, not High. |
+| at-least-once semantics | 至少一次（at-least-once）消息传递语义 | P40 retained AS-IS. |
