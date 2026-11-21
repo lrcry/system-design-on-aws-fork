@@ -423,24 +423,24 @@
             <p>为满足<a contenteditable="false" data-type="indexterm" data-primary="message ordering">&nbsp;</a>严格的消息顺序需求并防止消息重复，SNS 支持类似 SQS 的 <a href="https://oreil.ly/MQQL1">FIFO 主题</a>。若无此类需求，默认使用标准主题即可。</p>
           </dd>
         </dl>
-        <p>SQS、Lambda 和 SNS 的组合被广泛用于支持事件驱动的异步架构（发布/订阅模型）以及简单工作流的编排。仔细想想，KDS 提供了类似的模型：数据发布到数据流，多个消费者可从数据流中消费数据。两者的主要区别在于 KDS 或 MSK 流处理方案所提供的近实时处理能力。在 SNS 和 SQS 模型中，数据必须先采集到某个特定系统才能进行分析；而 KDS 则允许在<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="pub/sub model" data-tertiary="SNS (Simple Notification Service)" data-startref="comms-pubsub-sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="pub/sub (publisher-subscriber) architecture" data-secondary="SNS (Simple Notification Service)" data-startref="pubsub-sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="push-based communication mechanisms" data-startref="push-comms-sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="orchestration" data-secondary="SNS (Simple Notification Service)" data-startref="orchestration-sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SNS (Simple Notification Service)" data-startref="sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Simple Notification Service (SNS)" data-startref="simple-notification-service">&nbsp;</a>数据到达的同时进行分析。</p>
-        <p>对于需要以事件驱动步骤编排复杂工作流的使用场景，让我们来探索 AWS 的工作流编排服务。</p>
+        <p>SQS、Lambda 和 SNS 常被组合使用，以支持事件驱动的异步架构（发布/订阅模型）并编排简单的工作流。KDS 也提供类似的模式：生产者将数据发布到数据流，多个消费者可以从中读取数据。主要区别在于，KDS 或 MSK 等流处理方案支持近实时处理。在 SNS 和 SQS 模型中，数据需要先进入特定系统才能进行分析；而使用 KDS，可以在<a contenteditable="false" data-type="indexterm" data-primary="communication" data-secondary="pub/sub model" data-tertiary="SNS (Simple Notification Service)" data-startref="comms-pubsub-sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="pub/sub (publisher-subscriber) architecture" data-secondary="SNS (Simple Notification Service)" data-startref="pubsub-sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="push-based communication mechanisms" data-startref="push-comms-sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="orchestration" data-secondary="SNS (Simple Notification Service)" data-startref="orchestration-sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="SNS (Simple Notification Service)" data-startref="sns">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Simple Notification Service (SNS)" data-startref="simple-notification-service">&nbsp;</a>数据到达时就进行分析。</p>
+        <p>接下来，我们将介绍 AWS 的工作流编排服务，了解如何通过事件驱动的步骤来编排复杂工作流。</p>
       </section>
       <section data-type="sect1" id="ch12_workflow_orchestration_1734552291639884">
         <h1>工作流编排</h1>
-        <p>AWS 提供<a contenteditable="false" data-type="indexterm" data-primary="orchestration" data-secondary="workflow orchestration" id="orchestration-workflow">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="workflow orchestration" id="workflow-orchestration">&nbsp;</a>两种工作流编排服务：AWS Step Functions 和亚马逊 Apache Airflow 托管工作流（Amazon MWAA）。Apache Airflow 更受欢迎，更推荐用于批量工作负载，而 Step Functions 则同时适用于实时流处理和批量工作负载（可与<a href="https://oreil.ly/HJZP9">亚马逊批处理服务（Amazon Batch）</a>集成）。以我们最喜爱的餐厅——德里高地咖啡馆为例，介绍在线点餐的简单流程。选好食物后下单的步骤顺序为：（1）处理付款，（2）向餐厅发送订单请求，（3）选择配送合作伙伴，（4）跟踪配送，如<a data-type="xref" href="#ch12_figure_2_1734552291610681">#ch12_figure_2_1734552291610681</a>所示。</p>
+        <p>AWS 提供<a contenteditable="false" data-type="indexterm" data-primary="orchestration" data-secondary="workflow orchestration" id="orchestration-workflow">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="workflow orchestration" id="workflow-orchestration">&nbsp;</a>两项工作流编排服务：AWS Step Functions 和 Amazon Managed Workflows for Apache Airflow（Amazon MWAA）。Apache Airflow 更为普及，通常更适合批处理工作负载；而 Step Functions 既适用于实时流数据处理，也适用于批处理工作负载（可与<a href="https://oreil.ly/HJZP9">AWS Batch</a>集成）。以我们熟悉的 Cafe Delhi Heights 餐厅为例，假设要在线点餐，选好餐品后依次需要：（1）处理付款；（2）向餐厅发送餐品订单；（3）选择配送合作伙伴；（4）跟踪配送进度，如<a data-type="xref" href="#ch12_figure_2_1734552291610681">#ch12_figure_2_1734552291610681</a>所示。</p>
         <figure id="ch12_figure_2_1734552291610681">
           <img src="images/sdoa_1202.png"/>
           <figcaption>在线点餐工作流</figcaption>
         </figure>
-        <p>这两项服务均由 AWS 全托管，客户可以专注于构建应用程序，无需担心基础设施维护。以步骤方式执行应用逻辑是提升应用可靠性的主要优势，因为它确保了独立执行（一个组件的问题不会影响其他组件）和妥善的故障处理。Step Functions 是专有服务，而 MWAA 基于开源的 <a href="https://airflow.apache.org">Apache Airflow</a> 构建。让我们更深入地探讨这两个选项。</p>
+        <p>这两项服务均由 AWS 全面托管，客户可以专注于应用程序开发，无需承担基础设施维护工作。将应用程序逻辑拆分为多个步骤执行，有助于提高可靠性，因为各步骤可以独立执行（一个组件的问题不会影响其他组件），并能得到妥善的故障处理。Step Functions 是专有服务，而 MWAA 基于开源的 <a href="https://airflow.apache.org">Apache Airflow</a> 构建。接下来，我们将进一步介绍这两项服务。</p>
         <section data-type="sect2" id="ch12_aws_step_functions_1734552291639957">
           <h2>AWS Step Functions</h2>
           <p>AWS Step Functions<a contenteditable="false" data-type="indexterm" data-primary="Step Functions" id="step-functions">&nbsp;</a>是一项全托管、无服务器的可视化工作流编排服务，帮助客户轻松创建和运行<a href="https://oreil.ly/OiSuJ">状态机</a>，以协调分布式应用组件。以下是充分理解 AWS Step Functions 所需掌握的基本术语：</p>
           <dl>
             <dt>状态机</dt>
             <dd>
-              <p>状态机<a contenteditable="false" data-type="indexterm" data-primary="state machines" id="state-machine">&nbsp;</a>将编排工作流表示为一系列步骤，以及这些步骤之间的关系和各自的输入与输出。这些步骤相互协调，并与不同组件交互，例如<a href="https://oreil.ly/5cn_A">活动（activity）</a>、Lambda 函数、SQS、DynamoDB 或<a href="https://oreil.ly/Hxp6f">其他服务</a>，以完成特定操作。</p>
+              <p>状态机<a contenteditable="false" data-type="indexterm" data-primary="state machines" id="state-machine">&nbsp;</a>使用一系列步骤来表示编排工作流，包括步骤之间的关系，以及各步骤的输入和输出。这些步骤相互协调，并与<a href="https://oreil.ly/5cn_A">活动（activity）</a>、Lambda 函数、SQS、DynamoDB 或<a href="https://oreil.ly/Hxp6f">其他服务</a>等组件交互，以完成特定操作。</p>
             </dd>
             <dt>任务</dt>
             <dd>
@@ -448,7 +448,7 @@
             </dd>
             <dt>活动</dt>
             <dd>
-              <p>任务<a contenteditable="false" data-type="indexterm" data-primary="activities (in Step Functions)">&nbsp;</a>负责执行某些工作，这些工作可由 EC2 机器、ECS、Lambda 函数上的工作进程或任何能够建立 HTTP 连接的托管在任意位置的应用程序来执行。这通过 Step Functions 的一项称为"活动"的功能来实现。Step Functions 工作流步骤会等待活动工作进程通过 <a href="https://oreil.ly/k43zp">GetActivityTask</a> API 向 Step Functions 轮询任务、完成工作，并通过 <a href="https://oreil.ly/pY1cF">SendTaskSuccess</a> 或 <a href="https://oreil.ly/lGLAq">SendTaskFailure</a> API 向 Step Functions 发送执行回调。等待回调的超时时间可以根据应用程序的性质和使用场景在任务定义中配置。</p>
+              <p>任务<a contenteditable="false" data-type="indexterm" data-primary="activities (in Step Functions)">&nbsp;</a>负责执行具体工作，这些工作可以由运行在 EC2 实例、ECS、Lambda 函数中的工作进程，或部署在任何位置且能够建立 HTTP 连接的应用程序来完成。这通过 Step Functions 中称为“活动”（activity）的功能实现。工作流中的相应步骤会等待活动工作进程通过 <a href="https://oreil.ly/k43zp">GetActivityTask</a> API 向 Step Functions 轮询任务。工作进程完成任务后，再通过 <a href="https://oreil.ly/pY1cF">SendTaskSuccess</a> 或 <a href="https://oreil.ly/lGLAq">SendTaskFailure</a> API 向 Step Functions 回报执行结果。等待回调的超时时间可根据应用程序的特点和使用场景在任务定义中配置。</p>
             </dd>
           </dl>
           <p>您可以使用 <a href="https://oreil.ly/k40Ag">Amazon States Language（ASL）</a>或<a contenteditable="false" data-type="indexterm" data-primary="Amazon States Language (ASL)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="ASL (Amazon States Language)">&nbsp;</a> Step Functions 控制台来创建工作流。ASL 是一种基于 JSON 的结构化语言，用于以声明式方式定义工作流状态，如以下代码片段所示：</p>
