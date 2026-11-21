@@ -577,11 +577,11 @@
         <section data-type="sect2" id="ch12_amazon_managed_workflow_for_apache_airflow_1734552291640023">
           <h2>Amazon Managed Workflow for Apache Airflow</h2>
           <p><a href="https://airflow.apache.org">Apache Airflow</a> 是一款开源工具，<a contenteditable="false" data-type="indexterm" data-primary="Managed Workflow for Apache Airflow (MWAA)" id="manage-workflow-apache-airflow">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="MWAA (Managed Workflow for Apache Airflow)" id="mwaa">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Apache Airflow" id="apache-airflow">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="Airflow" id="airflow">&nbsp;</a>用于通过编程创建、调度和监控工作流。工作流可以表示为<a href="https://oreil.ly/ygivw"><em>有向无环图（DAG）</em></a>，<a contenteditable="false" data-type="indexterm" data-primary="Directed Acyclic Graphs (DAGs)">&nbsp;</a><a contenteditable="false" data-type="indexterm" data-primary="DAGs (Directed Acyclic Graphs)">&nbsp;</a>由一组具有明确依赖关系、且不形成循环的任务组成。Apache Airflow 使用消息队列来协调工作进程，并可根据需求扩展工作进程的数量。例如，在 ETL 作业中，可以从多个数据源加载数据，进行转换，再将结果保存到目标数据存储系统，以供后续分析。</p>
-          <p>包含工作流执行涉及的所有组件的 <a href="https://oreil.ly/MCGeP">Airflow 架构</a>简化视图如<a data-type="xref" href="#ch12_figure_3_1734552291610704">#ch12_figure_3_1734552291610704</a>所示。让我们逐一了解各组件：</p>
+          <p>如 <a href="https://oreil.ly/MCGeP">Airflow 架构</a>的简化示意图 <a data-type="xref" href="#ch12_figure_3_1734552291610704">#ch12_figure_3_1734552291610704</a>所示，该图展示了执行工作流所涉及的各个组件。下面逐一介绍这些组件：</p>
           <dl>
             <dt>调度器</dt>
             <dd>
-              <p>触发已调度的工作流并将任务提交给执行器执行</p>
+              <p>触发按计划运行的工作流，并将任务提交给执行器处理</p>
             </dd>
             <dt><a href="https://oreil.ly/TckXC"><em>执行器</em></a></dt>
             <dd>
@@ -604,7 +604,7 @@
             <img src="images/sdoa_1203.png"/>
             <figcaption>Apache Airflow 架构</figcaption>
           </figure>
-          <p>AWS 将 Apache Airflow 基础设施管理的运维负担从客户身上卸下，提供 Amazon MWAA 作为托管服务并按需扩展。以下是 Amazon MWAA 区别于开源工具的一些功能：</p>
+          <p>AWS 通过 Amazon MWAA 提供可按需扩展的托管 Apache Airflow 服务，减轻客户管理基础设施的运维负担。以下是 Amazon MWAA 相较于自行部署的开源方案所具备的一些特点：</p>
           <dl>
             <dt>可扩展性</dt>
             <dd>
@@ -612,11 +612,11 @@
             </dd>
             <dt>安全性</dt>
             <dd>
-              <p>您可以使用 IAM 角色和策略管理对不同 AWS 服务的访问，所有工作进程和调度器均在 <a href="https://oreil.ly/dLaXZ">MWAA 的 VPC</a> 中运行，确保私有资源的管理。默认使用 AWS KMS 对所有数据进行加密，提供额外安全保障。您可以根据需要使用 <a href="https://oreil.ly/k2TuP">AWS IAM</a> 策略和 <a href="https://oreil.ly/ck5no">Amazon IAM Identity Center</a> 启用私有或公共访问模式。公共访问模式通过 VPC 端点确保可通过互联网访问 Apache Airflow 服务器；私有访问模式仅在您的 VPC 内可访问。</p>
+              <p>您可以使用 IAM 角色和策略管理对不同 AWS 服务的访问权限。所有工作进程和调度器均在 <a href="https://oreil.ly/dLaXZ">MWAA 的 VPC</a> 中运行，以便对这些资源进行私有化管理。默认情况下，所有数据均使用 AWS KMS 加密，以进一步提高安全性。您可以根据需要使用 <a href="https://oreil.ly/k2TuP">AWS IAM</a> 策略和 <a href="https://oreil.ly/ck5no">AWS IAM Identity Center</a> 启用私有或公共访问模式。公共访问模式允许通过互联网访问 Apache Airflow 服务器，并使用 VPC 端点；私有访问模式则仅允许从您的 VPC 内访问该服务器。</p>
             </dd>
             <dt>运维管理</dt>
             <dd>
-              <p>在 AWS 控制台中只需几次点击即可完成设置，无需担心版本升级或应用安全补丁。</p>
+              <p>只需在 AWS 控制台中进行少量操作，即可完成环境设置，也无需自行承担版本升级和安全补丁的维护工作。</p>
             </dd>
             <dt>监控</dt>
             <dd>
